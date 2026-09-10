@@ -51,6 +51,18 @@ namespace BelowTheWing.Tests.Support
         public ulong OwnerOf(VehicleController vehicle)
             => m_Owners.TryGetValue(vehicle, out var id) ? id : 0;
 
+        /// <summary>Everything handed back, in the order it was given up.</summary>
+        public List<VehicleController> HandedBack { get; } = new List<VehicleController>();
+
+        public void HandBack(IReadOnlyList<VehicleController> vehicles)
+        {
+            foreach (var vehicle in vehicles)
+            {
+                HandedBack.Add(vehicle);
+                m_Owners[vehicle] = 0;
+            }
+        }
+
         public void RequestAll(IReadOnlyList<VehicleController> vehicles, Action<bool> onResult)
         {
             Requests.Add(new List<VehicleController>(vehicles));

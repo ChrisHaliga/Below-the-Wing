@@ -1,0 +1,30 @@
+{
+    "name": "BelowTheWing.Tests.Multiplayer",
+    "rootNamespace": "BelowTheWing.Tests.Multiplayer",
+    "references": [
+        "BelowTheWing.Vehicles",
+        "BelowTheWing.Crew",
+        "BelowTheWing.Apron",
+        "BelowTheWing.Net",
+        "BelowTheWing.Session",
+        "BelowTheWing.Diagnostics",
+        "BelowTheWing.Tests.Support",
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Runtime.Tests",
+        "Unity.Collections",
+        "UnityEngine.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

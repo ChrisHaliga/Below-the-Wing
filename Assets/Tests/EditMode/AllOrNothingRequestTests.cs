@@ -13,11 +13,44 @@ namespace BelowTheWing.Tests.EditMode
     /// </summary>
     public sealed class AllOrNothingRequestTests
     {
+        static IReadOnlyList<string> Wanted(params string[] items) => items;
+
+        [Test]
+        public void ADuplicateAnswerArrivingEarlyDoesNotSettleTheRequest()
+        {
+            var handedBack = new List<string>();
+            var told = new List<bool>();
+            var request = new AllOrNothingRequest<string>(Wanted("tractor", "cart 1", "cart 2"), handedBack.Add, told.Add);
+
+            request.Answer("tractor", true);
+            request.Answer("tractor", true);
+            request.Answer("cart 1", true);
+
+            Assert.That(told, Is.Empty,
+                "counting answers rather than tracking which ones arrived makes the guarantee depend " +
+                "on the caller never repeating itself. Cart 2 has not answered and the request is not done");
+            Assert.That(request.Settled, Is.False);
+        }
+
+        [Test]
+        public void AnAnswerForSomethingNeverAskedForIsIgnored()
+        {
+            var told = new List<bool>();
+            var request = new AllOrNothingRequest<string>(Wanted("tractor", "cart 1"), _ => { }, told.Add);
+
+            request.Answer("a cart from another train", false);
+            request.Answer("tractor", true);
+            request.Answer("cart 1", true);
+
+            Assert.That(told, Is.EqualTo(new[] { true }),
+                "a stray answer must not refuse a request that was in fact entirely granted");
+        }
+
         [Test]
         public void NobodyIsToldAnythingUntilEveryAnswerIsIn()
         {
             var told = new List<bool>();
-            var request = new AllOrNothingRequest<string>(3, _ => { }, granted => told.Add(granted));
+            var request = new AllOrNothingRequest<string>(Wanted("tractor", "cart 1", "cart 2"), _ => { }, granted => told.Add(granted));
 
             request.Answer("tractor", true);
             request.Answer("cart 1", true);
@@ -31,7 +64,7 @@ namespace BelowTheWing.Tests.EditMode
         {
             var handedBack = new List<string>();
             var told = new List<bool>();
-            var request = new AllOrNothingRequest<string>(2, handedBack.Add, told.Add);
+            var request = new AllOrNothingRequest<string>(Wanted("tractor", "cart 1"), handedBack.Add, told.Add);
 
             request.Answer("tractor", true);
             request.Answer("cart 1", true);
@@ -45,7 +78,7 @@ namespace BelowTheWing.Tests.EditMode
         {
             var handedBack = new List<string>();
             var told = new List<bool>();
-            var request = new AllOrNothingRequest<string>(3, handedBack.Add, told.Add);
+            var request = new AllOrNothingRequest<string>(Wanted("tractor", "cart 1", "cart 2"), handedBack.Add, told.Add);
 
             request.Answer("tractor", true);
             request.Answer("cart 1", true);
@@ -61,7 +94,7 @@ namespace BelowTheWing.Tests.EditMode
         {
             var handedBack = new List<string>();
             var told = new List<bool>();
-            var request = new AllOrNothingRequest<string>(3, handedBack.Add, told.Add);
+            var request = new AllOrNothingRequest<string>(Wanted("tractor", "cart 1", "cart 2"), handedBack.Add, told.Add);
 
             request.Answer("tractor", false);
             request.Answer("cart 1", true);
@@ -78,7 +111,7 @@ namespace BelowTheWing.Tests.EditMode
         {
             var handedBack = new List<string>();
             var told = new List<bool>();
-            var request = new AllOrNothingRequest<string>(2, handedBack.Add, told.Add);
+            var request = new AllOrNothingRequest<string>(Wanted("tractor", "cart 1"), handedBack.Add, told.Add);
 
             request.Answer("tractor", true);
             request.Answer("cart 1", false);
@@ -95,7 +128,7 @@ namespace BelowTheWing.Tests.EditMode
         public void ARequestForOneThingIsSettledByItsSingleAnswer()
         {
             var told = new List<bool>();
-            var request = new AllOrNothingRequest<string>(1, _ => { }, told.Add);
+            var request = new AllOrNothingRequest<string>(Wanted("tractor"), _ => { }, told.Add);
 
             request.Answer("tractor", true);
 

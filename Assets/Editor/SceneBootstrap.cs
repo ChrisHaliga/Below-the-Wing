@@ -4,6 +4,7 @@ using BelowTheWing.Apron;
 using BelowTheWing.Crew;
 using BelowTheWing.Diagnostics;
 using BelowTheWing.Net;
+using BelowTheWing.Session;
 using BelowTheWing.Vehicles;
 using Unity.Netcode;
 using Unity.Netcode.Components;
@@ -11,17 +12,20 @@ using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace BelowTheWing.EditorTools
 {
     /// <summary>
-    /// Builds the apron scene and the prefabs it spawns, for a project that does not have them yet.
+    /// Builds the apron scene and the four prefabs it spawns.
+    ///
+    /// One prefab per kind of thing, each carrying the profile it runs on. That is what makes a cart
+    /// a cart: not a value it is told after it exists, but the thing it was made from. The stand-in
+    /// shape is filled in here from the same profile, so what a vehicle looks like and what it
+    /// collides as cannot drift apart.
     ///
     /// The scene deliberately contains no aircraft, tractors or carts. It holds the machinery --
-    /// networking, the camera, the readout -- and everything on the apron itself is put there at
-    /// runtime by <see cref="RampSpawner"/>, so that there is one description of what stands where
-    /// rather than a scene and a spawner that can disagree.
+    /// networking, the camera, the readout -- and everything on the apron is put there at runtime by
+    /// <see cref="RampSession"/>, so there is one description of what stands where.
     ///
     /// Running this again replaces the scene and prefabs it made. Anything hand-edited in them will
     /// be lost, which is fine while they are scaffolding and worth remembering once they are not.
@@ -37,6 +41,11 @@ namespace BelowTheWing.EditorTools
         const string AircraftProfilePath = "Assets/Content/Aircraft/NarrowbodyAirliner.asset";
         const string CrewProfilePath = "Assets/Content/Crew/RampWorker.asset";
 
+        static readonly Color TractorBlue = new Color(0.35f, 0.55f, 0.75f);
+        static readonly Color CartGrey = new Color(0.55f, 0.55f, 0.58f);
+        static readonly Color HiVisYellow = new Color(0.95f, 0.75f, 0.15f);
+        static readonly Color FuselageWhite = new Color(0.82f, 0.82f, 0.85f);
+
         [MenuItem("Below the Wing/Rebuild apron scene and prefabs")]
         public static void Rebuild()
         {
@@ -45,11 +54,17 @@ namespace BelowTheWing.EditorTools
             Directory.CreateDirectory(PrefabFolder);
             Directory.CreateDirectory(Path.GetDirectoryName(ScenePath) ?? "Assets/Scenes");
 
-            var vehicle = BuildVehiclePrefab();
-            var crew = BuildCrewPrefab();
-            var aircraft = BuildAircraftPrefab();
+            var tractorProfile = AssetDatabase.LoadAssetAtPath<VehicleProfile>(TractorProfilePath);
+            var cartProfile = AssetDatabase.LoadAssetAtPath<VehicleProfile>(CartProfilePath);
+            var aircraftProfile = AssetDatabase.LoadAssetAtPath<AircraftProfile>(AircraftProfilePath);
+            var crewProfile = AssetDatabase.LoadAssetAtPath<CrewProfile>(CrewProfilePath);
 
-            BuildScene(vehicle, crew, aircraft);
+            var tractor = BuildTractor(tractorProfile);
+            var cart = BuildCart(cartProfile);
+            var aircraft = BuildAircraft(aircraftProfile);
+            var crew = BuildCrew(crewProfile);
+
+            BuildScene(tractorProfile, cartProfile, aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -57,54 +72,84 @@ namespace BelowTheWing.EditorTools
             Debug.Log("Apron scene and prefabs rebuilt.");
         }
 
-        static GameObject BuildVehiclePrefab()
+        static GameObject BuildTractor(VehicleProfile profile)
         {
-            var go = new GameObject("Vehicle");
+            var go = NewVehicle("BaggageTractor", profile, TractorBlue);
 
-            // Everything the profile decides -- mass, size, wheel positions -- is applied when the
-            // vehicle is configured at spawn, so the prefab only needs the components to exist.
+            // Only something a player can sit in needs to say whether somebody is sitting in it, and
+            // to refuse to change hands while they are.
+            go.AddComponent<VehicleOccupant>();
+
+            return SaveAndDiscard(go, $"{PrefabFolder}/BaggageTractor.prefab");
+        }
+
+        static GameObject BuildCart(VehicleProfile profile)
+            => SaveAndDiscard(NewVehicle("BaggageCart", profile, CartGrey), $"{PrefabFolder}/BaggageCart.prefab");
+
+        static GameObject NewVehicle(string name, VehicleProfile profile, Color colour)
+        {
+            var go = new GameObject(name);
             go.AddComponent<Rigidbody>();
             go.AddComponent<BoxCollider>();
-            go.AddComponent<VehicleController>();
+
+            var vehicle = go.AddComponent<VehicleController>();
+            Set(vehicle, "m_Profile", profile);
 
             AddNetworking(go);
+            go.AddComponent<TrainMember>();
 
-            return SaveAndDiscard(go, $"{PrefabFolder}/Vehicle.prefab");
+            go.AddComponent<ApronAppearance>().DescribeAs(
+                ApronAppearance.Shape.Box,
+                profile.bodySizeMetres,
+                colour,
+                profile.bodySizeMetres.y * 0.7f);
+
+            return go;
         }
 
-        static GameObject BuildCrewPrefab()
+        static GameObject BuildAircraft(AircraftProfile profile)
         {
-            var go = new GameObject("Crew");
-
-            go.AddComponent<Rigidbody>();
-            go.AddComponent<CapsuleCollider>();
-            go.AddComponent<CrewCharacter>();
-
-            AddNetworking(go);
-
-            return SaveAndDiscard(go, $"{PrefabFolder}/Crew.prefab");
-        }
-
-        static GameObject BuildAircraftPrefab()
-        {
-            var go = new GameObject("Aircraft");
+            var go = new GameObject("NarrowbodyAirliner");
 
             var body = go.AddComponent<Rigidbody>();
             body.isKinematic = true;
             go.AddComponent<CapsuleCollider>();
 
-            var aircraft = go.AddComponent<AircraftBody>();
-            Set(aircraft, "m_Profile", AssetDatabase.LoadAssetAtPath<AircraftProfile>(AircraftProfilePath));
+            Set(go.AddComponent<AircraftBody>(), "m_Profile", profile);
 
             AddNetworking(go);
 
-            return SaveAndDiscard(go, $"{PrefabFolder}/Aircraft.prefab");
+            go.AddComponent<ApronAppearance>().DescribeAs(
+                ApronAppearance.Shape.LyingCapsule,
+                new Vector3(profile.fuselageDiameterMetres, profile.lengthMetres, profile.fuselageDiameterMetres),
+                FuselageWhite,
+                profile.fuselageDiameterMetres);
+
+            return SaveAndDiscard(go, $"{PrefabFolder}/NarrowbodyAirliner.prefab");
+        }
+
+        static GameObject BuildCrew(CrewProfile profile)
+        {
+            var go = new GameObject("RampWorker");
+            go.AddComponent<Rigidbody>();
+            go.AddComponent<CapsuleCollider>();
+
+            Set(go.AddComponent<CrewCharacter>(), "m_Profile", profile);
+
+            AddNetworking(go);
+
+            go.AddComponent<ApronAppearance>().DescribeAs(
+                ApronAppearance.Shape.UprightCapsule,
+                new Vector3(profile.radiusMetres * 2f, profile.heightMetres, profile.radiusMetres * 2f),
+                HiVisYellow,
+                profile.heightMetres * 0.7f);
+
+            return SaveAndDiscard(go, $"{PrefabFolder}/RampWorker.prefab");
         }
 
         static void AddNetworking(GameObject go)
         {
             go.AddComponent<NetworkObject>();
-            go.AddComponent<RampObject>();
 
             // Movement is replicated as transform state rather than through NetworkRigidbody, which
             // forces every non-owning copy kinematic. A kinematic vehicle has infinite mass: you
@@ -120,7 +165,15 @@ namespace BelowTheWing.EditorTools
             return saved;
         }
 
-        static void BuildScene(GameObject vehiclePrefab, GameObject crewPrefab, GameObject aircraftPrefab)
+        static void BuildScene(
+            VehicleProfile tractorProfile,
+            VehicleProfile cartProfile,
+            AircraftProfile aircraftProfile,
+            CrewProfile crewProfile,
+            GameObject tractor,
+            GameObject cart,
+            GameObject aircraft,
+            GameObject crew)
         {
             // Replacing the open scene throws away anything unsaved in it, so ask first. Somebody
             // running this from the menu has other work open more often than not.
@@ -136,29 +189,28 @@ namespace BelowTheWing.EditorTools
             BuildLighting();
 
             var camera = BuildCamera();
-            var manager = BuildNetworkManager(vehiclePrefab, crewPrefab, aircraftPrefab);
+            var manager = BuildNetworkManager(tractor, cart, aircraft, crew);
             var gateway = manager.gameObject.AddComponent<SessionGateway>();
             var broker = manager.gameObject.AddComponent<NetworkOwnershipBroker>();
 
-            var screen = new GameObject("Session Entry Screen").AddComponent<SessionEntryScreen>();
-            Set(screen, "m_Gateway", gateway);
-
+            Set(new GameObject("Session Entry Screen").AddComponent<SessionEntryScreen>(), "m_Gateway", gateway);
             var readout = new GameObject("Ramp Readout").AddComponent<RampReadout>();
 
-            var spawner = new GameObject("Ramp Spawner");
-            spawner.AddComponent<NetworkObject>();
-            var ramp = spawner.AddComponent<RampSpawner>();
+            var sessionObject = new GameObject("Ramp Session");
+            sessionObject.AddComponent<NetworkObject>();
+            var session = sessionObject.AddComponent<RampSession>();
 
-            Set(ramp, "m_TractorProfile", AssetDatabase.LoadAssetAtPath<VehicleProfile>(TractorProfilePath));
-            Set(ramp, "m_CartProfile", AssetDatabase.LoadAssetAtPath<VehicleProfile>(CartProfilePath));
-            Set(ramp, "m_AircraftProfile", AssetDatabase.LoadAssetAtPath<AircraftProfile>(AircraftProfilePath));
-            Set(ramp, "m_CrewProfile", AssetDatabase.LoadAssetAtPath<CrewProfile>(CrewProfilePath));
-            Set(ramp, "m_VehiclePrefab", vehiclePrefab.GetComponent<NetworkObject>());
-            Set(ramp, "m_CrewPrefab", crewPrefab.GetComponent<NetworkObject>());
-            Set(ramp, "m_AircraftPrefab", aircraftPrefab.GetComponent<NetworkObject>());
-            Set(ramp, "m_Broker", broker);
-            Set(ramp, "m_Camera", camera);
-            Set(ramp, "m_Readout", readout);
+            Set(session, "m_TractorProfile", tractorProfile);
+            Set(session, "m_CartProfile", cartProfile);
+            Set(session, "m_AircraftProfile", aircraftProfile);
+            Set(session, "m_CrewProfile", crewProfile);
+            Set(session, "m_TractorPrefab", tractor.GetComponent<NetworkObject>());
+            Set(session, "m_CartPrefab", cart.GetComponent<NetworkObject>());
+            Set(session, "m_AircraftPrefab", aircraft.GetComponent<NetworkObject>());
+            Set(session, "m_CrewPrefab", crew.GetComponent<NetworkObject>());
+            Set(session, "m_Broker", broker);
+            Set(session, "m_Camera", camera);
+            Set(session, "m_Readout", readout);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings();
@@ -174,8 +226,9 @@ namespace BelowTheWing.EditorTools
             // Unity's plane primitive is ten metres across per unit of scale, so this is 400 metres
             // square -- room for a train to be got badly wrong in.
             floor.transform.localScale = new Vector3(40f, 1f, 40f);
+
             // A material of its own. Writing a colour onto sharedMaterial would repaint the render
-            // pipeline's default material, and with it every other object in the project still using it.
+            // pipeline's default material, and with it every other object in the project using it.
             var concrete = new Material(floor.GetComponent<MeshRenderer>().sharedMaterial)
             {
                 name = "Apron concrete",
@@ -218,7 +271,7 @@ namespace BelowTheWing.EditorTools
                 // client is nominated session owner to look after state that belongs to nobody.
                 NetworkTopology = NetworkTopologyTypes.DistributedAuthority,
 
-                // Players are given a character by the spawner rather than receiving one
+                // Players are given a character by the session rather than receiving one
                 // automatically, because a character needs wiring to a camera and a broker that a
                 // default player prefab knows nothing about.
                 PlayerPrefab = null,
@@ -249,7 +302,7 @@ namespace BelowTheWing.EditorTools
         /// Assigns a private serialized field on a component.
         ///
         /// The fields these set are deliberately private: nothing at runtime should be reaching into
-        /// a spawner to swap its prefabs. They are inspector wiring, and this is the editor doing
+        /// a session to swap its prefabs. They are inspector wiring, and this is the editor doing
         /// the wiring, so it goes through the same serialization the inspector uses.
         /// </summary>
         static void Set(Object target, string field, Object value)

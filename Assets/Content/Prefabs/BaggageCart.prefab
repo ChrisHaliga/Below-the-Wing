@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2294268923091621976
+--- !u!1 &3129341736767791987
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,27 +8,28 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 9112843039179258440}
-  - component: {fileID: 8961877600868819257}
-  - component: {fileID: 7813994564225662107}
-  - component: {fileID: 7941028621668474531}
-  - component: {fileID: 3084097022254033920}
-  - component: {fileID: 552396737014063351}
-  - component: {fileID: 1801616120780109277}
+  - component: {fileID: 740480764481469725}
+  - component: {fileID: 5186839370979093466}
+  - component: {fileID: 8753801783086960624}
+  - component: {fileID: 1055323687982784440}
+  - component: {fileID: 3322196097056669251}
+  - component: {fileID: 4313315727349991441}
+  - component: {fileID: 7841358492550874047}
+  - component: {fileID: 1480938795275519676}
   m_Layer: 0
-  m_Name: Vehicle
+  m_Name: BaggageCart
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &9112843039179258440
+--- !u!4 &740480764481469725
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2294268923091621976}
+  m_GameObject: {fileID: 3129341736767791987}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -37,13 +38,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!54 &8961877600868819257
+--- !u!54 &5186839370979093466
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2294268923091621976}
+  m_GameObject: {fileID: 3129341736767791987}
   serializedVersion: 5
   m_Mass: 1
   m_LinearDamping: 0
@@ -64,13 +65,13 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!65 &7813994564225662107
+--- !u!65 &8753801783086960624
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2294268923091621976}
+  m_GameObject: {fileID: 3129341736767791987}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -85,30 +86,30 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &7941028621668474531
+--- !u!114 &1055323687982784440
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2294268923091621976}
+  m_GameObject: {fileID: 3129341736767791987}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbe4547147a629e43b871532e1042734, type: 3}
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Vehicles::BelowTheWing.Vehicles.VehicleController
-  m_Profile: {fileID: 0}
+  m_Profile: {fileID: 11400000, guid: 38f027b435ec04649a8b25bd5c522028, type: 2}
   m_GroundMask:
     serializedVersion: 2
     m_Bits: 4294967295
   m_DisplayName: 
---- !u!114 &3084097022254033920
+--- !u!114 &3322196097056669251
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2294268923091621976}
+  m_GameObject: {fileID: 3129341736767791987}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
@@ -129,26 +130,13 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &552396737014063351
+--- !u!114 &4313315727349991441
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2294268923091621976}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 860b37d96e3f78940a5a0fcce7eed369, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BelowTheWing.Apron::BelowTheWing.Apron.RampObject
-  ShowTopMostFoldoutHeaderGroup: 1
---- !u!114 &1801616120780109277
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2294268923091621976}
+  m_GameObject: {fileID: 3129341736767791987}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5abfce83aadd948498d4990c645a017b, type: 3}
@@ -189,3 +177,33 @@ MonoBehaviour:
   Interpolate: 0
   SlerpPosition: 0
   StaleDataHandling: 1
+--- !u!114 &7841358492550874047
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3129341736767791987}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1fbd6d54df33174495af5a58b9b09ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelowTheWing.Session::BelowTheWing.Session.TrainMember
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &1480938795275519676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3129341736767791987}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 762a38080e061374c97ed160f46a9cd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelowTheWing.Apron::BelowTheWing.Apron.ApronAppearance
+  m_Shape: 0
+  m_SizeMetres: {x: 1.5, y: 1.7, z: 3}
+  m_Colour: {r: 0.55, g: 0.55, b: 0.58, a: 1}
+  m_LabelHeightMetres: 1.19
+  m_DisplayName: 

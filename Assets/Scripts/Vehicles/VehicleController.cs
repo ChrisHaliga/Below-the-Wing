@@ -88,6 +88,7 @@ namespace BelowTheWing.Vehicles
         Wheel[] m_Wheels;
         float m_SteerAngleDegrees;
         float m_SecondsStill;
+        bool m_Occupied;
 
         /// <summary>The tuning and real-world mass this vehicle runs on.</summary>
         public VehicleProfile Profile => m_Profile;
@@ -134,13 +135,67 @@ namespace BelowTheWing.Vehicles
         /// Deliberately a plain flag rather than a question about networking, so that the vehicle
         /// still knows nothing about how -- or whether -- the game is networked.
         /// </summary>
-        public bool Simulated { get; set; } = true;
+        public bool Simulated
+        {
+            get => m_Simulated;
+            set
+            {
+                if (m_Simulated == value)
+                {
+                    return;
+                }
+
+                m_Simulated = value;
+
+                // Gravity goes with it. A copy that is not running its own suspension has nothing
+                // holding it up, so left falling it sinks onto its bodywork between network updates
+                // and is snapped back the moment the next one arrives -- which reads as every remote
+                // vehicle juddering, twenty times a second.
+                //
+                // It stays a dynamic body either way. A vehicle somebody else owns still has to be
+                // something you can walk into and be shoved by.
+                Body.useGravity = value;
+
+                if (!value)
+                {
+                    Body.linearVelocity = Vector3.zero;
+                    Body.angularVelocity = Vector3.zero;
+                }
+            }
+        }
+
+        bool m_Simulated = true;
 
         public string DisplayName => m_DisplayName;
 
         public Vector3 Position => transform.position;
 
-        public bool AcceptsDriver => m_Profile != null && m_Profile.driveable && IntentSource == null;
+        /// <summary>
+        /// Whether somebody is in this vehicle's seat, on whichever machine they are playing from.
+        ///
+        /// Deliberately not "does this instance have an intent source", which is only ever true on
+        /// the driver's own machine. Every other machine would look at an occupied tractor, see no
+        /// local driver, and offer it to somebody else.
+        /// </summary>
+        public bool Occupied
+        {
+            get => m_Occupied;
+            set
+            {
+                if (m_Occupied == value)
+                {
+                    return;
+                }
+
+                m_Occupied = value;
+                OccupiedChanged?.Invoke(value);
+            }
+        }
+
+        /// <summary>Raised when somebody gets in or out, so the change can be told to other machines.</summary>
+        public event System.Action<bool> OccupiedChanged;
+
+        public bool AcceptsDriver => m_Profile != null && m_Profile.driveable && !m_Occupied;
 
         /// <summary>Where a vehicle in front of this one attaches, in this vehicle's local space.</summary>
         public Vector3 FrontHitchLocal => new Vector3(0f, CouplingHeightLocal, HitchReach);
@@ -173,10 +228,12 @@ namespace BelowTheWing.Vehicles
         /// </summary>
         public static float RestingHeightMetres(VehicleProfile profile)
         {
-            const float gravity = 9.81f;
             const int corners = 4;
 
-            var weightOnEachCorner = profile.massKg * gravity / corners;
+            // Read from physics rather than written down again. This figure decides where a
+            // vehicle's coupling point ends up, and two vehicles whose coupling points do not meet
+            // lean into the difference until a parked train wanders off across the apron.
+            var weightOnEachCorner = profile.massKg * Physics.gravity.magnitude / corners;
             var compression = Mathf.Clamp01(weightOnEachCorner / profile.springStrengthNewtons);
             var mountAboveGround = profile.wheelRadiusMetres
                                    + (profile.suspensionRestLengthMetres * (1f - compression));
@@ -206,9 +263,10 @@ namespace BelowTheWing.Vehicles
             m_Body.centerOfMass = profile.centerOfMassOffset;
             m_Body.interpolation = RigidbodyInterpolation.Interpolate;
 
-            // Vehicles are fast and the apron has edges and legs to tunnel through, but they only
-            // ever tunnel through things that do not move, so sweeping against static geometry is
-            // enough and costs far less than sweeping against everything.
+            // Vehicles are fast, heavy, and the thing most often driven hard at something else --
+            // an apron edge, a jetway leg, or another train. Sweeping against moving bodies as well
+            // as static ones costs more than sweeping against static alone, and a tractor passing
+            // clean through a cart is the failure nobody would accept.
             m_Body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
 
             m_Collider = GetComponent<BoxCollider>();
@@ -248,6 +306,20 @@ namespace BelowTheWing.Vehicles
             if (m_Profile != null && m_Wheels == null)
             {
                 Configure(m_Profile, string.IsNullOrEmpty(m_DisplayName) ? name : m_DisplayName);
+            }
+        }
+
+        void Start()
+        {
+            // Checked here rather than in Awake because a vehicle built in code is configured
+            // immediately after the component is added, which is still before the first frame.
+            if (m_Profile == null)
+            {
+                Debug.LogError(
+                    $"'{name}' has no vehicle profile, so it has no mass, no wheels and no size. It " +
+                    "will sit where it was put and do nothing. A vehicle without a profile is a piece " +
+                    "of wiring that was missed, not a vehicle that happens to be idle.", this);
+                enabled = false;
             }
         }
 

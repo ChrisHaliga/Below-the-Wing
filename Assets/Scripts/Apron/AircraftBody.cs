@@ -26,6 +26,9 @@ namespace BelowTheWing.Apron
         {
             if (m_Profile == null)
             {
+                Debug.LogError(
+                    $"'{name}' has no aircraft profile, so it keeps the prefab's collider and is not " +
+                    "the size of an aircraft. Everything parks relative to it.", this);
                 return;
             }
 

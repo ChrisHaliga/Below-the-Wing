@@ -21,14 +21,27 @@ namespace BelowTheWing.Net
     [DisallowMultipleComponent]
     public sealed class NetworkOwnershipBroker : MonoBehaviour, IOwnershipBroker
     {
+        /// <summary>
+        /// Stands for "no machine at all". Client ids start at zero and zero is a real client, so
+        /// answering an unanswerable question with zero would have a machine conclude it owned
+        /// everything on the apron.
+        /// </summary>
+        public const ulong Nobody = ulong.MaxValue;
+
         NetworkManager Manager => NetworkManager.Singleton;
 
-        public ulong LocalClientId => Manager != null ? Manager.LocalClientId : 0;
+        public ulong LocalClientId => Manager != null && Manager.IsListening ? Manager.LocalClientId : Nobody;
 
         public ulong OwnerOf(VehicleController vehicle)
         {
             var networked = vehicle != null ? vehicle.GetComponent<NetworkObject>() : null;
-            return networked != null ? networked.OwnerClientId : 0;
+
+            if (networked == null || !networked.IsSpawned)
+            {
+                return Nobody;
+            }
+
+            return networked.OwnerClientId;
         }
 
         public void RequestAll(IReadOnlyList<VehicleController> vehicles, Action<bool> onResult)
@@ -55,7 +68,7 @@ namespace BelowTheWing.Net
             }
 
             var request = new AllOrNothingRequest<NetworkObject>(
-                members.Count,
+                members,
                 giveBack: member =>
                 {
                     if (previousOwners.TryGetValue(member, out var previous) && previous != claimant)
@@ -68,6 +81,20 @@ namespace BelowTheWing.Net
             foreach (var member in members)
             {
                 Ask(member, claimant, request);
+            }
+        }
+
+        public void HandBack(IReadOnlyList<VehicleController> vehicles)
+        {
+            var sessionOwner = Manager != null ? Manager.CurrentSessionOwner : 0;
+
+            foreach (var vehicle in vehicles)
+            {
+                var networked = vehicle != null ? vehicle.GetComponent<NetworkObject>() : null;
+                if (networked != null && networked.IsSpawned && networked.OwnerClientId == LocalClientId)
+                {
+                    networked.ChangeOwnership(sessionOwner);
+                }
             }
         }
 

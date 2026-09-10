@@ -77,9 +77,6 @@ namespace BelowTheWing.Net
             }
         }
 
-        /// <summary>Raised whenever <see cref="Phase"/> changes, so screens can redraw.</summary>
-        public event Action Changed;
-
         async void Start()
         {
             await SignInAsync();
@@ -127,28 +124,6 @@ namespace BelowTheWing.Net
             });
         }
 
-        /// <summary>Leaves the current session, returning to <see cref="SessionPhase.Ready"/>.</summary>
-        public async Task LeaveAsync()
-        {
-            if (m_Session == null)
-            {
-                return;
-            }
-
-            try
-            {
-                await m_Session.LeaveAsync();
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"Leaving the session did not go cleanly: {e.Message}");
-            }
-            finally
-            {
-                m_Session = null;
-                Move(SessionPhase.Ready);
-            }
-        }
 
         async Task SignInAsync()
         {
@@ -222,7 +197,6 @@ namespace BelowTheWing.Net
             }
 
             Phase = phase;
-            Changed?.Invoke();
         }
     }
 }

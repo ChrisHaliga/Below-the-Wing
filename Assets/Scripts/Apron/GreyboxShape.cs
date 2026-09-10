@@ -19,8 +19,11 @@ namespace BelowTheWing.Apron
         /// <summary>What the stand-in shape is called, so it can be found again rather than duplicated.</summary>
         public const string ShapeName = "Greybox";
 
-        /// <summary>Unity's capsule primitive is two units tall, so half its height is one unit.</summary>
-        const float CapsuleHalfHeightUnits = 2f;
+        /// <summary>
+        /// How tall Unity's capsule primitive is at a scale of one, in units. Dividing a wanted
+        /// height in metres by this gives the scale to ask for.
+        /// </summary>
+        const float CapsuleHeightUnits = 2f;
 
         /// <summary>Puts a box of the given size in metres on an object.</summary>
         public static Transform AttachBox(Transform target, Vector3 sizeMetres, Color colour)
@@ -34,7 +37,7 @@ namespace BelowTheWing.Apron
         public static Transform AttachCapsule(Transform target, float heightMetres, float diameterMetres, Color colour)
         {
             var shape = Build(target, PrimitiveType.Capsule, colour);
-            shape.localScale = new Vector3(diameterMetres, heightMetres / CapsuleHalfHeightUnits, diameterMetres);
+            shape.localScale = new Vector3(diameterMetres, heightMetres / CapsuleHeightUnits, diameterMetres);
             return shape;
         }
 

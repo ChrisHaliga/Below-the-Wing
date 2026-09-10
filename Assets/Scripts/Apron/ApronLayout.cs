@@ -53,11 +53,22 @@ namespace BelowTheWing.Apron
         /// <summary>Every placement in the plan, aircraft included, in no particular order.</summary>
         public IReadOnlyList<Placement> Everything { get; }
 
-        public ApronPlan(Placement aircraft, IReadOnlyList<TrainPlan> trains, IReadOnlyList<Placement> everything)
+        /// <summary>
+        /// Where each player arrives, one spot per player, clear of the equipment and of each other.
+        /// Two capsules starting in the same place do not settle: they fire apart.
+        /// </summary>
+        public IReadOnlyList<Placement> CrewSpawnPoints { get; }
+
+        public ApronPlan(
+            Placement aircraft,
+            IReadOnlyList<TrainPlan> trains,
+            IReadOnlyList<Placement> everything,
+            IReadOnlyList<Placement> crewSpawnPoints)
         {
             Aircraft = aircraft;
             Trains = trains;
             Everything = everything;
+            CrewSpawnPoints = crewSpawnPoints;
         }
     }
 
@@ -77,13 +88,21 @@ namespace BelowTheWing.Apron
         [Tooltip("Where the first train's tractor stands, relative to the aircraft.")]
         public Vector3 firstTractorPosition;
 
+        [Tooltip("How many players the apron makes room for.")]
+        public int crewSpawnPoints;
+
+        [Tooltip("Clear space left between one arriving player and the next, in metres.")]
+        public float crewSpacingMetres;
+
         /// <summary>Two tractors with four carts each, parked clear of the aircraft.</summary>
         public static ApronLayoutSettings Default => new ApronLayoutSettings
         {
             trainCount = 2,
             cartsPerTrain = 4,
             trainSpacingMetres = 6f,
-            firstTractorPosition = new Vector3(-18f, 0f, -22f)
+            firstTractorPosition = new Vector3(-18f, 0f, -22f),
+            crewSpawnPoints = 5,
+            crewSpacingMetres = 2f
         };
     }
 
@@ -104,11 +123,55 @@ namespace BelowTheWing.Apron
         /// from how far each one's own hitch reaches, so a plan built from bigger equipment spreads
         /// out rather than overlapping.
         /// </summary>
+        /// <summary>
+        /// Where players arrive: a row alongside the trains, spaced so nobody lands inside anybody
+        /// else, and clear of everything already placed.
+        /// </summary>
+        static IReadOnlyList<Placement> ArrivalPoints(
+            ApronLayoutSettings settings,
+            Vector3 crewSizeMetres,
+            IReadOnlyList<Placement> equipment)
+        {
+            // Taken as a size rather than a crew profile, so that working out where things stand
+            // stays arithmetic about the apron and does not drag in what a ramp worker is.
+            var standingHeight = crewSizeMetres.y * 0.5f;
+
+            // Ahead of where the trains are parked, so nobody arrives among the carts.
+            var alongZ = settings.firstTractorPosition.z + 6f;
+            var points = new List<Placement>(settings.crewSpawnPoints);
+
+            for (var i = 0; i < settings.crewSpawnPoints; i++)
+            {
+                var at = new Vector3(
+                    settings.firstTractorPosition.x - 2f + (i * settings.crewSpacingMetres),
+                    standingHeight,
+                    alongZ);
+
+                var arrival = new Placement($"Arrival {i + 1}", at, Quaternion.identity, crewSizeMetres);
+
+                foreach (var thing in equipment)
+                {
+                    if (arrival.Bounds.Intersects(thing.Bounds))
+                    {
+                        throw new InvalidOperationException(
+                            $"Player {i + 1} would arrive inside '{thing.Name}'. Arrival points are part " +
+                            "of the layout precisely so this is caught here rather than as bodies firing " +
+                            "apart when a session starts.");
+                    }
+                }
+
+                points.Add(arrival);
+            }
+
+            return points;
+        }
+
         public static ApronPlan Build(
             ApronLayoutSettings settings,
             VehicleProfile tractor,
             VehicleProfile cart,
-            AircraftProfile aircraft)
+            AircraftProfile aircraft,
+            Vector3 crewSizeMetres)
         {
             var everything = new List<Placement>();
 
@@ -161,7 +224,7 @@ namespace BelowTheWing.Apron
                 everything.AddRange(carts);
             }
 
-            return new ApronPlan(aircraftPlacement, trains, everything);
+            return new ApronPlan(aircraftPlacement, trains, everything, ArrivalPoints(settings, crewSizeMetres, everything));
         }
     }
 }

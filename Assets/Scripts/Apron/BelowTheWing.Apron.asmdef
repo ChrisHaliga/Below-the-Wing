@@ -2,12 +2,7 @@
     "name": "BelowTheWing.Apron",
     "rootNamespace": "BelowTheWing.Apron",
     "references": [
-        "BelowTheWing.Vehicles",
-        "BelowTheWing.Crew",
-        "BelowTheWing.Net",
-        "BelowTheWing.Diagnostics",
-        "Unity.Netcode.Runtime",
-        "Unity.Collections"
+        "BelowTheWing.Vehicles"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

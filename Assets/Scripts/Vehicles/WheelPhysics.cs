@@ -169,10 +169,9 @@ namespace BelowTheWing.Vehicles
                 return 0f;
             }
 
-            const float gravity = 9.81f;
             var speed = Mathf.Abs(forwardVelocity);
 
-            var fromTheTire = profile.rollingResistanceCoefficient * supportedMassKg * gravity;
+            var fromTheTire = profile.rollingResistanceCoefficient * supportedMassKg * Physics.gravity.magnitude;
             var fromTheDriveline = profile.coastingDragPerSecond * supportedMassKg * speed;
             var enoughToStopItThisStep = speed * supportedMassKg / Mathf.Max(deltaTime, 1e-5f);
 

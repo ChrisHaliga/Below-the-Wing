@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using BelowTheWing.Apron;
+using BelowTheWing.Crew;
 using BelowTheWing.Tests.Support;
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
@@ -21,6 +22,7 @@ namespace BelowTheWing.Tests.EditMode
         VehicleProfile m_Tractor;
         VehicleProfile m_Cart;
         AircraftProfile m_Aircraft;
+        CrewProfile m_Crew;
 
         [SetUp]
         public void SetUp()
@@ -28,6 +30,7 @@ namespace BelowTheWing.Tests.EditMode
             m_Tractor = TestProfiles.Tractor();
             m_Cart = TestProfiles.Cart();
             m_Aircraft = TestProfiles.Aircraft();
+            m_Crew = TestProfiles.CrewMember();
         }
 
         [TearDown]
@@ -36,9 +39,13 @@ namespace BelowTheWing.Tests.EditMode
             Object.DestroyImmediate(m_Tractor);
             Object.DestroyImmediate(m_Cart);
             Object.DestroyImmediate(m_Aircraft);
+            Object.DestroyImmediate(m_Crew);
         }
 
-        ApronPlan Plan(ApronLayoutSettings settings) => ApronLayout.Build(settings, m_Tractor, m_Cart, m_Aircraft);
+        Vector3 CrewSize()
+            => new Vector3(m_Crew.radiusMetres * 2f, m_Crew.heightMetres, m_Crew.radiusMetres * 2f);
+
+        ApronPlan Plan(ApronLayoutSettings settings) => ApronLayout.Build(settings, m_Tractor, m_Cart, m_Aircraft, CrewSize());
 
         [Test]
         public void TheApronHoldsOneAircraftTwoTractorsAndEightCarts()
@@ -121,6 +128,43 @@ namespace BelowTheWing.Tests.EditMode
             var gap = Vector3.Distance(carts[0].Position, carts[1].Position);
             Assert.That(gap, Is.GreaterThanOrEqualTo(6f),
                 "spacing must come from the size of the equipment, not from a hardcoded distance");
+        }
+
+        [Test]
+        public void EveryPlayerGetsSomewhereOfTheirOwnToArrive()
+        {
+            var plan = Plan(ApronLayoutSettings.Default);
+
+            Assert.That(plan.CrewSpawnPoints.Count, Is.GreaterThanOrEqualTo(5),
+                "the design target is four players and five has to be checked, so there must be room " +
+                "for at least five to arrive");
+
+            for (var i = 0; i < plan.CrewSpawnPoints.Count; i++)
+            {
+                for (var j = i + 1; j < plan.CrewSpawnPoints.Count; j++)
+                {
+                    Assert.That(
+                        plan.CrewSpawnPoints[i].Bounds.Intersects(plan.CrewSpawnPoints[j].Bounds),
+                        Is.False,
+                        $"players {i} and {j} arrive inside one another. Two capsules starting in the " +
+                        "same place do not settle, they fire apart");
+                }
+            }
+        }
+
+        [Test]
+        public void NobodyArrivesInsideTheEquipment()
+        {
+            var plan = Plan(ApronLayoutSettings.Default);
+
+            foreach (var arrival in plan.CrewSpawnPoints)
+            {
+                foreach (var thing in plan.Everything)
+                {
+                    Assert.That(arrival.Bounds.Intersects(thing.Bounds), Is.False,
+                        $"'{arrival.Name}' arrives inside '{thing.Name}'");
+                }
+            }
         }
 
         [Test]

@@ -14,18 +14,23 @@ namespace BelowTheWing.Crew
     /// are capped per step, so a shove survives for a moment rather than being overwritten on the
     /// frame it lands.
     ///
-    /// While its owner is driving a vehicle the character stops steering itself and rides along.
-    /// It also acts as the driver of that vehicle: what the player presses becomes steering and
-    /// throttle rather than footsteps.
+    /// Every character configures its own body from the profile on its prefab, on every machine.
+    /// A copy of somebody else's character left unconfigured has whatever the prefab defaults to --
+    /// a kilogram, the wrong shape, free to topple -- and the first thing that touches it sends it
+    /// across the apron.
+    ///
+    /// Only the character belonging to the person at this machine is given a seat, a camera and a
+    /// keyboard. See <c>LocalPlayerRig</c>.
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
+    [RequireComponent(typeof(CapsuleCollider))]
     [DisallowMultipleComponent]
     public sealed class CrewCharacter : MonoBehaviour, IDriveIntentSource
     {
         /// <summary>Below this speed a character is treated as standing still and stops turning.</summary>
         const float WalkingPaceMetresPerSecond = 0.1f;
 
-        [SerializeField, Tooltip("Mass, size and speeds for a person.")]
+        [SerializeField, Tooltip("Mass, size and speeds for a person. Carried on the prefab.")]
         CrewProfile m_Profile;
 
         [SerializeField, Tooltip("How close this character must be to a vehicle to be offered it.")]
@@ -55,10 +60,13 @@ namespace BelowTheWing.Crew
         /// <summary>Where this character's movement comes from. Null means it does not move itself.</summary>
         public ICrewIntentSource IntentSource { get; set; }
 
-        /// <summary>The camera this character moves relative to, and which follows it.</summary>
+        /// <summary>The camera this character moves relative to. Only the local player has one.</summary>
         public FollowCamera Camera { get; set; }
 
-        /// <summary>Getting in and out of vehicles.</summary>
+        /// <summary>
+        /// Getting in and out of vehicles. Null on every character except the one belonging to the
+        /// person at this machine, because nobody else's character is driven from here.
+        /// </summary>
         public VehicleOccupancy Seat { get; private set; }
 
         /// <summary>
@@ -75,19 +83,14 @@ namespace BelowTheWing.Crew
         }
 
         /// <summary>
-        /// Wires this character up once it has been built: the profile it runs on, how ownership of
-        /// vehicles is asked for, and how it finds vehicles worth being offered.
+        /// Gives this character the body its profile describes: mass, size, and how it behaves when
+        /// something hits it. Runs on every machine, for every character.
         /// </summary>
-        public void Configure(CrewProfile profile, IOwnershipBroker broker, Func<IReadOnlyList<IDriveable>> nearbyVehicles)
+        public void ConfigureBody(CrewProfile profile)
         {
-            m_Profile = profile;
+            m_Profile = profile ?? throw new ArgumentNullException(nameof(profile));
 
             m_Body = GetComponent<Rigidbody>();
-            if (m_Body == null)
-            {
-                m_Body = gameObject.AddComponent<Rigidbody>();
-            }
-
             m_Body.mass = profile.massKg;
             m_Body.interpolation = RigidbodyInterpolation.Interpolate;
 
@@ -100,16 +103,36 @@ namespace BelowTheWing.Crew
             m_Body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
             m_Collider = GetComponent<CapsuleCollider>();
-            if (m_Collider == null)
-            {
-                m_Collider = gameObject.AddComponent<CapsuleCollider>();
-            }
-
             m_Collider.height = profile.heightMetres;
             m_Collider.radius = profile.radiusMetres;
             m_Collider.center = Vector3.zero;
+        }
 
-            Seat = new VehicleOccupancy(transform, broker, nearbyVehicles, m_ReachMetres);
+        /// <summary>
+        /// Gives this character a seat, so its owner can get into vehicles. Only the local player's
+        /// character gets one.
+        /// </summary>
+        public void TakeTheSeat(IOwnershipBroker broker, Func<IReadOnlyList<IDriveable>> nearbyVehicles)
+            => Seat = new VehicleOccupancy(transform, broker, nearbyVehicles, m_ReachMetres);
+
+        void Awake()
+        {
+            if (m_Profile != null)
+            {
+                ConfigureBody(m_Profile);
+            }
+        }
+
+        void Start()
+        {
+            if (m_Profile == null)
+            {
+                Debug.LogError(
+                    $"'{name}' has no crew profile, so it keeps whatever mass and shape its prefab " +
+                    "happened to have -- typically one kilogram and the wrong collider -- and the " +
+                    "first thing that touches it sends it across the apron.", this);
+                enabled = false;
+            }
         }
 
         /// <summary>
@@ -145,7 +168,7 @@ namespace BelowTheWing.Crew
 
             transform.SetParent(null, worldPositionStays: true);
 
-            if (left != null)
+            if (left != null && Seat != null)
             {
                 transform.position = Seat.DismountPosition(left);
             }
@@ -169,7 +192,7 @@ namespace BelowTheWing.Crew
 
             Seat?.Refresh();
 
-            var drivingNow = Seat != null ? Seat.Driving : null;
+            var drivingNow = Seat?.Driving;
             if (drivingNow != m_RidingIn)
             {
                 if (drivingNow != null)

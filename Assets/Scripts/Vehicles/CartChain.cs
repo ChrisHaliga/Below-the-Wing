@@ -203,12 +203,16 @@ namespace BelowTheWing.Vehicles
             var coupling = behind.gameObject.AddComponent<HingeJoint>();
             coupling.connectedBody = inFront.Body;
 
-            // Each end is anchored at its own vehicle's hitch. Those two points land on top of one
-            // another when the vehicles are parked at coupling distance, so the joint begins life
-            // already satisfied and has nothing to pull against.
+            // Each end is anchored at its own vehicle's hitch. Parked at coupling distance -- which
+            // is how the layout places them -- those two points land on top of one another, so the
+            // joint begins life already satisfied and has nothing to pull against. A coupling that
+            // starts out violated never stops trying to close, and the solver drags the whole train
+            // along for as long as the session lasts.
             //
-            // A coupling that starts out violated never stops trying to close, and the solver drags
-            // the whole train along for as long as the session lasts.
+            // Re-hitching a train that has moved since it was parked does not get that for free. A
+            // train is only ever hitched here at layout time or when a machine picks up one it owns
+            // outright, and in the second case the members are wherever their owner last put them,
+            // which is coupling distance apart because that is what the joints were holding them at.
             coupling.autoConfigureConnectedAnchor = false;
             coupling.anchor = behind.FrontHitchLocal;
             coupling.connectedAnchor = inFront.RearHitchLocal;

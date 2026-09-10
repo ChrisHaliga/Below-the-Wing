@@ -123,6 +123,36 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator AVehicleThisMachineIsNotSimulatingDoesNotSinkThroughTheApron()
+        {
+            var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
+            yield return Step(3f);
+            var whereItStood = tractor.transform.position.y;
+
+            tractor.Simulated = false;
+            yield return Step(3f);
+
+            Assert.That(tractor.transform.position.y, Is.EqualTo(whereItStood).Within(0.05f),
+                "a copy of a vehicle somebody else is simulating runs no suspension of its own. Left " +
+                "with gravity on it, it settles onto its bodywork between network updates and is " +
+                "yanked back up by the next one, which reads as every remote vehicle juddering");
+        }
+
+        [UnityTest]
+        public IEnumerator AVehicleThisMachineIsNotSimulatingCanStillBeWalkedInto()
+        {
+            var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
+            yield return Step(2f);
+            tractor.Simulated = false;
+            yield return Step(1f);
+
+            Assert.That(tractor.Body.isKinematic, Is.False,
+                "a kinematic vehicle has infinite mass. You would drive into somebody else's tractor " +
+                "and bounce off a wall while on their screen the mirror image happened. This is the " +
+                "whole reason the game does not use NetworkRigidbody");
+        }
+
+        [UnityTest]
         public IEnumerator ACartAndATractorAreTheSameComponentBehavingDifferentlyBecauseOfTheirProfiles()
         {
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);

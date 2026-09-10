@@ -6,9 +6,11 @@ namespace BelowTheWing.Crew
     /// <summary>
     /// The keyboard and mouse, for the one character on this machine that belongs to this player.
     ///
-    /// This is the only place in the game that reads a physical input device. Everything downstream
-    /// takes a <see cref="CrewIntent"/> and cannot tell whether it came from a player, from another
-    /// machine, or from a test, which is what allows all three to work the same way.
+    /// The only place that turns a physical input device into anything the game acts on. Everything
+    /// downstream takes a <see cref="CrewIntent"/> and cannot tell whether it came from a player,
+    /// from another machine, or from a test, which is what allows all three to work the same way.
+    /// (The debug readout reads a key of its own to show and hide itself. That is a developer
+    /// switch, not a game control, and nothing downstream of it exists.)
     ///
     /// Reading devices directly rather than through an input asset, because the controls are four
     /// keys and a mouse and are going to be replaced along with everything else here.

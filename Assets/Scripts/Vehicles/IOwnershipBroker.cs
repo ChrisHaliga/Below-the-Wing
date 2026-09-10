@@ -31,5 +31,14 @@ namespace BelowTheWing.Vehicles
         /// refusal and leaves ownership exactly as it was.
         /// </summary>
         void RequestAll(IReadOnlyList<VehicleController> vehicles, Action<bool> onResult);
+
+        /// <summary>
+        /// Gives these vehicles up, so that whoever wants them next may have them.
+        ///
+        /// Needed because a request granted is not always a request still wanted: an answer can
+        /// arrive after the player who asked has walked away, and keeping a train nobody is driving
+        /// would leave it simulated here and unavailable to everybody else.
+        /// </summary>
+        void HandBack(IReadOnlyList<VehicleController> vehicles);
     }
 }

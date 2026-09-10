@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BelowTheWing.Apron;
 using BelowTheWing.Crew;
 using BelowTheWing.Vehicles;
 using UnityEngine;
@@ -42,26 +43,25 @@ namespace BelowTheWing.Tests.Support
         /// <summary>Puts a tractor and a row of carts on the apron and hooks them together.</summary>
         public CartChain AddTrain(VehicleProfile tractor, VehicleProfile cart, int cartCount, Vector3 tractorPosition, string name = "Tug 1")
         {
-            // Spaced hitch to hitch and stood at the height each profile settles at, exactly as the
-            // real apron layout does. Parking a train any other way leaves its couplings straining
-            // from the first step, which looks like a physics problem and is an arithmetic one.
-            var tractorStandsAt = new Vector3(
-                tractorPosition.x, VehicleController.RestingHeightMetres(tractor), tractorPosition.z);
+            // Built from the real apron layout rather than by working the spacing out again here.
+            // A test train parked differently from a shipped one exercises different geometry, and
+            // this spacing is exactly the arithmetic whose mismatch made a parked train wander.
+            var settings = ApronLayoutSettings.Default;
+            settings.trainCount = 1;
+            settings.cartsPerTrain = cartCount;
+            settings.firstTractorPosition = tractorPosition;
+
+            var plan = ApronLayout.Build(settings, tractor, cart, TestProfiles.Aircraft(), Vector3.one)
+                .Trains[0];
 
             var members = new List<VehicleController>
             {
-                AddVehicle(tractor, name, tractorStandsAt, Quaternion.identity)
+                AddVehicle(tractor, name, plan.Tractor.Position, plan.Tractor.Rotation)
             };
 
-            var z = tractorPosition.z
-                    - VehicleController.HitchReachMetres(tractor)
-                    - VehicleController.HitchReachMetres(cart);
-
-            for (var i = 0; i < cartCount; i++)
+            for (var i = 0; i < plan.Carts.Count; i++)
             {
-                var at = new Vector3(tractorPosition.x, VehicleController.RestingHeightMetres(cart), z);
-                members.Add(AddVehicle(cart, $"{name} cart {i + 1}", at, Quaternion.identity));
-                z -= 2f * VehicleController.HitchReachMetres(cart);
+                members.Add(AddVehicle(cart, $"{name} cart {i + 1}", plan.Carts[i].Position, plan.Carts[i].Rotation));
             }
 
             // A test apron is a machine simulating this train, so it holds the couplings too.
@@ -76,7 +76,8 @@ namespace BelowTheWing.Tests.Support
             var go = new GameObject("Crew");
             go.transform.position = position;
             var crew = go.AddComponent<CrewCharacter>();
-            crew.Configure(profile, broker ?? new RecordingBroker(grant: true), () => new List<IDriveable>());
+            crew.ConfigureBody(profile);
+            crew.TakeTheSeat(broker ?? new RecordingBroker(grant: true), () => new List<IDriveable>());
             m_Spawned.Add(go);
             return crew;
         }
