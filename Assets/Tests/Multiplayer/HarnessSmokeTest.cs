@@ -17,13 +17,8 @@ namespace BelowTheWing.Tests.Multiplayer
     /// Netcode runs distributed authority in-process when it is not asked to use the cloud service,
     /// with one instance acting as session owner. That is what these tests use.
     /// </summary>
-    public sealed class HarnessSmokeTest : NetcodeIntegrationTest
+    public sealed class HarnessSmokeTest : RampMultiplayerTest
     {
-        protected override int NumberOfClients => 2;
-
-        protected override NetworkTopologyTypes OnGetNetworkTopologyType()
-            => NetworkTopologyTypes.DistributedAuthority;
-
         [UnityTest]
         public IEnumerator TwoClientsAndASessionOwnerAreConnectedToEachOther()
         {

@@ -21,13 +21,8 @@ namespace BelowTheWing.Tests.Multiplayer
     /// server, so somebody else leaving never reaches it, and a reclaim hung on it never runs: the
     /// train freezes mid-apron, simulated by no-one, for the rest of the session.
     /// </summary>
-    public sealed class DepartureMultiplayerTests : NetcodeIntegrationTest
+    public sealed class DepartureMultiplayerTests : RampMultiplayerTest
     {
-        protected override int NumberOfClients => 2;
-
-        protected override NetworkTopologyTypes OnGetNetworkTopologyType()
-            => NetworkTopologyTypes.DistributedAuthority;
-
         [UnityTest]
         public IEnumerator EverybodyStillHereHearsThatSomebodyLeft()
         {

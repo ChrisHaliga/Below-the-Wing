@@ -25,12 +25,17 @@ namespace BelowTheWing.Tests.Multiplayer
     /// request is approved unless something objects, so a second player could take a tractor out
     /// from under the person driving it.
     /// </summary>
-    public sealed class OwnershipRulesMultiplayerTests : NetcodeIntegrationTest
+    public sealed class OwnershipRulesMultiplayerTests : RampMultiplayerTest
     {
-        protected override int NumberOfClients => 2;
-
-        protected override NetworkTopologyTypes OnGetNetworkTopologyType()
-            => NetworkTopologyTypes.DistributedAuthority;
+        /// <summary>
+        /// The worst network this game is expected to work on.
+        ///
+        /// Both of the things below are races. A third player joining while ownership is being
+        /// worked out, and two players reaching for the same tractor at the same moment, are both
+        /// decided by which message arrives first -- so proving them where messages cannot arrive
+        /// late, out of order, or not at all proves nothing about either.
+        /// </summary>
+        protected override NetworkCondition Conditions => NetworkConditions.Bad;
 
         GameObject m_TractorPrefab;
         VehicleProfile m_TractorProfile;

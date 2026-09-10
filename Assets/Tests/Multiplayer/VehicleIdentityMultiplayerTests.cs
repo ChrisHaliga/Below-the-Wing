@@ -24,13 +24,8 @@ namespace BelowTheWing.Tests.Multiplayer
     /// A cart is now a cart because it came from the cart prefab, so there is no window in which it
     /// is anything else and nothing to get in the wrong order.
     /// </summary>
-    public sealed class VehicleIdentityMultiplayerTests : NetcodeIntegrationTest
+    public sealed class VehicleIdentityMultiplayerTests : RampMultiplayerTest
     {
-        protected override int NumberOfClients => 2;
-
-        protected override NetworkTopologyTypes OnGetNetworkTopologyType()
-            => NetworkTopologyTypes.DistributedAuthority;
-
         GameObject m_CartPrefab;
         VehicleProfile m_CartProfile;
 
