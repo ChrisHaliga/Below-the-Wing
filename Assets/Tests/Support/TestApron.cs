@@ -1,0 +1,111 @@
+using System.Collections.Generic;
+using BelowTheWing.Crew;
+using BelowTheWing.Vehicles;
+using UnityEngine;
+
+namespace BelowTheWing.Tests.Support
+{
+    /// <summary>
+    /// Builds the smallest apron a test can run on, and takes it down again afterwards.
+    ///
+    /// Tests that are about physics need real ground to push against and real bodies to push, but
+    /// they do not need a session, a lobby or any of the rest of the game. This puts down a floor
+    /// and whatever vehicles are asked for, and nothing else.
+    /// </summary>
+    public sealed class TestApron
+    {
+        readonly List<GameObject> m_Spawned = new List<GameObject>();
+
+        /// <summary>The floor everything stands on.</summary>
+        public GameObject Ground { get; }
+
+        public TestApron(float sizeMetres = 200f)
+        {
+            Ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Ground.name = "Apron";
+            Ground.transform.position = new Vector3(0f, -0.5f, 0f);
+            Ground.transform.localScale = new Vector3(sizeMetres, 1f, sizeMetres);
+            m_Spawned.Add(Ground);
+        }
+
+        /// <summary>Puts one vehicle on the apron, configured from a profile, and returns it.</summary>
+        public VehicleController AddVehicle(VehicleProfile profile, string displayName, Vector3 position, Quaternion rotation)
+        {
+            var go = new GameObject(displayName);
+            go.transform.SetPositionAndRotation(position, rotation);
+            var vehicle = go.AddComponent<VehicleController>();
+            vehicle.Configure(profile, displayName);
+            m_Spawned.Add(go);
+            return vehicle;
+        }
+
+        /// <summary>Puts a tractor and a row of carts on the apron and hooks them together.</summary>
+        public CartChain AddTrain(VehicleProfile tractor, VehicleProfile cart, int cartCount, Vector3 tractorPosition, string name = "Tug 1")
+        {
+            // Spaced hitch to hitch and stood at the height each profile settles at, exactly as the
+            // real apron layout does. Parking a train any other way leaves its couplings straining
+            // from the first step, which looks like a physics problem and is an arithmetic one.
+            var tractorStandsAt = new Vector3(
+                tractorPosition.x, VehicleController.RestingHeightMetres(tractor), tractorPosition.z);
+
+            var members = new List<VehicleController>
+            {
+                AddVehicle(tractor, name, tractorStandsAt, Quaternion.identity)
+            };
+
+            var z = tractorPosition.z
+                    - VehicleController.HitchReachMetres(tractor)
+                    - VehicleController.HitchReachMetres(cart);
+
+            for (var i = 0; i < cartCount; i++)
+            {
+                var at = new Vector3(tractorPosition.x, VehicleController.RestingHeightMetres(cart), z);
+                members.Add(AddVehicle(cart, $"{name} cart {i + 1}", at, Quaternion.identity));
+                z -= 2f * VehicleController.HitchReachMetres(cart);
+            }
+
+            return CartChain.Couple(members, ChainJointSettings.Default);
+        }
+
+        /// <summary>Puts one crew member on the apron, with nothing nearby to get into.</summary>
+        public CrewCharacter AddCrew(CrewProfile profile, Vector3 position, IOwnershipBroker broker = null)
+        {
+            var go = new GameObject("Crew");
+            go.transform.position = position;
+            var crew = go.AddComponent<CrewCharacter>();
+            crew.Configure(profile, broker ?? new RecordingBroker(grant: true), () => new List<IDriveable>());
+            m_Spawned.Add(go);
+            return crew;
+        }
+
+        /// <summary>Registers an object so it is cleaned up with everything else.</summary>
+        public T Track<T>(T component) where T : Component
+        {
+            m_Spawned.Add(component.gameObject);
+            return component;
+        }
+
+        /// <summary>Removes everything this apron put into the scene.</summary>
+        public void TearDown()
+        {
+            foreach (var go in m_Spawned)
+            {
+                if (go == null)
+                {
+                    continue;
+                }
+
+                if (Application.isPlaying)
+                {
+                    Object.Destroy(go);
+                }
+                else
+                {
+                    Object.DestroyImmediate(go);
+                }
+            }
+
+            m_Spawned.Clear();
+        }
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "name": "BelowTheWing.Tests.Support",
+    "rootNamespace": "BelowTheWing.Tests.Support",
+    "references": [
+        "BelowTheWing.Vehicles",
+        "BelowTheWing.Crew",
+        "BelowTheWing.Apron"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
