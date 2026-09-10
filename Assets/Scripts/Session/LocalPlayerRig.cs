@@ -10,8 +10,8 @@ namespace BelowTheWing.Session
     /// The one character on this machine that belongs to the person sitting in front of it.
     ///
     /// Every other character in a session is a copy of somebody else's, driven by what arrives over
-    /// the network. This is the only one that reads the keyboard, moves the camera, gets in and out
-    /// of vehicles, and is told things on screen.
+    /// the network. This is the only one that reads the keyboard, holds the mouse pointer, moves
+    /// the camera, gets in and out of vehicles, and is told things on screen.
     ///
     /// Keeping that distinction in one named object is what stops "is this ours?" being asked in
     /// several places and answered differently.
@@ -32,6 +32,10 @@ namespace BelowTheWing.Session
 
             m_Character.TakeTheSeat(broker, nearbyVehicles);
             m_Character.Camera = camera;
+            // Before the input, so that the first frame of looking around already has the pointer.
+            // Arriving on the apron is the moment this player starts playing, and playing is when
+            // the pointer belongs to the game rather than to their desktop.
+            m_Character.gameObject.AddComponent<MouseCapture>();
             m_Character.gameObject.AddComponent<LocalCrewInput>();
             m_Character.gameObject.AddComponent<OccupancyPromptView>().Watch(m_Character.Seat);
 

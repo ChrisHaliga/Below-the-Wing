@@ -9,23 +9,29 @@ namespace BelowTheWing.Crew
     /// The only place that turns a physical input device into anything the game acts on. Everything
     /// downstream takes a <see cref="CrewIntent"/> and cannot tell whether it came from a player,
     /// from another machine, or from a test, which is what allows all three to work the same way.
-    /// (The debug readout reads a key of its own to show and hide itself. That is a developer
-    /// switch, not a game control, and nothing downstream of it exists.)
+    /// (Two things read keys of their own. The debug readout has a key to show and hide itself,
+    /// which is a developer switch rather than a game control. And <see cref="MouseCapture"/> reads
+    /// Escape and the left button, because whether the game holds the pointer is a decision about
+    /// the window rather than about what a character does. Neither has a <see cref="CrewIntent"/>
+    /// downstream of it.)
     ///
     /// Reading devices directly rather than through an input asset, because the controls are four
     /// keys and a mouse and are going to be replaced along with everything else here.
     /// </summary>
     [RequireComponent(typeof(CrewCharacter))]
+    [RequireComponent(typeof(MouseCapture))]
     [DisallowMultipleComponent]
     public sealed class LocalCrewInput : MonoBehaviour, ICrewIntentSource
     {
         CrewCharacter m_Character;
+        MouseCapture m_Pointer;
 
         public CrewIntent Current { get; private set; } = CrewIntent.Idle;
 
         void Awake()
         {
             m_Character = GetComponent<CrewCharacter>();
+            m_Pointer = GetComponent<MouseCapture>();
             m_Character.IntentSource = this;
         }
 
@@ -55,6 +61,13 @@ namespace BelowTheWing.Crew
             }
         }
 
+        /// <summary>
+        /// Mouse movement, but only while the pointer belongs to the game.
+        ///
+        /// Once it has been handed back the player is using it somewhere else -- on the desktop, on
+        /// another monitor -- and every one of those movements would otherwise still be swinging
+        /// the camera behind them.
+        /// </summary>
         void Look()
         {
             var mouse = Mouse.current;
@@ -63,7 +76,7 @@ namespace BelowTheWing.Crew
                 return;
             }
 
-            m_Character.Camera.Look(mouse.delta.ReadValue());
+            m_Character.Camera.Look(m_Pointer.Movement(mouse.delta.ReadValue()));
         }
 
         static float Held(Keyboard keyboard, Key key) => keyboard[key].isPressed ? 1f : 0f;
