@@ -183,6 +183,44 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void ASecondPressWhileTheFirstIsStillInFlightDoesNotAskTwice()
+        {
+            var broker = new SilentBroker();
+            var seat = SeatWith(broker);
+            seat.Refresh();
+
+            seat.Toggle(new FixedIntent());
+            seat.Toggle(new FixedIntent());
+
+            Assert.That(broker.Requests.Count, Is.EqualTo(1),
+                "two requests for the same train race each other, and whichever answer arrives second " +
+                "overwrites the outcome of the first");
+        }
+
+        [Test]
+        public void WalkingAwayFromARequestThatIsNeverAnsweredLetsThePlayerAskAgain()
+        {
+            var broker = new SilentBroker();
+            var seat = SeatWith(broker);
+            seat.Refresh();
+            seat.Toggle(new FixedIntent());
+            Assert.That(broker.Requests.Count, Is.EqualTo(1), "precondition: one request is in flight");
+
+            // A request goes to whichever machine is recorded as owning the vehicle. If that machine
+            // has left the session, no answer is ever coming.
+            m_Crew.position = new Vector3(0f, 0f, -60f);
+            seat.Refresh();
+
+            m_Crew.position = Vector3.zero;
+            seat.Refresh();
+            seat.Toggle(new FixedIntent());
+
+            Assert.That(broker.Requests.Count, Is.EqualTo(2),
+                "waiting for ever on an answer that is not coming leaves this player unable to get " +
+                "into anything at all for the rest of the session");
+        }
+
+        [Test]
         public void PressingTheKeyWithNothingInReachDoesNothing()
         {
             m_Crew.position = new Vector3(0f, 0f, -60f);

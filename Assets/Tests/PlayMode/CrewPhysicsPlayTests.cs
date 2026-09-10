@@ -84,6 +84,27 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ACharacterThisMachineIsNotSimulatingIsLeftToTheNetwork()
+        {
+            var crew = m_Apron.AddCrew(m_CrewProfile, new Vector3(0f, 1.5f, 0f));
+            yield return Step(2f);
+
+            // Every character except the local player's is a copy whose position arrives over the
+            // network. Running its movement here as well means a full-mass body being braked toward
+            // a standstill locally while replication drags it somewhere else -- so it shoves your
+            // character on your screen, and on its owner's screen it never touched you.
+            crew.Simulated = false;
+            crew.IntentSource = new FixedCrewIntent(new Vector2(0f, 1f));
+
+            var leftAt = crew.transform.position;
+            yield return Step(3f);
+
+            Assert.That(Vector3.Distance(crew.transform.position, leftAt), Is.LessThan(0.05f),
+                "a copy of somebody else's character walked itself across the apron. Where it goes is " +
+                "the network's business, not this machine's");
+        }
+
+        [UnityTest]
         public IEnumerator ATractorRunningIntoSomebodyKnocksThemOutOfTheWay()
         {
             var crew = m_Apron.AddCrew(m_CrewProfile, new Vector3(0f, 1.5f, 0f));

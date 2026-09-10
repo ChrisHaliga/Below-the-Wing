@@ -87,3 +87,32 @@ namespace BelowTheWing.Tests.Support
             => Current = new DriveIntent(steer, throttle, brake);
     }
 }
+
+namespace BelowTheWing.Tests.Support
+{
+    /// <summary>
+    /// A broker that accepts a request and never answers it.
+    ///
+    /// This is what asking a machine that has left the session looks like. Netcode sends an
+    /// ownership request to whichever client the object records as its owner, and if that client is
+    /// gone the request simply goes nowhere -- no grant, no refusal, no error.
+    /// </summary>
+    public sealed class SilentBroker : BelowTheWing.Vehicles.IOwnershipBroker
+    {
+        public System.Collections.Generic.List<System.Collections.Generic.IReadOnlyList<BelowTheWing.Vehicles.VehicleController>> Requests { get; }
+            = new System.Collections.Generic.List<System.Collections.Generic.IReadOnlyList<BelowTheWing.Vehicles.VehicleController>>();
+
+        public ulong LocalClientId => 1;
+
+        public ulong OwnerOf(BelowTheWing.Vehicles.VehicleController vehicle) => 9;
+
+        public void RequestAll(
+            System.Collections.Generic.IReadOnlyList<BelowTheWing.Vehicles.VehicleController> vehicles,
+            System.Action<bool> onResult)
+            => Requests.Add(new System.Collections.Generic.List<BelowTheWing.Vehicles.VehicleController>(vehicles));
+
+        public void HandBack(System.Collections.Generic.IReadOnlyList<BelowTheWing.Vehicles.VehicleController> vehicles)
+        {
+        }
+    }
+}

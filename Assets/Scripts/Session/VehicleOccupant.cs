@@ -61,10 +61,14 @@ namespace BelowTheWing.Session
             }
 
             // Only the owner may say who is in a seat, so a driver who lost the vehicle -- or left
-            // the session -- can never record that they got out. Whoever picks it up says so
-            // instead. Without this the tractor stays occupied on every machine for ever: never
-            // offered to anybody, and refusing every request for it.
-            if (!m_Vehicle.Occupied)
+            // the session -- can never record that they got out. Whoever picks it up says so on
+            // their behalf. Without this the tractor stays occupied on every machine for ever:
+            // never offered to anybody, and refusing every request made for it.
+            //
+            // The test is who is named in the seat, not whether the seat is taken. Asking whether
+            // it is occupied gets the answer "yes" -- that value has just been replicated from the
+            // driver being dispossessed -- and nothing is ever cleared.
+            if (m_Driver.Value != NetworkManager.LocalClientId)
             {
                 m_Driver.Value = Nobody;
             }
