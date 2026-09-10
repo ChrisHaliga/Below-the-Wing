@@ -3,7 +3,6 @@
     "rootNamespace": "BelowTheWing.Diagnostics",
     "references": [
         "BelowTheWing.Vehicles",
-        "Unity.Netcode.Runtime",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],

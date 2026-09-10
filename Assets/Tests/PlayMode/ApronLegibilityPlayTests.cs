@@ -55,7 +55,7 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator EveryVehicleCarriesALabelSayingWhatItIs()
+        public IEnumerator ALabelSaysWhatItWasGivenAndFloatsAboveIt()
         {
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
 
@@ -88,6 +88,20 @@ namespace BelowTheWing.Tests.PlayMode
 
             Assert.That(fromTheSide, Is.LessThan(5f), "text edge-on to the camera cannot be read");
             Assert.That(fromBehind, Is.LessThan(5f), "and it must keep turning as the camera moves");
+        }
+
+        [UnityTest]
+        public IEnumerator AGreyboxShapeIsSomethingToLookAtRatherThanSomethingToHit()
+        {
+            var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
+            var before = tractor.GetComponentsInChildren<Collider>().Length;
+
+            GreyboxShape.AttachBox(tractor.transform, m_TractorProfile.bodySizeMetres, Color.grey);
+            yield return null;
+
+            Assert.That(tractor.GetComponentsInChildren<Collider>().Length, Is.EqualTo(before),
+                "Unity's primitives arrive with a collider of their own, and a second box inside the " +
+                "vehicle's own would fight it. The stand-in shape has to be scenery and nothing else");
         }
 
         [UnityTest]

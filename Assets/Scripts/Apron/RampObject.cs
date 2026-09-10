@@ -1,3 +1,4 @@
+using BelowTheWing.Crew;
 using BelowTheWing.Vehicles;
 using Unity.Collections;
 using Unity.Netcode;
@@ -6,21 +7,20 @@ using UnityEngine;
 namespace BelowTheWing.Apron
 {
     /// <summary>
-    /// What kind of equipment a spawned object is, and what it is called.
+    /// What a spawned object is, what it is called, and which train it belongs to.
     ///
-    /// Every machine in a session needs this, not just the one that built the apron. A client that
-    /// joins later receives a vehicle as a bare networked object and has to be told which profile
-    /// to configure it from and what to write on its label, because a profile is a local asset and
-    /// cannot itself be sent over the wire.
+    /// Every machine in a session needs all of this, not just the one that built the apron. A
+    /// client that joins later receives a vehicle as a bare networked object and has to be told
+    /// which profile to configure it from, what to write on its label, and which train it is part
+    /// of -- because a profile is a local asset and cannot be sent over the wire, and because a
+    /// machine that does not know a tractor is towing four carts will happily take the tractor and
+    /// drive off without them.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(NetworkObject))]
     public sealed class RampObject : NetworkBehaviour
     {
-        /// <summary>How far above a vehicle's origin its name floats, in metres.</summary>
-        const float LabelHeightMetres = 1.6f;
-
-        /// <summary>Which kind of equipment this is. Indexes the spawner's catalogue.</summary>
+        /// <summary>Which kind of equipment this is.</summary>
         public enum Kind
         {
             Tractor = 0,
@@ -29,11 +29,22 @@ namespace BelowTheWing.Apron
             Crew = 3
         }
 
+        /// <summary>Given as the train index for anything that is not part of a train.</summary>
+        public const int NoTrain = -1;
+
         readonly NetworkVariable<int> m_Kind = new NetworkVariable<int>(
             writePerm: NetworkVariableWritePermission.Owner);
 
         readonly NetworkVariable<FixedString64Bytes> m_DisplayName = new NetworkVariable<FixedString64Bytes>(
             writePerm: NetworkVariableWritePermission.Owner);
+
+        readonly NetworkVariable<int> m_TrainIndex = new NetworkVariable<int>(
+            NoTrain, writePerm: NetworkVariableWritePermission.Owner);
+
+        readonly NetworkVariable<int> m_PlaceInTrain = new NetworkVariable<int>(
+            writePerm: NetworkVariableWritePermission.Owner);
+
+        RampSpawner m_Apron;
 
         /// <summary>What this object is called, on its label and in the prompt to drive it.</summary>
         public string DisplayName => m_DisplayName.Value.ToString();
@@ -42,22 +53,80 @@ namespace BelowTheWing.Apron
         public Kind EquipmentKind => (Kind)m_Kind.Value;
 
         /// <summary>
+        /// Which train this belongs to, or <see cref="NoTrain"/>. Trains are identified by number
+        /// rather than by object reference because the identity has to survive being sent to a
+        /// machine that has not received the other members yet.
+        /// </summary>
+        public int TrainIndex => m_TrainIndex.Value;
+
+        /// <summary>Where in its train this sits: 0 is the tractor, 1 the first cart, and so on.</summary>
+        public int PlaceInTrain => m_PlaceInTrain.Value;
+
+        /// <summary>
         /// Says what this object is. Called by whichever machine spawned it, before anybody else
         /// has had a chance to look at it.
         /// </summary>
-        public void Describe(Kind kind, string displayName)
+        public void Describe(Kind kind, string displayName, int trainIndex = NoTrain, int placeInTrain = 0)
         {
             m_Kind.Value = (int)kind;
             m_DisplayName.Value = displayName;
+            m_TrainIndex.Value = trainIndex;
+            m_PlaceInTrain.Value = placeInTrain;
         }
 
         public override void OnNetworkSpawn()
         {
-            // Late joiners receive the values as part of the spawn, and everyone else sees them
-            // change a moment after. Both paths end up here.
-            m_DisplayName.OnValueChanged += (_, _) => Dress();
-            Dress();
+            m_Apron = FindAnyObjectByType<RampSpawner>();
+
+            // The values arrive with the spawn for a late joiner and a moment afterwards for
+            // everybody else, so both paths have to end up here.
+            m_DisplayName.OnValueChanged += OnDescriptionChanged;
+            m_TrainIndex.OnValueChanged += OnDescriptionChanged;
+
+            m_Apron?.Adopt(this);
         }
+
+        public override void OnNetworkDespawn()
+        {
+            m_DisplayName.OnValueChanged -= OnDescriptionChanged;
+            m_TrainIndex.OnValueChanged -= OnDescriptionChanged;
+
+            m_Apron?.Abandon(this);
+        }
+
+        protected override void OnOwnershipChanged(ulong previous, ulong current)
+        {
+            // Which machine holds a train decides which machine holds its couplings, so a change of
+            // hands has to be noticed by the apron rather than only by the netcode layer.
+            m_Apron?.OwnershipMoved();
+        }
+
+        /// <summary>
+        /// Gives this object the appearance that goes with what it is: a primitive of the right
+        /// real-world size, and its name floating above it.
+        /// </summary>
+        public void Dress()
+        {
+            var called = DisplayName;
+            if (string.IsNullOrEmpty(called))
+            {
+                return;
+            }
+
+            name = called;
+
+            if (transform.Find(GreyboxShape.ShapeName) == null)
+            {
+                DrawGreybox();
+            }
+
+            if (GetComponentInChildren<WorldLabel>() == null)
+            {
+                WorldLabel.Attach(transform, called, LabelHeightMetres());
+            }
+        }
+
+        void OnDescriptionChanged<T>(T _, T __) => m_Apron?.Adopt(this);
 
         void DrawGreybox()
         {
@@ -77,7 +146,7 @@ namespace BelowTheWing.Apron
                     break;
 
                 case Kind.Crew:
-                    var crew = GetComponent<Crew.CrewCharacter>();
+                    var crew = GetComponent<CrewCharacter>();
                     if (crew != null && crew.Profile != null)
                     {
                         GreyboxShape.AttachCapsule(
@@ -105,7 +174,7 @@ namespace BelowTheWing.Apron
             }
         }
 
-        float LabelAt()
+        float LabelHeightMetres()
         {
             switch (EquipmentKind)
             {
@@ -113,50 +182,17 @@ namespace BelowTheWing.Apron
                     var aircraft = GetComponent<AircraftBody>();
                     return aircraft != null && aircraft.Profile != null
                         ? aircraft.Profile.fuselageDiameterMetres
-                        : LabelHeightMetres;
+                        : 2f;
 
                 case Kind.Crew:
-                    var crew = GetComponent<Crew.CrewCharacter>();
-                    return crew != null && crew.Profile != null
-                        ? crew.Profile.heightMetres * 0.7f
-                        : LabelHeightMetres;
+                    var crew = GetComponent<CrewCharacter>();
+                    return crew != null && crew.Profile != null ? crew.Profile.heightMetres * 0.7f : 1.4f;
 
                 default:
                     var vehicle = GetComponent<VehicleController>();
                     return vehicle != null && vehicle.Profile != null
                         ? vehicle.Profile.bodySizeMetres.y * 0.7f
-                        : LabelHeightMetres;
-            }
-        }
-
-        void Dress()
-        {
-            var called = DisplayName;
-            if (string.IsNullOrEmpty(called))
-            {
-                return;
-            }
-
-            name = called;
-
-            var vehicle = GetComponent<VehicleController>();
-            if (vehicle != null && vehicle.Profile == null)
-            {
-                var catalogue = FindAnyObjectByType<RampSpawner>();
-                if (catalogue != null)
-                {
-                    vehicle.Configure(catalogue.ProfileFor(EquipmentKind), called);
-                }
-            }
-
-            if (transform.Find("Greybox") == null)
-            {
-                DrawGreybox();
-            }
-
-            if (GetComponentInChildren<WorldLabel>() == null)
-            {
-                WorldLabel.Attach(transform, called, LabelAt());
+                        : 1.4f;
             }
         }
     }

@@ -14,10 +14,9 @@ namespace BelowTheWing.Net
     /// out -- is written against <see cref="IOwnershipBroker"/> and would work just as well against
     /// a different networking library, or none.
     ///
-    /// Requests for a whole train are made together and reported together. If any member is refused
-    /// the whole request is refused and every member that was granted is handed straight back,
-    /// because a train split between two machines has couplings whose two ends are being simulated
-    /// by different physics engines, and neither engine can move the far end.
+    /// Asking for a train is asking for all of it. Whether that succeeded is decided by
+    /// <see cref="AllOrNothingRequest{T}"/>; this class only sends the requests, reports the
+    /// answers, and hands things back when told to.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class NetworkOwnershipBroker : MonoBehaviour, IOwnershipBroker
@@ -48,106 +47,60 @@ namespace BelowTheWing.Net
                 members.Add(networked);
             }
 
-            new TrainHandover(members, LocalClientId, onResult).Begin();
-        }
-
-        /// <summary>
-        /// One attempt to take a whole train, tracking each member's answer until they have all
-        /// come back.
-        ///
-        /// Answers arrive one at a time and out of order, so the result cannot be known until the
-        /// last one lands. Anything granted before a refusal arrives is given back rather than kept,
-        /// which is what makes the operation all-or-nothing from the caller's point of view.
-        /// </summary>
-        sealed class TrainHandover
-        {
-            readonly List<NetworkObject> m_Members;
-            readonly List<NetworkObject> m_Granted = new List<NetworkObject>();
-            readonly Dictionary<NetworkObject, ulong> m_PreviousOwners = new Dictionary<NetworkObject, ulong>();
-            readonly ulong m_Claimant;
-            readonly Action<bool> m_OnResult;
-
-            int m_Outstanding;
-            bool m_AnyRefused;
-            bool m_Reported;
-
-            public TrainHandover(List<NetworkObject> members, ulong claimant, Action<bool> onResult)
+            var claimant = LocalClientId;
+            var previousOwners = new Dictionary<NetworkObject, ulong>(members.Count);
+            foreach (var member in members)
             {
-                m_Members = members;
-                m_Claimant = claimant;
-                m_OnResult = onResult;
+                previousOwners[member] = member.OwnerClientId;
             }
 
-            public void Begin()
-            {
-                m_Outstanding = m_Members.Count;
-
-                foreach (var member in m_Members)
+            var request = new AllOrNothingRequest<NetworkObject>(
+                members.Count,
+                giveBack: member =>
                 {
-                    m_PreviousOwners[member] = member.OwnerClientId;
-
-                    if (member.OwnerClientId == m_Claimant)
-                    {
-                        Answer(member, approved: true);
-                        continue;
-                    }
-
-                    member.OnOwnershipRequestResponse += response => OnResponse(member, response);
-
-                    var status = member.RequestOwnership();
-                    if (status != NetworkObject.OwnershipRequestStatus.RequestSent)
-                    {
-                        // Turned down before it left this machine -- locked, or not a kind of
-                        // object whose ownership moves at all.
-                        Answer(member, approved: false);
-                    }
-                }
-            }
-
-            void OnResponse(NetworkObject member, NetworkObject.OwnershipRequestResponseStatus response)
-                => Answer(member, response == NetworkObject.OwnershipRequestResponseStatus.Approved);
-
-            void Answer(NetworkObject member, bool approved)
-            {
-                if (m_Reported)
-                {
-                    return;
-                }
-
-                if (approved)
-                {
-                    m_Granted.Add(member);
-                }
-                else
-                {
-                    m_AnyRefused = true;
-                }
-
-                m_Outstanding--;
-                if (m_Outstanding > 0)
-                {
-                    return;
-                }
-
-                if (m_AnyRefused)
-                {
-                    GiveBackWhatWasGranted();
-                }
-
-                m_Reported = true;
-                m_OnResult?.Invoke(!m_AnyRefused);
-            }
-
-            void GiveBackWhatWasGranted()
-            {
-                foreach (var member in m_Granted)
-                {
-                    if (m_PreviousOwners.TryGetValue(member, out var previous) && previous != m_Claimant)
+                    if (previousOwners.TryGetValue(member, out var previous) && previous != claimant)
                     {
                         member.ChangeOwnership(previous);
                     }
-                }
+                },
+                onResult);
+
+            foreach (var member in members)
+            {
+                Ask(member, claimant, request);
             }
+        }
+
+        static void Ask(NetworkObject member, ulong claimant, AllOrNothingRequest<NetworkObject> request)
+        {
+            if (member.OwnerClientId == claimant)
+            {
+                request.Answer(member, granted: true);
+                return;
+            }
+
+            // The handler takes itself off the moment it fires. Left subscribed, every attempt to
+            // get into a vehicle would leave another closure behind on it, each one holding the
+            // whole request and the seat that made it.
+            NetworkObject.OnOwnershipRequestResponseDelegateHandler handler = null;
+            handler = response =>
+            {
+                member.OnOwnershipRequestResponse -= handler;
+                request.Answer(member, response == NetworkObject.OwnershipRequestResponseStatus.Approved);
+            };
+
+            member.OnOwnershipRequestResponse += handler;
+
+            var status = member.RequestOwnership();
+            if (status == NetworkObject.OwnershipRequestStatus.RequestSent)
+            {
+                return;
+            }
+
+            // Turned down before it left this machine -- locked, or not a kind of object whose
+            // ownership moves at all. No response is coming, so the handler has to go now.
+            member.OnOwnershipRequestResponse -= handler;
+            request.Answer(member, granted: false);
         }
     }
 }

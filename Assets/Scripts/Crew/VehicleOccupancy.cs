@@ -154,11 +154,10 @@ namespace BelowTheWing.Crew
 
         void StepOut()
         {
-            var left = m_Driving;
-
-            left.IntentSource = null;
+            // Where the body physically goes is the character's business, not the seat's. This
+            // records only that nobody is driving any more; the character notices and climbs out.
+            m_Driving.IntentSource = null;
             m_Driving = null;
-            m_Crew.position = DismountPosition(left);
 
             Say(OccupancyPrompt.None, "");
         }

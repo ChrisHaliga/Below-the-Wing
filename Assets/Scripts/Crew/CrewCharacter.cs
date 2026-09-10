@@ -33,6 +33,7 @@ namespace BelowTheWing.Crew
 
         Rigidbody m_Body;
         CapsuleCollider m_Collider;
+        VehicleController m_RidingIn;
 
         /// <summary>The profile this character's mass, size and speeds come from.</summary>
         public CrewProfile Profile => m_Profile;
@@ -111,6 +112,54 @@ namespace BelowTheWing.Crew
             Seat = new VehicleOccupancy(transform, broker, nearbyVehicles, m_ReachMetres);
         }
 
+        /// <summary>
+        /// Puts the body away while its owner drives.
+        ///
+        /// A character left standing where they got in is an obstacle: another player runs into an
+        /// invisible person, and the driver reverses into their own body. Riding along inside the
+        /// vehicle rather than beside it is what makes getting in look like getting in.
+        /// </summary>
+        void ClimbIn(VehicleController vehicle)
+        {
+            m_RidingIn = vehicle;
+
+            Body.linearVelocity = Vector3.zero;
+            Body.angularVelocity = Vector3.zero;
+            Body.isKinematic = true;
+
+            if (m_Collider != null)
+            {
+                m_Collider.enabled = false;
+            }
+
+            transform.SetParent(vehicle.transform, worldPositionStays: false);
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+        }
+
+        /// <summary>Puts the body back on the apron, clear of the vehicle it came out of.</summary>
+        void ClimbOut()
+        {
+            var left = m_RidingIn;
+            m_RidingIn = null;
+
+            transform.SetParent(null, worldPositionStays: true);
+
+            if (left != null)
+            {
+                transform.position = Seat.DismountPosition(left);
+            }
+
+            Body.isKinematic = false;
+            Body.linearVelocity = Vector3.zero;
+            Body.angularVelocity = Vector3.zero;
+
+            if (m_Collider != null)
+            {
+                m_Collider.enabled = true;
+            }
+        }
+
         void FixedUpdate()
         {
             if (m_Profile == null)
@@ -120,9 +169,22 @@ namespace BelowTheWing.Crew
 
             Seat?.Refresh();
 
+            var drivingNow = Seat != null ? Seat.Driving : null;
+            if (drivingNow != m_RidingIn)
+            {
+                if (drivingNow != null)
+                {
+                    ClimbIn(drivingNow);
+                }
+                else
+                {
+                    ClimbOut();
+                }
+            }
+
             // Somebody in a seat is cargo. Their controls are going to the vehicle, and walking at
             // the same time would drag the capsule out through the bodywork.
-            if (Seat != null && Seat.IsDriving)
+            if (m_RidingIn != null)
             {
                 return;
             }

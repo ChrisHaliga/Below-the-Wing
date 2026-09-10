@@ -43,26 +43,28 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void TheReadoutNamesWhoIsSimulatingEachTrain()
         {
-            var broker = new RecordingBroker(grant: true, localClientId: 4);
+            var broker = new RecordingBroker(grant: true, localClientId: 7);
             foreach (var member in m_Train.Members)
             {
-                broker.SetOwner(member, 4);
+                broker.SetOwner(member, 7);
             }
 
             m_Readout.Observe(new List<CartChain> { m_Train }, broker);
 
             Assert.That(m_Readout.OwnershipLines.Count, Is.EqualTo(1));
             Assert.That(m_Readout.OwnershipLines[0], Does.Contain(m_Train.Leader.DisplayName));
-            Assert.That(m_Readout.OwnershipLines[0], Does.Contain("4"));
+            Assert.That(m_Readout.OwnershipLines[0], Does.Contain("owner 7"),
+                "the owner has to be named. A bare \"7\" would also be satisfied by the member count " +
+                "printed alongside it, and would pass with the owner reported as anybody at all");
         }
 
         [Test]
         public void TheReadoutSaysSoWhenATrainIsSplitBetweenTwoMachines()
         {
-            var broker = new RecordingBroker(grant: true, localClientId: 4);
+            var broker = new RecordingBroker(grant: true, localClientId: 7);
             foreach (var member in m_Train.Members)
             {
-                broker.SetOwner(member, 4);
+                broker.SetOwner(member, 7);
             }
 
             broker.SetOwner(m_Train.Members[3], 9);
@@ -76,7 +78,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void TheReadoutFollowsOwnershipWhenATrainChangesHands()
         {
-            var broker = new RecordingBroker(grant: true, localClientId: 4);
+            var broker = new RecordingBroker(grant: true, localClientId: 7);
             foreach (var member in m_Train.Members)
             {
                 broker.SetOwner(member, 9);
@@ -87,9 +89,9 @@ namespace BelowTheWing.Tests.EditMode
 
             m_Train.RequestOwnership(broker, _ => { });
 
-            Assert.That(m_Readout.OwnershipLines[0], Is.Not.EqualTo(beforeTakeover),
+            Assert.That(beforeTakeover, Does.Contain("owner 9"));
+            Assert.That(m_Readout.OwnershipLines[0], Does.Contain("owner 7"),
                 "the readout must reflect the takeover, not a snapshot from when it was wired up");
-            Assert.That(m_Readout.OwnershipLines[0], Does.Contain("4"));
         }
     }
 }

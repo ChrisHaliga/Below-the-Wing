@@ -122,6 +122,20 @@ namespace BelowTheWing.Vehicles
         /// </summary>
         public CartChain Chain { get; internal set; }
 
+        /// <summary>
+        /// Whether this machine is the one working out where this vehicle goes.
+        ///
+        /// False on a copy of a vehicle somebody else is simulating. Such a copy still collides and
+        /// can still be shoved, but it does not run its own suspension, grip or drive: its position
+        /// comes from its owner, and anything computed here would be overwritten the moment the
+        /// next update arrived. Running it anyway costs four raycasts and four forces per vehicle
+        /// per step for a result that is thrown away.
+        ///
+        /// Deliberately a plain flag rather than a question about networking, so that the vehicle
+        /// still knows nothing about how -- or whether -- the game is networked.
+        /// </summary>
+        public bool Simulated { get; set; } = true;
+
         public string DisplayName => m_DisplayName;
 
         public Vector3 Position => transform.position;
@@ -239,7 +253,7 @@ namespace BelowTheWing.Vehicles
 
         void FixedUpdate()
         {
-            if (m_Profile == null || m_Wheels == null)
+            if (m_Profile == null || m_Wheels == null || !Simulated)
             {
                 return;
             }

@@ -30,6 +30,7 @@ namespace BelowTheWing.EditorTools
     {
         const string PrefabFolder = "Assets/Content/Prefabs";
         const string ScenePath = "Assets/Scenes/Apron.unity";
+        const string ApronMaterialPath = "Assets/Content/ApronConcrete.mat";
 
         const string TractorProfilePath = "Assets/Content/Vehicles/BaggageTractor.asset";
         const string CartProfilePath = "Assets/Content/Vehicles/BaggageCart.asset";
@@ -121,6 +122,14 @@ namespace BelowTheWing.EditorTools
 
         static void BuildScene(GameObject vehiclePrefab, GameObject crewPrefab, GameObject aircraftPrefab)
         {
+            // Replacing the open scene throws away anything unsaved in it, so ask first. Somebody
+            // running this from the menu has other work open more often than not.
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                Debug.Log("Apron rebuild cancelled.");
+                return;
+            }
+
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             BuildApronFloor();
@@ -157,13 +166,24 @@ namespace BelowTheWing.EditorTools
 
         static void BuildApronFloor()
         {
+            AssetDatabase.DeleteAsset(ApronMaterialPath);
+
             var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
             floor.name = "Apron";
 
             // Unity's plane primitive is ten metres across per unit of scale, so this is 400 metres
             // square -- room for a train to be got badly wrong in.
             floor.transform.localScale = new Vector3(40f, 1f, 40f);
-            floor.GetComponent<MeshRenderer>().sharedMaterial.color = new Color(0.32f, 0.33f, 0.34f);
+            // A material of its own. Writing a colour onto sharedMaterial would repaint the render
+            // pipeline's default material, and with it every other object in the project still using it.
+            var concrete = new Material(floor.GetComponent<MeshRenderer>().sharedMaterial)
+            {
+                name = "Apron concrete",
+                color = new Color(0.32f, 0.33f, 0.34f)
+            };
+
+            AssetDatabase.CreateAsset(concrete, ApronMaterialPath);
+            floor.GetComponent<MeshRenderer>().sharedMaterial = concrete;
         }
 
         static void BuildLighting()

@@ -16,6 +16,9 @@ namespace BelowTheWing.Apron
     /// </summary>
     public static class GreyboxShape
     {
+        /// <summary>What the stand-in shape is called, so it can be found again rather than duplicated.</summary>
+        public const string ShapeName = "Greybox";
+
         /// <summary>Unity's capsule primitive is two units tall, so half its height is one unit.</summary>
         const float CapsuleHalfHeightUnits = 2f;
 
@@ -49,14 +52,21 @@ namespace BelowTheWing.Apron
         static Transform Build(Transform target, PrimitiveType type, Color colour)
         {
             var primitive = GameObject.CreatePrimitive(type);
-            primitive.name = "Greybox";
+            primitive.name = ShapeName;
 
             // The object it hangs on already has whatever collider it is supposed to have, and a
             // second one inside the first would fight it.
             var ownCollider = primitive.GetComponent<Collider>();
             if (ownCollider != null)
             {
-                Object.Destroy(ownCollider);
+                if (Application.isPlaying)
+                {
+                    Object.Destroy(ownCollider);
+                }
+                else
+                {
+                    Object.DestroyImmediate(ownCollider);
+                }
             }
 
             primitive.GetComponent<MeshRenderer>().material.color = colour;

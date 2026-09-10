@@ -122,6 +122,61 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void ATrainThisMachineIsNotSimulatingStillKnowsEveryMemberItHas()
+        {
+            var train = FourCartTrain();
+
+            train.ReleaseCouplings();
+
+            Assert.That(train.CouplingsEngaged, Is.False);
+            for (var i = 0; i < train.Members.Count - 1; i++)
+            {
+                Assert.That(train.CouplingBehind(i), Is.Null,
+                    "a machine watching somebody else's train must not hold hinges of its own, " +
+                    "because half that constraint would be solving against a body it cannot move");
+            }
+
+            Assert.That(train.Members.Count, Is.EqualTo(5),
+                "but it is still five vehicles. A machine that forgets the carts asks only for the " +
+                "tractor, takes it, and drives off leaving four carts owned by somebody else");
+
+            var broker = new RecordingBroker(grant: true);
+            train.RequestOwnership(broker, _ => { });
+            Assert.That(broker.Requests[0], Is.EquivalentTo(train.Members));
+        }
+
+        [Test]
+        public void PickingUpATrainPutsItsCouplingsBackOn()
+        {
+            var train = FourCartTrain();
+            train.ReleaseCouplings();
+
+            train.EngageCouplings();
+
+            Assert.That(train.CouplingsEngaged, Is.True);
+            for (var i = 0; i < train.Members.Count - 1; i++)
+            {
+                Assert.That(train.CouplingBehind(i), Is.Not.Null);
+            }
+        }
+
+        [Test]
+        public void EngagingCouplingsTwiceDoesNotDoubleThemUp()
+        {
+            var train = FourCartTrain();
+
+            train.EngageCouplings();
+            train.EngageCouplings();
+
+            foreach (var member in train.Members)
+            {
+                Assert.That(member.GetComponents<Joint>().Length, Is.LessThanOrEqualTo(1),
+                    "confirming ownership again must not stack a second hinge on a vehicle that " +
+                    "already has one, which would over-constrain it and make the train fight itself");
+            }
+        }
+
+        [Test]
         public void TakingATrainAsksForEveryMemberInOneGo()
         {
             var train = FourCartTrain();

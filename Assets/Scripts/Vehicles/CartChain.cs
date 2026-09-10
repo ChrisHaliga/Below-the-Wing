@@ -31,14 +31,20 @@ namespace BelowTheWing.Vehicles
     /// <summary>
     /// A tractor and the carts hooked up behind it, treated as a single thing.
     ///
-    /// Physically a chain is a row of separate rigidbodies held together by hinges. For almost
-    /// every purpose above physics, though, it has to behave as one object: it is taken over as
-    /// one, handed back as one, and reported as one. Splitting that -- letting two machines
-    /// simulate different carts of the same train -- puts a joint across a boundary where half the
-    /// constraint solver is working against a body it cannot move, and that is where these trains
-    /// come apart.
+    /// A chain is two separate ideas that have to be kept apart.
     ///
-    /// A chain owns the joints it created and is the only thing that destroys them. There is no
+    /// Its <b>membership</b> -- which vehicles belong to this train and in what order -- is true on
+    /// every machine in the session. It has to be, because taking a train over means asking for all
+    /// of its members at once, and a machine that believes a tractor is on its own will ask for the
+    /// tractor and drive away leaving its carts behind, simulated by somebody else.
+    ///
+    /// Its <b>couplings</b> -- the hinges that physically hold it together -- exist only on the one
+    /// machine simulating it. A joint whose two ends are being integrated by different physics
+    /// engines has half its constraint solver working against a body it cannot move, and that is
+    /// where these trains come apart. Everywhere else the members are replicated copies following
+    /// their owner, and hinges between them would only fight that.
+    ///
+    /// A chain owns any couplings it created and is the only thing that destroys them. There is no
     /// such thing as a dormant coupling left lying around switched off.
     /// </summary>
     public sealed class CartChain
@@ -46,8 +52,9 @@ namespace BelowTheWing.Vehicles
         readonly List<VehicleController> m_Members;
 
         /// <summary>
-        /// The coupling between each member and the one behind it. One shorter than the member
-        /// list, because the vehicle at the back has nothing hooked on to it.
+        /// The coupling between each member and the one behind it, or null where there is none.
+        /// Always one shorter than the member list: the vehicle at the back has nothing hooked on.
+        /// Every entry is null on a machine that is not simulating this train.
         /// </summary>
         readonly List<HingeJoint> m_Couplings;
 
@@ -77,8 +84,31 @@ namespace BelowTheWing.Vehicles
         public VehicleController Leader => m_Members[0];
 
         /// <summary>
-        /// Hooks a row of vehicles together, front to back, and returns the train they form.
-        /// Each vehicle is joined to the one ahead of it at their facing hitch points.
+        /// Whether this machine is holding the train together with real joints, rather than
+        /// watching a train somebody else is simulating.
+        /// </summary>
+        public bool CouplingsEngaged
+        {
+            get
+            {
+                foreach (var coupling in m_Couplings)
+                {
+                    if (coupling == null)
+                    {
+                        return false;
+                    }
+                }
+
+                return m_Couplings.Count > 0;
+            }
+        }
+
+        /// <summary>
+        /// Records that these vehicles form one train, front to back.
+        ///
+        /// This establishes membership only. Nothing is physically joined until
+        /// <see cref="EngageCouplings"/> is called, which the machine simulating the train does and
+        /// no other machine should.
         /// </summary>
         public static CartChain Couple(IReadOnlyList<VehicleController> frontToBack, ChainJointSettings settings)
         {
@@ -88,14 +118,38 @@ namespace BelowTheWing.Vehicles
             }
 
             var members = new List<VehicleController>(frontToBack);
-            var couplings = new List<HingeJoint>(members.Count - 1);
-
-            for (var i = 0; i < members.Count - 1; i++)
-            {
-                couplings.Add(Hitch(inFront: members[i], behind: members[i + 1], settings));
-            }
+            var couplings = new List<HingeJoint>(new HingeJoint[Mathf.Max(0, members.Count - 1)]);
 
             return new CartChain(members, couplings, settings);
+        }
+
+        /// <summary>
+        /// Physically hooks the train together on this machine. Does nothing to couplings that are
+        /// already in place, so it is safe to call whenever ownership is confirmed.
+        /// </summary>
+        public void EngageCouplings()
+        {
+            for (var i = 0; i < m_Couplings.Count; i++)
+            {
+                if (m_Couplings[i] == null)
+                {
+                    m_Couplings[i] = Hitch(inFront: m_Members[i], behind: m_Members[i + 1], m_Settings);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Takes the couplings off, leaving membership intact. Called on a machine that has handed
+        /// the train to somebody else: the train still exists and is still one thing, it is simply
+        /// being simulated elsewhere now.
+        /// </summary>
+        public void ReleaseCouplings()
+        {
+            for (var i = 0; i < m_Couplings.Count; i++)
+            {
+                Unhitch(m_Couplings[i]);
+                m_Couplings[i] = null;
+            }
         }
 
         /// <summary>Whether this vehicle is part of this train.</summary>
@@ -109,8 +163,8 @@ namespace BelowTheWing.Vehicles
             => broker.RequestAll(m_Members, onResult);
 
         /// <summary>
-        /// Unhooks the train after the given member, destroying the coupling between it and the
-        /// next one, and returns the two trains that result.
+        /// Unhooks the train after the given member and returns the two trains that result. Any
+        /// coupling at the break is destroyed rather than left in place switched off.
         /// </summary>
         public (CartChain Front, CartChain Back) SplitAfter(int memberIndex)
         {
@@ -122,6 +176,7 @@ namespace BelowTheWing.Vehicles
             }
 
             Unhitch(m_Couplings[memberIndex]);
+            m_Couplings[memberIndex] = null;
 
             var frontMembers = m_Members.GetRange(0, memberIndex + 1);
             var frontCouplings = m_Couplings.GetRange(0, memberIndex);
@@ -134,27 +189,9 @@ namespace BelowTheWing.Vehicles
                     new CartChain(backMembers, backCouplings, m_Settings));
         }
 
-        /// <summary>Destroys every coupling in this train, leaving its members unhitched.</summary>
-        public void Dissolve()
-        {
-            foreach (var coupling in m_Couplings)
-            {
-                Unhitch(coupling);
-            }
-
-            m_Couplings.Clear();
-
-            foreach (var member in m_Members)
-            {
-                Couple(new[] { member }, m_Settings);
-            }
-
-            m_Members.Clear();
-        }
-
         /// <summary>
-        /// The coupling between a member and the one behind it, or null if there is none.
-        /// Exists so that a train can be checked for couplings it should no longer have.
+        /// The coupling between a member and the one behind it, or null if there is none -- either
+        /// because that member is at the back, or because this machine is not simulating the train.
         /// </summary>
         public Joint CouplingBehind(int memberIndex)
             => memberIndex >= 0 && memberIndex < m_Couplings.Count ? m_Couplings[memberIndex] : null;

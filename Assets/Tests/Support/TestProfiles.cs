@@ -53,8 +53,8 @@ namespace BelowTheWing.Tests.Support
             p.centerOfMassOffset = new Vector3(0f, -0.3f, 0f);
             p.wheelbaseMetres = 2.0f;
             p.trackMetres = 1.3f;
-            p.wheelRadiusMetres = 0.25f;
-            p.suspensionRestLengthMetres = 0.25f;
+            p.wheelRadiusMetres = 0.3f;
+            p.suspensionRestLengthMetres = 0.35f;
             p.springStrengthNewtons = 12000f;
             p.damperNewtonsPerMetrePerSecond = 1400f;
             p.lateralGripCurve = PeakingGripCurve();

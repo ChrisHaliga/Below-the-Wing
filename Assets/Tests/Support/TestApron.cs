@@ -64,7 +64,10 @@ namespace BelowTheWing.Tests.Support
                 z -= 2f * VehicleController.HitchReachMetres(cart);
             }
 
-            return CartChain.Couple(members, ChainJointSettings.Default);
+            // A test apron is a machine simulating this train, so it holds the couplings too.
+            var train = CartChain.Couple(members, ChainJointSettings.Default);
+            train.EngageCouplings();
+            return train;
         }
 
         /// <summary>Puts one crew member on the apron, with nothing nearby to get into.</summary>
