@@ -36,6 +36,12 @@ namespace BelowTheWing.EditorTools
         const string ScenePath = "Assets/Scenes/Apron.unity";
         const string ApronMaterialPath = "Assets/Content/ApronConcrete.mat";
 
+        /// <summary>
+        /// The prefab list Netcode maintains as prefabs are added to the project. Registering this
+        /// is what makes spawned objects creatable on machines other than the one that spawned them.
+        /// </summary>
+        const string DefaultPrefabListPath = "Assets/DefaultNetworkPrefabs.asset";
+
         const string TractorProfilePath = "Assets/Content/Vehicles/BaggageTractor.asset";
         const string CartProfilePath = "Assets/Content/Vehicles/BaggageCart.asset";
         const string AircraftProfilePath = "Assets/Content/Aircraft/NarrowbodyAirliner.asset";
@@ -95,7 +101,7 @@ namespace BelowTheWing.EditorTools
             var vehicle = go.AddComponent<VehicleController>();
             Set(vehicle, "m_Profile", profile);
 
-            AddNetworking(go);
+            AddNetworking(go, outlivesItsOwner: true);
             go.AddComponent<TrainMember>();
 
             Dress(go, ApronAppearance.Shape.Box,
@@ -116,7 +122,7 @@ namespace BelowTheWing.EditorTools
 
             Set(go.AddComponent<AircraftBody>(), "m_Profile", profile);
 
-            AddNetworking(go);
+            AddNetworking(go, outlivesItsOwner: true);
 
             Dress(go, ApronAppearance.Shape.LyingCapsule,
                 new Vector3(profile.fuselageDiameterMetres, profile.lengthMetres, profile.fuselageDiameterMetres),
@@ -134,7 +140,7 @@ namespace BelowTheWing.EditorTools
 
             Set(go.AddComponent<CrewCharacter>(), "m_Profile", profile);
 
-            AddNetworking(go);
+            AddNetworking(go, outlivesItsOwner: false);
 
             Dress(go, ApronAppearance.Shape.UprightCapsule,
                 new Vector3(profile.radiusMetres * 2f, profile.heightMetres, profile.radiusMetres * 2f),
@@ -156,9 +162,21 @@ namespace BelowTheWing.EditorTools
             go.AddComponent<ApronIdentity>();
         }
 
-        static void AddNetworking(GameObject go)
+        /// <param name="outlivesItsOwner">
+        /// Whether this should survive the departure of whoever owns it.
+        ///
+        /// True for equipment: a player quitting must not take a tractor and four carts off the
+        /// apron with them. Netcode then hands their objects to remaining clients one at a time,
+        /// which can leave a train split across machines, so the session owner reclaims each train
+        /// whole afterwards.
+        ///
+        /// False for a person: a player who leaves takes their character with them, and one left
+        /// behind would be a body nobody is driving standing in the way for the rest of the session.
+        /// </param>
+        static void AddNetworking(GameObject go, bool outlivesItsOwner)
         {
-            go.AddComponent<NetworkObject>();
+            var networked = go.AddComponent<NetworkObject>();
+            networked.DontDestroyWithOwner = outlivesItsOwner;
 
             // Movement is replicated as transform state rather than through NetworkRigidbody, which
             // forces every non-owning copy kinematic. A kinematic vehicle has infinite mass: you
@@ -198,7 +216,7 @@ namespace BelowTheWing.EditorTools
             BuildLighting();
 
             var camera = BuildCamera();
-            var manager = BuildNetworkManager(tractor, cart, aircraft, crew);
+            var manager = BuildNetworkManager();
             var gateway = manager.gameObject.AddComponent<SessionGateway>();
             var broker = manager.gameObject.AddComponent<NetworkOwnershipBroker>();
 
@@ -266,7 +284,7 @@ namespace BelowTheWing.EditorTools
             return go.AddComponent<FollowCamera>();
         }
 
-        static NetworkManager BuildNetworkManager(params GameObject[] prefabs)
+        static NetworkManager BuildNetworkManager()
         {
             var go = new GameObject("Network Manager");
             var manager = go.AddComponent<NetworkManager>();
@@ -287,9 +305,25 @@ namespace BelowTheWing.EditorTools
                 TickRate = 20
             };
 
-            foreach (var prefab in prefabs)
+            // Registered as a prefab *list* asset, not by adding prefabs one at a time.
+            //
+            // NetworkConfig.Prefabs keeps its prefabs in a field marked NonSerialized, so anything
+            // added here is thrown away the moment the scene is saved -- and the failure is silent
+            // and total: the session owner spawns the apron, and every other machine reports that
+            // the prefab could not be found and creates nothing. A player joining sees bare ground.
+            //
+            // The list asset is maintained by Netcode's own prefab processor as prefabs are added to
+            // the project, so this stays correct without being edited again.
+            var known = AssetDatabase.LoadAssetAtPath<NetworkPrefabsList>(DefaultPrefabListPath);
+            if (known == null)
             {
-                manager.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = prefab });
+                Debug.LogError(
+                    $"No prefab list at {DefaultPrefabListPath}. Without it nothing spawned by the " +
+                    "session owner can be created on any other machine.");
+            }
+            else
+            {
+                manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(known);
             }
 
             return manager;

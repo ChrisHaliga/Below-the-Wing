@@ -139,14 +139,21 @@ namespace BelowTheWing.Crew
                 }
 
                 m_Simulated = value;
-                Body.useGravity = value;
-
-                if (!value)
-                {
-                    Body.linearVelocity = Vector3.zero;
-                    Body.angularVelocity = Vector3.zero;
-                }
+                ApplySimulation();
             }
+        }
+
+        void ApplySimulation()
+        {
+            Body.useGravity = m_Simulated;
+
+            if (m_Simulated)
+            {
+                return;
+            }
+
+            Body.linearVelocity = Vector3.zero;
+            Body.angularVelocity = Vector3.zero;
         }
 
         void Awake()
@@ -155,6 +162,11 @@ namespace BelowTheWing.Crew
             {
                 ConfigureBody(m_Profile);
             }
+
+            // Applied rather than assumed. The field already holds false, so the setter would see no
+            // change and skip the work -- leaving a copy of somebody else's character falling under
+            // gravity between network updates, which is the very thing the flag exists to stop.
+            ApplySimulation();
         }
 
         void Start()
@@ -214,6 +226,22 @@ namespace BelowTheWing.Crew
             if (m_Collider != null)
             {
                 m_Collider.enabled = true;
+            }
+        }
+
+        void LateUpdate()
+        {
+            // Parenting a character into a vehicle is replicated; switching its collider off is not,
+            // and a copy of somebody else's character never runs ClimbIn because it is not simulated
+            // here. Left alone, every other machine has a live 80 kg capsule buried inside a
+            // tractor's bodywork, which the solver reads as deep interpenetration and shoves apart
+            // every step against a transform replication keeps snapping back.
+            //
+            // Riding in a vehicle is visible from the parenting, so every machine can act on it.
+            var ridingSomewhere = transform.parent != null;
+            if (m_Collider != null && m_Collider.enabled == ridingSomewhere)
+            {
+                m_Collider.enabled = !ridingSomewhere;
             }
         }
 

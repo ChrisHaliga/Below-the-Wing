@@ -81,10 +81,16 @@ namespace BelowTheWing.Net
                 members,
                 giveBack: member =>
                 {
-                    if (previousOwners.TryGetValue(member, out var previous) && previous != claimant)
+                    if (!previousOwners.TryGetValue(member, out var previous) || previous == claimant)
                     {
-                        member.ChangeOwnership(previous);
+                        return;
                     }
+
+                    // Handing something back to a machine that has left is a no-op with a warning,
+                    // and the caller has already been told the whole request failed. The vehicle
+                    // would stay here, part of a train whose other members are elsewhere, with
+                    // nothing scheduled to put it right. The session owner is always somebody.
+                    member.ChangeOwnership(StillHere(previous) ? previous : SessionOwner);
                 },
                 onResult);
 
@@ -94,9 +100,36 @@ namespace BelowTheWing.Net
             }
         }
 
+        /// <summary>The machine looking after anything that belongs to nobody in particular.</summary>
+        ulong SessionOwner => Manager != null ? Manager.CurrentSessionOwner : Nobody;
+
+        bool StillHere(ulong client)
+        {
+            if (Manager == null)
+            {
+                return false;
+            }
+
+            foreach (var id in Manager.ConnectedClientsIds)
+            {
+                if (id == client)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool OwnedByUs(VehicleController vehicle)
+        {
+            var us = LocalClientId;
+            return us != Nobody && OwnerOf(vehicle) == us;
+        }
+
         public void HandBack(IReadOnlyList<VehicleController> vehicles)
         {
-            var sessionOwner = Manager != null ? Manager.CurrentSessionOwner : 0;
+            var sessionOwner = SessionOwner;
 
             foreach (var vehicle in vehicles)
             {

@@ -117,13 +117,6 @@ namespace BelowTheWing.Apron
     public static class ApronLayout
     {
         /// <summary>
-        /// Works out where the aircraft and every train should stand.
-        ///
-        /// Vehicles are placed nose to tail along each train at exactly coupling distance, worked out
-        /// from how far each one's own hitch reaches, so a plan built from bigger equipment spreads
-        /// out rather than overlapping.
-        /// </summary>
-        /// <summary>
         /// Where players arrive: a row alongside the trains, spaced so nobody lands inside anybody
         /// else, and clear of everything already placed.
         /// </summary>
@@ -166,6 +159,13 @@ namespace BelowTheWing.Apron
             return points;
         }
 
+        /// <summary>
+        /// Works out where the aircraft and every train should stand.
+        ///
+        /// Vehicles are placed nose to tail along each train at exactly coupling distance, worked
+        /// out from how far each one's own hitch reaches, so a plan built from bigger equipment
+        /// spreads out rather than overlapping.
+        /// </summary>
         public static ApronPlan Build(
             ApronLayoutSettings settings,
             VehicleProfile tractor,

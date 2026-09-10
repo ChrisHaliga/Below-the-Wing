@@ -149,7 +149,7 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void GettingOutHandsTheVehicleBackAndPutsThePlayerBesideIt()
+        public void GettingOutLeavesTheVehicleAvailableAndTakesTheCameraOffIt()
         {
             var seat = SeatWith(new RecordingBroker(grant: true));
             var driver = new FixedIntent();

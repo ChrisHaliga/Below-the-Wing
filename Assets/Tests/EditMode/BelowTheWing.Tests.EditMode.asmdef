@@ -6,6 +6,8 @@
         "BelowTheWing.Crew",
         "BelowTheWing.Apron",
         "BelowTheWing.Net",
+        "BelowTheWing.Session",
+        "Unity.Netcode.Runtime",
         "BelowTheWing.Diagnostics",
         "BelowTheWing.Tests.Support",
         "UnityEngine.TestRunner",

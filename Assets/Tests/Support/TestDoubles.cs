@@ -51,6 +51,8 @@ namespace BelowTheWing.Tests.Support
         public ulong OwnerOf(VehicleController vehicle)
             => m_Owners.TryGetValue(vehicle, out var id) ? id : 0;
 
+        public bool OwnedByUs(VehicleController vehicle) => OwnerOf(vehicle) == LocalClientId;
+
         /// <summary>Everything handed back, in the order it was given up.</summary>
         public List<VehicleController> HandedBack { get; } = new List<VehicleController>();
 
@@ -105,6 +107,8 @@ namespace BelowTheWing.Tests.Support
         public ulong LocalClientId => 1;
 
         public ulong OwnerOf(BelowTheWing.Vehicles.VehicleController vehicle) => 9;
+
+        public bool OwnedByUs(BelowTheWing.Vehicles.VehicleController vehicle) => false;
 
         public void RequestAll(
             System.Collections.Generic.IReadOnlyList<BelowTheWing.Vehicles.VehicleController> vehicles,

@@ -171,6 +171,44 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void ATrainWithAnyMemberBelongingToADepartedPlayerIsOneToTakeBack()
+        {
+            var described = OneTrain(trainIndex: 0);
+            described.AddRange(OneTrain(trainIndex: 1, lane: 20f));
+            m_Registry.Rebuild(described);
+
+            var broker = new RecordingBroker(grant: true, localClientId: 7);
+            foreach (var train in m_Registry.Trains)
+            {
+                foreach (var member in train.Members)
+                {
+                    broker.SetOwner(member, 7);
+                }
+            }
+
+            // Equipment belonging to somebody who leaves is handed on one object at a time, taking
+            // no notice of which train anything belongs to. One stray cart is enough to mean the
+            // whole train needs taking back.
+            broker.SetOwner(m_Registry.Trains[1].Members[3], 4);
+
+            var toReclaim = m_Registry.TrainsHeldBy(4, broker);
+
+            Assert.That(toReclaim.Count, Is.EqualTo(1));
+            Assert.That(toReclaim[0], Is.SameAs(m_Registry.Trains[1]),
+                "the train with the departed player's cart in it, and only that one");
+        }
+
+        [Test]
+        public void ATrainNobodyWhoLeftWasHoldingIsLeftAlone()
+        {
+            m_Registry.Rebuild(OneTrain());
+            var broker = OwningEverything(m_Registry.Trains[0]);
+
+            Assert.That(m_Registry.TrainsHeldBy(4, broker), Is.Empty,
+                "taking back a train nobody abandoned would drag it away from whoever is driving it");
+        }
+
+        [Test]
         public void ATrainThisMachineOwnsOutrightIsHeldTogetherAndSimulated()
         {
             m_Registry.Rebuild(OneTrain());

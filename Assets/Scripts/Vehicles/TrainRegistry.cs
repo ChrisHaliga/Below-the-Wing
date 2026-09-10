@@ -100,7 +100,7 @@ namespace BelowTheWing.Vehicles
                 var ours = 0;
                 foreach (var member in train.Members)
                 {
-                    if (broker.OwnerOf(member) == broker.LocalClientId)
+                    if (broker.OwnedByUs(member))
                     {
                         ours++;
                     }
@@ -115,6 +115,33 @@ namespace BelowTheWing.Vehicles
                     Hold(train, held: false);
                 }
             }
+        }
+
+        /// <summary>
+        /// Every train holding a vehicle that belongs to the named machine.
+        ///
+        /// Used when somebody leaves a session. Their equipment is handed on one object at a time by
+        /// the netcode layer, which takes no notice of which train anything belongs to, so a train
+        /// can end up scattered across whoever is left. Asking which trains were touched is what
+        /// lets one machine take each of them back whole.
+        /// </summary>
+        public IReadOnlyList<CartChain> TrainsHeldBy(ulong client, IOwnershipBroker broker)
+        {
+            var theirs = new List<CartChain>();
+
+            foreach (var train in m_Trains)
+            {
+                foreach (var member in train.Members)
+                {
+                    if (broker.OwnerOf(member) == client)
+                    {
+                        theirs.Add(train);
+                        break;
+                    }
+                }
+            }
+
+            return theirs;
         }
 
         static void Hold(CartChain train, bool held)

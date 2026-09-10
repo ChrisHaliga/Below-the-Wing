@@ -133,26 +133,10 @@ namespace BelowTheWing.Session
                 return;
             }
 
-            foreach (var train in m_Trains.Trains)
+            foreach (var train in m_Trains.TrainsHeldBy(departed, m_Broker))
             {
-                if (WasHeldBy(train, departed))
-                {
-                    train.RequestOwnership(m_Broker, _ => { });
-                }
+                train.RequestOwnership(m_Broker, _ => { });
             }
-        }
-
-        bool WasHeldBy(CartChain train, ulong client)
-        {
-            foreach (var member in train.Members)
-            {
-                if (m_Broker.OwnerOf(member) == client)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         /// <summary>A vehicle has appeared, from wherever. Work the trains out again.</summary>
@@ -209,15 +193,12 @@ namespace BelowTheWing.Session
             var plan = ApronLayout.Build(
                 m_Layout, m_TractorProfile, m_CartProfile, m_AircraftProfile, CrewSize());
 
-            // By position in the session's roster, not by client id. Ids are handed out in the
-            // order people have ever connected and keep climbing, so the sixth person to join would
-            // land on the first arrival point, on top of whoever is standing there.
-            var arrivals = plan.CrewSpawnPoints;
-            var roster = new List<ulong>(NetworkManager.ConnectedClientsIds);
-            roster.Sort();
-
-            var place = roster.IndexOf(NetworkManager.LocalClientId);
-            var mine = arrivals[Mathf.Max(0, place) % arrivals.Count];
+            // The first arrival point with nobody standing on it.
+            //
+            // Neither a client id nor a position in the roster works: ids climb forever, and roster
+            // positions shift when somebody leaves, so both eventually put two people in the same
+            // place. Two capsules starting inside one another do not settle, they fire apart.
+            var mine = FirstFreeArrival(plan.CrewSpawnPoints);
 
             var crew = Instantiate(m_CrewPrefab, mine.Position, mine.Rotation);
             crew.GetComponent<ApronIdentity>().Called($"Player {NetworkManager.LocalClientId}");
@@ -225,6 +206,23 @@ namespace BelowTheWing.Session
 
             m_LocalPlayer = new LocalPlayerRig(
                 crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, Driveable);
+        }
+
+        /// <summary>
+        /// An arrival point with nobody already standing on it, or the first one if the apron is
+        /// somehow full.
+        /// </summary>
+        static Placement FirstFreeArrival(IReadOnlyList<Placement> arrivals)
+        {
+            foreach (var arrival in arrivals)
+            {
+                if (!Physics.CheckBox(arrival.Position, arrival.SizeMetres * 0.5f, arrival.Rotation))
+                {
+                    return arrival;
+                }
+            }
+
+            return arrivals[0];
         }
 
         Vector3 CrewSize()

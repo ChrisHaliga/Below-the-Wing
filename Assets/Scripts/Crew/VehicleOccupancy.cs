@@ -95,7 +95,7 @@ namespace BelowTheWing.Crew
                 // A vehicle can be taken from underneath somebody: a session owner reclaiming an
                 // orphaned train, or ownership moving for any other reason. Sitting in a body this
                 // machine no longer simulates means pressing controls that reach nothing.
-                if (m_Broker.OwnerOf(m_Driving) != m_Broker.LocalClientId)
+                if (!m_Broker.OwnedByUs(m_Driving))
                 {
                     StepOut();
                     return;
@@ -125,7 +125,12 @@ namespace BelowTheWing.Crew
 
             if (ReferenceEquals(Offer, m_Refused))
             {
-                Say(OccupancyPrompt.VehicleTaken, $"{Offer.DisplayName} is being driven");
+                // A refusal has two causes and they need different words. Somebody is in it, or
+                // nobody answered -- and telling a player that an empty tractor is being driven is
+                // false about the only thing the message says.
+                Say(OccupancyPrompt.VehicleTaken, Offer.AcceptsDriver
+                    ? $"{Offer.DisplayName} did not answer. Try again."
+                    : $"{Offer.DisplayName} is being driven");
                 return;
             }
 
@@ -165,7 +170,9 @@ namespace BelowTheWing.Crew
                 if (!granted)
                 {
                     m_Refused = wanted;
-                    Say(OccupancyPrompt.VehicleTaken, $"{wanted.DisplayName} is being driven");
+                    Say(OccupancyPrompt.VehicleTaken, wanted.AcceptsDriver
+                        ? $"{wanted.DisplayName} did not answer. Try again."
+                        : $"{wanted.DisplayName} is being driven");
                     return;
                 }
 

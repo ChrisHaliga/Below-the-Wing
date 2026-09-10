@@ -25,6 +25,17 @@ namespace BelowTheWing.Vehicles
         ulong OwnerOf(VehicleController vehicle);
 
         /// <summary>
+        /// Whether this machine is the one simulating this vehicle.
+        ///
+        /// Asked as its own question rather than by comparing <see cref="OwnerOf"/> with
+        /// <see cref="LocalClientId"/>, because both can answer "no idea" -- a vehicle that is not
+        /// spawned, a machine not in a session -- and two don't-knows compare equal. That reads as
+        /// "yes, ours", which is how a machine that owns nothing at all concludes it owns the whole
+        /// apron.
+        /// </summary>
+        bool OwnedByUs(VehicleController vehicle);
+
+        /// <summary>
         /// Asks to simulate every one of these vehicles, and reports back whether that was granted.
         ///
         /// Either all of them transfer or none of them do. A partial grant is reported as a

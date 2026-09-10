@@ -82,6 +82,21 @@ namespace BelowTheWing.Tests.Support
             return crew;
         }
 
+        /// <summary>
+        /// Puts a copy of somebody else's character on the apron: configured from its profile, as
+        /// every machine does for every character, but with no seat, no camera and no keyboard.
+        /// That is exactly what a remote player's body is.
+        /// </summary>
+        public CrewCharacter AddRemoteCrew(CrewProfile profile, Vector3 position)
+        {
+            var go = new GameObject("Somebody else");
+            go.transform.position = position;
+            var crew = go.AddComponent<CrewCharacter>();
+            crew.ConfigureBody(profile);
+            m_Spawned.Add(go);
+            return crew;
+        }
+
         /// <summary>Registers an object so it is cleaned up with everything else.</summary>
         public T Track<T>(T component) where T : Component
         {
