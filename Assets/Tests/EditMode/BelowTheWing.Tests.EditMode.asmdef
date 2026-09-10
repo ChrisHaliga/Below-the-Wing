@@ -1,0 +1,31 @@
+{
+    "name": "BelowTheWing.Tests.EditMode",
+    "rootNamespace": "BelowTheWing.Tests.EditMode",
+    "references": [
+        "BelowTheWing.Vehicles",
+        "BelowTheWing.Crew",
+        "BelowTheWing.Apron",
+        "BelowTheWing.Net",
+        "BelowTheWing.Session",
+        "Unity.Netcode.Runtime",
+        "BelowTheWing.Diagnostics",
+        "BelowTheWing.Tests.Support",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,22 @@
+{
+    "name": "BelowTheWing.Session",
+    "rootNamespace": "BelowTheWing.Session",
+    "references": [
+        "BelowTheWing.Vehicles",
+        "BelowTheWing.Crew",
+        "BelowTheWing.Apron",
+        "BelowTheWing.Net",
+        "BelowTheWing.Diagnostics",
+        "Unity.Netcode.Runtime",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

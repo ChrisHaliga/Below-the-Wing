@@ -1,0 +1,17 @@
+{
+    "name": "BelowTheWing.Diagnostics",
+    "rootNamespace": "BelowTheWing.Diagnostics",
+    "references": [
+        "BelowTheWing.Vehicles",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
