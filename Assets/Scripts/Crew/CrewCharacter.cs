@@ -79,7 +79,7 @@ namespace BelowTheWing.Crew
             get
             {
                 var asked = IntentSource?.Current ?? CrewIntent.Idle;
-                return new DriveIntent(asked.Move.x, asked.Move.y, asked.Brake);
+                return new DriveIntent(asked.Move.x, asked.Move.y, asked.Brake, asked.Sprint);
             }
         }
 

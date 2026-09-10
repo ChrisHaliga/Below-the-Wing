@@ -117,11 +117,48 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void ThrottleProducesTheProfilesDriveForce()
         {
-            Assert.That(WheelPhysics.DriveForce(1f, m_Tractor),
+            Assert.That(WheelPhysics.DriveForce(1f, sprinting: false, m_Tractor),
                 Is.EqualTo(m_Tractor.maxDriveForceNewtons).Within(0.01f));
-            Assert.That(WheelPhysics.DriveForce(0f, m_Tractor), Is.EqualTo(0f).Within(1e-4f));
-            Assert.That(WheelPhysics.DriveForce(0.5f, m_Tractor),
+            Assert.That(WheelPhysics.DriveForce(0f, sprinting: false, m_Tractor), Is.EqualTo(0f).Within(1e-4f));
+            Assert.That(WheelPhysics.DriveForce(0.5f, sprinting: false, m_Tractor),
                 Is.EqualTo(m_Tractor.maxDriveForceNewtons * 0.5f).Within(0.01f));
+        }
+
+        [Test]
+        public void SprintingPutsMoreForceThroughTheDrivenWheels()
+        {
+            var cruising = WheelPhysics.DriveForce(1f, sprinting: false, m_Tractor);
+            var flatOut = WheelPhysics.DriveForce(1f, sprinting: true, m_Tractor);
+
+            Assert.That(cruising, Is.EqualTo(m_Tractor.maxDriveForceNewtons).Within(0.01f));
+            Assert.That(flatOut,
+                Is.EqualTo(m_Tractor.maxDriveForceNewtons * m_Tractor.sprintDriveMultiplier).Within(0.01f));
+            Assert.That(flatOut, Is.GreaterThan(cruising));
+        }
+
+        [Test]
+        public void SprintingWithTheThrottleShutStillProducesNothing()
+        {
+            Assert.That(WheelPhysics.DriveForce(0f, sprinting: true, m_Tractor), Is.EqualTo(0f).Within(1e-4f),
+                "holding sprint is not a throttle of its own");
+        }
+
+        [Test]
+        public void ATractorCanOutrunItsOwnDrag()
+        {
+            // Top speed is where drive force and resistance meet. It is worth pinning, because the
+            // figure that sets it is a real one and the honest real answer -- about 23 km/h -- is
+            // slower than this game wants to be.
+            const int corners = 4;
+            var atSpeed = 10f;
+
+            var resistance = Mathf.Abs(
+                WheelPhysics.RollingResistance(atSpeed, m_Tractor.massKg / corners, 0.02f, m_Tractor)) * corners;
+
+            Assert.That(WheelPhysics.DriveForce(1f, sprinting: false, m_Tractor), Is.GreaterThan(resistance),
+                $"a tractor cannot reach {atSpeed} m/s -- about 36 km/h -- because drag has already " +
+                "beaten the engine before it gets there. Everything on this apron then feels heavy " +
+                "and slow to drive, which is the complaint this figure exists to prevent returning");
         }
 
         [Test]

@@ -18,11 +18,15 @@ namespace BelowTheWing.Vehicles
         /// <summary>Brake request from 0 (off) to 1 (full).</summary>
         public readonly float Brake;
 
-        public DriveIntent(float steer, float throttle, float brake)
+        /// <summary>Whether the driver is asking for everything the vehicle has.</summary>
+        public readonly bool Sprint;
+
+        public DriveIntent(float steer, float throttle, float brake, bool sprint = false)
         {
             Steer = steer;
             Throttle = throttle;
             Brake = brake;
+            Sprint = sprint;
         }
 
         /// <summary>A vehicle nobody is driving: no steering, no throttle, no brake.</summary>

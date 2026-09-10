@@ -179,9 +179,18 @@ namespace BelowTheWing.Vehicles
                    * Mathf.Min(fromTheTire + fromTheDriveline, enoughToStopItThisStep);
         }
 
-        /// <summary>Newtons of forward drive the whole vehicle produces at this throttle.</summary>
-        public static float DriveForce(float throttle, VehicleProfile profile)
-            => Mathf.Clamp(throttle, -1f, 1f) * profile.maxDriveForceNewtons;
+        /// <summary>
+        /// Newtons of forward drive the whole vehicle produces at this throttle.
+        ///
+        /// Sprinting multiplies what the driven wheels get, which raises both how hard a vehicle
+        /// accelerates and the speed at which drive force and drag finally balance. It is not a
+        /// throttle of its own: sprinting with the throttle shut still produces nothing.
+        /// </summary>
+        public static float DriveForce(float throttle, bool sprinting, VehicleProfile profile)
+        {
+            var asked = Mathf.Clamp(throttle, -1f, 1f) * profile.maxDriveForceNewtons;
+            return sprinting ? asked * profile.sprintDriveMultiplier : asked;
+        }
 
         /// <summary>
         /// Newtons of braking the whole vehicle produces, opposing its current motion.
@@ -229,7 +238,7 @@ namespace BelowTheWing.Vehicles
 
             var suspension = SuspensionForce(compression, velocity.AlongSuspension, profile);
             var lateral = LateralForce(velocity.Lateral, load.SupportedMassKg, profile);
-            var drive = DriveForce(intent.Throttle, profile) * load.DriveShare;
+            var drive = DriveForce(intent.Throttle, intent.Sprint, profile) * load.DriveShare;
             var braking = BrakeForce(intent.Brake, velocity.Forward, vehicleMassKg, deltaTime, profile) * load.BrakeShare;
             var resistance = RollingResistance(velocity.Forward, load.SupportedMassKg, deltaTime, profile);
 

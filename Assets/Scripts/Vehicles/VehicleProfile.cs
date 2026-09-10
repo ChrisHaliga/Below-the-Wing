@@ -77,6 +77,10 @@ namespace BelowTheWing.Vehicles
         [Tooltip("Newtons of forward force at full throttle, shared across the driven wheels.")]
         public float maxDriveForceNewtons = 12000f;
 
+        [Tooltip("How much more force the driven wheels get while sprinting. 1 means sprinting does " +
+                 "nothing; 1.5 is half as much again.")]
+        public float sprintDriveMultiplier = 1.5f;
+
         [Tooltip("Newtons of braking force available, shared across the wheels.")]
         public float maxBrakeForceNewtons = 20000f;
 

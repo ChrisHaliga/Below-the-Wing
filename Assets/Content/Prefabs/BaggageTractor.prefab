@@ -100,7 +100,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbe4547147a629e43b871532e1042734, type: 3}
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Vehicles::BelowTheWing.Vehicles.VehicleController
-  m_Profile: {fileID: 11400000, guid: 7d458221529659a4493346ca5a316228, type: 2}
+  m_Profile: {fileID: 11400000, guid: c707325302c268e46bbc9be242427684, type: 2}
   m_GroundMask:
     serializedVersion: 2
     m_Bits: 4294967295

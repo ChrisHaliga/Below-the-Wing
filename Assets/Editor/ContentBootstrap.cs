@@ -15,6 +15,11 @@ namespace BelowTheWing.EditorTools
     /// three tonne tractor towing half-tonne carts behaves differently from any pair of numbers
     /// that happen to feel right.
     ///
+    /// Drag is the deliberate exception. A real baggage tractor tops out around 23 km/h, which is
+    /// accurate and no fun to drive: the design asks for plausible rather than precise, and a game
+    /// where crossing the apron is a chore has chosen the wrong one. It is set to give roughly
+    /// 36 km/h cruising and 54 km/h with sprint held.
+    ///
     /// Only missing assets are created. Anything already on disk has been tuned by hand and is left
     /// exactly as it is, so this can be run again safely at any time.
     /// </summary>
@@ -69,8 +74,10 @@ namespace BelowTheWing.EditorTools
             profile.suspensionRestLengthMetres = 0.35f;
             profile.springStrengthNewtons = 60000f;
             profile.damperNewtonsPerMetrePerSecond = 6000f;
+            profile.coastingDragPerSecond = 0.4f;
             profile.lateralGripCurve = TireCurve();
             profile.maxDriveForceNewtons = 14000f;
+            profile.sprintDriveMultiplier = 1.5f;
             profile.maxBrakeForceNewtons = 20000f;
             profile.maxSteerAngleDegrees = 45f;
             profile.steerRateDegreesPerSecond = 120f;
@@ -95,8 +102,12 @@ namespace BelowTheWing.EditorTools
             profile.suspensionRestLengthMetres = 0.35f;
             profile.springStrengthNewtons = 12000f;
             profile.damperNewtonsPerMetrePerSecond = 1400f;
+            profile.coastingDragPerSecond = 0.4f;
             profile.lateralGripCurve = TireCurve();
             profile.maxDriveForceNewtons = 0f;
+
+            // A cart has no engine, so there is nothing for a sprint to multiply.
+            profile.sprintDriveMultiplier = 1f;
             profile.maxBrakeForceNewtons = 2000f;
             profile.maxSteerAngleDegrees = 0f;
             profile.steerRateDegreesPerSecond = 0f;

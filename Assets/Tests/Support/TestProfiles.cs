@@ -33,6 +33,8 @@ namespace BelowTheWing.Tests.Support
             p.damperNewtonsPerMetrePerSecond = 6000f;
             p.lateralGripCurve = PeakingGripCurve();
             p.maxDriveForceNewtons = 14000f;
+            p.sprintDriveMultiplier = 1.5f;
+            p.coastingDragPerSecond = 0.4f;
             p.maxBrakeForceNewtons = 20000f;
             p.maxSteerAngleDegrees = 45f;
             p.steerRateDegreesPerSecond = 120f;
@@ -59,6 +61,8 @@ namespace BelowTheWing.Tests.Support
             p.damperNewtonsPerMetrePerSecond = 1400f;
             p.lateralGripCurve = PeakingGripCurve();
             p.maxDriveForceNewtons = 0f;
+            p.sprintDriveMultiplier = 1f;
+            p.coastingDragPerSecond = 0.4f;
             p.maxBrakeForceNewtons = 2000f;
             p.maxSteerAngleDegrees = 0f;
             p.steerRateDegreesPerSecond = 0f;

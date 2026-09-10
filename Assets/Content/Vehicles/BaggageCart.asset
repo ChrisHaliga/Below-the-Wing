@@ -58,7 +58,10 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  rollingResistanceCoefficient: 0.02
+  coastingDragPerSecond: 0.4
   maxDriveForceNewtons: 0
+  sprintDriveMultiplier: 1
   maxBrakeForceNewtons: 2000
   maxSteerAngleDegrees: 0
   steerRateDegreesPerSecond: 0
