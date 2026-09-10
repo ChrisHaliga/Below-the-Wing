@@ -141,15 +141,25 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator AVehicleThisMachineIsNotSimulatingCanStillBeWalkedInto()
         {
+            var crewProfile = TestProfiles.CrewMember();
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
+            var crew = m_Apron.AddCrew(crewProfile, new Vector3(0f, 1.5f, -4f));
             yield return Step(2f);
+
             tractor.Simulated = false;
             yield return Step(1f);
 
-            Assert.That(tractor.Body.isKinematic, Is.False,
-                "a kinematic vehicle has infinite mass. You would drive into somebody else's tractor " +
-                "and bounce off a wall while on their screen the mirror image happened. This is the " +
-                "whole reason the game does not use NetworkRigidbody");
+            // Walk into it and see whether anything is there.
+            crew.IntentSource = new FixedCrewIntent(new Vector2(0f, 1f));
+            yield return Step(4f);
+
+            var reachedTheTractor = crew.transform.position.z;
+            Assert.That(reachedTheTractor, Is.LessThan(tractor.transform.position.z),
+                "the character walked clean through a vehicle somebody else is simulating. A copy that " +
+                "cannot be collided with -- or one made kinematic, which has infinite mass -- is the " +
+                "whole reason this game does not use NetworkRigidbody");
+
+            Object.DestroyImmediate(crewProfile);
         }
 
         [UnityTest]

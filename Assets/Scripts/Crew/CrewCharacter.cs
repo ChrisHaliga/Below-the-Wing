@@ -39,6 +39,7 @@ namespace BelowTheWing.Crew
         Rigidbody m_Body;
         CapsuleCollider m_Collider;
         VehicleController m_RidingIn;
+        bool m_Simulated;
 
         /// <summary>The profile this character's mass, size and speeds come from.</summary>
         public CrewProfile Profile => m_Profile;
@@ -113,7 +114,40 @@ namespace BelowTheWing.Crew
         /// character gets one.
         /// </summary>
         public void TakeTheSeat(IOwnershipBroker broker, Func<IReadOnlyList<IDriveable>> nearbyVehicles)
-            => Seat = new VehicleOccupancy(transform, broker, nearbyVehicles, m_ReachMetres);
+        {
+            Seat = new VehicleOccupancy(transform, broker, nearbyVehicles, m_ReachMetres);
+            Simulated = true;
+        }
+
+        /// <summary>
+        /// Whether this machine works out where this character goes.
+        ///
+        /// False on a copy of somebody else's, which is every character except the one belonging to
+        /// the person sitting here. Such a copy has its position written by the network, and running
+        /// its movement locally as well means a full-mass body being braked toward a standstill here
+        /// while replication drags it elsewhere -- so it shoves your character on your screen, and
+        /// on its owner's screen they never touched you.
+        /// </summary>
+        public bool Simulated
+        {
+            get => m_Simulated;
+            set
+            {
+                if (m_Simulated == value)
+                {
+                    return;
+                }
+
+                m_Simulated = value;
+                Body.useGravity = value;
+
+                if (!value)
+                {
+                    Body.linearVelocity = Vector3.zero;
+                    Body.angularVelocity = Vector3.zero;
+                }
+            }
+        }
 
         void Awake()
         {
@@ -185,7 +219,7 @@ namespace BelowTheWing.Crew
 
         void FixedUpdate()
         {
-            if (m_Profile == null)
+            if (m_Profile == null || !m_Simulated)
             {
                 return;
             }

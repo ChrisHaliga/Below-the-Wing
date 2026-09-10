@@ -54,6 +54,9 @@ namespace BelowTheWing.Crew
         /// <summary>Set while a request is in flight, so one press asks once.</summary>
         bool m_Asking;
 
+        /// <summary>What that request was for, so it can be given up on.</summary>
+        IDriveable m_AskedFor;
+
         public VehicleOccupancy(Transform crew, IOwnershipBroker broker, Func<IReadOnlyList<IDriveable>> nearbyVehicles, float reachMetres)
         {
             m_Crew = crew != null ? crew : throw new ArgumentNullException(nameof(crew));
@@ -103,6 +106,14 @@ namespace BelowTheWing.Crew
                 return;
             }
 
+            // A request whose owner has left the session is never answered, and waiting on it for
+            // ever would leave this player unable to ask for anything again. Walking away gives up.
+            if (m_Asking && m_AskedFor != null && !WithinReachOf(m_AskedFor))
+            {
+                m_Asking = false;
+                m_AskedFor = null;
+            }
+
             Offer = DriverPrompt.Nearest(m_Crew.position, m_ReachMetres, m_NearbyVehicles());
 
             if (Offer == null)
@@ -143,11 +154,13 @@ namespace BelowTheWing.Crew
             }
 
             m_Asking = true;
+            m_AskedFor = wanted;
             var train = wanted.Chain;
 
             train.RequestOwnership(m_Broker, granted =>
             {
                 m_Asking = false;
+                m_AskedFor = null;
 
                 if (!granted)
                 {

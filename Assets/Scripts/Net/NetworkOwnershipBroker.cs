@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using BelowTheWing.Vehicles;
 using Unity.Netcode;
@@ -27,6 +28,15 @@ namespace BelowTheWing.Net
         /// everything on the apron.
         /// </summary>
         public const ulong Nobody = ulong.MaxValue;
+
+        /// <summary>
+        /// How long to wait for an answer before treating a request as refused.
+        ///
+        /// A request goes to whichever machine the object records as its owner. If that machine has
+        /// left the session, nothing ever answers, and without a limit the caller waits for the rest
+        /// of the session and the response handler is never taken off.
+        /// </summary>
+        const float AnswerDeadlineSeconds = 5f;
 
         NetworkManager Manager => NetworkManager.Singleton;
 
@@ -98,7 +108,7 @@ namespace BelowTheWing.Net
             }
         }
 
-        static void Ask(NetworkObject member, ulong claimant, AllOrNothingRequest<NetworkObject> request)
+        void Ask(NetworkObject member, ulong claimant, AllOrNothingRequest<NetworkObject> request)
         {
             if (member.OwnerClientId == claimant)
             {
@@ -121,12 +131,35 @@ namespace BelowTheWing.Net
             var status = member.RequestOwnership();
             if (status == NetworkObject.OwnershipRequestStatus.RequestSent)
             {
+                StartCoroutine(GiveUpIfNobodyAnswers(member, handler, request));
                 return;
             }
 
             // Turned down before it left this machine -- locked, or not a kind of object whose
             // ownership moves at all. No response is coming, so the handler has to go now.
             member.OnOwnershipRequestResponse -= handler;
+            request.Answer(member, granted: false);
+        }
+
+        static IEnumerator GiveUpIfNobodyAnswers(
+            NetworkObject member,
+            NetworkObject.OnOwnershipRequestResponseDelegateHandler handler,
+            AllOrNothingRequest<NetworkObject> request)
+        {
+            yield return new WaitForSeconds(AnswerDeadlineSeconds);
+
+            if (request.Settled)
+            {
+                yield break;
+            }
+
+            if (member != null)
+            {
+                member.OnOwnershipRequestResponse -= handler;
+            }
+
+            // Reported as a refusal rather than left hanging. The caller is told no, anything else
+            // that was granted is handed back, and the player can try again.
             request.Answer(member, granted: false);
         }
     }

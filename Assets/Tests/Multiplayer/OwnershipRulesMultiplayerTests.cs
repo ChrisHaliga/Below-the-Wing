@@ -63,7 +63,10 @@ namespace BelowTheWing.Tests.Multiplayer
             for (var i = 0; i < 5; i++)
             {
                 var vehicle = SpawnObject(m_TractorPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
-                vehicle.SetOwnershipStatus(NetworkObject.OwnershipStatus.RequestRequired, clearAndSet: true);
+
+                // Through the production call, not by repeating what it does. Written out here, this
+                // test would pass even with that line deleted from the builder.
+                ApronBuilder.OnlyByAsking(vehicle);
                 placed.Add(vehicle);
             }
 
@@ -94,7 +97,7 @@ namespace BelowTheWing.Tests.Multiplayer
             var wouldBeThief = m_ClientNetworkManagers[1];
 
             var tractor = SpawnObject(m_TractorPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
-            tractor.SetOwnershipStatus(NetworkObject.OwnershipStatus.RequestRequired, clearAndSet: true);
+            ApronBuilder.OnlyByAsking(tractor);
             var id = tractor.NetworkObjectId;
 
             yield return WaitForConditionOrTimeOut(() => EveryMachineHasAll(new List<NetworkObject> { tractor }));

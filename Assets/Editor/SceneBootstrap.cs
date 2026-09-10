@@ -98,8 +98,7 @@ namespace BelowTheWing.EditorTools
             AddNetworking(go);
             go.AddComponent<TrainMember>();
 
-            go.AddComponent<ApronAppearance>().DescribeAs(
-                ApronAppearance.Shape.Box,
+            Dress(go, ApronAppearance.Shape.Box,
                 profile.bodySizeMetres,
                 colour,
                 profile.bodySizeMetres.y * 0.7f);
@@ -119,8 +118,7 @@ namespace BelowTheWing.EditorTools
 
             AddNetworking(go);
 
-            go.AddComponent<ApronAppearance>().DescribeAs(
-                ApronAppearance.Shape.LyingCapsule,
+            Dress(go, ApronAppearance.Shape.LyingCapsule,
                 new Vector3(profile.fuselageDiameterMetres, profile.lengthMetres, profile.fuselageDiameterMetres),
                 FuselageWhite,
                 profile.fuselageDiameterMetres);
@@ -138,13 +136,24 @@ namespace BelowTheWing.EditorTools
 
             AddNetworking(go);
 
-            go.AddComponent<ApronAppearance>().DescribeAs(
-                ApronAppearance.Shape.UprightCapsule,
+            Dress(go, ApronAppearance.Shape.UprightCapsule,
                 new Vector3(profile.radiusMetres * 2f, profile.heightMetres, profile.radiusMetres * 2f),
                 HiVisYellow,
                 profile.heightMetres * 0.7f);
 
             return SaveAndDiscard(go, $"{PrefabFolder}/RampWorker.prefab");
+        }
+
+        /// <summary>
+        /// Gives an object its stand-in shape and the name-carrying component that shows it.
+        ///
+        /// The name travels over the network, and appearance is built when it arrives, so a player
+        /// who joins sees the apron rather than an empty grey plane full of invisible colliders.
+        /// </summary>
+        static void Dress(GameObject go, ApronAppearance.Shape shape, Vector3 sizeMetres, Color colour, float labelHeightMetres)
+        {
+            go.AddComponent<ApronAppearance>().DescribeAs(shape, sizeMetres, colour, labelHeightMetres);
+            go.AddComponent<ApronIdentity>();
         }
 
         static void AddNetworking(GameObject go)

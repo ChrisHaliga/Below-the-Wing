@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 5676129582782349722}
   - component: {fileID: 7731286785358537139}
   - component: {fileID: 7070602677735900836}
+  - component: {fileID: 9071467641969174353}
   m_Layer: 0
   m_Name: NarrowbodyAirliner
   m_TagString: Untagged
@@ -191,3 +192,16 @@ MonoBehaviour:
   m_Colour: {r: 0.82, g: 0.82, b: 0.85, a: 1}
   m_LabelHeightMetres: 3.76
   m_DisplayName: 
+--- !u!114 &9071467641969174353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1621300165123496893}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bfce43af087ee240882717eb9cbc7ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelowTheWing.Session::BelowTheWing.Session.ApronIdentity
+  ShowTopMostFoldoutHeaderGroup: 1

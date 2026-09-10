@@ -95,7 +95,7 @@ namespace BelowTheWing.Session
             // Nothing redistributes vehicles automatically any more, which is deliberate: doing it
             // one object at a time is what split trains across machines. The cost is that a train
             // belonging to somebody who leaves is nobody's until this picks it up.
-            NetworkManager.OnClientDisconnectCallback += ReclaimWhatTheyLeftBehind;
+            NetworkManager.OnConnectionEvent += OnSomebodyCameOrWent;
 
             SpawnOwnCrew();
         }
@@ -104,7 +104,7 @@ namespace BelowTheWing.Session
         {
             if (NetworkManager != null)
             {
-                NetworkManager.OnClientDisconnectCallback -= ReclaimWhatTheyLeftBehind;
+                NetworkManager.OnConnectionEvent -= OnSomebodyCameOrWent;
             }
         }
 
@@ -115,6 +115,17 @@ namespace BelowTheWing.Session
         /// split as letting the netcode layer redistribute it, which is the thing this game goes to
         /// some trouble to prevent.
         /// </summary>
+        void OnSomebodyCameOrWent(NetworkManager manager, ConnectionEventData what)
+        {
+            // Under distributed authority nobody is a server, so the disconnect callback only ever
+            // fires for this machine's own disconnection. Another player leaving arrives as a peer
+            // event, which is the one that matters here.
+            if (what.EventType == ConnectionEvent.PeerDisconnected || what.EventType == ConnectionEvent.ClientDisconnected)
+            {
+                ReclaimWhatTheyLeftBehind(what.ClientId);
+            }
+        }
+
         void ReclaimWhatTheyLeftBehind(ulong departed)
         {
             if (!NetworkManager.LocalClient.IsSessionOwner)
@@ -198,16 +209,19 @@ namespace BelowTheWing.Session
             var plan = ApronLayout.Build(
                 m_Layout, m_TractorProfile, m_CartProfile, m_AircraftProfile, CrewSize());
 
-            // Each player takes the arrival point matching their place in the session, so two
-            // people never arrive inside one another.
+            // By position in the session's roster, not by client id. Ids are handed out in the
+            // order people have ever connected and keep climbing, so the sixth person to join would
+            // land on the first arrival point, on top of whoever is standing there.
             var arrivals = plan.CrewSpawnPoints;
-            var mine = arrivals[(int)(NetworkManager.LocalClientId % (ulong)arrivals.Count)];
+            var roster = new List<ulong>(NetworkManager.ConnectedClientsIds);
+            roster.Sort();
+
+            var place = roster.IndexOf(NetworkManager.LocalClientId);
+            var mine = arrivals[Mathf.Max(0, place) % arrivals.Count];
 
             var crew = Instantiate(m_CrewPrefab, mine.Position, mine.Rotation);
+            crew.GetComponent<ApronIdentity>().Called($"Player {NetworkManager.LocalClientId}");
             crew.Spawn();
-
-            var name = $"Player {NetworkManager.LocalClientId}";
-            crew.GetComponent<ApronAppearance>().Show(name);
 
             m_LocalPlayer = new LocalPlayerRig(
                 crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, Driveable);

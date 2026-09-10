@@ -38,6 +38,18 @@ namespace BelowTheWing.Tests.EditMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
+        /// <summary>A broker that says this machine owns every member of the train, so it holds it.</summary>
+        static RecordingBroker OwningEverything(CartChain train)
+        {
+            var broker = new RecordingBroker(grant: true, localClientId: 7);
+            foreach (var member in train.Members)
+            {
+                broker.SetOwner(member, 7);
+            }
+
+            return broker;
+        }
+
         /// <summary>A tractor and four carts, described the way every machine is told about them.</summary>
         List<TrainMembership> OneTrain(int trainIndex = 0, float lane = 0f)
         {
@@ -123,9 +135,12 @@ namespace BelowTheWing.Tests.EditMode
             var described = OneTrain();
             m_Registry.Rebuild(described);
             var before = m_Registry.Trains[0];
-            var broker = new RecordingBroker(grant: true);
+            var broker = OwningEverything(before);
             m_Registry.TakeUpWhatWeOwn(broker);
+
             var couplingBefore = before.CouplingBehind(0);
+            Assert.That(couplingBefore, Is.Not.Null,
+                "precondition: this machine is holding the train, so there is a coupling to preserve");
 
             m_Registry.Rebuild(described);
 
@@ -141,8 +156,11 @@ namespace BelowTheWing.Tests.EditMode
         {
             var described = OneTrain();
             m_Registry.Rebuild(described);
-            m_Registry.TakeUpWhatWeOwn(new RecordingBroker(grant: true));
+            m_Registry.TakeUpWhatWeOwn(OwningEverything(m_Registry.Trains[0]));
             var departing = described[4].Vehicle;
+
+            Assert.That(departing.GetComponents<Joint>(), Is.Not.Empty,
+                "precondition: the cart about to leave is hitched to the one in front of it");
 
             described.RemoveAt(4);
             m_Registry.Rebuild(described);

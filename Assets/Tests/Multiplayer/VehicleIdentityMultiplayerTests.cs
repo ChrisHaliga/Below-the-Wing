@@ -1,4 +1,6 @@
 using System.Collections;
+using BelowTheWing.Apron;
+using BelowTheWing.Session;
 using BelowTheWing.Tests.Support;
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
@@ -37,7 +39,13 @@ namespace BelowTheWing.Tests.Multiplayer
             m_CartProfile = TestProfiles.Cart();
 
             m_CartPrefab = CreateNetworkObjectPrefab("Cart");
-            m_CartPrefab.AddComponent<VehicleController>().Configure(m_CartProfile, "Cart 1-1");
+            m_CartPrefab.AddComponent<VehicleController>().Configure(m_CartProfile, "");
+
+            // Named the way the game names things -- over the network, on arrival -- rather than by
+            // the test writing a name in and then asserting the name it wrote.
+            m_CartPrefab.AddComponent<ApronAppearance>().DescribeAs(
+                ApronAppearance.Shape.Box, m_CartProfile.bodySizeMetres, Color.grey, 1.2f);
+            m_CartPrefab.AddComponent<ApronIdentity>();
 
             base.OnServerAndClientsCreated();
         }
@@ -96,19 +104,45 @@ namespace BelowTheWing.Tests.Multiplayer
         [UnityTest]
         public IEnumerator AVehicleHasTheSameNameEverywhereAndItIsNotBlank()
         {
-            var spawned = SpawnObject(m_CartPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
+            var spawned = Object.Instantiate(m_CartPrefab).GetComponent<NetworkObject>();
+            spawned.GetComponent<ApronIdentity>().Called("Cart 1-1");
+            spawned.SpawnWithOwnership(m_ServerNetworkManager.LocalClientId);
             var id = spawned.NetworkObjectId;
 
             yield return WaitForConditionOrTimeOut(() => EveryMachineHas(id));
             AssertOnTimeout($"not every machine received cart {id}");
 
+            yield return WaitForConditionOrTimeOut(() => EveryMachineNamesIt(id, "Cart 1-1"));
+            AssertOnTimeout("the name never reached every machine");
+
             foreach (var manager in AllManagers())
             {
                 var vehicle = manager.SpawnManager.SpawnedObjects[id].GetComponent<VehicleController>();
-                Assert.That(vehicle.DisplayName, Is.Not.Null.And.Not.Empty,
-                    $"client {manager.LocalClientId} has a nameless vehicle. The drive prompt reads this, " +
-                    "so a blank one offers a prompt ending in nothing at all");
+                Assert.That(vehicle.DisplayName, Is.EqualTo("Cart 1-1"),
+                    $"client {manager.LocalClientId} has this vehicle as '{vehicle.DisplayName}'. The " +
+                    "drive prompt reads this, so an unnamed one offers \"Press E to drive " +
+                    "BaggageCart(Clone)\" -- and a machine that never received the name draws no " +
+                    "shape and no label at all, leaving an invisible collider on an empty apron");
+
+                Assert.That(manager.SpawnManager.SpawnedObjects[id].GetComponentInChildren<MeshRenderer>(),
+                    Is.Not.Null,
+                    $"client {manager.LocalClientId} has nothing to look at. Appearance is built when " +
+                    "the name arrives, so a machine that is never told sees an empty grey plane");
             }
+        }
+
+        bool EveryMachineNamesIt(ulong networkObjectId, string called)
+        {
+            foreach (var manager in AllManagers())
+            {
+                if (!manager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out var each)
+                    || each.GetComponent<VehicleController>().DisplayName != called)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         bool EveryMachineHas(ulong networkObjectId)

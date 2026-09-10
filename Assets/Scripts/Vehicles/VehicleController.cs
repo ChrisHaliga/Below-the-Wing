@@ -168,6 +168,16 @@ namespace BelowTheWing.Vehicles
 
         public string DisplayName => m_DisplayName;
 
+        /// <summary>
+        /// Gives this vehicle the name a player sees when offered it. Separate from configuring it,
+        /// because a vehicle is built from its prefab before anybody has said which tractor it is.
+        /// </summary>
+        public void Rename(string displayName)
+        {
+            m_DisplayName = displayName;
+            name = displayName;
+        }
+
         public Vector3 Position => transform.position;
 
         /// <summary>
