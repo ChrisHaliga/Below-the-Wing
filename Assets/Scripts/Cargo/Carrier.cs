@@ -25,6 +25,10 @@ namespace BelowTheWing.Cargo
         [SerializeField, Tooltip("Width, height and length of that space in metres.")]
         Vector3 m_VolumeSizeMetres = new Vector3(1.4f, 0.6f, 2.8f);
 
+        [SerializeField, Tooltip("Whether things taken aboard are moved to the middle of this " +
+                                 "carrier rather than left where they were.")]
+        bool m_HoldsAtItsCentre;
+
         readonly List<Carried> m_Riding = new List<Carried>();
 
         Rigidbody m_Body;
@@ -47,11 +51,26 @@ namespace BelowTheWing.Cargo
         /// <summary>Everything currently riding on this carrier.</summary>
         public IReadOnlyList<Carried> Riding => m_Riding;
 
+        /// <summary>
+        /// Whether this carrier puts what it takes in one particular spot.
+        ///
+        /// True of hands: a bag picked up goes into them, not to wherever the player was standing
+        /// when they reached for it. False of a deck, where a bag stays exactly where it came to
+        /// rest, because a deck full of bags all stacked in the middle is not a loaded cart.
+        ///
+        /// It matters most where nobody is watching. A machine told over the network that a bag is
+        /// now in somebody's hands has to put it in their hands; leaving it where its own copy
+        /// happened to be would strand it a few metres from the player holding it, for good, since
+        /// nothing steers something that is being carried.
+        /// </summary>
+        public bool HoldsAtItsCentre => m_HoldsAtItsCentre;
+
         /// <summary>Sets the space an object has to be in to be picked up, for a hand or a deck.</summary>
-        public void Covers(Vector3 centreLocal, Vector3 sizeMetres)
+        public void Covers(Vector3 centreLocal, Vector3 sizeMetres, bool holdsAtItsCentre = false)
         {
             m_VolumeCentreLocal = centreLocal;
             m_VolumeSizeMetres = sizeMetres;
+            m_HoldsAtItsCentre = holdsAtItsCentre;
         }
 
         /// <summary>Whether this point is inside the space this carrier will take things in.</summary>

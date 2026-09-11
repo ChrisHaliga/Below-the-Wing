@@ -133,7 +133,6 @@ namespace BelowTheWing.Cargo
             }
 
             wanted.AttachTo(m_Holding);
-            wanted.transform.localPosition = Vector3.zero;
 
             return true;
         }

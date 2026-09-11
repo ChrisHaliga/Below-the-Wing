@@ -35,7 +35,7 @@ namespace BelowTheWing.Tests.PlayMode
             playerBody.useGravity = false;
             playerBody.mass = 80f;
             m_Hands = m_PlayerObject.AddComponent<Carrier>();
-            m_Hands.Covers(Vector3.zero, new Vector3(1f, 1f, 1f));
+            m_Hands.Covers(Vector3.zero, new Vector3(1f, 1f, 1f), holdsAtItsCentre: true);
 
             m_BagObject = new GameObject("Bag");
             var bagBody = m_BagObject.AddComponent<Rigidbody>();

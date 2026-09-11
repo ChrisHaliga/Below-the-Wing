@@ -176,6 +176,14 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
+            // Nothing to steer. A kinematic body is not being moved by the solver at all -- it is
+            // being carried by whatever it is attached to, and that thing is reporting its own
+            // position. Pushing it would do nothing except log an error every step.
+            if (leader.isKinematic)
+            {
+                return;
+            }
+
             var shouldBe = WhereItShouldBeNow(said, secondsSince, settings);
 
             if (TooFarToBlend(leader.position, shouldBe, settings))
@@ -199,7 +207,7 @@ namespace BelowTheWing.Vehicles
 
             foreach (var body in train)
             {
-                if (body == null)
+                if (body == null || body.isKinematic)
                 {
                     continue;
                 }

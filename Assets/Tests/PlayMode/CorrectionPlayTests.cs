@@ -164,5 +164,37 @@ namespace BelowTheWing.Tests.PlayMode
                 $"still {off:F0} degrees from the way its owner says it points. A tractor facing one " +
                 "way here and another way there is one you cannot line a cart up behind");
         }
+
+        [UnityTest]
+        public IEnumerator SomethingBeingCarriedIsNotSteeredAtAll()
+        {
+            var vehicle = Copy(new Vector3(0f, 1f, 0f));
+            yield return null;
+
+            // What being carried looks like from the solver's side: a body it no longer moves,
+            // because whatever it is attached to moves it instead. A person riding a cart deck and
+            // a bag in somebody's hands are both in this state.
+            vehicle.Body.isKinematic = true;
+            var restingAt = vehicle.transform.position;
+
+            yield return KeptInStepFor(1f, vehicle, Standing(new Vector3(0f, 0f, 20f)));
+
+            Assert.That(vehicle.transform.position, Is.EqualTo(restingAt).Using(new Vector3Within(1e-3f)),
+                "a carried body has to be left where its carrier put it. Pushing one does nothing " +
+                "except fill the log with an error on every step of every copy of every rider on " +
+                "the apron");
+        }
+
+        /// <summary>Compares two positions to within a tolerance, since floats never land exactly.</summary>
+        sealed class Vector3Within : System.Collections.Generic.IEqualityComparer<Vector3>
+        {
+            readonly float m_Tolerance;
+
+            public Vector3Within(float tolerance) => m_Tolerance = tolerance;
+
+            public bool Equals(Vector3 a, Vector3 b) => Vector3.Distance(a, b) <= m_Tolerance;
+
+            public int GetHashCode(Vector3 of) => of.GetHashCode();
+        }
     }
 }

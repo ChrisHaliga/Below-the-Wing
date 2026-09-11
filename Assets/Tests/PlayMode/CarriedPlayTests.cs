@@ -72,12 +72,16 @@ namespace BelowTheWing.Tests.PlayMode
         {
             m_BagObject.transform.position = new Vector3(0.5f, 0.4f, 1f);
             m_Bag.AttachTo(m_Deck);
-            var satAt = m_BagObject.transform.localPosition;
+
+            // Where the bag sits on the deck, in the deck's own frame -- which is the thing that
+            // has to stay the same however far the cart drives.
+            var satAt = m_CartObject.transform.InverseTransformPoint(m_BagObject.transform.position);
 
             m_CartObject.GetComponent<Rigidbody>().linearVelocity = new Vector3(0f, 0f, 8f);
             yield return Step(3f);
 
-            Assert.That(Vector3.Distance(m_BagObject.transform.localPosition, satAt), Is.LessThan(0.001f),
+            var sitsAt = m_CartObject.transform.InverseTransformPoint(m_BagObject.transform.position);
+            Assert.That(Vector3.Distance(sitsAt, satAt), Is.LessThan(0.001f),
                 "a bag that creeps about its deck while the cart drives is the jitter this mechanism " +
                 "exists to remove");
         }

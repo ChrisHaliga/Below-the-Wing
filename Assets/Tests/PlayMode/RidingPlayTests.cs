@@ -77,12 +77,16 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator ARiderIsNotFlungOffByTheCartSimplyDriving()
         {
             m_Riding.LandedOn(m_Deck, Time.time);
-            var stoodAt = m_Crew.transform.localPosition;
+
+            // Where they are standing on the deck, in the deck's own frame -- which is what has to
+            // stay the same however far the cart drives.
+            var stoodAt = m_CartObject.transform.InverseTransformPoint(m_Crew.transform.position);
 
             m_CartObject.GetComponent<Rigidbody>().linearVelocity = new Vector3(0f, 0f, 8f);
             yield return Step(3f);
 
-            Assert.That(Vector3.Distance(m_Crew.transform.localPosition, stoodAt), Is.LessThan(0.01f),
+            var standsAt = m_CartObject.transform.InverseTransformPoint(m_Crew.transform.position);
+            Assert.That(Vector3.Distance(standsAt, stoodAt), Is.LessThan(0.01f),
                 "riding a cart in a straight line has to be uneventful, or nobody will ever do it");
         }
 

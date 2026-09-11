@@ -7,8 +7,10 @@
         "BelowTheWing.Crew",
         "BelowTheWing.Apron",
         "BelowTheWing.Net",
+        "BelowTheWing.Session",
         "BelowTheWing.Diagnostics",
         "BelowTheWing.Tests.Support",
+        "Unity.Netcode.Runtime",
         "UnityEngine.TestRunner"
     ],
     "includePlatforms": [],

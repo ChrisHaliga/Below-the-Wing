@@ -131,9 +131,8 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator ATrainLetGoOfComesToRestAndStaysThere()
         {
-            var train = m_Apron.AddTrain(m_TractorProfile, m_CartProfile, cartCount: 4, Vector3.zero);
-            var driving = new FixedIntent(throttle: 1f);
-            train.Leader.IntentSource = driving;
+            var train = m_Train;
+            train.Leader.IntentSource = new FixedIntent(throttle: 1f);
 
             yield return Step(4f);
             Assert.That(train.Leader.Body.linearVelocity.magnitude, Is.GreaterThan(2f),
