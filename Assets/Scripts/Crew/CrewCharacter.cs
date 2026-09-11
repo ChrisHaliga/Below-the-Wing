@@ -88,6 +88,12 @@ namespace BelowTheWing.Crew
         public Carried Riding { get; set; }
 
         /// <summary>
+        /// This player's hands. Only the character belonging to the person at this machine has
+        /// them, for the same reason only they have a seat: nobody else's is operated from here.
+        /// </summary>
+        public Hands Handling { get; set; }
+
+        /// <summary>
         /// What this character is asking a vehicle to do. Meaningful only while it is driving one:
         /// the same stick that walks a character forward opens a throttle once they are in a seat.
         /// </summary>

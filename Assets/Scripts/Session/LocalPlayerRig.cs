@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Vehicles;
 using UnityEngine;
@@ -26,6 +27,7 @@ namespace BelowTheWing.Session
             FollowCamera camera,
             IOwnershipBroker broker,
             Func<IReadOnlyList<VehicleController>> nearbyVehicles,
+            Func<IReadOnlyList<Carried>> nearbyCargo,
             RampSession session)
         {
             m_Character = character != null ? character : throw new ArgumentNullException(nameof(character));
@@ -47,6 +49,14 @@ namespace BelowTheWing.Session
                     session.Reshaped(front, session.TrainIndexOf(front));
                     session.Reshaped(back, session.ATrainNumberNobodyIsUsing());
                 });
+
+            // Hands, so that bags can be picked up and thrown. The carrier is on the prefab; what
+            // is built here is the part that reads what the player is doing with it.
+            var hands = m_Character.GetComponentInChildren<Carrier>();
+            if (hands != null)
+            {
+                m_Character.Handling = new Hands(hands, nearbyCargo, ThrowSettings.Default);
+            }
 
             // Before the input, so that the first frame of looking around already has the pointer.
             // Arriving on the apron is the moment this player starts playing, and playing is when

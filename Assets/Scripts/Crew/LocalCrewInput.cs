@@ -72,6 +72,8 @@ namespace BelowTheWing.Crew
             {
                 m_Character.Hitching?.Act();
             }
+
+            Handle();
         }
 
         /// <summary>
@@ -90,6 +92,58 @@ namespace BelowTheWing.Crew
             }
 
             m_Character.Camera.Look(m_Pointer.Movement(mouse.delta.ReadValue()));
+        }
+
+        /// <summary>
+        /// Picking things up and throwing them, on the left button.
+        ///
+        /// Empty hands pick up; full hands wind up and throw. The two never overlap, so one button
+        /// does both without a player having to decide which they meant -- and a tap with something
+        /// held puts it down rather than launching it, which is what stacking a cart needs.
+        /// </summary>
+        void Handle()
+        {
+            var mouse = Mouse.current;
+            var hands = m_Character.Handling;
+
+            if (mouse == null || hands == null)
+            {
+                return;
+            }
+
+            if (mouse.leftButton.wasPressedThisFrame)
+            {
+                if (hands.Full)
+                {
+                    hands.StartWindingUp(Time.time);
+                }
+                else
+                {
+                    hands.PickUp(Time.time);
+                }
+            }
+
+            if (mouse.leftButton.wasReleasedThisFrame && hands.Full)
+            {
+                hands.LetGo(Time.time, ThrowingTowards());
+            }
+        }
+
+        /// <summary>
+        /// Which way a throw goes: where the player is looking, rather than where their feet point.
+        ///
+        /// Somebody throwing a bag into a cart is aiming at the cart, and their body may well be
+        /// facing the way they were running.
+        /// </summary>
+        Vector3 ThrowingTowards()
+        {
+            if (m_Character.Camera == null)
+            {
+                return m_Character.transform.forward;
+            }
+
+            var looking = Quaternion.Euler(0f, m_Character.Camera.YawDegrees, 0f) * Vector3.forward;
+            return looking;
         }
 
         static float Held(Keyboard keyboard, Key key) => keyboard[key].isPressed ? 1f : 0f;

@@ -24,7 +24,9 @@ namespace BelowTheWing.Session
             CrewProfile crewProfile,
             NetworkObject tractorPrefab,
             NetworkObject cartPrefab,
-            NetworkObject aircraftPrefab)
+            NetworkObject aircraftPrefab,
+            NetworkObject bagPrefab,
+            int bagsPerTrain)
         {
             var crewSize = new Vector3(
                 crewProfile.radiusMetres * 2f, crewProfile.heightMetres, crewProfile.radiusMetres * 2f);
@@ -43,6 +45,42 @@ namespace BelowTheWing.Session
                 {
                     Place(cartPrefab, train.Carts[c], t, placeInTrain: c + 1);
                 }
+
+                Scatter(bagPrefab, train, bagsPerTrain);
+            }
+        }
+
+        /// <summary>
+        /// Drops a few bags on the ground beside a train.
+        ///
+        /// On the ground rather than on the decks. A bag that settles onto a cart does so through
+        /// the ordinary path -- come to rest on something that carries things, climb aboard -- and
+        /// putting them straight onto the decks here would be a second way for cargo to arrive that
+        /// nothing else in the game uses. Watching them settle on their own is also the cheapest
+        /// proof that the path works.
+        /// </summary>
+        static void Scatter(NetworkObject bagPrefab, TrainPlan train, int howMany)
+        {
+            if (bagPrefab == null || howMany <= 0 || train.Carts.Count == 0)
+            {
+                return;
+            }
+
+            var beside = train.Carts[0];
+
+            for (var i = 0; i < howMany; i++)
+            {
+                // In a line along the side of the train, clear of its wheels.
+                var where = beside.Position
+                            + (Vector3.right * 2.5f)
+                            + (Vector3.back * (i * 0.9f))
+                            + (Vector3.up * 0.4f);
+
+                var bag = Object.Instantiate(bagPrefab, where, Quaternion.identity);
+                bag.GetComponent<ApronIdentity>()?.Called($"Bag {i + 1}");
+                bag.Spawn();
+
+                OnlyByAsking(bag);
             }
         }
 

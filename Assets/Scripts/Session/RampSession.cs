@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BelowTheWing.Apron;
+using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Diagnostics;
 using BelowTheWing.Net;
@@ -49,6 +50,12 @@ namespace BelowTheWing.Session
         [SerializeField, Tooltip("A ramp worker.")]
         NetworkObject m_CrewPrefab;
 
+        [SerializeField, Tooltip("A piece of baggage.")]
+        NetworkObject m_BagPrefab;
+
+        [SerializeField, Tooltip("How many bags to leave beside each train.")]
+        int m_BagsPerTrain = 4;
+
         [Header("Wiring")]
         [SerializeField] NetworkOwnershipBroker m_Broker;
         [SerializeField] FollowCamera m_Camera;
@@ -62,6 +69,7 @@ namespace BelowTheWing.Session
         /// fixed step and allocating a fresh list fifty times a second is a waste.
         /// </summary>
         readonly List<VehicleController> m_OnTheApron = new List<VehicleController>();
+        readonly List<Carried> m_Cargo = new List<Carried>();
 
         TrainRegistry m_Trains;
         readonly Reclaiming m_Reclaiming = new Reclaiming();
@@ -76,6 +84,21 @@ namespace BelowTheWing.Session
         /// vehicles in step by hand is a bug waiting for the day they disagree.
         /// </summary>
         public IReadOnlyList<VehicleController> Vehicles() => m_OnTheApron;
+
+        /// <summary>
+        /// Everything on the apron that could be picked up.
+        ///
+        /// Gathered fresh, because bags arrive and leave constantly -- thrown, dropped, carried off
+        /// by somebody else -- and a list built once would go stale within seconds of anybody
+        /// touching one.
+        /// </summary>
+        public IReadOnlyList<Carried> LooseCargo()
+        {
+            m_Cargo.Clear();
+            m_Cargo.AddRange(FindObjectsByType<Carried>(FindObjectsSortMode.None));
+
+            return m_Cargo;
+        }
 
         void Awake() => m_Trains = new TrainRegistry(m_Coupling);
 
@@ -94,7 +117,7 @@ namespace BelowTheWing.Session
             if (NetworkManager.LocalClient.IsSessionOwner)
             {
                 ApronBuilder.Build(m_Layout, m_TractorProfile, m_CartProfile, m_AircraftProfile, m_CrewProfile,
-                    m_TractorPrefab, m_CartPrefab, m_AircraftPrefab);
+                    m_TractorPrefab, m_CartPrefab, m_AircraftPrefab, m_BagPrefab, m_BagsPerTrain);
             }
 
             // Nothing redistributes vehicles automatically any more, which is deliberate: doing it
@@ -255,7 +278,7 @@ namespace BelowTheWing.Session
             crew.Spawn();
 
             m_LocalPlayer = new LocalPlayerRig(
-                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, Vehicles, this);
+                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, Vehicles, LooseCargo, this);
         }
 
         /// <summary>
