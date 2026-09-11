@@ -19,14 +19,16 @@ namespace BelowTheWing.Tests.Multiplayer
     /// What a test's network actually does, rather than what it is labelled.
     ///
     /// Every multiplayer test in this project is a claim about behaviour under network conditions,
-    /// and each one of those claims is worth exactly as much as the conditions being real. A suite
-    /// that believes it runs at 150 milliseconds while actually running at zero proves nothing and
-    /// says nothing is wrong, which is the worst of both. So the conditions are measured here, by
-    /// timing how long a change takes to cross, before anything is built on them.
+    /// and each of those claims is worth exactly as much as the conditions being real. A suite that
+    /// believes it runs at 150 milliseconds while actually running at zero proves nothing and says
+    /// nothing is wrong, which is the worst of both. So the conditions are measured here, by timing
+    /// how long a change takes to cross, before anything is built on them.
     /// </summary>
-    public abstract class CrossingTimeTest : RampMultiplayerTest
+    public sealed class NetworkConditionsTests : RampMultiplayerTest
     {
         GameObject m_Prefab;
+
+        protected override NetworkCondition Conditions => NetworkConditions.Clean;
 
         protected override void OnServerAndClientsCreated()
         {
@@ -59,7 +61,7 @@ namespace BelowTheWing.Tests.Multiplayer
         /// How long, in milliseconds, a change made on one instance takes to show up on another,
         /// averaged over several crossings so that one unlucky tick does not decide the answer.
         /// </summary>
-        protected IEnumerator MeasureCrossing(int crossings, List<double> into)
+        IEnumerator MeasureCrossing(int crossings, List<double> into)
         {
             var owner = m_ClientNetworkManagers[0];
             var watcher = m_ClientNetworkManagers[1];
@@ -85,7 +87,7 @@ namespace BelowTheWing.Tests.Multiplayer
             networkObject.Despawn();
         }
 
-        protected static double Average(List<double> values)
+        static double Average(List<double> values)
         {
             var total = 0d;
             foreach (var value in values)
@@ -95,14 +97,6 @@ namespace BelowTheWing.Tests.Multiplayer
 
             return total / values.Count;
         }
-    }
-
-    /// <summary>
-    /// Whether the network a test asks for is the network it gets.
-    /// </summary>
-    public sealed class NetworkConditionsTests : CrossingTimeTest
-    {
-        protected override NetworkCondition Conditions => NetworkConditions.Clean;
 
         /// <summary>
         /// The same crossing measured on two networks, and compared against each other rather than
