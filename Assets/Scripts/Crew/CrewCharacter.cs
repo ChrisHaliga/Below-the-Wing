@@ -71,6 +71,12 @@ namespace BelowTheWing.Crew
         public VehicleOccupancy Seat { get; private set; }
 
         /// <summary>
+        /// Hooking a cart on and dropping one off. Null for the same reason as the seat: only the
+        /// player at this machine reshapes trains from here.
+        /// </summary>
+        public CouplingHand Hitching { get; set; }
+
+        /// <summary>
         /// What this character is asking a vehicle to do. Meaningful only while it is driving one:
         /// the same stick that walks a character forward opens a throttle once they are in a seat.
         /// </summary>
@@ -113,7 +119,7 @@ namespace BelowTheWing.Crew
         /// Gives this character a seat, so its owner can get into vehicles. Only the local player's
         /// character gets one.
         /// </summary>
-        public void TakeTheSeat(IOwnershipBroker broker, Func<IReadOnlyList<IDriveable>> nearbyVehicles)
+        public void TakeTheSeat(IOwnershipBroker broker, Func<IReadOnlyList<VehicleController>> nearbyVehicles)
         {
             Seat = new VehicleOccupancy(transform, broker, nearbyVehicles, m_ReachMetres);
             Simulated = true;
@@ -253,6 +259,13 @@ namespace BelowTheWing.Crew
             }
 
             Seat?.Refresh();
+
+            if (Hitching != null)
+            {
+                // Only meaningful while driving, and the train being driven is what it acts on.
+                Hitching.Driving = Seat?.Driving != null ? Seat.Driving.Chain : null;
+                Hitching.Refresh();
+            }
 
             var drivingNow = Seat?.Driving;
             if (drivingNow != m_RidingIn)

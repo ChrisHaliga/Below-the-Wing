@@ -36,7 +36,7 @@ namespace BelowTheWing.Crew
 
         readonly Transform m_Crew;
         readonly IOwnershipBroker m_Broker;
-        readonly Func<IReadOnlyList<IDriveable>> m_NearbyVehicles;
+        readonly Func<IReadOnlyList<VehicleController>> m_NearbyVehicles;
         readonly float m_ReachMetres;
 
         VehicleController m_Driving;
@@ -49,15 +49,15 @@ namespace BelowTheWing.Crew
         /// milliseconds -- and then quietly offer them the vehicle again as though nothing had
         /// happened.
         /// </summary>
-        IDriveable m_Refused;
+        VehicleController m_Refused;
 
         /// <summary>Set while a request is in flight, so one press asks once.</summary>
         bool m_Asking;
 
         /// <summary>What that request was for, so it can be given up on.</summary>
-        IDriveable m_AskedFor;
+        VehicleController m_AskedFor;
 
-        public VehicleOccupancy(Transform crew, IOwnershipBroker broker, Func<IReadOnlyList<IDriveable>> nearbyVehicles, float reachMetres)
+        public VehicleOccupancy(Transform crew, IOwnershipBroker broker, Func<IReadOnlyList<VehicleController>> nearbyVehicles, float reachMetres)
         {
             m_Crew = crew != null ? crew : throw new ArgumentNullException(nameof(crew));
             m_Broker = broker ?? throw new ArgumentNullException(nameof(broker));
@@ -66,7 +66,7 @@ namespace BelowTheWing.Crew
         }
 
         /// <summary>The vehicle currently being offered, or null if none is.</summary>
-        public IDriveable Offer { get; private set; }
+        public VehicleController Offer { get; private set; }
 
         /// <summary>The vehicle being driven, or null while the player is on foot.</summary>
         public VehicleController Driving => m_Driving;
@@ -153,7 +153,8 @@ namespace BelowTheWing.Crew
 
             // A second press while the first is still in flight would send a second request for the
             // same train, and the answers would race each other.
-            if (m_Asking || Offer is not VehicleController wanted)
+            var wanted = Offer;
+            if (m_Asking || wanted == null)
             {
                 return;
             }
@@ -203,7 +204,7 @@ namespace BelowTheWing.Crew
             return vehicle.transform.position + (vehicle.transform.right * clearOfTheBodywork);
         }
 
-        bool WithinReachOf(IDriveable vehicle)
+        bool WithinReachOf(VehicleController vehicle)
             => Vector3.Distance(m_Crew.position, vehicle.Position) <= m_ReachMetres;
 
         void StepOut()

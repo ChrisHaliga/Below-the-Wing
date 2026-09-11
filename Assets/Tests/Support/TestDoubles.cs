@@ -6,24 +6,6 @@ using UnityEngine;
 namespace BelowTheWing.Tests.Support
 {
     /// <summary>
-    /// A vehicle that exists only to be near or far, and to say whether it would take a driver.
-    /// Used where the question is which vehicle gets offered, not what happens when one is taken.
-    /// </summary>
-    public sealed class StubDriveable : IDriveable
-    {
-        public string DisplayName { get; }
-        public Vector3 Position { get; }
-        public bool AcceptsDriver { get; }
-
-        public StubDriveable(string displayName, Vector3 position, bool acceptsDriver = true)
-        {
-            DisplayName = displayName;
-            Position = position;
-            AcceptsDriver = acceptsDriver;
-        }
-    }
-
-    /// <summary>
     /// An ownership broker that grants or refuses whatever it is asked, and remembers what that was.
     ///
     /// Real refusals happen when two players reach for the same tractor at the same moment, which

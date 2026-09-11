@@ -123,30 +123,14 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator AVehicleThisMachineIsNotSimulatingDoesNotSinkThroughTheApron()
-        {
-            var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
-            yield return Step(3f);
-            var whereItStood = tractor.transform.position.y;
-
-            tractor.Simulated = false;
-            yield return Step(3f);
-
-            Assert.That(tractor.transform.position.y, Is.EqualTo(whereItStood).Within(0.05f),
-                "a copy of a vehicle somebody else is simulating runs no suspension of its own. Left " +
-                "with gravity on it, it settles onto its bodywork between network updates and is " +
-                "yanked back up by the next one, which reads as every remote vehicle juddering");
-        }
-
-        [UnityTest]
-        public IEnumerator AVehicleThisMachineIsNotSimulatingCanStillBeWalkedInto()
+        public IEnumerator AVehicleSomebodyElseOwnsCanStillBeWalkedInto()
         {
             var crewProfile = TestProfiles.CrewMember();
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
             var crew = m_Apron.AddCrew(crewProfile, new Vector3(0f, 1.5f, -4f));
             yield return Step(2f);
 
-            tractor.Simulated = false;
+            tractor.OursToMove = false;
             yield return Step(1f);
 
             // Walk into it and see whether anything is there.
@@ -155,9 +139,9 @@ namespace BelowTheWing.Tests.PlayMode
 
             var reachedTheTractor = crew.transform.position.z;
             Assert.That(reachedTheTractor, Is.LessThan(tractor.transform.position.z),
-                "the character walked clean through a vehicle somebody else is simulating. A copy that " +
-                "cannot be collided with -- or one made kinematic, which has infinite mass -- is the " +
-                "whole reason this game does not use NetworkRigidbody");
+                "the character walked clean through a vehicle somebody else owns. A copy that cannot " +
+                "be collided with -- or one made kinematic, which has infinite mass -- is the whole " +
+                "reason this game does not use NetworkRigidbody");
 
             Object.DestroyImmediate(crewProfile);
         }

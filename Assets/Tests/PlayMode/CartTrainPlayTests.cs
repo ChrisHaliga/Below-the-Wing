@@ -120,6 +120,56 @@ namespace BelowTheWing.Tests.PlayMode
             }
         }
 
+        /// <summary>
+        /// A train that has been driven and then let go of has to stop, and stay stopped.
+        ///
+        /// This is the thing a parked apron rests on. Everything that costs anything in this game
+        /// is per awake rigidbody, and a train that keeps creeping after its driver has let go
+        /// never sleeps -- so it goes on costing on every machine, for the rest of the session,
+        /// and the carts are never quite where anybody left them.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ATrainLetGoOfComesToRestAndStaysThere()
+        {
+            var train = m_Apron.AddTrain(m_TractorProfile, m_CartProfile, cartCount: 4, Vector3.zero);
+            var driving = new FixedIntent(throttle: 1f);
+            train.Leader.IntentSource = driving;
+
+            yield return Step(4f);
+            Assert.That(train.Leader.Body.linearVelocity.magnitude, Is.GreaterThan(2f),
+                "it has to have been moving for letting go to mean anything");
+
+            // Let go. Nothing is driving it and nothing is correcting it.
+            train.Leader.IntentSource = null;
+            yield return Step(12f);
+
+            foreach (var member in train.Members)
+            {
+                Assert.That(member.Body.linearVelocity.magnitude, Is.LessThan(0.2f),
+                    $"'{member.DisplayName}' is still travelling at " +
+                    $"{member.Body.linearVelocity.magnitude:F2} m/s twelve seconds after the throttle " +
+                    "was released. Nothing is taking its speed away");
+            }
+
+            var restedAt = new Vector3[train.Members.Count];
+            for (var i = 0; i < restedAt.Length; i++)
+            {
+                restedAt[i] = train.Members[i].transform.position;
+            }
+
+            yield return Step(5f);
+
+            for (var i = 0; i < restedAt.Length; i++)
+            {
+                var member = train.Members[i];
+                Assert.That(Vector3.Distance(restedAt[i], member.transform.position), Is.LessThan(0.15f),
+                    $"'{member.DisplayName}' wandered while nothing was driving it");
+                Assert.That(member.Body.IsSleeping(), Is.True,
+                    $"'{member.DisplayName}' never went to sleep, so it goes on costing for the rest " +
+                    "of the session on every machine in the game");
+            }
+        }
+
         [UnityTest]
         public IEnumerator ASplitTrainLeavesItsBackHalfBehind()
         {

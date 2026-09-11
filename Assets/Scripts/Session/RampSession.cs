@@ -61,16 +61,21 @@ namespace BelowTheWing.Session
         /// Reused rather than rebuilt, because it is handed to the local player's seat on every
         /// fixed step and allocating a fresh list fifty times a second is a waste.
         /// </summary>
-        readonly List<IDriveable> m_Driveable = new List<IDriveable>();
+        readonly List<VehicleController> m_OnTheApron = new List<VehicleController>();
 
         TrainRegistry m_Trains;
+        readonly Reclaiming m_Reclaiming = new Reclaiming();
         LocalPlayerRig m_LocalPlayer;
 
         /// <summary>Every train on the apron, as this machine understands it.</summary>
         public IReadOnlyList<CartChain> Trains => m_Trains.Trains;
 
-        /// <summary>Everything a player might be offered a chance to drive.</summary>
-        public IReadOnlyList<IDriveable> Driveable() => m_Driveable;
+        /// <summary>
+        /// Every vehicle on the apron: what a player might be offered to drive, and what is close
+        /// enough to hitch onto the back of a train. One list, because keeping two of the same
+        /// vehicles in step by hand is a bug waiting for the day they disagree.
+        /// </summary>
+        public IReadOnlyList<VehicleController> Vehicles() => m_OnTheApron;
 
         void Awake() => m_Trains = new TrainRegistry(m_Coupling);
 
@@ -135,8 +140,57 @@ namespace BelowTheWing.Session
 
             foreach (var train in m_Trains.TrainsHeldBy(departed, m_Broker))
             {
-                train.RequestOwnership(m_Broker, _ => { });
+                m_Reclaiming.TakeBack(train);
             }
+        }
+
+        /// <summary>
+        /// Writes down a train's new shape so that every machine works out the same one.
+        ///
+        /// Which train a vehicle belongs to is replicated rather than inferred from where things are
+        /// parked, so hitching a cart on is not finished until that has been said out loud. Until it
+        /// is, only the machine that did it knows -- and every other machine still believes the cart
+        /// is standing on its own, so a player there is offered it and can drive it out of the train
+        /// it is physically coupled to.
+        /// </summary>
+        public void Reshaped(IReadOnlyList<VehicleController> train, int trainIndex)
+        {
+            for (var place = 0; place < train.Count; place++)
+            {
+                var member = train[place].GetComponent<TrainMember>();
+                if (member != null)
+                {
+                    member.Joins(trainIndex, place);
+                }
+            }
+
+            MembershipChanged();
+        }
+
+        /// <summary>Which train a vehicle currently says it belongs to.</summary>
+        public int TrainIndexOf(IReadOnlyList<VehicleController> train)
+        {
+            var member = train[0].GetComponent<TrainMember>();
+            return member != null ? member.Membership.TrainIndex : TrainMembership.NoTrain;
+        }
+
+        /// <summary>
+        /// A train number nothing on the apron is using, for carts that have just been dropped off
+        /// and are now a train of their own.
+        /// </summary>
+        public int ATrainNumberNobodyIsUsing()
+        {
+            var highest = TrainMembership.NoTrain;
+
+            foreach (var member in m_Vehicles)
+            {
+                if (member != null)
+                {
+                    highest = Mathf.Max(highest, member.Membership.TrainIndex);
+                }
+            }
+
+            return highest + 1;
         }
 
         /// <summary>A vehicle has appeared, from wherever. Work the trains out again.</summary>
@@ -163,7 +217,7 @@ namespace BelowTheWing.Session
         public void MembershipChanged()
         {
             m_Described.Clear();
-            m_Driveable.Clear();
+            m_OnTheApron.Clear();
 
             foreach (var member in m_Vehicles)
             {
@@ -173,20 +227,16 @@ namespace BelowTheWing.Session
                 }
 
                 m_Described.Add(member.Membership);
-                m_Driveable.Add(member.Vehicle);
+                m_OnTheApron.Add(member.Vehicle);
             }
 
             m_Trains.Rebuild(m_Described);
-            m_Trains.TakeUpWhatWeOwn(m_Broker);
 
             if (m_Readout != null)
             {
                 m_Readout.Observe(m_Trains.Trains, m_Broker);
             }
         }
-
-        /// <summary>A vehicle has changed hands, so which machine holds which couplings may have too.</summary>
-        public void OwnershipMoved() => m_Trains.TakeUpWhatWeOwn(m_Broker);
 
         void SpawnOwnCrew()
         {
@@ -205,7 +255,7 @@ namespace BelowTheWing.Session
             crew.Spawn();
 
             m_LocalPlayer = new LocalPlayerRig(
-                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, Driveable);
+                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, Vehicles, this);
         }
 
         /// <summary>
@@ -227,6 +277,14 @@ namespace BelowTheWing.Session
 
         Vector3 CrewSize()
             => new Vector3(m_CrewProfile.radiusMetres * 2f, m_CrewProfile.heightMetres, m_CrewProfile.radiusMetres * 2f);
+
+        void FixedUpdate()
+        {
+            if (m_Broker != null)
+            {
+                m_Reclaiming.Chase(m_Broker, Time.fixedDeltaTime);
+            }
+        }
 
         void LateUpdate() => m_LocalPlayer?.FollowWhateverTheyAreControlling();
     }

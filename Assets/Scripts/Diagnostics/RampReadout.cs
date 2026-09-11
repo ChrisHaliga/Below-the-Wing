@@ -51,6 +51,7 @@ namespace BelowTheWing.Diagnostics
         readonly Stopwatch m_SinceStepBegan = new Stopwatch();
         readonly List<CartChain> m_Trains = new List<CartChain>();
         readonly List<Rigidbody> m_Bodies = new List<Rigidbody>();
+        readonly List<ContactTally> m_Tallies = new List<ContactTally>();
 
         IOwnershipBroker m_Broker;
 
@@ -62,6 +63,16 @@ namespace BelowTheWing.Diagnostics
 
         /// <summary>How long the last physics step took, in milliseconds.</summary>
         public float PhysicsStepMilliseconds { get; private set; }
+
+        /// <summary>
+        /// How many pairs of things are touching right now.
+        ///
+        /// The number that explains a physics step time nothing else accounts for. Contacts are
+        /// what the solver actually spends its time on, and a train folded against an aircraft, or
+        /// a pile-up nobody is looking at, costs the same on every machine whether or not anybody
+        /// can see it.
+        /// </summary>
+        public int ContactCount { get; private set; }
 
         /// <summary>
         /// One line per train saying which machine is simulating it, and whether every member of
@@ -95,34 +106,93 @@ namespace BelowTheWing.Diagnostics
             m_Trains.AddRange(trains);
 
             m_Bodies.Clear();
+            m_Tallies.Clear();
+
             foreach (var train in trains)
             {
                 foreach (var member in train.Members)
                 {
                     m_Bodies.Add(member.Body);
+
+                    var tally = member.GetComponent<ContactTally>();
+                    if (tally != null)
+                    {
+                        m_Tallies.Add(tally);
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// How far the worst-placed member of a train is from where its owner says it should be, in
+        /// metres. Zero for a train this machine owns.
+        ///
+        /// The worst rather than the average, because a train comes apart one vehicle at a time and
+        /// an average over five hides the one that has gone.
+        /// </summary>
+        public static float WorstDrift(CartChain train)
+        {
+            var worst = 0f;
+
+            foreach (var member in train.Members)
+            {
+                var keptInStep = member.GetComponent<IKeepsInStep>();
+                if (keptInStep != null)
+                {
+                    worst = Mathf.Max(worst, keptInStep.MetresOutOfPlace);
+                }
+            }
+
+            return worst;
         }
 
         string DescribeOwnership(CartChain train)
         {
             var owners = train.Members.Select(member => m_Broker.OwnerOf(member)).Distinct().ToList();
+            var mine = train.Leader.OursToMove ? "ours" : "theirs";
+
+            // Whether this machine is in charge, and how far its copy has drifted, are the two facts
+            // that say whether a disagreement between two screens is a tuning problem or an
+            // architectural one. Neither can be seen by looking at the apron: both screens look
+            // perfectly reasonable on their own.
+            var drift = train.Leader.OursToMove ? "" : $"  off by {WorstDrift(train):F2} m";
 
             if (owners.Count == 1)
             {
-                return $"{train.Leader.DisplayName} (+{train.Members.Count - 1}): owner {owners[0]}";
+                return $"{train.Leader.DisplayName} (+{train.Members.Count - 1}): {mine}, owner {owners[0]}{drift}";
             }
 
             // The failure this readout exists to catch. A train whose members are being simulated by
             // different machines has couplings with one end on each, and the solver on both sides is
             // working against a body it cannot move.
             return $"{train.Leader.DisplayName} (+{train.Members.Count - 1}): SPLIT across owners "
-                   + string.Join(", ", owners);
+                   + string.Join(", ", owners) + drift;
         }
 
         void OnEnable() => StartCoroutine(TimePhysicsSteps());
 
-        void FixedUpdate() => m_SinceStepBegan.Restart();
+        void FixedUpdate()
+        {
+            ContactCount = CountContacts();
+            m_SinceStepBegan.Restart();
+        }
+
+        int CountContacts()
+        {
+            var touching = 0;
+
+            foreach (var tally in m_Tallies)
+            {
+                if (tally != null)
+                {
+                    touching += tally.Touching;
+                }
+            }
+
+            // Every contact is counted at both ends, so halving it gives pairs of things touching,
+            // which is what the solver actually has work to do about.
+            return touching / 2;
+        }
 
         IEnumerator TimePhysicsSteps()
         {
@@ -156,7 +226,8 @@ namespace BelowTheWing.Diagnostics
             var lines = new List<string>
             {
                 $"awake bodies   {AwakeBodyCount} / {m_Bodies.Count}",
-                $"physics step   {PhysicsStepMilliseconds:F2} ms"
+                $"physics step   {PhysicsStepMilliseconds:F2} ms",
+                $"contacts       {ContactCount}"
             };
             lines.AddRange(OwnershipLines);
 

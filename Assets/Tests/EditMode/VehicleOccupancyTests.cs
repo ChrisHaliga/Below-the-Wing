@@ -47,7 +47,7 @@ namespace BelowTheWing.Tests.EditMode
 
         VehicleOccupancy SeatWith(IOwnershipBroker broker)
         {
-            IReadOnlyList<IDriveable> Nearby() => m_Train.Members.Cast<IDriveable>().ToList();
+            IReadOnlyList<VehicleController> Nearby() => m_Train.Members.Cast<VehicleController>().ToList();
             return new VehicleOccupancy(m_Crew, broker, Nearby, Reach);
         }
 

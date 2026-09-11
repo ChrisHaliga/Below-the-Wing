@@ -4,7 +4,6 @@ using BelowTheWing.Tests.Support;
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
 using Unity.Netcode;
-using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -19,13 +18,8 @@ namespace BelowTheWing.Tests.Multiplayer
     /// every machine for the rest of the session: never offered to anybody, and refusing every
     /// request made for it. Five vehicles quietly become unusable and nothing can unstick them.
     /// </summary>
-    public sealed class OccupancyHandoverMultiplayerTests : NetcodeIntegrationTest
+    public sealed class OccupancyHandoverMultiplayerTests : RampMultiplayerTest
     {
-        protected override int NumberOfClients => 2;
-
-        protected override NetworkTopologyTypes OnGetNetworkTopologyType()
-            => NetworkTopologyTypes.DistributedAuthority;
-
         GameObject m_TractorPrefab;
         VehicleProfile m_TractorProfile;
 

@@ -12,6 +12,7 @@
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Runtime.Tests",
         "Unity.Collections",
+        "Unity.Multiplayer.Tools.NetworkSimulator.Runtime",
         "UnityEngine.TestRunner"
     ],
     "includePlatforms": [],

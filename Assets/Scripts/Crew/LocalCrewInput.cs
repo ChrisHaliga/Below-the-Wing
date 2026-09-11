@@ -59,6 +59,13 @@ namespace BelowTheWing.Crew
             {
                 m_Character.Seat?.Toggle(m_Character);
             }
+
+            // One key for both halves of coupling. Which one it does depends on what is in reach,
+            // so a player never has to remember which of two keys they wanted.
+            if (keyboard.qKey.wasPressedThisFrame)
+            {
+                m_Character.Hitching?.Act();
+            }
         }
 
         /// <summary>

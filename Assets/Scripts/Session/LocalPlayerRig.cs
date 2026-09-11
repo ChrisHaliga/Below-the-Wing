@@ -25,13 +25,29 @@ namespace BelowTheWing.Session
             CrewCharacter character,
             FollowCamera camera,
             IOwnershipBroker broker,
-            Func<IReadOnlyList<IDriveable>> nearbyVehicles)
+            Func<IReadOnlyList<VehicleController>> nearbyVehicles,
+            RampSession session)
         {
             m_Character = character != null ? character : throw new ArgumentNullException(nameof(character));
             m_Camera = camera;
 
             m_Character.TakeTheSeat(broker, nearbyVehicles);
             m_Character.Camera = camera;
+
+            // Hooking carts on and dropping them off. Writing the new shape down is what finishes
+            // the job: which train a vehicle belongs to is replicated rather than worked out from
+            // where things are parked, so until it is said out loud only this machine knows, and a
+            // player elsewhere is still offered a cart that is physically coupled to a train.
+            m_Character.Hitching = new CouplingHand(
+                broker,
+                nearbyVehicles,
+                hitched: train => session.Reshaped(train, session.TrainIndexOf(train)),
+                split: (front, back) =>
+                {
+                    session.Reshaped(front, session.TrainIndexOf(front));
+                    session.Reshaped(back, session.ATrainNumberNobodyIsUsing());
+                });
+
             // Before the input, so that the first frame of looking around already has the pointer.
             // Arriving on the apron is the moment this player starts playing, and playing is when
             // the pointer belongs to the game rather than to their desktop.

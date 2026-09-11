@@ -40,6 +40,69 @@ namespace BelowTheWing.Tests.EditMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
+        /// <summary>A vehicle that reports whatever drift it is told to report.</summary>
+        sealed class DriftingCopy : MonoBehaviour, IKeepsInStep
+        {
+            public float MetresOutOfPlace { get; set; }
+        }
+
+        [Test]
+        public void TheReadoutCountsWhatIsTouchingWhat()
+        {
+            var broker = new RecordingBroker(grant: true, localClientId: 7);
+            m_Readout.Observe(new[] { m_Train }, broker);
+
+            Assert.That(m_Readout.ContactCount, Is.Zero,
+                "nothing has hit anything yet, and a contact count that starts out wrong is worse " +
+                "than no contact count");
+        }
+
+        [Test]
+        public void TheReadoutSaysWhetherThisMachineIsInChargeOfEachTrain()
+        {
+            var broker = new RecordingBroker(grant: true, localClientId: 7);
+            foreach (var member in m_Train.Members)
+            {
+                broker.SetOwner(member, 3);
+            }
+
+            m_Train.Leader.OursToMove = false;
+            m_Readout.Observe(new[] { m_Train }, broker);
+
+            Assert.That(m_Readout.OwnershipLines[0], Does.Contain("theirs"),
+                "which machine is in charge of a train cannot be seen by looking at the apron, and it " +
+                "is the first thing worth knowing when two screens disagree");
+        }
+
+        [Test]
+        public void TheReadoutSaysHowFarOutOfPlaceATrainHasDrifted()
+        {
+            var broker = new RecordingBroker(grant: true, localClientId: 7);
+            foreach (var member in m_Train.Members)
+            {
+                broker.SetOwner(member, 3);
+            }
+
+            m_Train.Leader.OursToMove = false;
+            m_Train.Members[2].gameObject.AddComponent<DriftingCopy>().MetresOutOfPlace = 3.75f;
+            m_Readout.Observe(new[] { m_Train }, broker);
+
+            Assert.That(m_Readout.OwnershipLines[0], Does.Contain("3.75"),
+                "without a number, whether a disagreement is a tuning problem or an architectural one " +
+                "is decided by eye, and both screens look perfectly reasonable on their own");
+        }
+
+        [Test]
+        public void TheWorstPlacedVehicleInATrainIsTheOneReported()
+        {
+            m_Train.Members[1].gameObject.AddComponent<DriftingCopy>().MetresOutOfPlace = 0.2f;
+            m_Train.Members[4].gameObject.AddComponent<DriftingCopy>().MetresOutOfPlace = 6f;
+
+            Assert.That(RampReadout.WorstDrift(m_Train), Is.EqualTo(6f).Within(1e-3f),
+                "a train comes apart one vehicle at a time, and an average over five hides the one " +
+                "that has gone");
+        }
+
         [Test]
         public void TheReadoutNamesWhoIsSimulatingEachTrain()
         {

@@ -65,6 +65,12 @@ namespace BelowTheWing.Apron
             if (transform.Find(GreyboxShape.ShapeName) == null)
             {
                 Draw();
+
+                // What you see trails the body slightly, so that a vehicle moved outright rather
+                // than eased into place reads as a fast slide instead of ceasing to exist in one
+                // spot and starting in another. Colliders stay on the body, so nothing is ever hit
+                // where it is not drawn.
+                transform.Find(GreyboxShape.ShapeName).gameObject.AddComponent<SmoothedLook>();
             }
 
             if (GetComponentInChildren<WorldLabel>() == null)
