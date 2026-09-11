@@ -178,11 +178,26 @@ namespace BelowTheWing.EditorTools
             var networked = go.AddComponent<NetworkObject>();
             networked.DontDestroyWithOwner = outlivesItsOwner;
 
-            // Movement is replicated as transform state rather than through NetworkRigidbody, which
-            // forces every non-owning copy kinematic. A kinematic vehicle has infinite mass: you
-            // would drive into somebody else's tractor and bounce off a wall, while on their screen
-            // the mirror image happened. Both players get shoved, or neither does.
-            go.AddComponent<AnticipatedNetworkTransform>();
+            // Movement is not replicated by a transform component at all. Both of the ones netcode
+            // offers write a position onto the copy -- and a vehicle whose position is written
+            // arrives somewhere without having travelled, so the impulse a collision should have
+            // exchanged never happens and the crash comes out different on each screen. NetworkRigidbody
+            // goes further and makes every non-owning copy kinematic, which is infinite mass: you
+            // would drive into somebody else's tractor and bounce off a wall while on their screen
+            // the mirror image happened.
+            //
+            // Vehicles carry VehicleMotion instead, which reports what the owner's vehicle is doing
+            // and steers every other copy toward it with force. Crew keep a transform component,
+            // because a person is not something anybody crashes into on purpose and their position
+            // arriving late matters more than their momentum surviving.
+            if (go.GetComponent<VehicleController>() != null)
+            {
+                go.AddComponent<VehicleMotion>();
+            }
+            else
+            {
+                go.AddComponent<AnticipatedNetworkTransform>();
+            }
         }
 
         static GameObject SaveAndDiscard(GameObject go, string path)

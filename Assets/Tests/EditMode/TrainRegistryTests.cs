@@ -209,7 +209,7 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void ATrainThisMachineOwnsOutrightIsHeldTogetherAndSimulated()
+        public void ATrainThisMachineOwnsOutrightIsHeldTogether()
         {
             m_Registry.Rebuild(OneTrain());
             var broker = new RecordingBroker(grant: true, localClientId: 7);
@@ -221,10 +221,6 @@ namespace BelowTheWing.Tests.EditMode
             m_Registry.TakeUpWhatWeOwn(broker);
 
             Assert.That(m_Registry.Trains[0].CouplingsEngaged, Is.True);
-            foreach (var member in m_Registry.Trains[0].Members)
-            {
-                Assert.That(member.OursToMove, Is.True);
-            }
         }
 
         [Test]
@@ -241,10 +237,6 @@ namespace BelowTheWing.Tests.EditMode
 
             Assert.That(m_Registry.Trains[0].CouplingsEngaged, Is.False,
                 "hinges between bodies another machine is integrating have one end nothing here can move");
-            foreach (var member in m_Registry.Trains[0].Members)
-            {
-                Assert.That(member.OursToMove, Is.False);
-            }
         }
 
         [Test]
@@ -270,7 +262,6 @@ namespace BelowTheWing.Tests.EditMode
                 "ownership of five vehicles does not move in one instant. If both machines let go on " +
                 "a half-answer, the train is simulated by nobody until the last response lands and it " +
                 "sits down on its bodywork");
-            Assert.That(train.Members[0].OursToMove, Is.True);
         }
 
         [Test]

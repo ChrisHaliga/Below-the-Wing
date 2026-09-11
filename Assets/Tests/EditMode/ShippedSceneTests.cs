@@ -4,6 +4,7 @@ using BelowTheWing.Session;
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -127,6 +128,14 @@ namespace BelowTheWing.Tests.EditMode
                 Assert.That(vehicle.GetComponent<ApronAppearance>(), Is.Not.Null, $"{name}: nothing to look at");
                 Assert.That(vehicle.GetComponent<NetworkObject>().DontDestroyWithOwner, Is.True,
                     $"{name}: a player quitting would take this off the apron with them");
+
+                Assert.That(vehicle.GetComponent<VehicleMotion>(), Is.Not.Null,
+                    $"{name}: nothing reports where this is or steers other machines' copies toward it, " +
+                    "so every copy drifts off on its own physics and never comes back");
+                Assert.That(vehicle.GetComponent<AnticipatedNetworkTransform>(), Is.Null,
+                    $"{name}: a transform component writes a position onto the copy every update, which " +
+                    "fights the correction forces and cancels the impulse a collision should have left. " +
+                    "One of the two has to own where a vehicle goes, and it is not this");
             }
 
             var tractor = Prefab("BaggageTractor");

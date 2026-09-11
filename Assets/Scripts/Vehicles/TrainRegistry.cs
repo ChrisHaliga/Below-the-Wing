@@ -155,10 +155,6 @@ namespace BelowTheWing.Vehicles
                 train.ReleaseCouplings();
             }
 
-            foreach (var member in train.Members)
-            {
-                member.OursToMove = held;
-            }
         }
 
         /// <summary>
