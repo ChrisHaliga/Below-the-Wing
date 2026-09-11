@@ -96,13 +96,20 @@ namespace BelowTheWing.Tests.PlayMode
             var leftAt = crew.transform.position;
             yield return Step(3f);
 
-            Assert.That(crew.Simulated, Is.False, "nobody gave this character a seat, so it is not ours");
-            Assert.That(crew.Body.useGravity, Is.False,
-                "a body nobody is working out the position of here must not be falling between the " +
-                "network updates that place it");
-            Assert.That(Vector3.Distance(crew.transform.position, leftAt), Is.LessThan(0.05f),
-                "a copy of somebody else's character walked itself across the apron. Where it goes is " +
-                "the network's business, not this machine's");
+            Assert.That(crew.OursToMove, Is.False, "nobody gave this character a seat, so it is not ours");
+            Assert.That(crew.Body.useGravity, Is.True,
+                "a copy of somebody else keeps its weight, because players run each other over on " +
+                "purpose and a weightless body has nothing for an impact to modify");
+            // Sideways only. Falling is not walking: a copy of somebody else keeps its weight, so
+            // it settles onto the apron like anything else, and that is the behaviour being asked
+            // for rather than a failure to stay put.
+            var wentSideways = Vector3.Distance(
+                new Vector3(leftAt.x, 0f, leftAt.z),
+                new Vector3(crew.transform.position.x, 0f, crew.transform.position.z));
+
+            Assert.That(wentSideways, Is.LessThan(0.05f),
+                "it walked itself across the apron. Two machines walking one character fight each " +
+                "other, and the one that does not own them loses");
         }
 
         [UnityTest]

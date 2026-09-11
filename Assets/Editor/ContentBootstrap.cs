@@ -93,6 +93,7 @@ namespace BelowTheWing.EditorTools
                 + "rated to carry roughly three times that again in bags. It is towed and never "
                 + "driven, so it has no engine and no steering of its own.";
             profile.massKg = 550f;
+
             profile.bodySizeMetres = new Vector3(1.5f, 1.7f, 3.0f);
             profile.centerOfMassOffset = new Vector3(0f, -0.3f, 0f);
             profile.drawbarLengthMetres = 0.3f;

@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 7042379831794684243}
   - component: {fileID: 3917785933107816195}
   - component: {fileID: 4437895685031766452}
-  - component: {fileID: 1169920559411251319}
+  - component: {fileID: 645095841599992706}
   - component: {fileID: 6244561382194275093}
   - component: {fileID: 2455670644777418200}
   m_Layer: 0
@@ -129,7 +129,7 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
---- !u!114 &1169920559411251319
+--- !u!114 &645095841599992706
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -138,44 +138,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 5279657257171408623}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5abfce83aadd948498d4990c645a017b, type: 3}
+  m_Script: {fileID: 11500000, guid: 7484298457a48504bb522575ceb336bc, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.AnticipatedNetworkTransform
+  m_EditorClassIdentifier: BelowTheWing.Session::BelowTheWing.Session.CrewMotion
   ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 0
-  AutoOwnerAuthorityTickOffset: 1
-  PositionInterpolationType: 0
-  RotationInterpolationType: 0
-  ScaleInterpolationType: 0
-  PositionLerpSmoothing: 1
-  PositionMaxInterpolationTime: 0.1
-  RotationLerpSmoothing: 1
-  RotationMaxInterpolationTime: 0.1
-  ScaleLerpSmoothing: 1
-  ScaleMaxInterpolationTime: 0.1
-  AuthorityMode: 0
-  TickSyncChildren: 0
-  UseUnreliableDeltas: 0
-  SyncPositionX: 1
-  SyncPositionY: 1
-  SyncPositionZ: 1
-  SyncRotAngleX: 1
-  SyncRotAngleY: 1
-  SyncRotAngleZ: 1
-  SyncScaleX: 1
-  SyncScaleY: 1
-  SyncScaleZ: 1
-  PositionThreshold: 0.001
-  RotAngleThreshold: 0.01
-  ScaleThreshold: 0.01
-  UseQuaternionSynchronization: 0
-  UseQuaternionCompression: 0
-  UseHalfFloatPrecision: 0
-  InLocalSpace: 0
-  SwitchTransformSpaceWhenParented: 0
-  Interpolate: 0
-  SlerpPosition: 0
-  StaleDataHandling: 1
+  m_Correction:
+    closingRatePerSecond: 6
+    authority: 0.35
+    snapMetres: 2
+    extrapolationCeilingSeconds: 0.5
+    leaveAloneBelow: 0.05
+  m_ReportsPerSecond: 20
 --- !u!114 &6244561382194275093
 MonoBehaviour:
   m_ObjectHideFlags: 0

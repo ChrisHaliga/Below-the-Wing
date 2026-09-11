@@ -150,6 +150,7 @@ MonoBehaviour:
     authority: 0.35
     snapMetres: 2
     extrapolationCeilingSeconds: 0.5
+    leaveAloneBelow: 0.05
   m_ReportsPerSecond: 20
 --- !u!114 &2754661858236968216
 MonoBehaviour:

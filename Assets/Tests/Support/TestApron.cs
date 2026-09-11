@@ -114,6 +114,11 @@ namespace BelowTheWing.Tests.Support
             go.transform.position = position;
             var crew = go.AddComponent<CrewCharacter>();
             crew.ConfigureBody(profile);
+
+            // Said here because there is no netcode in a play mode test to say it. In the game this
+            // comes from who owns the character, which is the only thing allowed to decide it.
+            crew.OursToMove = false;
+
             m_Spawned.Add(go);
             return crew;
         }

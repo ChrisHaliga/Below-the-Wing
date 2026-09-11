@@ -39,7 +39,6 @@ namespace BelowTheWing.Crew
         Rigidbody m_Body;
         CapsuleCollider m_Collider;
         VehicleController m_RidingIn;
-        bool m_Simulated;
 
         /// <summary>The profile this character's mass, size and speeds come from.</summary>
         public CrewProfile Profile => m_Profile;
@@ -122,45 +121,22 @@ namespace BelowTheWing.Crew
         public void TakeTheSeat(IOwnershipBroker broker, Func<IReadOnlyList<VehicleController>> nearbyVehicles)
         {
             Seat = new VehicleOccupancy(transform, broker, nearbyVehicles, m_ReachMetres);
-            Simulated = true;
         }
 
         /// <summary>
-        /// Whether this machine works out where this character goes.
+        /// Whether this machine is the one that says where this character goes.
         ///
-        /// False on a copy of somebody else's, which is every character except the one belonging to
-        /// the person sitting here. Such a copy has its position written by the network, and running
-        /// its movement locally as well means a full-mass body being braked toward a standstill here
-        /// while replication drags it elsewhere -- so it shoves your character on your screen, and
-        /// on its owner's screen they never touched you.
+        /// Authority, and nothing else. A copy of somebody else's character still has their weight,
+        /// still falls, still keeps whatever speed it was given, and can still be run over -- it
+        /// simply is not walked from here. Two machines walking one character fight each other, and
+        /// the one that does not own them loses.
+        ///
+        /// It has to keep its weight and its momentum because players run each other over on
+        /// purpose. A body with gravity switched off and its velocity zeroed has nothing for an
+        /// impact to modify, so a tractor driven into somebody passes through them on the driver's
+        /// screen while their own screen shows them standing untouched.
         /// </summary>
-        public bool Simulated
-        {
-            get => m_Simulated;
-            set
-            {
-                if (m_Simulated == value)
-                {
-                    return;
-                }
-
-                m_Simulated = value;
-                ApplySimulation();
-            }
-        }
-
-        void ApplySimulation()
-        {
-            Body.useGravity = m_Simulated;
-
-            if (m_Simulated)
-            {
-                return;
-            }
-
-            Body.linearVelocity = Vector3.zero;
-            Body.angularVelocity = Vector3.zero;
-        }
+        public bool OursToMove { get; set; } = true;
 
         void Awake()
         {
@@ -169,10 +145,6 @@ namespace BelowTheWing.Crew
                 ConfigureBody(m_Profile);
             }
 
-            // Applied rather than assumed. The field already holds false, so the setter would see no
-            // change and skip the work -- leaving a copy of somebody else's character falling under
-            // gravity between network updates, which is the very thing the flag exists to stop.
-            ApplySimulation();
         }
 
         void Start()
@@ -253,7 +225,7 @@ namespace BelowTheWing.Crew
 
         void FixedUpdate()
         {
-            if (m_Profile == null || !m_Simulated)
+            if (m_Profile == null)
             {
                 return;
             }
@@ -283,6 +255,15 @@ namespace BelowTheWing.Crew
             // Somebody in a seat is cargo. Their controls are going to the vehicle, and walking at
             // the same time would drag the capsule out through the bodywork.
             if (m_RidingIn != null)
+            {
+                return;
+            }
+
+            // Walked only where this machine is in charge. The body keeps its weight and its
+            // momentum either way, so a copy of somebody else's character is still something that
+            // can be run over -- it is simply not being walked from here as well. Two machines
+            // walking one character fight, and the one that does not own them loses.
+            if (!OursToMove)
             {
                 return;
             }

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using BelowTheWing.Apron;
+using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Diagnostics;
 using BelowTheWing.Net;
@@ -89,8 +90,52 @@ namespace BelowTheWing.EditorTools
             return SaveAndDiscard(go, $"{PrefabFolder}/BaggageTractor.prefab");
         }
 
+        /// <summary>How thick the walkable deck is, in metres.</summary>
+        const float DeckThicknessMetres = 0.08f;
+
         static GameObject BuildCart(VehicleProfile profile)
-            => SaveAndDiscard(NewVehicle("BaggageCart", profile, CartGrey), $"{PrefabFolder}/BaggageCart.prefab");
+        {
+            var go = NewVehicle("BaggageCart", profile, CartGrey);
+            AddDeck(go, profile);
+
+            return SaveAndDiscard(go, $"{PrefabFolder}/BaggageCart.prefab");
+        }
+
+        /// <summary>
+        /// The flat top of a baggage cart: something bags sit on and people stand on.
+        ///
+        /// A thin collider on top of the cart, and for now that is all it is: the cart underneath
+        /// keeps the shape and weight distribution it has been tuned with. Flattening the whole cart
+        /// into a low deck moved its centre of mass, and the couplings -- anchored at a fixed height
+        /// above the ground -- then pulled from well above it, which fed energy into a coasting
+        /// train and stopped it ever settling. That is the bug this project has already chased
+        /// twice, and it wants somebody watching the apron rather than a test threshold to say when
+        /// it is fixed.
+        ///
+        /// Deliberately no lip. A bare board means nothing ever slides or catches, so friction plays
+        /// no part and what throws a bag off is the wake threshold and nothing else. That is the one
+        /// number this slice exists to measure, and it is worth measuring with nothing else in the
+        /// way. A lip is easy to add afterwards if carts read better with one.
+        /// </summary>
+        static void AddDeck(GameObject cart, VehicleProfile profile)
+        {
+            var deck = new GameObject("Deck");
+            deck.transform.SetParent(cart.transform, worldPositionStays: false);
+
+            // Sitting on top of the chassis, so its underside meets the chassis roof.
+            var topOfChassis = profile.bodySizeMetres.y * 0.5f;
+            deck.transform.localPosition = new Vector3(0f, topOfChassis + (DeckThicknessMetres * 0.5f), 0f);
+
+            var surface = deck.AddComponent<BoxCollider>();
+            surface.size = new Vector3(profile.bodySizeMetres.x, DeckThicknessMetres, profile.bodySizeMetres.z);
+
+            // The space something has to come to rest in to be carried: the deck's own footprint,
+            // standing high enough to take a person as well as a bag.
+            var carrier = deck.AddComponent<Carrier>();
+            carrier.Covers(
+                new Vector3(0f, 1f, 0f),
+                new Vector3(profile.bodySizeMetres.x, 2f, profile.bodySizeMetres.z));
+        }
 
         static GameObject NewVehicle(string name, VehicleProfile profile, Color colour)
         {
@@ -179,20 +224,22 @@ namespace BelowTheWing.EditorTools
             networked.DontDestroyWithOwner = outlivesItsOwner;
 
             // Movement is not replicated by a transform component at all. Both of the ones netcode
-            // offers write a position onto the copy -- and a vehicle whose position is written
+            // offers write a position onto the copy -- and anything whose position is written
             // arrives somewhere without having travelled, so the impulse a collision should have
-            // exchanged never happens and the crash comes out different on each screen. NetworkRigidbody
-            // goes further and makes every non-owning copy kinematic, which is infinite mass: you
-            // would drive into somebody else's tractor and bounce off a wall while on their screen
-            // the mirror image happened.
+            // exchanged never happens and the crash comes out different on each screen.
+            // NetworkRigidbody goes further and makes every non-owning copy kinematic, which is
+            // infinite mass: you would drive into somebody else's tractor and bounce off a wall
+            // while on their screen the mirror image happened.
             //
-            // Vehicles carry VehicleMotion instead, which reports what the owner's vehicle is doing
-            // and steers every other copy toward it with force. Crew keep a transform component,
-            // because a person is not something anybody crashes into on purpose and their position
-            // arriving late matters more than their momentum surviving.
+            // Everything that can be crashed into reports what it is doing and is steered toward
+            // that with force instead. That includes people: players run each other over on purpose.
             if (go.GetComponent<VehicleController>() != null)
             {
                 go.AddComponent<VehicleMotion>();
+            }
+            else if (go.GetComponent<CrewCharacter>() != null)
+            {
+                go.AddComponent<CrewMotion>();
             }
             else
             {
