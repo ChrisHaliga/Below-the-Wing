@@ -18,7 +18,7 @@ namespace BelowTheWing.Vehicles
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     [DisallowMultipleComponent]
-    public sealed class VehicleController : MonoBehaviour, IDriveable
+    public sealed class VehicleController : MonoBehaviour
     {
         /// <summary>
         /// How far up inside the bodywork the top of the suspension sits, in metres.

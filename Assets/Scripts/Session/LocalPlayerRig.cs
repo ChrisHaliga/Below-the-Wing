@@ -25,8 +25,7 @@ namespace BelowTheWing.Session
             CrewCharacter character,
             FollowCamera camera,
             IOwnershipBroker broker,
-            Func<IReadOnlyList<IDriveable>> nearbyVehicles,
-            Func<IReadOnlyList<VehicleController>> nearbyCarts,
+            Func<IReadOnlyList<VehicleController>> nearbyVehicles,
             RampSession session)
         {
             m_Character = character != null ? character : throw new ArgumentNullException(nameof(character));
@@ -41,7 +40,7 @@ namespace BelowTheWing.Session
             // player elsewhere is still offered a cart that is physically coupled to a train.
             m_Character.Hitching = new CouplingHand(
                 broker,
-                nearbyCarts,
+                nearbyVehicles,
                 hitched: train => session.Reshaped(train, session.TrainIndexOf(train)),
                 split: (front, back) =>
                 {

@@ -61,9 +61,6 @@ namespace BelowTheWing.Session
         /// Reused rather than rebuilt, because it is handed to the local player's seat on every
         /// fixed step and allocating a fresh list fifty times a second is a waste.
         /// </summary>
-        readonly List<IDriveable> m_Driveable = new List<IDriveable>();
-
-        /// <summary>The same vehicles again, as the type the coupling rules work in.</summary>
         readonly List<VehicleController> m_OnTheApron = new List<VehicleController>();
 
         TrainRegistry m_Trains;
@@ -73,10 +70,11 @@ namespace BelowTheWing.Session
         /// <summary>Every train on the apron, as this machine understands it.</summary>
         public IReadOnlyList<CartChain> Trains => m_Trains.Trains;
 
-        /// <summary>Everything a player might be offered a chance to drive.</summary>
-        public IReadOnlyList<IDriveable> Driveable() => m_Driveable;
-
-        /// <summary>Every vehicle on the apron, for deciding what is close enough to hitch on.</summary>
+        /// <summary>
+        /// Every vehicle on the apron: what a player might be offered to drive, and what is close
+        /// enough to hitch onto the back of a train. One list, because keeping two of the same
+        /// vehicles in step by hand is a bug waiting for the day they disagree.
+        /// </summary>
         public IReadOnlyList<VehicleController> Vehicles() => m_OnTheApron;
 
         void Awake() => m_Trains = new TrainRegistry(m_Coupling);
@@ -155,11 +153,11 @@ namespace BelowTheWing.Session
         /// is standing on its own, so a player there is offered it and can drive it out of the train
         /// it is physically coupled to.
         /// </summary>
-        public void Reshaped(CartChain train, int trainIndex)
+        public void Reshaped(IReadOnlyList<VehicleController> train, int trainIndex)
         {
-            for (var place = 0; place < train.Members.Count; place++)
+            for (var place = 0; place < train.Count; place++)
             {
-                var member = train.Members[place].GetComponent<TrainMember>();
+                var member = train[place].GetComponent<TrainMember>();
                 if (member != null)
                 {
                     member.Joins(trainIndex, place);
@@ -170,9 +168,9 @@ namespace BelowTheWing.Session
         }
 
         /// <summary>Which train a vehicle currently says it belongs to.</summary>
-        public int TrainIndexOf(CartChain train)
+        public int TrainIndexOf(IReadOnlyList<VehicleController> train)
         {
-            var member = train.Members[0].GetComponent<TrainMember>();
+            var member = train[0].GetComponent<TrainMember>();
             return member != null ? member.Membership.TrainIndex : TrainMembership.NoTrain;
         }
 
@@ -219,7 +217,6 @@ namespace BelowTheWing.Session
         public void MembershipChanged()
         {
             m_Described.Clear();
-            m_Driveable.Clear();
             m_OnTheApron.Clear();
 
             foreach (var member in m_Vehicles)
@@ -230,7 +227,6 @@ namespace BelowTheWing.Session
                 }
 
                 m_Described.Add(member.Membership);
-                m_Driveable.Add(member.Vehicle);
                 m_OnTheApron.Add(member.Vehicle);
             }
 
@@ -259,7 +255,7 @@ namespace BelowTheWing.Session
             crew.Spawn();
 
             m_LocalPlayer = new LocalPlayerRig(
-                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, Driveable, Vehicles, this);
+                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, Vehicles, this);
         }
 
         /// <summary>

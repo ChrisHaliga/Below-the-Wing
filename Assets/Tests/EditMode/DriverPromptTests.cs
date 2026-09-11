@@ -15,12 +15,32 @@ namespace BelowTheWing.Tests.EditMode
 
         static readonly Vector3 Standing = Vector3.zero;
 
+        TestApron m_Apron;
+        VehicleProfile m_Profile;
+
+        [SetUp]
+        public void SetUp()
+        {
+            m_Apron = new TestApron();
+            m_Profile = TestProfiles.Tractor();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            m_Apron.TearDown();
+            Object.DestroyImmediate(m_Profile);
+        }
+
+        VehicleController At(string called, float metresAway, bool driveable = true)
+            => m_Apron.AddMarker(m_Profile, called, new Vector3(0f, 0f, metresAway), driveable);
+
         [Test]
         public void NothingIsOfferedWhenEverythingIsOutOfReach()
         {
-            var candidates = new List<IDriveable>
+            var candidates = new List<VehicleController>
             {
-                new StubDriveable("Tug 1", new Vector3(0f, 0f, 12f))
+                At("Tug 1", 12f)
             };
 
             Assert.That(DriverPrompt.Nearest(Standing, Reach, candidates), Is.Null);
@@ -29,9 +49,9 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void AVehicleWithinReachIsOffered()
         {
-            var tug = new StubDriveable("Tug 1", new Vector3(0f, 0f, 2f));
+            var tug = At("Tug 1", 2f);
 
-            var offered = DriverPrompt.Nearest(Standing, Reach, new List<IDriveable> { tug });
+            var offered = DriverPrompt.Nearest(Standing, Reach, new List<VehicleController> { tug });
 
             Assert.That(offered, Is.SameAs(tug));
         }
@@ -39,10 +59,10 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void StandingBetweenTwoVehiclesOffersTheNearer()
         {
-            var further = new StubDriveable("Tug 1", new Vector3(0f, 0f, 2.5f));
-            var nearer = new StubDriveable("Tug 2", new Vector3(0f, 0f, -1f));
+            var further = At("Tug 1", 2.5f);
+            var nearer = At("Tug 2", -1f);
 
-            var offered = DriverPrompt.Nearest(Standing, Reach, new List<IDriveable> { further, nearer });
+            var offered = DriverPrompt.Nearest(Standing, Reach, new List<VehicleController> { further, nearer });
 
             Assert.That(offered, Is.SameAs(nearer), "the offer must follow where the player actually is");
         }
@@ -50,10 +70,10 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void AVehicleThatTakesNoDriverIsNeverOffered()
         {
-            var cart = new StubDriveable("Cart 1-1", new Vector3(0f, 0f, 0.5f), acceptsDriver: false);
-            var tug = new StubDriveable("Tug 1", new Vector3(0f, 0f, 2.5f));
+            var cart = At("Cart 1-1", 0.5f, driveable: false);
+            var tug = At("Tug 1", 2.5f);
 
-            var offered = DriverPrompt.Nearest(Standing, Reach, new List<IDriveable> { cart, tug });
+            var offered = DriverPrompt.Nearest(Standing, Reach, new List<VehicleController> { cart, tug });
 
             Assert.That(offered, Is.SameAs(tug),
                 "a cart is towed, never driven, even when it is the closest thing to hand");
@@ -62,15 +82,15 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void NothingIsOfferedWhenTheOnlyVehicleInReachTakesNoDriver()
         {
-            var cart = new StubDriveable("Cart 1-1", new Vector3(0f, 0f, 0.5f), acceptsDriver: false);
+            var cart = At("Cart 1-1", 0.5f, driveable: false);
 
-            Assert.That(DriverPrompt.Nearest(Standing, Reach, new List<IDriveable> { cart }), Is.Null);
+            Assert.That(DriverPrompt.Nearest(Standing, Reach, new List<VehicleController> { cart }), Is.Null);
         }
 
         [Test]
         public void NothingIsOfferedWhenThereAreNoVehiclesAtAll()
         {
-            Assert.That(DriverPrompt.Nearest(Standing, Reach, new List<IDriveable>()), Is.Null);
+            Assert.That(DriverPrompt.Nearest(Standing, Reach, new List<VehicleController>()), Is.Null);
         }
     }
 }

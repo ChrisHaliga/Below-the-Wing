@@ -59,6 +59,7 @@ namespace BelowTheWing.Vehicles
         readonly List<HingeJoint> m_Couplings;
 
         readonly List<Rigidbody> m_Bodies;
+        readonly ContactBlackout m_Crashing = new ContactBlackout(BlackoutSettings.Default);
         float m_SecondsStill;
         readonly ChainJointSettings m_Settings;
 
@@ -300,6 +301,22 @@ namespace BelowTheWing.Vehicles
                 }
             }
         }
+
+        /// <summary>
+        /// How much say the machine that owns this train currently has over where it is.
+        ///
+        /// Nothing at all for a moment after anything hits it, then easing back. A whole train goes
+        /// quiet together because a collision that displaces one cart displaces everything hitched
+        /// to it -- correcting any member mid-crash puts a force on one end of a hinge whose other
+        /// end is still being thrown about.
+        /// </summary>
+        public float OwnersSay => m_Crashing.Authority;
+
+        /// <summary>Something hit this train. Leave the crash alone for a moment.</summary>
+        public void Struck() => m_Crashing.Touched();
+
+        /// <summary>Moves the blackout on by a step.</summary>
+        public void TickBlackout(float deltaTime) => m_Crashing.Tick(deltaTime);
 
         /// <summary>Whether this vehicle is part of this train.</summary>
         public bool Contains(VehicleController vehicle) => m_Members.Contains(vehicle);

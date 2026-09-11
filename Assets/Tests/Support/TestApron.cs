@@ -47,6 +47,20 @@ namespace BelowTheWing.Tests.Support
             return vehicle;
         }
 
+        /// <summary>
+        /// A vehicle that is only ever asked where it is and whether it would take a driver.
+        ///
+        /// A real controller rather than a stand-in, because the question "which vehicle is
+        /// offered" is answered against real ones in the game, and a stand-in that is near or far
+        /// on its own terms can agree with a rule the real thing would break.
+        /// </summary>
+        public VehicleController AddMarker(VehicleProfile profile, string displayName, Vector3 position, bool driveable = true)
+        {
+            var vehicle = AddVehicle(profile, displayName, position, Quaternion.identity);
+            vehicle.Occupied = !driveable;
+            return vehicle;
+        }
+
         /// <summary>Puts a tractor and a row of carts on the apron and hooks them together.</summary>
         public CartChain AddTrain(VehicleProfile tractor, VehicleProfile cart, int cartCount, Vector3 tractorPosition, string name = "Tug 1")
         {
@@ -84,7 +98,7 @@ namespace BelowTheWing.Tests.Support
             go.transform.position = position;
             var crew = go.AddComponent<CrewCharacter>();
             crew.ConfigureBody(profile);
-            crew.TakeTheSeat(broker ?? new RecordingBroker(grant: true), () => new List<IDriveable>());
+            crew.TakeTheSeat(broker ?? new RecordingBroker(grant: true), () => new List<VehicleController>());
             m_Spawned.Add(go);
             return crew;
         }

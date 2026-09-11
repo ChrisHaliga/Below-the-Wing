@@ -119,7 +119,7 @@ namespace BelowTheWing.Crew
         /// Gives this character a seat, so its owner can get into vehicles. Only the local player's
         /// character gets one.
         /// </summary>
-        public void TakeTheSeat(IOwnershipBroker broker, Func<IReadOnlyList<IDriveable>> nearbyVehicles)
+        public void TakeTheSeat(IOwnershipBroker broker, Func<IReadOnlyList<VehicleController>> nearbyVehicles)
         {
             Seat = new VehicleOccupancy(transform, broker, nearbyVehicles, m_ReachMetres);
             Simulated = true;

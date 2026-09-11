@@ -73,9 +73,9 @@ namespace BelowTheWing.Tests.EditMode
                 m_CartProfile, "Spare", back.transform.position - new Vector3(0.4f, 0f, 4f), Quaternion.identity);
         }
 
-        CartChain m_Hitched;
-        CartChain m_Front;
-        CartChain m_Dropped;
+        IReadOnlyList<VehicleController> m_Hitched;
+        IReadOnlyList<VehicleController> m_Front;
+        IReadOnlyList<VehicleController> m_Dropped;
 
         CouplingHand HandAt(Answering broker, params VehicleController[] nearby)
         {
@@ -138,7 +138,7 @@ namespace BelowTheWing.Tests.EditMode
             hand.Hitch();
             var longer = m_Hitched;
 
-            var back = longer.Members[longer.Members.Count - 2];
+            var back = longer[longer.Count - 2];
             var theirHitch = back.transform.TransformPoint(back.RearHitchLocal);
             var itsHitch = spare.transform.TransformPoint(spare.FrontHitchLocal);
 
@@ -175,12 +175,12 @@ namespace BelowTheWing.Tests.EditMode
             var front = m_Front;
             var dropped = m_Dropped;
 
-            Assert.That(front.Members, Has.Count.EqualTo(2));
-            Assert.That(dropped.Members, Has.Count.EqualTo(1));
+            Assert.That(front, Has.Count.EqualTo(2));
+            Assert.That(dropped, Has.Count.EqualTo(1));
             Assert.That(broker.HandedBack, Has.Count.EqualTo(1),
                 "a player who drops a cart and drives away is not driving that cart. Held on to, it is " +
                 "equipment nobody else can ever take");
-            Assert.That(broker.HandedBack[0], Does.Contain(dropped.Members[0]));
+            Assert.That(broker.HandedBack[0], Does.Contain(dropped[0]));
         }
 
         [Test]
@@ -192,11 +192,11 @@ namespace BelowTheWing.Tests.EditMode
             var front = m_Front;
             var dropped = m_Dropped;
 
-            Assert.That(front.Members, Has.Count.EqualTo(1), "the tractor on its own");
-            Assert.That(dropped.Members, Has.Count.EqualTo(2), "and two carts left standing together");
-            Assert.That(dropped.CouplingsEngaged, Is.True,
-                "the carts left behind are still hitched to each other. Dropped as loose boxes they " +
-                "drift apart and have to be collected one at a time");
+            Assert.That(front, Has.Count.EqualTo(1), "the tractor on its own");
+            Assert.That(dropped, Has.Count.EqualTo(2), "and two carts left standing together");
+            Assert.That(dropped, Does.Contain(m_Train.Members[2]),
+                "the carts left behind stay together as one train, so they are rebuilt hitched to " +
+                "each other rather than as loose boxes to be collected one at a time");
         }
 
         [Test]
@@ -207,7 +207,7 @@ namespace BelowTheWing.Tests.EditMode
 
             hand.UnhitchTheBack();
 
-            Assert.That(hand.Driving.Leader, Is.SameAs(tractor),
+            Assert.That(m_Front[0], Is.SameAs(tractor),
                 "dropping a cart must not take the wheel out of the player's hands");
         }
 

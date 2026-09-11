@@ -38,8 +38,8 @@ namespace BelowTheWing.Vehicles
     {
         readonly IOwnershipBroker m_Broker;
         readonly Func<IReadOnlyList<VehicleController>> m_Nearby;
-        readonly Action<CartChain> m_Hitched;
-        readonly Action<CartChain, CartChain> m_Split;
+        readonly Action<IReadOnlyList<VehicleController>> m_Hitched;
+        readonly Action<IReadOnlyList<VehicleController>, IReadOnlyList<VehicleController>> m_Split;
 
         VehicleController m_Offered;
         bool m_Asking;
@@ -47,8 +47,8 @@ namespace BelowTheWing.Vehicles
         public CouplingHand(
             IOwnershipBroker broker,
             Func<IReadOnlyList<VehicleController>> nearby,
-            Action<CartChain> hitched = null,
-            Action<CartChain, CartChain> split = null)
+            Action<IReadOnlyList<VehicleController>> hitched = null,
+            Action<IReadOnlyList<VehicleController>, IReadOnlyList<VehicleController>> split = null)
         {
             m_Broker = broker ?? throw new ArgumentNullException(nameof(broker));
             m_Nearby = nearby ?? throw new ArgumentNullException(nameof(nearby));
@@ -131,14 +131,11 @@ namespace BelowTheWing.Vehicles
                     return;
                 }
 
-                // Put into place before the coupling exists, so the joint is created with its two
+                // Put into place before anything hooks it up, so the coupling is made with its two
                 // ends already touching and has nothing to pull against.
                 var (position, rotation) = Coupling.WhereToStand(
                     Driving.Members[Driving.Members.Count - 1], wanted);
 
-                // Both the transform and the body. Writing only the body leaves the transform where
-                // it was until physics next syncs, and the joint created in between anchors itself
-                // against the old pose -- which is the violated coupling this is here to avoid.
                 wanted.transform.SetPositionAndRotation(position, rotation);
                 wanted.Body.position = position;
                 wanted.Body.rotation = rotation;
@@ -148,12 +145,12 @@ namespace BelowTheWing.Vehicles
                 wanted.Body.linearVelocity = Driving.Leader.Body.linearVelocity;
                 wanted.Body.angularVelocity = Vector3.zero;
 
-                var longer = CartChain.Couple(joining, Driving.Settings);
-                longer.EngageCouplings();
-
-                Driving = longer;
+                // Saying who belongs to the train is the whole job. Building the chain and hanging
+                // the hinges is the register's, on every machine, from the membership it is told --
+                // doing it here as well would leave two chains and two sets of hinges on the same
+                // vehicles, with nothing holding a reference to the first.
                 Prompt = CouplingPrompt.None;
-                m_Hitched?.Invoke(longer);
+                m_Hitched?.Invoke(joining);
             });
         }
 
@@ -171,16 +168,21 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
-            var (front, back) = Driving.SplitAfter(memberIndex);
+            var members = Driving.Members;
+            var staying = new List<VehicleController>(members.Count);
+            var dropped = new List<VehicleController>(members.Count);
 
-            front.EngageCouplings();
-            back.EngageCouplings();
+            for (var i = 0; i < members.Count; i++)
+            {
+                (i <= memberIndex ? staying : dropped).Add(members[i]);
+            }
 
-            m_Broker.HandBack(back.Members);
+            // Again, said rather than done. The register rebuilds both trains from the new
+            // membership and takes the coupling at the break off with the chain it belonged to.
+            m_Broker.HandBack(dropped);
 
-            Driving = front;
             Prompt = CouplingPrompt.None;
-            m_Split?.Invoke(front, back);
+            m_Split?.Invoke(staying, dropped);
         }
 
         /// <summary>Drops the last vehicle off the back, which is what a single key press means.</summary>
