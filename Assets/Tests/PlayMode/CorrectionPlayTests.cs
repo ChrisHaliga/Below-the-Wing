@@ -50,7 +50,7 @@ namespace BelowTheWing.Tests.PlayMode
             var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
             for (var i = 0; i < steps; i++)
             {
-                Correction.Apply(vehicle.Body, said, secondsSince: 0f, Settings);
+                Correction.Apply(new[] { vehicle.Body }, vehicle.Body, said, secondsSince: 0f, Settings);
                 yield return new WaitForFixedUpdate();
             }
         }
@@ -115,7 +115,7 @@ namespace BelowTheWing.Tests.PlayMode
             var said = Standing(new Vector3(0f, 0f, 60f));
 
             // A single step is all a snap should need.
-            Correction.Apply(vehicle.Body, said, secondsSince: 0f, Settings);
+            Correction.Apply(new[] { vehicle.Body }, vehicle.Body, said, secondsSince: 0f, Settings);
             yield return new WaitForFixedUpdate();
 
             Assert.That(Vector3.Distance(vehicle.transform.position, said.Position), Is.LessThan(1f),
@@ -137,7 +137,7 @@ namespace BelowTheWing.Tests.PlayMode
             var steps = Mathf.CeilToInt(0.5f / Time.fixedDeltaTime);
             for (var i = 0; i < steps; i++)
             {
-                Correction.Apply(vehicle.Body, said, secondsSince: 0f, Settings, say: 0f);
+                Correction.Apply(new[] { vehicle.Body }, vehicle.Body, said, secondsSince: 0f, Settings, say: 0f);
                 yield return new WaitForFixedUpdate();
             }
 

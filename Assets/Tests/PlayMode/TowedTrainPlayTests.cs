@@ -62,6 +62,17 @@ namespace BelowTheWing.Tests.PlayMode
             return train;
         }
 
+        static Rigidbody[] Bodies(CartChain train)
+        {
+            var bodies = new Rigidbody[train.Members.Count];
+            for (var i = 0; i < bodies.Length; i++)
+            {
+                bodies[i] = train.Members[i].Body;
+            }
+
+            return bodies;
+        }
+
         static float[] GapsBetweenMembers(CartChain train)
         {
             var gaps = new float[train.Members.Count - 1];
@@ -98,7 +109,7 @@ namespace BelowTheWing.Tests.PlayMode
             var steps = Mathf.CeilToInt(8f / Time.fixedDeltaTime);
             for (var i = 0; i < steps; i++)
             {
-                Correction.Apply(train.Leader.Body, said, secondsSince: 0f, Settings);
+                Correction.Apply(Bodies(train), train.Leader.Body, said, secondsSince: 0f, Settings);
                 yield return new WaitForFixedUpdate();
             }
 
@@ -122,7 +133,7 @@ namespace BelowTheWing.Tests.PlayMode
             var steps = Mathf.CeilToInt(10f / Time.fixedDeltaTime);
             for (var i = 0; i < steps; i++)
             {
-                Correction.Apply(train.Leader.Body, said, secondsSince: 0f, Settings);
+                Correction.Apply(Bodies(train), train.Leader.Body, said, secondsSince: 0f, Settings);
                 yield return new WaitForFixedUpdate();
             }
 
@@ -139,6 +150,63 @@ namespace BelowTheWing.Tests.PlayMode
                 $"{awake} of {train.Members.Count} still awake. Any force at all wakes a rigidbody, so " +
                 "a correction applied every step -- however small -- keeps every vehicle on the apron " +
                 "awake for the rest of the session on every machine that does not own it");
+        }
+
+        [UnityTest]
+        public IEnumerator ATrainPutBackArrivesStillHitchedUpInOrder()
+        {
+            var train = SomebodyElsesTrain();
+            yield return Step(1f);
+            var spacedAt = GapsBetweenMembers(train);
+
+            // Far enough away that blending is given up on and the train is moved outright.
+            var said = VehicleState.Of(train.Leader.Body);
+            said.Position += new Vector3(0f, 0f, 30f);
+
+            Correction.Apply(Bodies(train), train.Leader.Body, said, secondsSince: 0f, Settings);
+            yield return Step(1.5f);
+
+            Assert.That(Vector3.Distance(train.Leader.transform.position, said.Position), Is.LessThan(2f),
+                "it has to have actually arrived");
+
+            var now = GapsBetweenMembers(train);
+            for (var i = 0; i < now.Length; i++)
+            {
+                Assert.That(now[i], Is.EqualTo(spacedAt[i]).Within(0.4f),
+                    $"the gap behind vehicle {i} is {now[i]:F2} m, was {spacedAt[i]:F2} m. Moving only the " +
+                    "front of a train leaves every coupling violated by the distance travelled, and the " +
+                    "solver answers that by throwing the carts apart -- the train twists itself inside " +
+                    "out instead of arriving");
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ATrainBeingPulledAlongKeepsItsShape()
+        {
+            var train = SomebodyElsesTrain();
+            yield return Step(1f);
+            var spacedAt = GapsBetweenMembers(train);
+
+            // Its owner is driving away steadily: always a little ahead of where this copy is.
+            var steps = Mathf.CeilToInt(6f / Time.fixedDeltaTime);
+            for (var i = 0; i < steps; i++)
+            {
+                var said = VehicleState.Of(train.Leader.Body);
+                said.Position += new Vector3(0f, 0f, 0.8f);
+                said.Velocity = new Vector3(0f, 0f, 4f);
+
+                Correction.Apply(Bodies(train), train.Leader.Body, said, secondsSince: 0f, Settings);
+                yield return new WaitForFixedUpdate();
+            }
+
+            var now = GapsBetweenMembers(train);
+            for (var i = 0; i < now.Length; i++)
+            {
+                Assert.That(now[i], Is.EqualTo(spacedAt[i]).Within(0.5f),
+                    $"under a steady correction the gap behind vehicle {i} went from {spacedAt[i]:F2} m " +
+                    "to {now[i]:F2} m. Pushing only the front means the couplings have to drag the carts " +
+                    "along, and the solver spends every step undoing what the correction just did");
+            }
         }
 
         [UnityTest]

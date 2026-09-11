@@ -64,12 +64,21 @@ namespace BelowTheWing.Tests.Multiplayer
             yield return WaitForSpawnedOnAllOrTimeOut(spawned);
             AssertOnTimeout("the tractor never reached every machine");
 
+            // Ownership of a freshly spawned object takes a moment to settle. What is being checked
+            // is that it lands on exactly one machine, not how quickly it gets there.
+            yield return WaitForConditionOrTimeOut(
+                () => CopyOn<NetworkObject>(driver, id).OwnerClientId == driver.LocalClientId);
+            AssertOnTimeout("the machine that spawned the tractor never ended up owning it");
+
             Assert.That(CopyOn<VehicleController>(driver, id).OursToMove, Is.True,
                 "the machine netcode says owns it has to be the one moving it");
 
             foreach (var watcher in new[] { m_ServerNetworkManager, m_ClientNetworkManagers[1] })
             {
+                var here = CopyOn<NetworkObject>(watcher, id);
                 Assert.That(CopyOn<VehicleController>(watcher, id).OursToMove, Is.False,
+                    $"on client {watcher.LocalClientId}: netcode says the owner is {here.OwnerClientId}, " +
+                    $"IsOwner is {here.IsOwner}, and the driving machine is {driver.LocalClientId}. " +
                     "two machines that both believe a vehicle is theirs drive it in two directions and " +
                     "both try to broadcast where it went. Netcode refuses the second write, so the only " +
                     "trace is an error in a log nobody is reading while the vehicle quietly diverges");

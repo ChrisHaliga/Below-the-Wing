@@ -117,39 +117,20 @@ namespace BelowTheWing.Session
         /// it. Blending any member back mid-crash puts a force on one end of a hinge whose other end
         /// is still being thrown about, which is exactly the constraint fight that towing a train
         /// locally exists to remove.
+        ///
+        /// Every vehicle belongs to a train, even if it is a train of itself, so there is no
+        /// separate case for a lone tractor.
         /// </summary>
         void Struck()
         {
-            var train = m_Vehicle.Chain;
-            if (train == null)
+            foreach (var member in m_Vehicle.Chain.Members)
             {
-                m_Crashing.Touched();
-                return;
-            }
-
-            foreach (var member in train.Members)
-            {
-                var motion = member.GetComponent<VehicleMotion>();
-                if (motion != null)
-                {
-                    motion.m_Crashing.Touched();
-                }
+                member.GetComponent<VehicleMotion>()?.LeaveThisCrashAlone();
             }
         }
 
-        /// <summary>
-        /// Authority over a vehicle is netcode ownership, and this is where the two are tied together.
-        ///
-        /// Nothing else gets to have an opinion. Left to be set from somewhere else -- by whatever
-        /// decides which trains this machine is holding, say -- the game's idea of who is in charge
-        /// and netcode's can disagree, and every machine that wrongly believes a vehicle is its own
-        /// drives it locally and tries to broadcast where it went. Netcode refuses the write, so the
-        /// only sign of it is an error in a log nobody is reading while the vehicle quietly diverges.
-        /// </summary>
-        public override void OnNetworkSpawn() => m_Vehicle.OursToMove = IsOwner;
-
-        protected override void OnOwnershipChanged(ulong previous, ulong now)
-            => m_Vehicle.OursToMove = now == NetworkManager.LocalClientId;
+        /// <summary>Told by a vehicle in the same train that a crash is under way.</summary>
+        void LeaveThisCrashAlone() => m_Crashing.Touched();
 
         /// <summary>Whether anything has been heard from the machine that owns this vehicle yet.</summary>
         public bool HeardFromTheOwner => m_Reported.Value.TakenAt > 0d;
@@ -200,7 +181,7 @@ namespace BelowTheWing.Session
         /// losing. Towing removes the argument -- there is one corrected body and the hinges
         /// distribute its motion the way they already know how to.
         /// </summary>
-        bool TheOneWorthCorrecting => m_Vehicle.Chain == null || m_Vehicle.Chain.Leader == m_Vehicle;
+        bool TheOneWorthCorrecting => m_Vehicle.Chain != null && m_Vehicle.Chain.Leader == m_Vehicle;
 
         void FixedUpdate()
         {
@@ -208,6 +189,16 @@ namespace BelowTheWing.Session
             {
                 return;
             }
+
+            // Read afresh every step rather than caught when it changes.
+            //
+            // Ownership is a question with a live answer, and catching it as an event gets it wrong
+            // at the one moment it matters most: an object spawned by another machine runs its spawn
+            // callback before ownership has been applied, reads itself as owned, and no later change
+            // event arrives to correct it -- because from netcode's side nothing changed. That
+            // machine then drives a vehicle it does not own and broadcasts where it went, which
+            // netcode silently refuses, leaving an error in a log nobody reads.
+            m_Vehicle.OursToMove = IsOwner;
 
             m_Crashing.Tick(Time.fixedDeltaTime);
 
@@ -250,8 +241,8 @@ namespace BelowTheWing.Session
             }
 
             Correction.Apply(
-                m_Vehicle.Body, m_Reported.Value.AsState(), SecondsSinceReading(), m_Correction,
-                say: m_Crashing.Authority);
+                m_Vehicle.Chain.Bodies, m_Vehicle.Body, m_Reported.Value.AsState(), SecondsSinceReading(),
+                m_Correction, say: m_Crashing.Authority);
         }
     }
 }

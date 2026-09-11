@@ -58,6 +58,7 @@ namespace BelowTheWing.Vehicles
         /// </summary>
         readonly List<HingeJoint> m_Couplings;
 
+        readonly List<Rigidbody> m_Bodies;
         readonly ChainJointSettings m_Settings;
 
         CartChain(List<VehicleController> members, List<HingeJoint> couplings, ChainJointSettings settings)
@@ -65,6 +66,12 @@ namespace BelowTheWing.Vehicles
             m_Members = members;
             m_Couplings = couplings;
             m_Settings = settings;
+
+            m_Bodies = new List<Rigidbody>(members.Count);
+            foreach (var member in members)
+            {
+                m_Bodies.Add(member.Body);
+            }
 
             foreach (var member in m_Members)
             {
@@ -84,6 +91,21 @@ namespace BelowTheWing.Vehicles
         public VehicleController Leader => m_Members[0];
 
         /// <summary>
+        /// Every member's rigidbody, in order.
+        ///
+        /// Built once with the chain rather than gathered on demand, because it is wanted on every
+        /// physics step by whatever is keeping this train in step with the machine that owns it.
+        /// </summary>
+        public IReadOnlyList<Rigidbody> Bodies => m_Bodies;
+
+        /// <summary>
+        /// How this train's couplings are set up. Carried so that a train made longer or shorter at
+        /// runtime keeps the joint limits and solver effort the original had, rather than silently
+        /// acquiring whatever the defaults happen to be.
+        /// </summary>
+        public ChainJointSettings Settings => m_Settings;
+
+        /// <summary>
         /// Whether this machine is holding the train together with real joints, rather than
         /// watching a train somebody else is simulating.
         /// </summary>
@@ -99,7 +121,11 @@ namespace BelowTheWing.Vehicles
                     }
                 }
 
-                return m_Couplings.Count > 0;
+                // A vehicle on its own has no couplings to engage, and is therefore as hooked
+                // together as it will ever be. Answering false for it -- which a count check does --
+                // means every uncoupled vehicle in the game reports that it is waiting to be joined
+                // up, and anything that gates behaviour on this refuses to act on a lone tractor.
+                return true;
             }
         }
 

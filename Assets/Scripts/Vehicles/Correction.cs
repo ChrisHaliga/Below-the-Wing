@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace BelowTheWing.Vehicles
@@ -145,19 +146,30 @@ namespace BelowTheWing.Vehicles
         }
 
         /// <summary>
-        /// Steers a body one step closer to what its owner reported.
+        /// Steers a whole train one step closer to what its owner reported.
+        ///
+        /// A train is one object as far as this is concerned. The correction is worked out from the
+        /// vehicle at the front, because that is the one whose position is reported, and then the
+        /// same change is applied to every vehicle in the train.
+        ///
+        /// Applying it to the front alone is what makes a train wander. The carts behind do not get
+        /// the push, so the couplings have to drag them along, and the solver spends every step
+        /// undoing what the correction just did. Moving all of them by the same amount leaves the
+        /// couplings with nothing to resist -- the shape of the train never changes, so no hinge is
+        /// asked to do anything.
         ///
         /// Here rather than in the component that receives the report, so that what correction does
-        /// to a real rigidbody can be watched without a network underneath it. The alternative is
+        /// to real rigidbodies can be watched without a network underneath it. The alternative is
         /// testing it through three machines in one process, and those share a single physics world
         /// -- every copy of a vehicle is a solid body in the same space as every other copy, so they
         /// collide with themselves and the measurement is meaningless.
         /// </summary>
         public static void Apply(
-            Rigidbody body, VehicleState said, float secondsSince, CorrectionSettings settings, float say = 1f)
+            IReadOnlyList<Rigidbody> train, Rigidbody leader, VehicleState said, float secondsSince,
+            CorrectionSettings settings, float say = 1f)
         {
             say = Mathf.Clamp01(say);
-            if (say <= 0f)
+            if (say <= 0f || leader == null)
             {
                 // A crash is playing out. Local physics resolves it without interference, and the
                 // two machines are allowed to disagree until it has finished.
@@ -166,21 +178,14 @@ namespace BelowTheWing.Vehicles
 
             var shouldBe = WhereItShouldBeNow(said, secondsSince, settings);
 
-            if (TooFarToBlend(body.position, shouldBe, settings))
+            if (TooFarToBlend(leader.position, shouldBe, settings))
             {
-                // Blending has been given up on, so the body is put where it belongs and given the
-                // motion that goes with it. Left with its old velocity it would immediately set off
-                // away from the place it was just moved to. Never during a crash: this is the one
-                // moment a teleport is most visible and least forgivable.
-                body.position = shouldBe;
-                body.rotation = said.Rotation;
-                body.linearVelocity = said.Velocity;
-                body.angularVelocity = said.Spin;
+                PutBack(train, leader, said, shouldBe);
                 return;
             }
 
-            var nudge = Nudge(body.position, body.linearVelocity, said, secondsSince, settings) * say;
-            var spin = SpinNudge(body.rotation, body.angularVelocity, said, settings) * say;
+            var nudge = Nudge(leader.position, leader.linearVelocity, said, secondsSince, settings) * say;
+            var spin = SpinNudge(leader.rotation, leader.angularVelocity, said, settings) * say;
 
             // A correction too small to see is not worth making, and making it has a cost that has
             // nothing to do with its size: any force at all wakes a rigidbody. Applied every step
@@ -192,8 +197,46 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
-            body.AddForce(nudge, ForceMode.VelocityChange);
-            body.AddTorque(spin, ForceMode.VelocityChange);
+            foreach (var body in train)
+            {
+                if (body == null)
+                {
+                    continue;
+                }
+
+                body.AddForce(nudge, ForceMode.VelocityChange);
+                body.AddTorque(spin, ForceMode.VelocityChange);
+            }
+        }
+
+        /// <summary>
+        /// Moves a train bodily to where its owner says the front of it is, keeping its own shape.
+        ///
+        /// Every vehicle moves and turns by the same amount, so the train arrives still hitched up
+        /// in the order it was in. Moving only the front of it leaves every coupling violated by the
+        /// distance travelled, and the solver answers that by throwing the carts apart -- which
+        /// reads as a train that twists itself inside out rather than arriving.
+        /// </summary>
+        static void PutBack(
+            IReadOnlyList<Rigidbody> train, Rigidbody leader, VehicleState said, Vector3 shouldBe)
+        {
+            var wasAt = leader.position;
+            var turn = said.Rotation * Quaternion.Inverse(leader.rotation);
+
+            foreach (var body in train)
+            {
+                if (body == null)
+                {
+                    continue;
+                }
+
+                var offset = body.position - wasAt;
+
+                body.position = shouldBe + (turn * offset);
+                body.rotation = turn * body.rotation;
+                body.linearVelocity = said.Velocity;
+                body.angularVelocity = said.Spin;
+            }
         }
 
         /// <summary>

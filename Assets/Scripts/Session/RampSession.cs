@@ -63,7 +63,11 @@ namespace BelowTheWing.Session
         /// </summary>
         readonly List<IDriveable> m_Driveable = new List<IDriveable>();
 
+        /// <summary>The same vehicles again, as the type the coupling rules work in.</summary>
+        readonly List<VehicleController> m_OnTheApron = new List<VehicleController>();
+
         TrainRegistry m_Trains;
+        readonly Reclaiming m_Reclaiming = new Reclaiming();
         LocalPlayerRig m_LocalPlayer;
 
         /// <summary>Every train on the apron, as this machine understands it.</summary>
@@ -71,6 +75,9 @@ namespace BelowTheWing.Session
 
         /// <summary>Everything a player might be offered a chance to drive.</summary>
         public IReadOnlyList<IDriveable> Driveable() => m_Driveable;
+
+        /// <summary>Every vehicle on the apron, for deciding what is close enough to hitch on.</summary>
+        public IReadOnlyList<VehicleController> Vehicles() => m_OnTheApron;
 
         void Awake() => m_Trains = new TrainRegistry(m_Coupling);
 
@@ -135,8 +142,57 @@ namespace BelowTheWing.Session
 
             foreach (var train in m_Trains.TrainsHeldBy(departed, m_Broker))
             {
-                train.RequestOwnership(m_Broker, _ => { });
+                m_Reclaiming.TakeBack(train);
             }
+        }
+
+        /// <summary>
+        /// Writes down a train's new shape so that every machine works out the same one.
+        ///
+        /// Which train a vehicle belongs to is replicated rather than inferred from where things are
+        /// parked, so hitching a cart on is not finished until that has been said out loud. Until it
+        /// is, only the machine that did it knows -- and every other machine still believes the cart
+        /// is standing on its own, so a player there is offered it and can drive it out of the train
+        /// it is physically coupled to.
+        /// </summary>
+        public void Reshaped(CartChain train, int trainIndex)
+        {
+            for (var place = 0; place < train.Members.Count; place++)
+            {
+                var member = train.Members[place].GetComponent<TrainMember>();
+                if (member != null)
+                {
+                    member.Joins(trainIndex, place);
+                }
+            }
+
+            MembershipChanged();
+        }
+
+        /// <summary>Which train a vehicle currently says it belongs to.</summary>
+        public int TrainIndexOf(CartChain train)
+        {
+            var member = train.Members[0].GetComponent<TrainMember>();
+            return member != null ? member.Membership.TrainIndex : TrainMembership.NoTrain;
+        }
+
+        /// <summary>
+        /// A train number nothing on the apron is using, for carts that have just been dropped off
+        /// and are now a train of their own.
+        /// </summary>
+        public int ATrainNumberNobodyIsUsing()
+        {
+            var highest = TrainMembership.NoTrain;
+
+            foreach (var member in m_Vehicles)
+            {
+                if (member != null)
+                {
+                    highest = Mathf.Max(highest, member.Membership.TrainIndex);
+                }
+            }
+
+            return highest + 1;
         }
 
         /// <summary>A vehicle has appeared, from wherever. Work the trains out again.</summary>
@@ -164,6 +220,7 @@ namespace BelowTheWing.Session
         {
             m_Described.Clear();
             m_Driveable.Clear();
+            m_OnTheApron.Clear();
 
             foreach (var member in m_Vehicles)
             {
@@ -174,6 +231,7 @@ namespace BelowTheWing.Session
 
                 m_Described.Add(member.Membership);
                 m_Driveable.Add(member.Vehicle);
+                m_OnTheApron.Add(member.Vehicle);
             }
 
             m_Trains.Rebuild(m_Described);
@@ -201,7 +259,7 @@ namespace BelowTheWing.Session
             crew.Spawn();
 
             m_LocalPlayer = new LocalPlayerRig(
-                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, Driveable);
+                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, Driveable, Vehicles, this);
         }
 
         /// <summary>
@@ -223,6 +281,14 @@ namespace BelowTheWing.Session
 
         Vector3 CrewSize()
             => new Vector3(m_CrewProfile.radiusMetres * 2f, m_CrewProfile.heightMetres, m_CrewProfile.radiusMetres * 2f);
+
+        void FixedUpdate()
+        {
+            if (m_Broker != null)
+            {
+                m_Reclaiming.Chase(m_Broker, Time.fixedDeltaTime);
+            }
+        }
 
         void LateUpdate() => m_LocalPlayer?.FollowWhateverTheyAreControlling();
     }
