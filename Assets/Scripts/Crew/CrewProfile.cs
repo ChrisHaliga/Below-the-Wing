@@ -34,5 +34,16 @@ namespace BelowTheWing.Crew
 
         [Tooltip("How fast the body comes round to face where it is going, in degrees per second.")]
         public float turnRateDegreesPerSecond = 720f;
+
+        [Header("Jumping")]
+        [Tooltip("How high a standing jump clears, in metres. Tuned to reach a cart deck with room " +
+                 "to spare, because that is the one thing jumping is for -- and once set, every " +
+                 "vertical decision in the game is measured against it.")]
+        public float jumpHeightMetres = 1.4f;
+
+        [Tooltip("How much of a walking speed a player keeps control of while in the air, 0 to 1. " +
+                 "Low on purpose: being committed to an arc is funnier, and it makes a moving deck " +
+                 "a target that can be missed.")]
+        public float airControl = 0.15f;
     }
 }

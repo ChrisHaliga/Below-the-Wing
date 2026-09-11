@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BelowTheWing.Cargo;
 using BelowTheWing.Vehicles;
 using UnityEngine;
 
@@ -36,9 +37,14 @@ namespace BelowTheWing.Crew
         [SerializeField, Tooltip("How close this character must be to a vehicle to be offered it.")]
         float m_ReachMetres = 3f;
 
+        [SerializeField, Tooltip("What counts as something to stand on. Everything, by default: a " +
+                                 "cart deck is as good a floor as the apron.")]
+        LayerMask m_StandsOn = ~0;
+
         Rigidbody m_Body;
         CapsuleCollider m_Collider;
         VehicleController m_RidingIn;
+        float m_LastJumpedAt = -1f;
 
         /// <summary>The profile this character's mass, size and speeds come from.</summary>
         public CrewProfile Profile => m_Profile;
@@ -74,6 +80,12 @@ namespace BelowTheWing.Crew
         /// player at this machine reshapes trains from here.
         /// </summary>
         public CouplingHand Hitching { get; set; }
+
+        /// <summary>
+        /// Whatever this character is riding on, if anything. Present on every character, not only
+        /// the local one, because a rider has to be carried on every machine that can see them.
+        /// </summary>
+        public Carried Riding { get; set; }
 
         /// <summary>
         /// What this character is asking a vehicle to do. Meaningful only while it is driving one:
@@ -207,6 +219,48 @@ namespace BelowTheWing.Crew
             }
         }
 
+        /// <summary>Whether there is something underneath close enough to push off.</summary>
+        public bool Grounded
+        {
+            get
+            {
+                var feet = transform.position - (Vector3.up * ((m_Profile.heightMetres * 0.5f) - 0.05f));
+                return Jumping.StandingOnSomething(feet, 0.2f, m_StandsOn, out _);
+            }
+        }
+
+        /// <summary>
+        /// Pushes off whatever is underneath.
+        ///
+        /// Jumping off a carrier lets go of it, so the jump carries wherever the carrier was going.
+        /// Somebody springing off a cart doing six metres a second lands well ahead of where they
+        /// left, which is both correct and the funnier outcome.
+        /// </summary>
+        public void Jump()
+        {
+            const float NoDoubleJumpsWithin = 0.2f;
+
+            if (m_Profile == null || Time.time - m_LastJumpedAt < NoDoubleJumpsWithin || !Grounded)
+            {
+                return;
+            }
+
+            m_LastJumpedAt = Time.time;
+
+            var carriedAt = Vector3.zero;
+            if (Riding != null && Riding.Attached)
+            {
+                carriedAt = Riding.On.VelocityAt(transform.position);
+                Riding.Wake(Time.time);
+            }
+
+            var up = Jumping.TakeOffSpeed(m_Profile.jumpHeightMetres, Mathf.Abs(Physics.gravity.y));
+            var velocity = Body.linearVelocity + carriedAt;
+            velocity.y = up;
+
+            Body.linearVelocity = velocity;
+        }
+
         void LateUpdate()
         {
             // Parenting a character into a vehicle is replicated; switching its collider off is not,
@@ -269,6 +323,12 @@ namespace BelowTheWing.Crew
             }
 
             var asked = IntentSource?.Current ?? CrewIntent.Idle;
+
+            if (asked.Jump)
+            {
+                Jump();
+            }
+
             var cameraYaw = Camera != null ? Camera.YawDegrees : transform.eulerAngles.y;
             var wanted = CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile);
 

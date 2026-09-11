@@ -51,7 +51,13 @@ namespace BelowTheWing.Crew
             Current = new CrewIntent(
                 move,
                 sprint: keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed,
-                brake: keyboard.spaceKey.isPressed ? 1f : 0f);
+                brake: keyboard.spaceKey.isPressed ? 1f : 0f,
+
+                // Space is the brake while driving and the jump while on foot. The same key for
+                // "get off the ground" either way, and never both at once, because a player in a
+                // seat is not standing on anything.
+                jump: keyboard.spaceKey.wasPressedThisFrame,
+                holdingOn: keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed);
 
             Look();
 

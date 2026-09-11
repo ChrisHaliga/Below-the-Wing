@@ -23,11 +23,25 @@ namespace BelowTheWing.Crew
         /// <summary>How hard the brake is being asked for, from 0 to 1. Ignored on foot.</summary>
         public readonly float Brake;
 
-        public CrewIntent(Vector2 move, bool sprint = false, float brake = 0f)
+        /// <summary>Whether a jump was asked for this step.</summary>
+        public readonly bool Jump;
+
+        /// <summary>
+        /// Whether they are holding on to whatever they are riding.
+        ///
+        /// Occupies the hands, which is the point of it: holding on is a trade a rider makes rather
+        /// than a rule the game enforces, and it gives the driver and the passenger something to
+        /// shout at each other about.
+        /// </summary>
+        public readonly bool HoldingOn;
+
+        public CrewIntent(Vector2 move, bool sprint = false, float brake = 0f, bool jump = false, bool holdingOn = false)
         {
             Move = move;
             Sprint = sprint;
             Brake = brake;
+            Jump = jump;
+            HoldingOn = holdingOn;
         }
 
         /// <summary>A character being asked to do nothing.</summary>
