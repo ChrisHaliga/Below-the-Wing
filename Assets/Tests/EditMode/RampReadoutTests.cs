@@ -47,6 +47,17 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void TheReadoutCountsWhatIsTouchingWhat()
+        {
+            var broker = new RecordingBroker(grant: true, localClientId: 7);
+            m_Readout.Observe(new[] { m_Train }, broker);
+
+            Assert.That(m_Readout.ContactCount, Is.Zero,
+                "nothing has hit anything yet, and a contact count that starts out wrong is worse " +
+                "than no contact count");
+        }
+
+        [Test]
         public void TheReadoutSaysWhetherThisMachineIsInChargeOfEachTrain()
         {
             var broker = new RecordingBroker(grant: true, localClientId: 7);

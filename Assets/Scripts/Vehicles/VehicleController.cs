@@ -265,6 +265,13 @@ namespace BelowTheWing.Vehicles
 
             BuildWheels(profile);
 
+            // Counting what is touching this vehicle. Physics reports contacts as they begin and
+            // end and keeps no running total, so the only way to have the number is to keep it.
+            if (GetComponent<ContactTally>() == null)
+            {
+                gameObject.AddComponent<ContactTally>();
+            }
+
             Chain ??= CartChain.Couple(new[] { this }, ChainJointSettings.Default);
         }
 

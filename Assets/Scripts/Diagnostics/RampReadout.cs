@@ -51,6 +51,7 @@ namespace BelowTheWing.Diagnostics
         readonly Stopwatch m_SinceStepBegan = new Stopwatch();
         readonly List<CartChain> m_Trains = new List<CartChain>();
         readonly List<Rigidbody> m_Bodies = new List<Rigidbody>();
+        readonly List<ContactTally> m_Tallies = new List<ContactTally>();
 
         IOwnershipBroker m_Broker;
 
@@ -62,6 +63,16 @@ namespace BelowTheWing.Diagnostics
 
         /// <summary>How long the last physics step took, in milliseconds.</summary>
         public float PhysicsStepMilliseconds { get; private set; }
+
+        /// <summary>
+        /// How many pairs of things are touching right now.
+        ///
+        /// The number that explains a physics step time nothing else accounts for. Contacts are
+        /// what the solver actually spends its time on, and a train folded against an aircraft, or
+        /// a pile-up nobody is looking at, costs the same on every machine whether or not anybody
+        /// can see it.
+        /// </summary>
+        public int ContactCount { get; private set; }
 
         /// <summary>
         /// One line per train saying which machine is simulating it, and whether every member of
@@ -95,11 +106,19 @@ namespace BelowTheWing.Diagnostics
             m_Trains.AddRange(trains);
 
             m_Bodies.Clear();
+            m_Tallies.Clear();
+
             foreach (var train in trains)
             {
                 foreach (var member in train.Members)
                 {
                     m_Bodies.Add(member.Body);
+
+                    var tally = member.GetComponent<ContactTally>();
+                    if (tally != null)
+                    {
+                        m_Tallies.Add(tally);
+                    }
                 }
             }
         }
@@ -152,7 +171,28 @@ namespace BelowTheWing.Diagnostics
 
         void OnEnable() => StartCoroutine(TimePhysicsSteps());
 
-        void FixedUpdate() => m_SinceStepBegan.Restart();
+        void FixedUpdate()
+        {
+            ContactCount = CountContacts();
+            m_SinceStepBegan.Restart();
+        }
+
+        int CountContacts()
+        {
+            var touching = 0;
+
+            foreach (var tally in m_Tallies)
+            {
+                if (tally != null)
+                {
+                    touching += tally.Touching;
+                }
+            }
+
+            // Every contact is counted at both ends, so halving it gives pairs of things touching,
+            // which is what the solver actually has work to do about.
+            return touching / 2;
+        }
 
         IEnumerator TimePhysicsSteps()
         {
@@ -186,7 +226,8 @@ namespace BelowTheWing.Diagnostics
             var lines = new List<string>
             {
                 $"awake bodies   {AwakeBodyCount} / {m_Bodies.Count}",
-                $"physics step   {PhysicsStepMilliseconds:F2} ms"
+                $"physics step   {PhysicsStepMilliseconds:F2} ms",
+                $"contacts       {ContactCount}"
             };
             lines.AddRange(OwnershipLines);
 

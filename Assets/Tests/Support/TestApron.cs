@@ -22,6 +22,13 @@ namespace BelowTheWing.Tests.Support
 
         public TestApron(float sizeMetres = 200f)
         {
+            // Physics has to be stepping for any of this to mean anything. The netcode integration
+            // tests drive the world themselves and can leave it under script control, and a later
+            // test that assumes otherwise measures a world that never moves: a vehicle released
+            // from the throttle keeps its exact speed for ever, and every assertion about settling,
+            // grip or collision quietly passes or fails for the wrong reason.
+            Physics.simulationMode = SimulationMode.FixedUpdate;
+
             Ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
             Ground.name = "Apron";
             Ground.transform.position = new Vector3(0f, -0.5f, 0f);
