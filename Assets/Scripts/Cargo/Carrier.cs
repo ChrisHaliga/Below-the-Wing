@@ -28,6 +28,7 @@ namespace BelowTheWing.Cargo
         readonly List<Carried> m_Riding = new List<Carried>();
 
         Rigidbody m_Body;
+        Carried m_RidingOnSomethingElse;
 
         /// <summary>The body this carrier moves as, if it moves at all.</summary>
         public Rigidbody Body
@@ -73,7 +74,27 @@ namespace BelowTheWing.Cargo
         /// to ask it rather than work it out again.
         /// </summary>
         public Vector3 VelocityAt(Vector3 worldPoint)
-            => Body != null ? Body.GetPointVelocity(worldPoint) : Vector3.zero;
+        {
+            if (m_RidingOnSomethingElse == null)
+            {
+                m_RidingOnSomethingElse = GetComponentInParent<Carried>();
+            }
+
+            // A carrier that is itself riding on something has a kinematic body, and a kinematic
+            // body reports no velocity at all -- it is being moved by being parented, not by
+            // physics. So it passes the question up: a player standing on a cart is moving at the
+            // speed of the cart under them, and a bag thrown from their hands has to know that.
+            //
+            // This is the nested case, and it is the one worth getting right first. A bag held by
+            // somebody riding a cart is the most ordinary thing a player will do, and it is where
+            // two chains of attachment have to come apart in the right order.
+            if (m_RidingOnSomethingElse != null && m_RidingOnSomethingElse.Attached)
+            {
+                return m_RidingOnSomethingElse.On.VelocityAt(worldPoint);
+            }
+
+            return Body != null ? Body.GetPointVelocity(worldPoint) : Vector3.zero;
+        }
 
         internal void NowCarrying(Carried carried)
         {
