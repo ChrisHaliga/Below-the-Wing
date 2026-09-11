@@ -22,6 +22,22 @@ namespace BelowTheWing.Vehicles
             };
     }
 
+    /// <summary>
+    /// Something that is keeping a vehicle in step with the machine that owns it, and knows how
+    /// well that is going.
+    ///
+    /// An interface so that a readout can ask without the diagnostics needing to know anything
+    /// about netcode, sessions, or how a report reaches a vehicle in the first place.
+    /// </summary>
+    public interface IKeepsInStep
+    {
+        /// <summary>
+        /// How far this copy is from where its owner says it should be by now, in metres. Zero on
+        /// the machine that owns the vehicle, which cannot be out of step with itself.
+        /// </summary>
+        float MetresOutOfPlace { get; }
+    }
+
     /// <summary>How hard a vehicle is steered back toward where its owner says it is.</summary>
     [Serializable]
     public struct CorrectionSettings

@@ -70,7 +70,7 @@ namespace BelowTheWing.Session
     /// </summary>
     [RequireComponent(typeof(VehicleController))]
     [DisallowMultipleComponent]
-    public sealed class VehicleMotion : NetworkBehaviour
+    public sealed class VehicleMotion : NetworkBehaviour, IKeepsInStep
     {
         [SerializeField, Tooltip("How hard a copy is steered back towards what its owner reports.")]
         CorrectionSettings m_Correction = CorrectionSettings.Default;

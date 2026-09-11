@@ -104,20 +104,50 @@ namespace BelowTheWing.Diagnostics
             }
         }
 
+        /// <summary>
+        /// How far the worst-placed member of a train is from where its owner says it should be, in
+        /// metres. Zero for a train this machine owns.
+        ///
+        /// The worst rather than the average, because a train comes apart one vehicle at a time and
+        /// an average over five hides the one that has gone.
+        /// </summary>
+        public static float WorstDrift(CartChain train)
+        {
+            var worst = 0f;
+
+            foreach (var member in train.Members)
+            {
+                var keptInStep = member.GetComponent<IKeepsInStep>();
+                if (keptInStep != null)
+                {
+                    worst = Mathf.Max(worst, keptInStep.MetresOutOfPlace);
+                }
+            }
+
+            return worst;
+        }
+
         string DescribeOwnership(CartChain train)
         {
             var owners = train.Members.Select(member => m_Broker.OwnerOf(member)).Distinct().ToList();
+            var mine = train.Leader.OursToMove ? "ours" : "theirs";
+
+            // Whether this machine is in charge, and how far its copy has drifted, are the two facts
+            // that say whether a disagreement between two screens is a tuning problem or an
+            // architectural one. Neither can be seen by looking at the apron: both screens look
+            // perfectly reasonable on their own.
+            var drift = train.Leader.OursToMove ? "" : $"  off by {WorstDrift(train):F2} m";
 
             if (owners.Count == 1)
             {
-                return $"{train.Leader.DisplayName} (+{train.Members.Count - 1}): owner {owners[0]}";
+                return $"{train.Leader.DisplayName} (+{train.Members.Count - 1}): {mine}, owner {owners[0]}{drift}";
             }
 
             // The failure this readout exists to catch. A train whose members are being simulated by
             // different machines has couplings with one end on each, and the solver on both sides is
             // working against a body it cannot move.
             return $"{train.Leader.DisplayName} (+{train.Members.Count - 1}): SPLIT across owners "
-                   + string.Join(", ", owners);
+                   + string.Join(", ", owners) + drift;
         }
 
         void OnEnable() => StartCoroutine(TimePhysicsSteps());
