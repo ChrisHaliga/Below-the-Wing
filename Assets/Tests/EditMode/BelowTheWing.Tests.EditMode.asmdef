@@ -2,6 +2,7 @@
     "name": "BelowTheWing.Tests.EditMode",
     "rootNamespace": "BelowTheWing.Tests.EditMode",
     "references": [
+        "BelowTheWing.Cargo",
         "BelowTheWing.Vehicles",
         "BelowTheWing.Crew",
         "BelowTheWing.Apron",

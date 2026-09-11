@@ -2,6 +2,7 @@
     "name": "BelowTheWing.Tests.Support",
     "rootNamespace": "BelowTheWing.Tests.Support",
     "references": [
+        "BelowTheWing.Cargo",
         "BelowTheWing.Vehicles",
         "BelowTheWing.Crew",
         "BelowTheWing.Apron"
