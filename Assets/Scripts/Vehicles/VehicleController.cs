@@ -87,7 +87,6 @@ namespace BelowTheWing.Vehicles
         BoxCollider m_Collider;
         Wheel[] m_Wheels;
         float m_SteerAngleDegrees;
-        float m_SecondsStill;
         bool m_Occupied;
 
         /// <summary>The tuning and real-world mass this vehicle runs on.</summary>
@@ -336,18 +335,16 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
-            if (idle && IsBarelyMoving())
+            // Sleep is a decision for a whole train, taken once, by the vehicle at the front of it.
+            // A vehicle on its own is a train of itself, so there is no separate case for one.
+            if (Chain != null && Chain.Leader == this
+                && Chain.SettleOnceEverythingHasStopped(
+                    idle, Time.fixedDeltaTime, SecondsOfStillnessBeforeSleeping,
+                    StillnessMetresPerSecond, StillnessRadiansPerSecond))
             {
-                m_SecondsStill += Time.fixedDeltaTime;
-                if (m_SecondsStill >= SecondsOfStillnessBeforeSleeping)
-                {
-                    Body.Sleep();
-                    return;
-                }
-            }
-            else
-            {
-                m_SecondsStill = 0f;
+                // Just put to sleep. Applying a single wheel force now would wake it again, and the
+                // train would spend the rest of the session settling and being roused by itself.
+                return;
             }
 
             if (OursToMove)
@@ -398,9 +395,6 @@ namespace BelowTheWing.Vehicles
             }
         }
 
-        bool IsBarelyMoving()
-            => Body.linearVelocity.sqrMagnitude < StillnessMetresPerSecond * StillnessMetresPerSecond
-               && Body.angularVelocity.sqrMagnitude < StillnessRadiansPerSecond * StillnessRadiansPerSecond;
 
         static bool NobodyIsAskingForAnything(in DriveIntent intent)
             => Mathf.Approximately(intent.Throttle, 0f)

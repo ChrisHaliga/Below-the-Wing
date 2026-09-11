@@ -204,7 +204,14 @@ namespace BelowTheWing.Vehicles
                     continue;
                 }
 
-                body.AddForce(nudge, ForceMode.VelocityChange);
+                // A turn about the front of the train, not five vehicles each twisting where they
+                // stand. Turning a body also carries it sideways by however far it sits from the
+                // point being turned about, and leaving that out is what makes the carts fight the
+                // couplings holding them: each one is spun in place, the hinge refuses, and the
+                // pair of them shuffle for ever without ever settling.
+                var carriedRound = Vector3.Cross(spin, body.position - leader.position);
+
+                body.AddForce(nudge + carriedRound, ForceMode.VelocityChange);
                 body.AddTorque(spin, ForceMode.VelocityChange);
             }
         }
