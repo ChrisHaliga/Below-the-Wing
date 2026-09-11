@@ -124,47 +124,23 @@ namespace BelowTheWing.Vehicles
         public CartChain Chain { get; internal set; }
 
         /// <summary>
-        /// Whether this machine is the one working out where this vehicle goes.
+        /// Whether this machine is the one that says where this vehicle goes.
         ///
-        /// False on a copy of a vehicle somebody else is simulating. Such a copy still collides and
-        /// can still be shoved, but it does not run its own suspension, grip or drive: its position
-        /// comes from its owner, and anything computed here would be overwritten the moment the
-        /// next update arrived. Running it anyway costs four raycasts and four forces per vehicle
-        /// per step for a result that is thrown away.
+        /// Authority, and nothing else. Physics runs on every vehicle on every machine either way:
+        /// a copy of one somebody else owns holds itself up on its own suspension, grips the ground
+        /// with its own tires, keeps its weight and keeps its speed. The single difference is that
+        /// nobody here is driving it, so no throttle and no brake are applied.
+        ///
+        /// It has to be that way for contact between two players to mean anything. A crash is an
+        /// exchange of momentum, and a body held still, or held up by nothing, has no momentum to
+        /// exchange -- there is nothing for an impulse to write into and nothing that survives to
+        /// the next update. What the owner says is blended in on top of the physics rather than
+        /// replacing it, which is why the physics has to be running underneath.
         ///
         /// Deliberately a plain flag rather than a question about networking, so that the vehicle
         /// still knows nothing about how -- or whether -- the game is networked.
         /// </summary>
-        public bool Simulated
-        {
-            get => m_Simulated;
-            set
-            {
-                if (m_Simulated == value)
-                {
-                    return;
-                }
-
-                m_Simulated = value;
-
-                // Gravity goes with it. A copy that is not running its own suspension has nothing
-                // holding it up, so left falling it sinks onto its bodywork between network updates
-                // and is snapped back the moment the next one arrives -- which reads as every remote
-                // vehicle juddering, twenty times a second.
-                //
-                // It stays a dynamic body either way. A vehicle somebody else owns still has to be
-                // something you can walk into and be shoved by.
-                Body.useGravity = value;
-
-                if (!value)
-                {
-                    Body.linearVelocity = Vector3.zero;
-                    Body.angularVelocity = Vector3.zero;
-                }
-            }
-        }
-
-        bool m_Simulated = true;
+        public bool OursToMove { get; set; } = true;
 
         public string DisplayName => m_DisplayName;
 
@@ -335,12 +311,16 @@ namespace BelowTheWing.Vehicles
 
         void FixedUpdate()
         {
-            if (m_Profile == null || m_Wheels == null || !Simulated)
+            if (m_Profile == null || m_Wheels == null)
             {
                 return;
             }
 
-            var intent = IntentSource?.Current ?? DriveIntent.Idle;
+            // Controls are read only where they count. On a copy of a vehicle somebody else owns
+            // the wheels still hold it up and still grip, but nobody here is driving: two machines
+            // opening the same throttle would fight each other, and the one that does not own it
+            // would lose anyway.
+            var intent = OursToMove ? IntentSource?.Current ?? DriveIntent.Idle : DriveIntent.Idle;
             var idle = NobodyIsAskingForAnything(intent);
 
             // A body that has gone to sleep costs nothing until something wakes it, and a parked
@@ -370,7 +350,10 @@ namespace BelowTheWing.Vehicles
                 m_SecondsStill = 0f;
             }
 
-            m_SteerAngleDegrees = Steering.Step(m_SteerAngleDegrees, intent.Steer, Time.fixedDeltaTime, m_Profile);
+            if (OursToMove)
+            {
+                m_SteerAngleDegrees = Steering.Step(m_SteerAngleDegrees, intent.Steer, Time.fixedDeltaTime, m_Profile);
+            }
 
             var massPerWheel = m_Profile.massKg / m_Wheels.Length;
             var rayLength = m_Profile.wheelRadiusMetres + m_Profile.suspensionRestLengthMetres;

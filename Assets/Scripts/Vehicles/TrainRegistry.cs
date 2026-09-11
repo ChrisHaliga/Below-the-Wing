@@ -157,7 +157,7 @@ namespace BelowTheWing.Vehicles
 
             foreach (var member in train.Members)
             {
-                member.Simulated = held;
+                member.OursToMove = held;
             }
         }
 
