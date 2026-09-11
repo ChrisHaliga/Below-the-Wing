@@ -1,5 +1,6 @@
 using System.IO;
 using BelowTheWing.Apron;
+using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Vehicles;
 using UnityEditor;
@@ -28,6 +29,7 @@ namespace BelowTheWing.EditorTools
         const string VehiclesFolder = "Assets/Content/Vehicles";
         const string AircraftFolder = "Assets/Content/Aircraft";
         const string CrewFolder = "Assets/Content/Crew";
+        const string CargoFolder = "Assets/Content/Cargo";
 
         [MenuItem("Below the Wing/Create missing content")]
         public static void CreateMissingContent()
@@ -36,6 +38,7 @@ namespace BelowTheWing.EditorTools
             CreateIfMissing($"{VehiclesFolder}/BaggageCart.asset", BuildCart);
             CreateIfMissing($"{AircraftFolder}/NarrowbodyAirliner.asset", BuildAircraft);
             CreateIfMissing($"{CrewFolder}/RampWorker.asset", BuildRampWorker);
+            CreateIfMissing($"{CargoFolder}/CheckedBag.asset", BuildCheckedBag);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -82,6 +85,23 @@ namespace BelowTheWing.EditorTools
             profile.maxSteerAngleDegrees = 45f;
             profile.steerRateDegreesPerSecond = 120f;
             profile.driveable = true;
+            return profile;
+        }
+
+        static BagProfile BuildCheckedBag()
+        {
+            var profile = ScriptableObject.CreateInstance<BagProfile>();
+
+            // A checked suitcase. Airlines allow up to twenty-three kilograms and most people fill
+            // it, so twenty is the everyday bag rather than a light one.
+            profile.massKg = 20f;
+            profile.sizeMetres = new Vector3(0.4f, 0.25f, 0.6f);
+            profile.wakeAtLateralAcceleration = 6f;
+            profile.wakeAtTiltDegrees = 25f;
+            profile.wakeAtImpactImpulse = 400f;
+            profile.cannotSettleForSeconds = 1f;
+            profile.damagedAtImpulse = 250f;
+
             return profile;
         }
 

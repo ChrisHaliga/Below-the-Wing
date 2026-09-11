@@ -47,10 +47,12 @@ namespace BelowTheWing.EditorTools
         const string CartProfilePath = "Assets/Content/Vehicles/BaggageCart.asset";
         const string AircraftProfilePath = "Assets/Content/Aircraft/NarrowbodyAirliner.asset";
         const string CrewProfilePath = "Assets/Content/Crew/RampWorker.asset";
+        const string BagProfilePath = "Assets/Content/Cargo/CheckedBag.asset";
 
         static readonly Color TractorBlue = new Color(0.35f, 0.55f, 0.75f);
         static readonly Color CartGrey = new Color(0.55f, 0.55f, 0.58f);
         static readonly Color HiVisYellow = new Color(0.95f, 0.75f, 0.15f);
+        static readonly Color BagCanvas = new Color(0.45f, 0.38f, 0.32f);
         static readonly Color FuselageWhite = new Color(0.82f, 0.82f, 0.85f);
 
         [MenuItem("Below the Wing/Rebuild apron scene and prefabs")]
@@ -70,6 +72,7 @@ namespace BelowTheWing.EditorTools
             var cart = BuildCart(cartProfile);
             var aircraft = BuildAircraft(aircraftProfile);
             var crew = BuildCrew(crewProfile);
+            var bagPrefab = BuildBag();
 
             BuildScene(tractorProfile, cartProfile, aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
 
@@ -135,6 +138,14 @@ namespace BelowTheWing.EditorTools
             carrier.Covers(
                 new Vector3(0f, 1f, 0f),
                 new Vector3(profile.bodySizeMetres.x, 2f, profile.bodySizeMetres.z));
+
+            // Something has to decide when the deck can no longer hold what is on it.
+            deck.AddComponent<CarrierWatch>();
+
+            // And one machine has to do the deciding. Judged on a copy, the nudges that keep the
+            // copy in step read as sideways acceleration the cart never felt, and bags leap off
+            // decks on every screen except the one where the cart is really being driven.
+            cart.AddComponent<CarrierAuthority>();
         }
 
         static GameObject NewVehicle(string name, VehicleProfile profile, Color colour)
@@ -177,6 +188,36 @@ namespace BelowTheWing.EditorTools
             return SaveAndDiscard(go, $"{PrefabFolder}/NarrowbodyAirliner.prefab");
         }
 
+        /// <summary>
+        /// A piece of baggage: a box that can be carried, thrown, and stood on top of.
+        ///
+        /// Built here with everything else rather than by hand, so that the one description of what
+        /// a bag is lives in one place and every bag in the game is that.
+        /// </summary>
+        static GameObject BuildBag()
+        {
+            var profile = AssetDatabase.LoadAssetAtPath<BagProfile>(BagProfilePath);
+            if (profile == null)
+            {
+                Debug.LogWarning($"No bag profile at {BagProfilePath}; skipping the bag prefab.");
+                return null;
+            }
+
+            var go = new GameObject("Bag");
+            go.AddComponent<Rigidbody>();
+            go.AddComponent<BoxCollider>();
+
+            Set(go.AddComponent<Bag>(), "m_Profile", profile);
+            go.AddComponent<Carried>();
+            go.AddComponent<SettlesOntoCarriers>();
+
+            AddNetworking(go, outlivesItsOwner: true);
+
+            Dress(go, ApronAppearance.Shape.Box, profile.sizeMetres, BagCanvas, profile.sizeMetres.y * 1.2f);
+
+            return SaveAndDiscard(go, $"{PrefabFolder}/Bag.prefab");
+        }
+
         static GameObject BuildCrew(CrewProfile profile)
         {
             var go = new GameObject("RampWorker");
@@ -184,6 +225,15 @@ namespace BelowTheWing.EditorTools
             go.AddComponent<CapsuleCollider>();
 
             Set(go.AddComponent<CrewCharacter>(), "m_Profile", profile);
+
+            // A person is something that can be carried -- by a cart deck now, by a belt or a pit
+            // later -- and something that can carry, because hands are a carrier like any other.
+            go.AddComponent<Carried>();
+
+            var hands = new GameObject("Hands");
+            hands.transform.SetParent(go.transform, worldPositionStays: false);
+            hands.transform.localPosition = new Vector3(0f, 0f, profile.radiusMetres + 0.25f);
+            hands.AddComponent<Carrier>().Covers(Vector3.zero, new Vector3(0.8f, 0.8f, 0.8f), holdsAtItsCentre: true);
 
             AddNetworking(go, outlivesItsOwner: false);
 
@@ -241,6 +291,12 @@ namespace BelowTheWing.EditorTools
             {
                 go.AddComponent<CrewMotion>();
             }
+            else if (go.GetComponent<Carried>() != null)
+            {
+                // Cargo has the same problem and one more besides: which cart a bag is riding on has
+                // to agree everywhere, and no transform component has anything to say about that.
+                go.AddComponent<CargoMotion>();
+            }
             else
             {
                 go.AddComponent<AnticipatedNetworkTransform>();
@@ -297,6 +353,12 @@ namespace BelowTheWing.EditorTools
             Set(session, "m_CartPrefab", cart.GetComponent<NetworkObject>());
             Set(session, "m_AircraftPrefab", aircraft.GetComponent<NetworkObject>());
             Set(session, "m_CrewPrefab", crew.GetComponent<NetworkObject>());
+
+            var bag = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabFolder}/Bag.prefab");
+            if (bag != null)
+            {
+                Set(session, "m_BagPrefab", bag.GetComponent<NetworkObject>());
+            }
             Set(session, "m_Broker", broker);
             Set(session, "m_Camera", camera);
             Set(session, "m_Readout", readout);

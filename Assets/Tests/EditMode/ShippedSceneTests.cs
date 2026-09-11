@@ -1,4 +1,5 @@
 using BelowTheWing.Apron;
+using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Session;
 using BelowTheWing.Vehicles;
@@ -70,8 +71,24 @@ namespace BelowTheWing.Tests.EditMode
                 known += list.PrefabList.Count;
             }
 
-            Assert.That(known, Is.GreaterThanOrEqualTo(4),
-                "the apron needs a tractor, a cart, an aircraft and a ramp worker");
+            Assert.That(known, Is.GreaterThanOrEqualTo(5),
+                "the apron needs a tractor, a cart, an aircraft, a ramp worker and a bag");
+
+            var bag = Prefab("Bag").GetComponent<NetworkObject>();
+            var registered = false;
+            foreach (var list in lists)
+            {
+                foreach (var entry in list.PrefabList)
+                {
+                    registered |= entry.Prefab != null
+                                  && entry.Prefab.GetComponent<NetworkObject>() == bag;
+                }
+            }
+
+            Assert.That(registered, Is.True,
+                "the session spawns bags, so every other machine has to know how to make one. " +
+                "Unregistered, the machine that builds the apron gets its bags and everybody else " +
+                "is told the prefab could not be found and creates nothing");
         }
 
         [Test]
@@ -82,7 +99,7 @@ namespace BelowTheWing.Tests.EditMode
             foreach (var field in new[]
                      {
                          "m_TractorProfile", "m_CartProfile", "m_AircraftProfile", "m_CrewProfile",
-                         "m_TractorPrefab", "m_CartPrefab", "m_AircraftPrefab", "m_CrewPrefab",
+                         "m_TractorPrefab", "m_CartPrefab", "m_AircraftPrefab", "m_CrewPrefab", "m_BagPrefab",
                          "m_Broker", "m_Camera", "m_Readout"
                      })
             {
@@ -137,6 +154,25 @@ namespace BelowTheWing.Tests.EditMode
                     "fights the correction forces and cancels the impulse a collision should have left. " +
                     "One of the two has to own where a vehicle goes, and it is not this");
             }
+
+            var cart = Prefab("BaggageCart");
+            Assert.That(cart.GetComponentInChildren<CarrierWatch>(), Is.Not.Null,
+                "BaggageCart: nothing decides that a corner was taken too hard, so a cart can be " +
+                "rolled onto its roof with its bags still glued to the deck");
+            Assert.That(cart.GetComponent<CarrierAuthority>(), Is.Not.Null,
+                "BaggageCart: with nothing saying which machine decides, every machine decides. A " +
+                "copy is steered toward its owner's reports twenty times a second and those nudges " +
+                "read as sideways acceleration the cart never felt, so bags leap off decks on every " +
+                "screen except the one where the cart is actually being driven");
+
+            var bag = Prefab("Bag");
+            Assert.That(bag.GetComponent<CargoMotion>(), Is.Not.Null,
+                "Bag: nothing tells the other machines which cart this is riding on, and no force " +
+                "exists that could pull a bag from a deck on one screen onto a deck on another");
+            Assert.That(bag.GetComponent<AnticipatedNetworkTransform>(), Is.Null,
+                "Bag: a transform component writes a position onto the copy every update and has " +
+                "nothing at all to say about what the bag is riding on, which is the only part " +
+                "players would notice being wrong");
 
             var tractor = Prefab("BaggageTractor");
             Assert.That(tractor.GetComponent<VehicleOccupant>(), Is.Not.Null,

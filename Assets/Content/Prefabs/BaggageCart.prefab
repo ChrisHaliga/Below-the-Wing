@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5367736163791389493}
   - component: {fileID: 5234260280086048928}
   - component: {fileID: 3030852149309277671}
+  - component: {fileID: 6007830581166362506}
   m_Layer: 0
   m_Name: Deck
   m_TagString: Untagged
@@ -68,6 +69,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: BelowTheWing.Cargo::BelowTheWing.Cargo.Carrier
   m_VolumeCentreLocal: {x: 0, y: 1, z: 0}
   m_VolumeSizeMetres: {x: 1.5, y: 2, z: 3}
+  m_HoldsAtItsCentre: 0
+--- !u!114 &6007830581166362506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 290160301196510764}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7bd52dd0a889deb4db922428ac7827c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelowTheWing.Cargo::BelowTheWing.Cargo.CarrierWatch
 --- !u!1 &3129341736767791987
 GameObject:
   m_ObjectHideFlags: 0
@@ -85,6 +99,7 @@ GameObject:
   - component: {fileID: 7841358492550874047}
   - component: {fileID: 1480938795275519676}
   - component: {fileID: 7284710948490794246}
+  - component: {fileID: 2720136339239251915}
   m_Layer: 0
   m_Name: BaggageCart
   m_TagString: Untagged
@@ -262,4 +277,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6bfce43af087ee240882717eb9cbc7ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Session::BelowTheWing.Session.ApronIdentity
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &2720136339239251915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3129341736767791987}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36a00770b024d424d819899aecab7148, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelowTheWing.Session::BelowTheWing.Session.CarrierAuthority
   ShowTopMostFoldoutHeaderGroup: 1
