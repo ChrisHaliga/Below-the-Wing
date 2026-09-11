@@ -177,16 +177,12 @@ namespace BelowTheWing.Session
             }
 
             m_Trains.Rebuild(m_Described);
-            m_Trains.TakeUpWhatWeOwn(m_Broker);
 
             if (m_Readout != null)
             {
                 m_Readout.Observe(m_Trains.Trains, m_Broker);
             }
         }
-
-        /// <summary>A vehicle has changed hands, so which machine holds which couplings may have too.</summary>
-        public void OwnershipMoved() => m_Trains.TakeUpWhatWeOwn(m_Broker);
 
         void SpawnOwnCrew()
         {

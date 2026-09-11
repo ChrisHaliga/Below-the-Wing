@@ -72,13 +72,6 @@ namespace BelowTheWing.Session
             m_Session?.Left(this);
         }
 
-        protected override void OnOwnershipChanged(ulong previous, ulong current)
-        {
-            // Which machine holds a train decides which machine holds its couplings, so a change of
-            // hands has to be noticed above the netcode layer as well as inside it.
-            m_Session?.OwnershipMoved();
-        }
-
         void OnPlaceChanged(int previous, int current) => m_Session?.MembershipChanged();
     }
 }

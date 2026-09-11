@@ -67,7 +67,18 @@ namespace BelowTheWing.Vehicles
             foreach (var lineup in wanted)
             {
                 var existing = MatchExisting(lineup);
-                kept.Add(existing ?? CartChain.Couple(lineup, m_Settings));
+                if (existing == null)
+                {
+                    existing = CartChain.Couple(lineup, m_Settings);
+
+                    // Hooked together here and on every other machine, whoever owns it. A train is
+                    // towed locally from whichever copy of the tractor this machine has, so the
+                    // hinges are what keep its carts in a line rather than each cart being dragged
+                    // into place on its own.
+                    existing.EngageCouplings();
+                }
+
+                kept.Add(existing);
             }
 
             // Anything not carried across is a chain nobody holds a reference to any more, and its
@@ -82,39 +93,6 @@ namespace BelowTheWing.Vehicles
 
             m_Trains.Clear();
             m_Trains.AddRange(kept);
-        }
-
-        /// <summary>
-        /// Puts couplings on the trains this machine owns outright and takes them off the ones it
-        /// does not own at all.
-        ///
-        /// A train the machine owns only part of is left exactly as it is. Ownership of five
-        /// vehicles does not move in one instant, and during that round trip neither the machine
-        /// handing the train over nor the one taking it owns all of it. Acting on a half-answer
-        /// means both let go, and the train is simulated by nobody until the last response lands.
-        /// </summary>
-        public void TakeUpWhatWeOwn(IOwnershipBroker broker)
-        {
-            foreach (var train in m_Trains)
-            {
-                var ours = 0;
-                foreach (var member in train.Members)
-                {
-                    if (broker.OwnedByUs(member))
-                    {
-                        ours++;
-                    }
-                }
-
-                if (ours == train.Members.Count)
-                {
-                    Hold(train, held: true);
-                }
-                else if (ours == 0)
-                {
-                    Hold(train, held: false);
-                }
-            }
         }
 
         /// <summary>
@@ -142,19 +120,6 @@ namespace BelowTheWing.Vehicles
             }
 
             return theirs;
-        }
-
-        static void Hold(CartChain train, bool held)
-        {
-            if (held)
-            {
-                train.EngageCouplings();
-            }
-            else
-            {
-                train.ReleaseCouplings();
-            }
-
         }
 
         /// <summary>

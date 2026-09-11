@@ -136,7 +136,6 @@ namespace BelowTheWing.Tests.EditMode
             m_Registry.Rebuild(described);
             var before = m_Registry.Trains[0];
             var broker = OwningEverything(before);
-            m_Registry.TakeUpWhatWeOwn(broker);
 
             var couplingBefore = before.CouplingBehind(0);
             Assert.That(couplingBefore, Is.Not.Null,
@@ -156,7 +155,6 @@ namespace BelowTheWing.Tests.EditMode
         {
             var described = OneTrain();
             m_Registry.Rebuild(described);
-            m_Registry.TakeUpWhatWeOwn(OwningEverything(m_Registry.Trains[0]));
             var departing = described[4].Vehicle;
 
             Assert.That(departing.GetComponents<Joint>(), Is.Not.Empty,
@@ -218,13 +216,12 @@ namespace BelowTheWing.Tests.EditMode
                 broker.SetOwner(member, 7);
             }
 
-            m_Registry.TakeUpWhatWeOwn(broker);
 
             Assert.That(m_Registry.Trains[0].CouplingsEngaged, Is.True);
         }
 
         [Test]
-        public void ATrainThisMachineOwnsNoneOfIsLetGoOf()
+        public void ATrainThisMachineOwnsNoneOfIsStillHookedTogether()
         {
             m_Registry.Rebuild(OneTrain());
             var broker = new RecordingBroker(grant: true, localClientId: 7);
@@ -233,10 +230,12 @@ namespace BelowTheWing.Tests.EditMode
                 broker.SetOwner(member, 3);
             }
 
-            m_Registry.TakeUpWhatWeOwn(broker);
-
-            Assert.That(m_Registry.Trains[0].CouplingsEngaged, Is.False,
-                "hinges between bodies another machine is integrating have one end nothing here can move");
+            Assert.That(m_Registry.Trains[0].CouplingsEngaged, Is.True,
+                "this supersedes the slice 1 rule that couplings belonged only to the machine owning " +
+                "every member. That rule protected a hinge from being pulled against by a correction " +
+                "applied to the body on its other end -- and carts are no longer corrected at all, so " +
+                "there is nothing left for the hinge to fight. Uncoupled, a train nobody here owns is " +
+                "five loose boxes that drift apart and shuffle about for the rest of the session");
         }
 
         [Test]
@@ -250,22 +249,20 @@ namespace BelowTheWing.Tests.EditMode
                 broker.SetOwner(member, 7);
             }
 
-            m_Registry.TakeUpWhatWeOwn(broker);
-            Assert.That(train.CouplingsEngaged, Is.True, "precondition: we were holding it");
+            Assert.That(train.CouplingsEngaged, Is.True, "precondition: it is hooked together");
 
             // Two of the five have gone across. The rest are still ours.
             broker.SetOwner(train.Members[3], 3);
             broker.SetOwner(train.Members[4], 3);
-            m_Registry.TakeUpWhatWeOwn(broker);
 
             Assert.That(train.CouplingsEngaged, Is.True,
-                "ownership of five vehicles does not move in one instant. If both machines let go on " +
-                "a half-answer, the train is simulated by nobody until the last response lands and it " +
-                "sits down on its bodywork");
+                "ownership of five vehicles does not move in one instant, and the train stays hooked " +
+                "together throughout. A train that came apart while changing hands would be halfway " +
+                "across the apron by the time the last answer landed");
         }
 
         [Test]
-        public void ATrainIsPickedUpOnlyOnceTheLastMemberHasArrived()
+        public void ATrainStaysHookedTogetherHoweverItsOwnershipMoves()
         {
             m_Registry.Rebuild(OneTrain());
             var broker = new RecordingBroker(grant: true, localClientId: 7);
@@ -275,20 +272,21 @@ namespace BelowTheWing.Tests.EditMode
                 broker.SetOwner(member, 3);
             }
 
-            m_Registry.TakeUpWhatWeOwn(broker);
+            Assert.That(train.CouplingsEngaged, Is.True, "owned entirely by somebody else");
 
             for (var i = 0; i < 4; i++)
             {
                 broker.SetOwner(train.Members[i], 7);
             }
 
-            m_Registry.TakeUpWhatWeOwn(broker);
-            Assert.That(train.CouplingsEngaged, Is.False, "four out of five is not a train");
+            Assert.That(train.CouplingsEngaged, Is.True, "four of five ours, mid-handover");
 
             broker.SetOwner(train.Members[4], 7);
-            m_Registry.TakeUpWhatWeOwn(broker);
 
-            Assert.That(train.CouplingsEngaged, Is.True);
+            Assert.That(train.CouplingsEngaged, Is.True,
+                "and ours outright. Who owns a train no longer decides whether it is a train: it is " +
+                "towed locally on every machine, and only the vehicle at the front is corrected");
         }
+
     }
 }

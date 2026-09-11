@@ -41,13 +41,18 @@ namespace BelowTheWing.Vehicles
                  "this, carrying a velocity forward invents motion rather than predicting it.")]
         public float extrapolationCeilingSeconds;
 
+        [Tooltip("How small a correction is not worth making, in metres per second. Below this the " +
+                 "vehicle is left alone entirely so that it can fall asleep.")]
+        public float leaveAloneBelow;
+
         /// <summary>Settings that close an ordinary error without visible pull.</summary>
         public static CorrectionSettings Default => new CorrectionSettings
         {
             closingRatePerSecond = 6f,
             authority = 0.35f,
             snapMetres = 2f,
-            extrapolationCeilingSeconds = 0.5f
+            extrapolationCeilingSeconds = 0.5f,
+            leaveAloneBelow = 0.05f
         };
     }
 
@@ -148,13 +153,21 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
-            body.AddForce(
-                Nudge(body.position, body.linearVelocity, said, secondsSince, settings),
-                ForceMode.VelocityChange);
+            var nudge = Nudge(body.position, body.linearVelocity, said, secondsSince, settings);
+            var spin = SpinNudge(body.rotation, body.angularVelocity, said, settings);
 
-            body.AddTorque(
-                SpinNudge(body.rotation, body.angularVelocity, said, settings),
-                ForceMode.VelocityChange);
+            // A correction too small to see is not worth making, and making it has a cost that has
+            // nothing to do with its size: any force at all wakes a rigidbody. Applied every step
+            // it means a vehicle standing still, in the right place, with nobody driving it, is
+            // kept awake for the rest of the session -- and so is every other vehicle on the apron,
+            // on every machine that does not own them.
+            if (nudge.magnitude < settings.leaveAloneBelow && spin.magnitude < settings.leaveAloneBelow)
+            {
+                return;
+            }
+
+            body.AddForce(nudge, ForceMode.VelocityChange);
+            body.AddTorque(spin, ForceMode.VelocityChange);
         }
 
         /// <summary>

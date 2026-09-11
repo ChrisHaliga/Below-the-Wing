@@ -136,6 +136,22 @@ namespace BelowTheWing.Session
         float SecondsSinceReading()
             => Mathf.Max(0f, (float)(NetworkManager.ServerTime.Time - m_Reported.Value.TakenAt));
 
+        /// <summary>
+        /// Whether this vehicle is the one in its train that gets corrected.
+        ///
+        /// Only the vehicle at the front is. Everything behind it is towed by the local copy of that
+        /// vehicle through the hinges that already hold the train together, exactly as it is towed on
+        /// the machine that owns it.
+        ///
+        /// Correcting each cart separately is what tears these trains apart. A chain is a set of
+        /// constraints and a correction is a force applied to one body: told that cart three is
+        /// thirty centimetres back and cart four twenty centimetres left, correction pushes each
+        /// toward a place the hinge between them forbids, and the solver and the network take turns
+        /// losing. Towing removes the argument -- there is one corrected body and the hinges
+        /// distribute its motion the way they already know how to.
+        /// </summary>
+        bool TheOneWorthCorrecting => m_Vehicle.Chain == null || m_Vehicle.Chain.Leader == m_Vehicle;
+
         void FixedUpdate()
         {
             if (m_Vehicle.Body == null)
@@ -147,7 +163,7 @@ namespace BelowTheWing.Session
             {
                 Report();
             }
-            else
+            else if (TheOneWorthCorrecting)
             {
                 KeepUp();
             }

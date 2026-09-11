@@ -49,6 +49,8 @@ namespace BelowTheWing.Tests.Multiplayer
             base.OnOneTimeTearDown();
         }
 
+        const float Correction_SnapMetres = 2f;
+
         static T CopyOn<T>(NetworkManager instance, ulong id) where T : Component
             => instance.SpawnManager.SpawnedObjects.TryGetValue(id, out var found)
                 ? found.GetComponent<T>()
@@ -127,8 +129,12 @@ namespace BelowTheWing.Tests.Multiplayer
             yield return WaitForConditionOrTimeOut(() => ours.HeardFromTheOwner);
             AssertOnTimeout("nothing was ever heard from the machine that owns the tractor");
 
-            Assert.That(ours.MetresOutOfPlace, Is.LessThan(1f),
-                "nothing has moved, so the copy should agree with its owner about where it is");
+            // Generous, and it has to be. Both copies of this tractor are solid bodies standing in
+            // the same spot of one shared physics world, so they shove each other apart no matter
+            // what correction does. What matters here is only that the reading is a real measurement
+            // rather than a constant, which the forty-metre check below establishes.
+            Assert.That(ours.MetresOutOfPlace, Is.LessThan(Correction_SnapMetres),
+                "before anything is moved the copy should be roughly where its owner says it is");
 
             // Correction is switched off before the copy is moved. Left running it would put the
             // vehicle straight back -- a gap this size is past the point where blending is given up
