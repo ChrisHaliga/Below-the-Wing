@@ -137,15 +137,25 @@ namespace BelowTheWing.Vehicles
         /// -- every copy of a vehicle is a solid body in the same space as every other copy, so they
         /// collide with themselves and the measurement is meaningless.
         /// </summary>
-        public static void Apply(Rigidbody body, VehicleState said, float secondsSince, CorrectionSettings settings)
+        public static void Apply(
+            Rigidbody body, VehicleState said, float secondsSince, CorrectionSettings settings, float say = 1f)
         {
+            say = Mathf.Clamp01(say);
+            if (say <= 0f)
+            {
+                // A crash is playing out. Local physics resolves it without interference, and the
+                // two machines are allowed to disagree until it has finished.
+                return;
+            }
+
             var shouldBe = WhereItShouldBeNow(said, secondsSince, settings);
 
             if (TooFarToBlend(body.position, shouldBe, settings))
             {
                 // Blending has been given up on, so the body is put where it belongs and given the
                 // motion that goes with it. Left with its old velocity it would immediately set off
-                // away from the place it was just moved to.
+                // away from the place it was just moved to. Never during a crash: this is the one
+                // moment a teleport is most visible and least forgivable.
                 body.position = shouldBe;
                 body.rotation = said.Rotation;
                 body.linearVelocity = said.Velocity;
@@ -153,8 +163,8 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
-            var nudge = Nudge(body.position, body.linearVelocity, said, secondsSince, settings);
-            var spin = SpinNudge(body.rotation, body.angularVelocity, said, settings);
+            var nudge = Nudge(body.position, body.linearVelocity, said, secondsSince, settings) * say;
+            var spin = SpinNudge(body.rotation, body.angularVelocity, said, settings) * say;
 
             // A correction too small to see is not worth making, and making it has a cost that has
             // nothing to do with its size: any force at all wakes a rigidbody. Applied every step

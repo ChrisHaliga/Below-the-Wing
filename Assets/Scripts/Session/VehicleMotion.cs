@@ -78,14 +78,64 @@ namespace BelowTheWing.Session
         [SerializeField, Tooltip("How many times a second the owner reports where its vehicle is.")]
         float m_ReportsPerSecond = 20f;
 
+        [SerializeField, Tooltip("How long a crash is left alone before correction argues with it.")]
+        BlackoutSettings m_Blackout = BlackoutSettings.Default;
+
         readonly NetworkVariable<ReportedMotion> m_Reported =
             new NetworkVariable<ReportedMotion>(default, NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Owner);
 
         VehicleController m_Vehicle;
+        ContactBlackout m_Crashing;
         float m_SinceLastReport;
 
-        void Awake() => m_Vehicle = GetComponent<VehicleController>();
+        void Awake()
+        {
+            m_Vehicle = GetComponent<VehicleController>();
+            m_Crashing = new ContactBlackout(m_Blackout);
+        }
+
+        /// <summary>
+        /// Anything solid touching this vehicle buys it a moment free of correction.
+        ///
+        /// Reported on the machine where the contact happened rather than replicated as an event.
+        /// A collision between two players happens on both machines at slightly different moments
+        /// and slightly differently, and each one is entitled to resolve its own.
+        /// </summary>
+        void OnCollisionEnter(Collision other)
+        {
+            if (other.rigidbody != null && !other.rigidbody.isKinematic)
+            {
+                Struck();
+            }
+        }
+
+        /// <summary>
+        /// Silences correction for this vehicle and everything hitched to it.
+        ///
+        /// A whole train, because a collision that displaces one cart displaces the ones coupled to
+        /// it. Blending any member back mid-crash puts a force on one end of a hinge whose other end
+        /// is still being thrown about, which is exactly the constraint fight that towing a train
+        /// locally exists to remove.
+        /// </summary>
+        void Struck()
+        {
+            var train = m_Vehicle.Chain;
+            if (train == null)
+            {
+                m_Crashing.Touched();
+                return;
+            }
+
+            foreach (var member in train.Members)
+            {
+                var motion = member.GetComponent<VehicleMotion>();
+                if (motion != null)
+                {
+                    motion.m_Crashing.Touched();
+                }
+            }
+        }
 
         /// <summary>
         /// Authority over a vehicle is netcode ownership, and this is where the two are tied together.
@@ -159,6 +209,8 @@ namespace BelowTheWing.Session
                 return;
             }
 
+            m_Crashing.Tick(Time.fixedDeltaTime);
+
             if (IsOwner)
             {
                 Report();
@@ -197,7 +249,9 @@ namespace BelowTheWing.Session
                 return;
             }
 
-            Correction.Apply(m_Vehicle.Body, m_Reported.Value.AsState(), SecondsSinceReading(), m_Correction);
+            Correction.Apply(
+                m_Vehicle.Body, m_Reported.Value.AsState(), SecondsSinceReading(), m_Correction,
+                say: m_Crashing.Authority);
         }
     }
 }

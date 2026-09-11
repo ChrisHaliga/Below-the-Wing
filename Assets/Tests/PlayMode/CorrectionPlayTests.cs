@@ -124,6 +124,31 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ACrashIsNotUndoneWhileItIsStillHappening()
+        {
+            var vehicle = Copy(new Vector3(0f, 1f, 0f));
+            yield return null;
+
+            // Its owner says it is parked. It is not: something has just hit it hard.
+            var said = VehicleState.Of(vehicle.Body);
+            vehicle.Body.linearVelocity = new Vector3(0f, 0f, 8f);
+            var whenItWasHit = vehicle.transform.position;
+
+            var steps = Mathf.CeilToInt(0.5f / Time.fixedDeltaTime);
+            for (var i = 0; i < steps; i++)
+            {
+                Correction.Apply(vehicle.Body, said, secondsSince: 0f, Settings, say: 0f);
+                yield return new WaitForFixedUpdate();
+            }
+
+            var carriedOn = vehicle.transform.position.z - whenItWasHit.z;
+            Assert.That(carriedOn, Is.GreaterThan(1f),
+                $"knocked at 8 m/s it travelled {carriedOn:F2} m. A vehicle hauled back through the " +
+                "impact it just took reads as the game refusing what the player did, which is the " +
+                "single most immersion-breaking thing networked physics does");
+        }
+
+        [UnityTest]
         public IEnumerator ACopyFacingTheWrongWayIsTurnedRound()
         {
             var vehicle = Copy(new Vector3(0f, 1f, 0f));
