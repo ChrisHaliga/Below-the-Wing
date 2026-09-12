@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 8910720713262780754}
   - component: {fileID: 4874660964975589666}
-  - component: {fileID: 2532286717196803245}
   - component: {fileID: 3932160168815883534}
+  - component: {fileID: 4854057853162507860}
   - component: {fileID: 1043594037342856105}
   - component: {fileID: 7849999545874441738}
   - component: {fileID: 2754661858236968216}
@@ -67,27 +67,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!65 &2532286717196803245
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4093103624448104130}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &3932160168815883534
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -105,6 +84,34 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   m_DisplayName: 
+--- !u!114 &4854057853162507860
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4093103624448104130}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab9d7d19d12edde41acb1fda44bda226, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelowTheWing.Vehicles::BelowTheWing.Vehicles.VehicleShape
+  m_WheelCentresLocal:
+  - {x: -0.54599994, y: 0.3, z: 1.05}
+  - {x: 0.54599994, y: 0.3, z: 1.05}
+  - {x: -0.54599994, y: 0.3, z: -1.05}
+  - {x: 0.54599994, y: 0.3, z: -1.05}
+  m_FrontCouplingLocal: {x: 0, y: 0.35000002, z: 1.8}
+  m_RearCouplingLocal: {x: 0, y: 0.35000002, z: -1.8}
+  m_EnvelopeSizeMetres: {x: 1.3, y: 1.6, z: 3}
+  m_EnvelopeCentreLocal: {x: 0, y: 1.1, z: 0}
+  m_InteriorLocal:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  m_SolidParts:
+  - Name: Body
+    SizeMetres: {x: 1.3, y: 1.6, z: 3}
+    CentreLocal: {x: 0, y: 1.1, z: 0}
 --- !u!114 &1043594037342856105
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -180,7 +187,8 @@ MonoBehaviour:
   m_Shape: 0
   m_SizeMetres: {x: 1.3, y: 1.6, z: 3}
   m_Colour: {r: 0.35, g: 0.55, b: 0.75, a: 1}
-  m_LabelHeightMetres: 1.12
+  m_LabelHeightMetres: 2.0600002
+  m_DrawnAtLocal: {x: 0, y: 1.1, z: 0}
   m_DisplayName: 
 --- !u!114 &7193037355188126333
 MonoBehaviour:

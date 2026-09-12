@@ -60,7 +60,7 @@ namespace BelowTheWing.Tests.PlayMode
             // Ten seconds without a single update from whoever owns it.
             yield return Step(10f);
 
-            var resting = VehicleController.RestingHeightMetres(m_TractorProfile);
+            const float resting = 0f;
             Assert.That(theirs.transform.position.y, Is.EqualTo(resting).Within(0.1f),
                 "left to itself it must hold itself up on its springs. Sunk onto its bodywork it has " +
                 "no suspension travel left to absorb anything, and a crash into it does nothing");
@@ -142,7 +142,7 @@ namespace BelowTheWing.Tests.PlayMode
             // Being moved is not on its own worth much: a dead weight lying on the ground slides
             // when something hits it too. What says the thing that got hit was a vehicle is that it
             // is still standing on its own springs afterwards, with travel left to take the next one.
-            var resting = VehicleController.RestingHeightMetres(m_TractorProfile);
+            const float resting = 0f;
             Assert.That(theirs.transform.position.y, Is.EqualTo(resting).Within(0.15f),
                 "shoved off its suspension and left sitting on its bodywork, it can absorb nothing " +
                 "further and every later impact against it reads as hitting a kerb");

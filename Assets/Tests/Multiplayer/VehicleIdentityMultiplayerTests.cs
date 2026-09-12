@@ -33,6 +33,7 @@ namespace BelowTheWing.Tests.Multiplayer
             m_CartProfile = TestProfiles.Cart();
 
             m_CartPrefab = CreateNetworkObjectPrefab("Cart");
+            TestShapes.On(m_CartPrefab, TestShapes.Cart());
             m_CartPrefab.AddComponent<VehicleController>().Configure(m_CartProfile, "");
 
             // Named the way the game names things -- over the network, on arrival -- rather than by

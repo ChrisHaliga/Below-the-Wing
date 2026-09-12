@@ -32,8 +32,6 @@ namespace BelowTheWing.Session
         ChainJointSettings m_Coupling = ChainJointSettings.Default;
 
         [Header("Equipment")]
-        [SerializeField] VehicleProfile m_TractorProfile;
-        [SerializeField] VehicleProfile m_CartProfile;
         [SerializeField] AircraftProfile m_AircraftProfile;
         [SerializeField] CrewProfile m_CrewProfile;
 
@@ -86,7 +84,11 @@ namespace BelowTheWing.Session
         public IReadOnlyList<VehicleController> Vehicles() => m_OnTheApron;
 
         /// <summary>
-        /// Everything on the apron that could be picked up.
+        /// Everything on the apron that a person could pick up.
+        ///
+        /// Bags, specifically, rather than everything that can be carried. People can be carried
+        /// too -- that is how they ride a cart -- and a list of every carriable thing offers a player
+        /// their own body, and everybody else's, as something to grab.
         ///
         /// Gathered fresh, because bags arrive and leave constantly -- thrown, dropped, carried off
         /// by somebody else -- and a list built once would go stale within seconds of anybody
@@ -95,7 +97,11 @@ namespace BelowTheWing.Session
         public IReadOnlyList<Carried> LooseCargo()
         {
             m_Cargo.Clear();
-            m_Cargo.AddRange(FindObjectsByType<Carried>(FindObjectsSortMode.None));
+
+            foreach (var bag in FindObjectsByType<Bag>(FindObjectsInactive.Exclude))
+            {
+                m_Cargo.Add(bag.GetComponent<Carried>());
+            }
 
             return m_Cargo;
         }
@@ -116,7 +122,7 @@ namespace BelowTheWing.Session
 
             if (NetworkManager.LocalClient.IsSessionOwner)
             {
-                ApronBuilder.Build(m_Layout, m_TractorProfile, m_CartProfile, m_AircraftProfile, m_CrewProfile,
+                ApronBuilder.Build(m_Layout, m_AircraftProfile, m_CrewProfile,
                     m_TractorPrefab, m_CartPrefab, m_AircraftPrefab, m_BagPrefab, m_BagsPerTrain);
             }
 
@@ -264,7 +270,11 @@ namespace BelowTheWing.Session
         void SpawnOwnCrew()
         {
             var plan = ApronLayout.Build(
-                m_Layout, m_TractorProfile, m_CartProfile, m_AircraftProfile, CrewSize());
+                m_Layout,
+                m_TractorPrefab.GetComponent<VehicleShape>(),
+                m_CartPrefab.GetComponent<VehicleShape>(),
+                m_AircraftProfile,
+                CrewSize());
 
             // The first arrival point with nobody standing on it.
             //

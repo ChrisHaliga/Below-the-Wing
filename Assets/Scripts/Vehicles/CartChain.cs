@@ -369,19 +369,23 @@ namespace BelowTheWing.Vehicles
             var coupling = behind.gameObject.AddComponent<HingeJoint>();
             coupling.connectedBody = inFront.Body;
 
-            // Each end is anchored at its own vehicle's hitch. Parked at coupling distance -- which
-            // is how the layout places them -- those two points land on top of one another, so the
-            // joint begins life already satisfied and has nothing to pull against. A coupling that
-            // starts out violated never stops trying to close, and the solver drags the whole train
-            // along for as long as the session lasts.
+            // Both ends anchored at one point, halfway between the two hitches.
             //
-            // Re-hitching a train that has moved since it was parked does not get that for free. A
-            // train is only ever hitched here at layout time or when a machine picks up one it owns
-            // outright, and in the second case the members are wherever their owner last put them,
-            // which is coupling distance apart because that is what the joints were holding them at.
+            // The two halves of a real coupling do not meet: a drawbar eye sits above the pin it
+            // drops onto, which on these vehicles is 7.7 cm on a cart-to-cart joint and 14 cm
+            // behind a tractor. Anchoring each end at its own hitch asks the solver to close that
+            // gap, and since neither vehicle can sink into the apron it closes it by tilting both
+            // of them instead -- and a leaning vehicle has its suspension pushing sideways, which
+            // is how a parked train walks off across the apron under a force nobody applied.
+            //
+            // Meeting in the middle leaves the difference as fixed geometry the joint never argues
+            // with. Parked at coupling distance -- which is how the layout places them -- the two
+            // anchors land on the same world point and the joint begins life already satisfied.
+            var meetAt = 0.5f * (behind.FrontHitchLocal.y + inFront.RearHitchLocal.y);
+
             coupling.autoConfigureConnectedAnchor = false;
-            coupling.anchor = behind.FrontHitchLocal;
-            coupling.connectedAnchor = inFront.RearHitchLocal;
+            coupling.anchor = new Vector3(0f, meetAt, behind.FrontHitchLocal.z);
+            coupling.connectedAnchor = new Vector3(0f, meetAt, inFront.RearHitchLocal.z);
 
             coupling.axis = Vector3.up;
             coupling.useLimits = true;

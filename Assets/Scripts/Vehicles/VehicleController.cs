@@ -20,31 +20,6 @@ namespace BelowTheWing.Vehicles
     [DisallowMultipleComponent]
     public sealed class VehicleController : MonoBehaviour
     {
-        /// <summary>
-        /// How far up inside the bodywork the top of the suspension sits, in metres.
-        ///
-        /// Two reasons for it being inside rather than flush with the underside. It gives the
-        /// suspension somewhere to hang from, and a ray that starts within a vehicle's own collider
-        /// cannot find that collider, so a wheel can never mistake the vehicle it belongs to for
-        /// the ground.
-        /// </summary>
-        const float SuspensionMountInsetMetres = 0.2f;
-
-        /// <summary>
-        /// How high above the apron every coupling sits, in metres.
-        ///
-        /// A fixed height above the ground, exactly like the standard tow height that lets any cart
-        /// hitch to any tractor. Measuring it from the ground rather than from a vehicle's own
-        /// bodywork is what makes two vehicles of different heights meet at precisely the same
-        /// point once both are standing on their suspension.
-        ///
-        /// Getting this wrong is not a cosmetic matter. A coupling that holds two hitches even
-        /// slightly apart vertically leaves both vehicles leaning, and a leaning vehicle has its
-        /// suspension pushing partly sideways -- so a parked train wanders off across the apron
-        /// under a force nobody applied.
-        /// </summary>
-        const float CouplingHeightAboveGroundMetres = 1.05f;
-
         /// <summary>One corner of the vehicle: where its suspension hangs and what it does.</summary>
         readonly struct Wheel
         {
@@ -84,13 +59,33 @@ namespace BelowTheWing.Vehicles
         const float SecondsOfStillnessBeforeSleeping = 1f;
 
         Rigidbody m_Body;
-        BoxCollider m_Collider;
+        VehicleShape m_Shape;
         Wheel[] m_Wheels;
+
+        /// <summary>How far each wheel currently hangs below its mount, in metres.</summary>
+        float[] m_HangingBy;
         float m_SteerAngleDegrees;
         bool m_Occupied;
 
         /// <summary>The tuning and real-world mass this vehicle runs on.</summary>
         public VehicleProfile Profile => m_Profile;
+
+        /// <summary>
+        /// Where this vehicle's parts physically are: its wheels, its couplings, the room it takes
+        /// up and which parts of it are solid.
+        /// </summary>
+        public VehicleShape Shape
+        {
+            get
+            {
+                if (m_Shape == null)
+                {
+                    m_Shape = GetComponent<VehicleShape>();
+                }
+
+                return m_Shape;
+            }
+        }
 
         /// <summary>The rigidbody the wheel forces are applied to.</summary>
         public Rigidbody Body
@@ -114,6 +109,28 @@ namespace BelowTheWing.Vehicles
 
         /// <summary>How far the steered wheels are currently turned from centre, in degrees.</summary>
         public float SteerAngleDegrees => m_SteerAngleDegrees;
+
+        /// <summary>Whether the wheel in that corner turns with the steering.</summary>
+        public bool WheelSteers(int corner)
+            => m_Wheels != null && corner >= 0 && corner < m_Wheels.Length && m_Wheels[corner].Steers;
+
+        /// <summary>
+        /// How high the centre of the wheel in that corner is sitting right now, in this vehicle's
+        /// own space.
+        ///
+        /// Where it is standing rather than where it was drawn. The body moves up and down on its
+        /// springs relative to an origin that is on the tarmac, so a wheel that keeps the height it
+        /// was modelled at is buried by however far the suspension compressed.
+        /// </summary>
+        public float WheelCentreLocal(int corner, float drawnAt)
+        {
+            if (m_Wheels == null || m_HangingBy == null || corner < 0 || corner >= m_Wheels.Length)
+            {
+                return drawnAt;
+            }
+
+            return m_Wheels[corner].MountLocal.y - m_HangingBy[corner];
+        }
 
         /// <summary>
         /// The train this vehicle belongs to. Every vehicle is in one; an uncoupled vehicle is in a
@@ -182,49 +199,51 @@ namespace BelowTheWing.Vehicles
 
         public bool AcceptsDriver => m_Profile != null && m_Profile.driveable && !m_Occupied;
 
-        /// <summary>Where a vehicle in front of this one attaches, in this vehicle's local space.</summary>
-        public Vector3 FrontHitchLocal => new Vector3(0f, CouplingHeightLocal, HitchReach);
+        /// <summary>
+        /// Where a vehicle in front of this one attaches, in this vehicle's local space.
+        ///
+        /// Read off the shape, which for a modelled vehicle read it off the model. A real drawbar
+        /// is nothing like symmetric -- a baggage cart reaches 3.16 m forward and 1.82 m back, and
+        /// the two halves sit at different heights so that they do not try to occupy the same
+        /// space -- so neither end can be worked out from the other.
+        /// </summary>
+        public Vector3 FrontHitchLocal => Shape != null ? Shape.FrontCouplingLocal : Vector3.zero;
 
         /// <summary>Where a vehicle behind this one attaches, in this vehicle's local space.</summary>
-        public Vector3 RearHitchLocal => new Vector3(0f, CouplingHeightLocal, -HitchReach);
+        public Vector3 RearHitchLocal => Shape != null ? Shape.RearCouplingLocal : Vector3.zero;
 
-        /// <summary>How far the coupling reaches past this vehicle's origin, in metres.</summary>
-        public float HitchReach => HitchReachMetres(m_Profile);
+        /// <summary>How far this vehicle's front coupling reaches past its origin, in metres.</summary>
+        public float FrontReach => Shape != null ? Shape.FrontReachMetres : 0f;
 
-        /// <summary>
-        /// How far a coupling reaches past a vehicle's origin, in metres.
-        ///
-        /// Two hitched vehicles stand exactly the sum of their two reaches apart, which is what puts
-        /// their hitches on the same spot and leaves the coupling with nothing to pull against.
-        /// Anything placing a train needs this to space it correctly.
-        /// </summary>
-        public static float HitchReachMetres(VehicleProfile profile)
-            => (profile.bodySizeMetres.z * 0.5f) + profile.drawbarLengthMetres;
-
-        float CouplingHeightLocal => CouplingHeightAboveGroundMetres - RestingHeightMetres(m_Profile);
+        /// <summary>How far this vehicle's rear coupling reaches past its origin, in metres.</summary>
+        public float RearReach => Shape != null ? Shape.RearReachMetres : 0f;
 
         /// <summary>
-        /// How high above the ground a vehicle's origin sits once it has settled on its suspension,
-        /// in metres.
+        /// How far each corner's spring is squashed by the weight standing on it, from 0 to 1.
         ///
-        /// Worked out from where the springs balance the weight they are holding. Anything placing
-        /// a vehicle needs this, because dropping one in at an arbitrary height either buries it in
-        /// the apron or leaves it to fall.
+        /// Read from the numbers rather than written down again. A vehicle resting at full
+        /// extension has nothing left to absorb a bump with; one resting bottomed out has nothing
+        /// left to give. Somewhere in between is the whole reason to have springs.
         /// </summary>
-        public static float RestingHeightMetres(VehicleProfile profile)
+        public static float SuspensionCompressionAtRest(VehicleProfile profile)
         {
             const int corners = 4;
 
-            // Read from physics rather than written down again. This figure decides where a
-            // vehicle's coupling point ends up, and two vehicles whose coupling points do not meet
-            // lean into the difference until a parked train wanders off across the apron.
             var weightOnEachCorner = profile.massKg * Physics.gravity.magnitude / corners;
-            var compression = Mathf.Clamp01(weightOnEachCorner / profile.springStrengthNewtons);
-            var mountAboveGround = profile.wheelRadiusMetres
-                                   + (profile.suspensionRestLengthMetres * (1f - compression));
 
-            return mountAboveGround + (profile.bodySizeMetres.y * 0.5f) - SuspensionMountInsetMetres;
+            return Mathf.Clamp01(weightOnEachCorner / profile.springStrengthNewtons);
         }
+
+        /// <summary>
+        /// How high above the ground the top of the suspension sits once it has settled, in metres.
+        ///
+        /// This is where a vehicle's body hangs from. With the origin on the ground between the
+        /// wheels, it is also how far above that origin the mounts have to be for the vehicle to
+        /// stand at the right height with nothing floating and nothing buried.
+        /// </summary>
+        public static float SuspensionMountHeightMetres(VehicleProfile profile)
+            => profile.wheelRadiusMetres
+               + (profile.suspensionRestLengthMetres * (1f - SuspensionCompressionAtRest(profile)));
 
         /// <summary>
         /// Applies a profile to this vehicle: its mass, its centre of mass, the size of its
@@ -245,6 +264,14 @@ namespace BelowTheWing.Vehicles
             }
 
             m_Body.mass = profile.massKg;
+            if (profile.centerOfMassOffset.y <= 0f)
+            {
+                Debug.LogError(
+                    $"'{name}' carries its centre of mass at or below its own origin, which is on " +
+                    "the ground. Weight transfer then works backwards -- braking pitches the nose " +
+                    "up -- and nothing can tip the vehicle over.", this);
+            }
+
             m_Body.centerOfMass = profile.centerOfMassOffset;
             m_Body.interpolation = RigidbodyInterpolation.Interpolate;
 
@@ -254,14 +281,10 @@ namespace BelowTheWing.Vehicles
             // clean through a cart is the failure nobody would accept.
             m_Body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
 
-            m_Collider = GetComponent<BoxCollider>();
-            if (m_Collider == null)
-            {
-                m_Collider = gameObject.AddComponent<BoxCollider>();
-            }
-
-            m_Collider.size = profile.bodySizeMetres;
-            m_Collider.center = Vector3.zero;
+            // Not one box the size of the vehicle. A cart is a container, and a box that size fills
+            // the space bags are supposed to go in -- so what a vehicle is solid where comes from
+            // its shape, which for a modelled vehicle is a floor, some walls and a roof.
+            VehicleBody.Build(gameObject, Shape);
 
             BuildWheels(profile);
 
@@ -275,22 +298,64 @@ namespace BelowTheWing.Vehicles
             Chain ??= CartChain.Couple(new[] { this }, ChainJointSettings.Default);
         }
 
+        /// <summary>
+        /// Hangs the suspension from where the wheels actually are.
+        ///
+        /// The positions come from the shape, which for a modelled vehicle read them off the model
+        /// itself. They used to be worked out from a wheelbase and a track written into the profile,
+        /// and that second copy of a measurement is what put the invisible probes fourteen
+        /// centimetres from the visible wheels, with one side of a cart sitting permanently
+        /// compressed and nobody able to see why.
+        ///
+        /// Only the height is decided here, because it is a suspension figure rather than a
+        /// geometric one: the mount sits at whatever height leaves the vehicle standing correctly
+        /// once its springs have taken its weight.
+        ///
+        /// Front wheels steer, rear wheels drive. A baggage tractor is a small rear-drive unit, and
+        /// pulling a loaded train from the front axle would spin the wheels up rather than move it.
+        /// Braking is shared evenly because every wheel has a brake on it.
+        /// </summary>
         void BuildWheels(VehicleProfile profile)
         {
-            var halfTrack = profile.trackMetres * 0.5f;
-            var halfWheelbase = profile.wheelbaseMetres * 0.5f;
-            var mountHeight = (-profile.bodySizeMetres.y * 0.5f) + SuspensionMountInsetMetres;
-
-            // Front wheels steer, rear wheels drive: a baggage tractor is a small rear-drive unit,
-            // and pulling a loaded train from the front axle would spin the wheels up rather than
-            // move it. Braking is shared evenly because every wheel has a brake on it.
-            m_Wheels = new[]
+            var wheels = Shape != null ? Shape.WheelCentresLocal : null;
+            if (wheels == null || wheels.Count == 0)
             {
-                new Wheel(new Vector3(-halfTrack, mountHeight, halfWheelbase), steers: true, driveShare: 0f, brakeShare: 0.25f),
-                new Wheel(new Vector3(halfTrack, mountHeight, halfWheelbase), steers: true, driveShare: 0f, brakeShare: 0.25f),
-                new Wheel(new Vector3(-halfTrack, mountHeight, -halfWheelbase), steers: false, driveShare: 0.5f, brakeShare: 0.25f),
-                new Wheel(new Vector3(halfTrack, mountHeight, -halfWheelbase), steers: false, driveShare: 0.5f, brakeShare: 0.25f)
-            };
+                Debug.LogError(
+                    $"'{name}' has no shape, so there is nowhere to hang its suspension from and it " +
+                    "will fall through the apron. Every vehicle prefab needs a VehicleShape.", this);
+
+                m_Wheels = new Wheel[0];
+                m_HangingBy = new float[0];
+                return;
+            }
+
+            var mountHeight = SuspensionMountHeightMetres(profile);
+            var middleOfTheWheelbase = 0f;
+
+            foreach (var wheel in wheels)
+            {
+                middleOfTheWheelbase += wheel.z;
+            }
+
+            middleOfTheWheelbase /= wheels.Count;
+
+            m_Wheels = new Wheel[wheels.Count];
+            for (var i = 0; i < wheels.Count; i++)
+            {
+                var atTheFront = wheels[i].z > middleOfTheWheelbase;
+
+                m_Wheels[i] = new Wheel(
+                    new Vector3(wheels[i].x, mountHeight, wheels[i].z),
+                    steers: atTheFront,
+                    driveShare: atTheFront ? 0f : 2f / wheels.Count,
+                    brakeShare: 1f / wheels.Count);
+            }
+
+            m_HangingBy = new float[m_Wheels.Length];
+            for (var i = 0; i < m_HangingBy.Length; i++)
+            {
+                m_HangingBy[i] = profile.suspensionRestLengthMetres;
+            }
         }
 
         void Awake()
@@ -364,8 +429,9 @@ namespace BelowTheWing.Vehicles
             var up = transform.up;
             var steerRotation = Quaternion.AngleAxis(m_SteerAngleDegrees, up);
 
-            foreach (var wheel in m_Wheels)
+            for (var i = 0; i < m_Wheels.Length; i++)
             {
+                var wheel = m_Wheels[i];
                 var mount = transform.TransformPoint(wheel.MountLocal);
                 var forward = wheel.Steers ? steerRotation * transform.forward : transform.forward;
                 var right = wheel.Steers ? steerRotation * transform.right : transform.right;
@@ -373,6 +439,14 @@ namespace BelowTheWing.Vehicles
                 var probe = Physics.Raycast(mount, -up, out var hit, rayLength, m_GroundMask, QueryTriggerInteraction.Ignore)
                     ? new GroundProbe(true, hit.distance)
                     : GroundProbe.Airborne;
+
+                // Kept so the visible wheels can be hung where the ground actually is. Measured
+                // once, here, rather than probed a second time by whatever draws them: two rays a
+                // frame apart find different ground on a moving vehicle, and the wheel you see
+                // would sit somewhere the wheel holding the cart up is not.
+                m_HangingBy[i] = probe.HitGround
+                    ? probe.DistanceToGround - m_Profile.wheelRadiusMetres
+                    : m_Profile.suspensionRestLengthMetres;
 
                 var atTheContactPatch = Body.GetPointVelocity(mount);
                 var velocity = new ContactVelocity(

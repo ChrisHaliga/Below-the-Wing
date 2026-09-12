@@ -165,11 +165,20 @@ namespace BelowTheWing.Apron
         /// Vehicles are placed nose to tail along each train at exactly coupling distance, worked
         /// out from how far each one's own hitch reaches, so a plan built from bigger equipment
         /// spreads out rather than overlapping.
+        ///
+        /// The two ends of a vehicle do not reach equally far. A baggage cart's drawbar sticks over
+        /// three metres out in front and its socket is recessed under two metres behind, so the gap
+        /// between two coupled vehicles is the rear reach of the one in front plus the front reach
+        /// of the one behind. Doubling either leaves every coupling in the train holding a gap open,
+        /// and a joint under permanent strain drags its train around the apron.
+        ///
+        /// Everything is placed standing on the ground. A vehicle's origin is where it touches down
+        /// rather than the middle of its bodywork, so there is no height to work out here at all.
         /// </summary>
         public static ApronPlan Build(
             ApronLayoutSettings settings,
-            VehicleProfile tractor,
-            VehicleProfile cart,
+            VehicleShape tractor,
+            VehicleShape cart,
             AircraftProfile aircraft,
             Vector3 crewSizeMetres)
         {
@@ -184,7 +193,7 @@ namespace BelowTheWing.Apron
 
             // Trains are laid out side by side, far enough apart that the widest thing in one has
             // clear air beside the widest thing in the next.
-            var widest = Mathf.Max(tractor.bodySizeMetres.x, cart.bodySizeMetres.x);
+            var widest = Mathf.Max(tractor.EnvelopeSizeMetres.x, cart.EnvelopeSizeMetres.x);
             var lanePitch = widest + settings.trainSpacingMetres;
 
             var trains = new List<TrainPlan>(settings.trainCount);
@@ -196,27 +205,27 @@ namespace BelowTheWing.Apron
 
                 var tractorPlacement = new Placement(
                     $"Tug {trainNumber}",
-                    new Vector3(lane, VehicleController.RestingHeightMetres(tractor), settings.firstTractorPosition.z),
+                    new Vector3(lane, 0f, settings.firstTractorPosition.z),
                     Quaternion.identity,
-                    tractor.bodySizeMetres);
+                    tractor.EnvelopeSizeMetres);
 
                 // Vehicles are spaced hitch to hitch: the distance between two coupled vehicles is
                 // the sum of how far each one's coupling reaches. Anything else leaves the joint
                 // holding a gap open, and a coupling under permanent strain drags its train about.
                 var carts = new List<Placement>(settings.cartsPerTrain);
                 var behind = settings.firstTractorPosition.z
-                             - VehicleController.HitchReachMetres(tractor)
-                             - VehicleController.HitchReachMetres(cart);
+                             - tractor.RearReachMetres
+                             - cart.FrontReachMetres;
 
                 for (var c = 0; c < settings.cartsPerTrain; c++)
                 {
                     carts.Add(new Placement(
                         $"Cart {trainNumber}-{c + 1}",
-                        new Vector3(lane, VehicleController.RestingHeightMetres(cart), behind),
+                        new Vector3(lane, 0f, behind),
                         Quaternion.identity,
-                        cart.bodySizeMetres));
+                        cart.EnvelopeSizeMetres));
 
-                    behind -= 2f * VehicleController.HitchReachMetres(cart);
+                    behind -= cart.RearReachMetres + cart.FrontReachMetres;
                 }
 
                 trains.Add(new TrainPlan(tractorPlacement, carts));

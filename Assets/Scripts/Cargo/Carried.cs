@@ -113,10 +113,21 @@ namespace BelowTheWing.Cargo
         /// </summary>
         public bool WouldSettle(float now) => !Attached && now >= m_CannotSettleUntil;
 
+        /// <summary>
+        /// Whether this could ride on that carrier at all.
+        ///
+        /// Not on a carrier that is part of this same object. A person has hands, hands are a
+        /// carrier, and a person can be carried -- so a person riding their own hands is a thing
+        /// that can be asked for. It cannot be done: the hands move with the body, the body follows
+        /// the hands, and asking either where it is moving asks the other, for ever.
+        /// </summary>
+        public bool CouldRide(Carrier carrier)
+            => carrier != null && !Attached && carrier.GetComponentInParent<Carried>() != this;
+
         /// <summary>Starts riding on this carrier, at whatever pose it currently has.</summary>
         public void AttachTo(Carrier carrier)
         {
-            if (carrier == null || Attached)
+            if (!CouldRide(carrier))
             {
                 return;
             }

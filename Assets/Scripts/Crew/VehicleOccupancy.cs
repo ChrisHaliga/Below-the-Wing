@@ -200,7 +200,7 @@ namespace BelowTheWing.Crew
         /// </summary>
         public Vector3 DismountPosition(VehicleController vehicle)
         {
-            var clearOfTheBodywork = (vehicle.Profile.bodySizeMetres.x * 0.5f) + DismountClearanceMetres;
+            var clearOfTheBodywork = (vehicle.Shape.EnvelopeSizeMetres.x * 0.5f) + DismountClearanceMetres;
             return vehicle.transform.position + (vehicle.transform.right * clearOfTheBodywork);
         }
 
