@@ -166,20 +166,35 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
-        /// <summary>A cart with something standing in for each of its four visible wheels.</summary>
+        /// <summary>
+        /// A cart with something standing in for each of its four visible wheels, hung the way an
+        /// imported model hangs them.
+        ///
+        /// Not as children of the cart. A model arrives from the modelling tool scaled by a hundred
+        /// and rotated to swap its up axis, and is then turned to face the way the game drives; its
+        /// wheels live inside that frame, where a metre is a hundredth of a unit and up is not up.
+        /// Wheels hung straight off the cart passed a test that the shipped cart failed by fifteen
+        /// metres.
+        /// </summary>
         (VehicleController cart, WheelLook look, Transform[] wheels) ACartWithWheels()
         {
             var cart = m_Apron.AddVehicle(
                 m_CartProfile, "Cart 1", Vector3.zero, Quaternion.identity, TestShapes.Cart());
+
+            var model = new GameObject("Look").transform;
+            model.SetParent(cart.transform, worldPositionStays: false);
+            model.localScale = Vector3.one * 100f;
+            model.localRotation = Quaternion.Euler(0f, 180f, 0f) * Quaternion.Euler(270f, 0f, 0f);
 
             var shape = cart.GetComponent<VehicleShape>();
             var wheels = new Transform[shape.WheelCentresLocal.Count];
 
             for (var i = 0; i < wheels.Length; i++)
             {
-                var wheel = new GameObject($"Wheel {i + 1}").transform;
-                wheel.SetParent(cart.transform, worldPositionStays: false);
-                wheel.localPosition = shape.WheelCentresLocal[i];
+                var wheel = new GameObject($"Wheel_{i + 1}").transform;
+                wheel.SetParent(model, worldPositionStays: false);
+                wheel.localRotation = Quaternion.Euler(0f, 270f, 270f);
+                wheel.position = cart.transform.TransformPoint(shape.WheelCentresLocal[i]);
                 wheels[i] = wheel;
             }
 
@@ -224,18 +239,55 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator AWheelStaysOnTheTarmacWhileTheBodySinksOntoIt()
         {
             var (cart, _, wheels) = ACartWithWheels();
+            var shape = cart.GetComponent<VehicleShape>();
 
             yield return Steps.Seconds(2f);
 
-            foreach (var wheel in wheels)
+            for (var i = 0; i < wheels.Length; i++)
             {
-                var bottom = wheel.position.y - m_CartProfile.wheelRadiusMetres;
+                var bottom = wheels[i].position.y - m_CartProfile.wheelRadiusMetres;
 
                 Assert.That(bottom, Is.EqualTo(0f).Within(0.04f),
                     $"the visible wheel's underside is at {bottom:F3} m. Parented rigidly to the " +
                     "body it sinks by however far the suspension compressed, which on this cart is " +
                     "most of the wheel");
+
+                // Under its own axle, not off somewhere along an axis that was never the cart's.
+                var where = cart.transform.InverseTransformPoint(wheels[i].position);
+                var axle = shape.WheelCentresLocal[i];
+                Assert.That(new Vector2(where.x - axle.x, where.z - axle.z).magnitude, Is.LessThan(0.02f),
+                    $"wheel {i + 1} is drawn {where} but its axle is at {axle}. A height written as " +
+                    "a coordinate in the model's own frame is a distance along whichever axis the " +
+                    "model happens to point that way, a hundred times over");
             }
+        }
+
+        [UnityTest]
+        public IEnumerator AWheelKeepsTheWayItWasModelledAndTurnsAboutItsAxle()
+        {
+            var (cart, _, wheels) = ACartWithWheels();
+            var authored = Quaternion.Inverse(cart.transform.rotation) * wheels[0].rotation;
+
+            yield return Steps.Seconds(1f);
+
+            var standingStill = Quaternion.Inverse(cart.transform.rotation) * wheels[0].rotation;
+            Assert.That(Quaternion.Angle(standingStill, authored), Is.LessThan(1f),
+                "a wheel on a parked cart is exactly as it was modelled: the way it faces was " +
+                "authored in the model's frame, and overwriting it with a spin about the cart's " +
+                "axis lays the wheel flat");
+
+            cart.Body.linearVelocity = new Vector3(0f, 0f, 2f);
+            yield return Steps.Seconds(0.5f);
+
+            // The turn since standing, expressed in the cart's frame: rolling forward is a turn
+            // about the cart's sideways axis, whichever way the wheel itself was modelled.
+            var rolling = Quaternion.Inverse(cart.transform.rotation) * wheels[0].rotation;
+            var turnedBy = rolling * Quaternion.Inverse(authored);
+            turnedBy.ToAngleAxis(out var degrees, out var axis);
+
+            Assert.That(degrees, Is.GreaterThan(5f), "it has to have turned at all");
+            Assert.That(Mathf.Abs(axis.x), Is.GreaterThan(0.9f),
+                $"a rolling wheel turns about the cart's sideways axis; this one turned about {axis}");
         }
     }
 }

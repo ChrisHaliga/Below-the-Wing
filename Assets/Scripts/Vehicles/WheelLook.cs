@@ -24,7 +24,12 @@ namespace BelowTheWing.Vehicles
         Transform[] m_Wheels = new Transform[0];
 
         VehicleController m_Vehicle;
+
+        /// <summary>Where each wheel's centre was modelled, in the vehicle's own frame.</summary>
         Vector3[] m_RestingAt;
+
+        /// <summary>Which way each wheel was modelled, relative to the vehicle.</summary>
+        Quaternion[] m_AuthoredFacing;
 
         /// <summary>How far the wheels have turned since the vehicle was built, in degrees.</summary>
         public float TurnedDegrees { get; private set; }
@@ -51,7 +56,14 @@ namespace BelowTheWing.Vehicles
         }
 
         /// <summary>
-        /// Notes where each wheel was authored, once.
+        /// Notes where and how each wheel was modelled, once, in the vehicle's own frame.
+        ///
+        /// The vehicle's frame and not the wheel's parent's. A wheel arrives inside an imported
+        /// model that is scaled by a hundred and rotated to swap its up axis: a metre there is a
+        /// hundredth of a unit and up is some other axis entirely. A height in metres written as a
+        /// local coordinate in that frame is a distance of a hundred times that along whichever
+        /// axis the model happens to point that way, which is how the shipped cart's wheels ended
+        /// up fifteen metres in front of it lying flat.
         ///
         /// Read off the model rather than taken from the shape, so that a wheel drawn slightly away
         /// from where its suspension probes -- a modelled offset, a hub that is not quite on the
@@ -65,9 +77,14 @@ namespace BelowTheWing.Vehicles
             }
 
             m_RestingAt = new Vector3[m_Wheels.Length];
+            m_AuthoredFacing = new Quaternion[m_Wheels.Length];
+
+            var toVehicle = Quaternion.Inverse(transform.rotation);
             for (var i = 0; i < m_Wheels.Length; i++)
             {
-                m_RestingAt[i] = m_Wheels[i] != null ? m_Wheels[i].localPosition : Vector3.zero;
+                var wheel = m_Wheels[i];
+                m_RestingAt[i] = wheel != null ? transform.InverseTransformPoint(wheel.position) : Vector3.zero;
+                m_AuthoredFacing[i] = wheel != null ? toVehicle * wheel.rotation : Quaternion.identity;
             }
         }
 
@@ -109,8 +126,14 @@ namespace BelowTheWing.Vehicles
                 var resting = m_RestingAt[i];
                 var standing = m_Vehicle.WheelCentreLocal(i, resting.y);
 
-                wheel.localPosition = new Vector3(resting.x, standing, resting.z);
-                wheel.localRotation = (m_Vehicle.WheelSteers(i) ? steer : Quaternion.identity) * spin;
+                // Placed in the world from the vehicle's frame, and turned about the vehicle's own
+                // axes with the modelled facing put back on afterwards -- so a wheel modelled lying
+                // on its side in its own file still stands up and rolls forward here.
+                wheel.position = transform.TransformPoint(new Vector3(resting.x, standing, resting.z));
+                wheel.rotation = transform.rotation
+                                 * (m_Vehicle.WheelSteers(i) ? steer : Quaternion.identity)
+                                 * spin
+                                 * m_AuthoredFacing[i];
             }
         }
     }
