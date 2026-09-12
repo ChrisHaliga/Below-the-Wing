@@ -59,11 +59,9 @@ namespace BelowTheWing.Session
         /// <summary>
         /// Drops a few bags on the ground beside a train.
         ///
-        /// On the ground rather than on the decks. A bag that settles onto a cart does so through
-        /// the ordinary path -- come to rest on something that carries things, climb aboard -- and
-        /// putting them straight onto the decks here would be a second way for cargo to arrive that
-        /// nothing else in the game uses. Watching them settle on their own is also the cheapest
-        /// proof that the path works.
+        /// On the ground rather than on the decks. Loading a cart is the players' job: a bag is
+        /// carried or thrown aboard and lies there by friction, and putting bags straight onto the
+        /// decks here would be a second way for cargo to arrive that nothing else in the game uses.
         /// </summary>
         static void Scatter(NetworkObject bagPrefab, TrainPlan train, int howMany)
         {

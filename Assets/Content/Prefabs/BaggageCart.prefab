@@ -1,65 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &290160301196510764
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5367736163791389493}
-  - component: {fileID: 3030852149309277671}
-  - component: {fileID: 6007830581166362506}
-  m_Layer: 0
-  m_Name: Deck
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5367736163791389493
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 290160301196510764}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.2857001, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 740480764481469725}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3030852149309277671
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 290160301196510764}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9796ae3db7c49094581d239881aa9d5b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BelowTheWing.Cargo::BelowTheWing.Cargo.Carrier
-  m_VolumeCentreLocal: {x: 0, y: 0, z: 0}
-  m_VolumeSizeMetres: {x: 1.7211, y: 1.626, z: 3.1538}
-  m_HoldsAtItsCentre: 0
---- !u!114 &6007830581166362506
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 290160301196510764}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7bd52dd0a889deb4db922428ac7827c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BelowTheWing.Cargo::BelowTheWing.Cargo.CarrierWatch
 --- !u!1 &3129341736767791987
 GameObject:
   m_ObjectHideFlags: 0
@@ -72,11 +12,11 @@ GameObject:
   - component: {fileID: 5186839370979093466}
   - component: {fileID: 1055323687982784440}
   - component: {fileID: 8788779018481134327}
-  - component: {fileID: 2720136339239251915}
   - component: {fileID: 5418079734087993141}
   - component: {fileID: 3322196097056669251}
   - component: {fileID: 1550900798212096461}
   - component: {fileID: 7841358492550874047}
+  - component: {fileID: 444678108702338289}
   - component: {fileID: 1480938795275519676}
   - component: {fileID: 7284710948490794246}
   m_Layer: 0
@@ -100,8 +40,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4952765411633194749}
-  - {fileID: 5367736163791389493}
-  - {fileID: 2923505320595045841}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &5186839370979093466
@@ -191,19 +129,6 @@ MonoBehaviour:
   - Name: Roof
     SizeMetres: {x: 1.7211, y: 0.15, z: 3.1538}
     CentreLocal: {x: 0, y: 2.1737, z: 0}
---- !u!114 &2720136339239251915
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3129341736767791987}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 36a00770b024d424d819899aecab7148, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BelowTheWing.Session::BelowTheWing.Session.CarrierAuthority
-  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &5418079734087993141
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -281,6 +206,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Session::BelowTheWing.Session.TrainMember
   ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &444678108702338289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3129341736767791987}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 574dca7c1fc44f56b5ce337b5af6320f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: BelowTheWing.Cargo::BelowTheWing.Cargo.HandUse
+  m_As: 1
 --- !u!114 &1480938795275519676
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -312,66 +250,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Session::BelowTheWing.Session.ApronIdentity
   ShowTopMostFoldoutHeaderGroup: 1
---- !u!1 &7120367194264354883
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2923505320595045841}
-  - component: {fileID: 7115331224253891264}
-  - component: {fileID: 8920264090482997488}
-  m_Layer: 0
-  m_Name: Roof
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2923505320595045841
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7120367194264354883}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.2487001, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 740480764481469725}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &7115331224253891264
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7120367194264354883}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9796ae3db7c49094581d239881aa9d5b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BelowTheWing.Cargo::BelowTheWing.Cargo.Carrier
-  m_VolumeCentreLocal: {x: 0, y: 1, z: 0}
-  m_VolumeSizeMetres: {x: 1.7211, y: 2, z: 3.1538}
-  m_HoldsAtItsCentre: 0
---- !u!114 &8920264090482997488
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7120367194264354883}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7bd52dd0a889deb4db922428ac7827c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BelowTheWing.Cargo::BelowTheWing.Cargo.CarrierWatch
 --- !u!1001 &4841783685114069270
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -223,38 +223,7 @@ namespace BelowTheWing.EditorTools
                 SolidParts = solid
             });
 
-            AddCarriers(cart, deckTopMetres, deckWidthMetres, deckLengthMetres, clearInsideMetres);
             WatchTheWheels(cart, model);
-        }
-
-        /// <summary>
-        /// The two places things ride on a cart: inside it, and on top of it.
-        ///
-        /// Inside is where bags go and where somebody crouching can stand. On top is out of jumping
-        /// reach from the tarmac, so getting up there means climbing from the drawbar or from
-        /// another cart -- which is the point of it being worth doing.
-        /// </summary>
-        static void AddCarriers(
-            GameObject cart, float deckTop, float deckWidth, float deckLength, float clearInside)
-        {
-            var inside = new GameObject("Deck");
-            inside.transform.SetParent(cart.transform, worldPositionStays: false);
-            inside.transform.localPosition = new Vector3(0f, deckTop + (clearInside * 0.5f), 0f);
-            inside.AddComponent<Carrier>()
-                .Covers(Vector3.zero, new Vector3(deckWidth, clearInside, deckLength));
-            inside.AddComponent<CarrierWatch>();
-
-            var onTop = new GameObject("Roof");
-            onTop.transform.SetParent(cart.transform, worldPositionStays: false);
-            onTop.transform.localPosition = new Vector3(0f, deckTop + clearInside + 0.15f, 0f);
-            onTop.AddComponent<Carrier>()
-                .Covers(new Vector3(0f, 1f, 0f), new Vector3(deckWidth, 2f, deckLength));
-            onTop.AddComponent<CarrierWatch>();
-
-            // One machine decides what comes off, for both of them. Judged on a copy, the nudges
-            // that keep the copy in step read as sideways acceleration the cart never felt, and bags
-            // leap off decks on every screen except the one where the cart is really being driven.
-            cart.AddComponent<CarrierAuthority>();
         }
 
         /// <summary>Hands the visible wheels to whatever turns them and keeps them on the ground.</summary>
@@ -300,6 +269,9 @@ namespace BelowTheWing.EditorTools
 
             AddNetworking(go, outlivesItsOwner: true);
             go.AddComponent<TrainMember>();
+
+            // Something to hold onto, and so something a rider goes round corners with.
+            go.AddComponent<HandUse>().As = HandUse.Category.HoldOnto;
 
             var shape = go.GetComponent<VehicleShape>();
             Dress(go,
@@ -393,6 +365,7 @@ namespace BelowTheWing.EditorTools
             go.AddComponent<CapsuleCollider>();
 
             Set(go.AddComponent<AircraftBody>(), "m_Profile", profile);
+            go.AddComponent<HandUse>().As = HandUse.Category.HoldOnto;
 
             AddNetworking(go, outlivesItsOwner: true);
 
@@ -424,8 +397,10 @@ namespace BelowTheWing.EditorTools
             go.AddComponent<BoxCollider>();
 
             Set(go.AddComponent<Bag>(), "m_Profile", profile);
-            go.AddComponent<Carried>();
-            go.AddComponent<SettlesOntoCarriers>();
+
+            // What hands may do with it, said on the bag so that hands never have to know what a
+            // bag is.
+            go.AddComponent<HandUse>().As = HandUse.Category.Carry;
 
             AddNetworking(go, outlivesItsOwner: true);
 
@@ -442,14 +417,11 @@ namespace BelowTheWing.EditorTools
 
             Set(go.AddComponent<CrewCharacter>(), "m_Profile", profile);
 
-            // A person is something that can be carried -- by a cart deck now, by a belt or a pit
-            // later -- and something that can carry, because hands are a carrier like any other.
-            go.AddComponent<Carried>();
-
-            var hands = new GameObject("Hands");
-            hands.transform.SetParent(go.transform, worldPositionStays: false);
-            hands.transform.localPosition = new Vector3(0f, 0f, profile.radiusMetres + 0.25f);
-            hands.AddComponent<Carrier>().Covers(Vector3.zero, new Vector3(0.8f, 0.8f, 0.8f), holdsAtItsCentre: true);
+            // Where the hands are: a little apart, a little below the shoulders, and far enough
+            // in front that a bag pulled to one hangs clear of the body.
+            var reach = profile.radiusMetres + 0.45f;
+            HandAnchor(go, Hands.LeftAnchorName, new Vector3(-0.3f, 0.2f, reach));
+            HandAnchor(go, Hands.RightAnchorName, new Vector3(0.3f, 0.2f, reach));
 
             AddNetworking(go, outlivesItsOwner: false);
 
@@ -459,6 +431,13 @@ namespace BelowTheWing.EditorTools
                 profile.heightMetres * 0.7f);
 
             return SaveAndDiscard(go, $"{PrefabFolder}/RampWorker.prefab");
+        }
+
+        static void HandAnchor(GameObject character, string name, Vector3 local)
+        {
+            var anchor = new GameObject(name);
+            anchor.transform.SetParent(character.transform, worldPositionStays: false);
+            anchor.transform.localPosition = local;
         }
 
         /// <summary>
@@ -514,10 +493,11 @@ namespace BelowTheWing.EditorTools
             {
                 go.AddComponent<CrewMotion>();
             }
-            else if (go.GetComponent<Carried>() != null)
+            else if (go.GetComponent<Bag>() != null)
             {
-                // Cargo has the same problem and one more besides: which cart a bag is riding on has
-                // to agree everywhere, and no transform component has anything to say about that.
+                // Bags have the same problem and one more besides: which machine simulates a bag
+                // changes with who picks it up and whose cart it lands in, and no transform
+                // component has anything to say about that.
                 go.AddComponent<CargoMotion>();
             }
             else

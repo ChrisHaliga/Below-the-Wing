@@ -93,10 +93,7 @@ namespace BelowTheWing.EditorTools
             // it, so twenty is the everyday bag rather than a light one.
             profile.massKg = 20f;
             profile.sizeMetres = new Vector3(0.4f, 0.25f, 0.6f);
-            profile.wakeAtLateralAcceleration = 6f;
-            profile.wakeAtTiltDegrees = 25f;
-            profile.wakeAtImpactImpulse = 400f;
-            profile.cannotSettleForSeconds = 1f;
+            profile.frictionCoefficient = 0.3f;
 
             return profile;
         }
@@ -163,7 +160,7 @@ namespace BelowTheWing.EditorTools
             profile.radiusMetres = 0.3f;
             profile.walkSpeedMetresPerSecond = 4f;
             profile.sprintSpeedMetresPerSecond = 7f;
-            profile.accelerationMetresPerSecondSquared = 30f;
+            profile.accelerationMetresPerSecondSquared = 8f;
             profile.turnRateDegreesPerSecond = 720f;
             return profile;
         }

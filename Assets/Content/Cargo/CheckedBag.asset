@@ -14,7 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: BelowTheWing.Cargo::BelowTheWing.Cargo.BagProfile
   massKg: 20
   sizeMetres: {x: 0.4, y: 0.25, z: 0.6}
-  wakeAtLateralAcceleration: 6
-  wakeAtTiltDegrees: 25
-  wakeAtImpactImpulse: 400
-  cannotSettleForSeconds: 1
+  frictionCoefficient: 0.3

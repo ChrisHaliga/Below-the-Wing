@@ -180,28 +180,29 @@ namespace BelowTheWing.Tests.EditMode
                 "BaggageCart: with nothing driving the visible wheels they neither turn nor stay on " +
                 "the tarmac, and the body sinks onto its springs leaving them buried");
 
-            var carriers = cart.GetComponentsInChildren<Carrier>();
-            Assert.That(carriers.Length, Is.EqualTo(2),
-                "BaggageCart: two places to ride -- inside it, where bags go and somebody crouching " +
-                "can stand, and on top of it");
-
-            Assert.That(cart.GetComponentInChildren<CarrierWatch>(), Is.Not.Null,
-                "BaggageCart: nothing decides that a corner was taken too hard, so a cart can be " +
-                "rolled onto its roof with its bags still glued to the deck");
-            Assert.That(cart.GetComponent<CarrierAuthority>(), Is.Not.Null,
-                "BaggageCart: with nothing saying which machine decides, every machine decides. A " +
-                "copy is steered toward its owner's reports twenty times a second and those nudges " +
-                "read as sideways acceleration the cart never felt, so bags leap off decks on every " +
-                "screen except the one where the cart is actually being driven");
+            Assert.That(cart.GetComponent<HandUse>()?.As, Is.EqualTo(HandUse.Category.HoldOnto),
+                "BaggageCart: a cart that says nothing about what hands may do with it cannot be " +
+                "held onto, and a rider who cannot hold on walks off it at the first corner");
 
             var bag = Prefab("Bag");
             Assert.That(bag.GetComponent<CargoMotion>(), Is.Not.Null,
-                "Bag: nothing tells the other machines which cart this is riding on, and no force " +
-                "exists that could pull a bag from a deck on one screen onto a deck on another");
+                "Bag: nothing tells the other machines where this bag is, and nothing moves it to " +
+                "the machine whose cart it lands in");
+            Assert.That(bag.GetComponent<HandUse>()?.As, Is.EqualTo(HandUse.Category.Carry),
+                "Bag: a bag that says nothing about what hands may do with it cannot be picked up");
+
+            Assert.That(Prefab("BaggageTractor").GetComponent<HandUse>()?.As, Is.EqualTo(HandUse.Category.HoldOnto),
+                "BaggageTractor: nothing to hold onto");
+
+            var worker = Prefab("RampWorker");
+            Assert.That(worker.transform.Find(Hands.LeftAnchorName), Is.Not.Null,
+                "RampWorker: no left hand, so nothing can be held in it");
+            Assert.That(worker.transform.Find(Hands.RightAnchorName), Is.Not.Null,
+                "RampWorker: no right hand, so nothing can be held in it");
             Assert.That(bag.GetComponent<AnticipatedNetworkTransform>(), Is.Null,
-                "Bag: a transform component writes a position onto the copy every update and has " +
-                "nothing at all to say about what the bag is riding on, which is the only part " +
-                "players would notice being wrong");
+                "Bag: a transform component writes a position onto the copy every update, so a " +
+                "copy cannot take part in a collision, and it has nothing to say about which " +
+                "machine should be simulating the bag");
 
             var tractor = Prefab("BaggageTractor");
             Assert.That(tractor.GetComponent<VehicleShape>(), Is.Not.Null,

@@ -171,18 +171,17 @@ namespace BelowTheWing.Tests.PlayMode
             var vehicle = Copy(new Vector3(0f, 1f, 0f));
             yield return null;
 
-            // What being carried looks like from the solver's side: a body it no longer moves,
-            // because whatever it is attached to moves it instead. A person riding a cart deck and
-            // a bag in somebody's hands are both in this state.
+            // What a body the solver no longer moves looks like: a driver's character, parked
+            // inside the vehicle they are driving and carried about by it.
             vehicle.Body.isKinematic = true;
             var restingAt = vehicle.transform.position;
 
             yield return KeptInStepFor(1f, vehicle, Standing(new Vector3(0f, 0f, 20f)));
 
             Assert.That(vehicle.transform.position, Is.EqualTo(restingAt).Using(Nearly.Within(1e-3f)),
-                "a carried body has to be left where its carrier put it. Pushing one does nothing " +
-                "except fill the log with an error on every step of every copy of every rider on " +
-                "the apron");
+                "a body being carried has to be left where its carrier put it. Pushing one does " +
+                "nothing except fill the log with an error on every step of every copy of every " +
+                "driver on the apron");
         }
     }
 }

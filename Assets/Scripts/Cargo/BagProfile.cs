@@ -3,7 +3,7 @@ using UnityEngine;
 namespace BelowTheWing.Cargo
 {
     /// <summary>
-    /// What a piece of baggage is physically, and what it takes to shake one loose.
+    /// What a piece of baggage is physically.
     ///
     /// A bag is always a single box. Not a compound collider, not a convex mesh, not now and not
     /// later when they have proper shapes: forty of them in a cart is forty contact pairs against
@@ -27,19 +27,13 @@ namespace BelowTheWing.Cargo
         [Tooltip("Width, height and length in metres.")]
         public Vector3 sizeMetres = new Vector3(0.4f, 0.25f, 0.6f);
 
-        [Header("What it takes to shake one loose")]
-        [Tooltip("Sideways acceleration at the bag's own position that throws it off its carrier, " +
-                 "in metres per second squared. Lower for a bag standing on end than a flat case.")]
-        public float wakeAtLateralAcceleration = 6f;
+        [Header("Grip")]
+        [Tooltip("How much grip it has on whatever it lies on, as a coefficient of friction. A " +
+                 "hard-shell case on a steel deck is about 0.3. This is the dial that decides how " +
+                 "hard a corner has to be taken to throw a load, because a cart's tyres will not " +
+                 "let it corner harder than about eight metres per second squared and a bag that " +
+                 "grips better than that never comes off.")]
+        public float frictionCoefficient = 0.3f;
 
-        [Tooltip("How far a carrier may lean before its cargo lets go, in degrees.")]
-        public float wakeAtTiltDegrees = 25f;
-
-        [Tooltip("How hard a carrier has to be hit for its cargo to let go, in newton seconds.")]
-        public float wakeAtImpactImpulse = 400f;
-
-        [Tooltip("Seconds after being thrown off before a bag may settle onto a carrier again. " +
-                 "Without it a bag flung on a corner sticks straight back down during the same corner.")]
-        public float cannotSettleForSeconds = 1f;
     }
 }

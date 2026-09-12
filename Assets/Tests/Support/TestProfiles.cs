@@ -76,7 +76,7 @@ namespace BelowTheWing.Tests.Support
             p.radiusMetres = 0.3f;
             p.walkSpeedMetresPerSecond = 4f;
             p.sprintSpeedMetresPerSecond = 7f;
-            p.accelerationMetresPerSecondSquared = 30f;
+            p.accelerationMetresPerSecondSquared = 8f;
             p.turnRateDegreesPerSecond = 720f;
             return p;
         }
@@ -87,10 +87,7 @@ namespace BelowTheWing.Tests.Support
             var p = ScriptableObject.CreateInstance<BagProfile>();
             p.massKg = 20f;
             p.sizeMetres = new Vector3(0.4f, 0.25f, 0.6f);
-            p.wakeAtLateralAcceleration = 6f;
-            p.wakeAtTiltDegrees = 25f;
-            p.wakeAtImpactImpulse = 400f;
-            p.cannotSettleForSeconds = 1f;
+            p.frictionCoefficient = 0.3f;
             return p;
         }
 

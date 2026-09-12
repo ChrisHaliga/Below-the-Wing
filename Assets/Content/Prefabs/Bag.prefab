@@ -12,8 +12,7 @@ GameObject:
   - component: {fileID: 8666469377410834615}
   - component: {fileID: 2671203664871872317}
   - component: {fileID: 5521973380441417395}
-  - component: {fileID: 6725053510760322337}
-  - component: {fileID: 5175257882344385000}
+  - component: {fileID: 6757572042173713953}
   - component: {fileID: 3315171990189831776}
   - component: {fileID: 7037216629291939880}
   - component: {fileID: 224881180372116424}
@@ -101,7 +100,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Cargo::BelowTheWing.Cargo.Bag
   m_Profile: {fileID: 11400000, guid: 888f64b17f31b0b489bdd74bc4cd428b, type: 2}
---- !u!114 &6725053510760322337
+--- !u!114 &6757572042173713953
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -110,26 +109,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 8467333282001237931}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de0033533dae7364a928ac9faa78ace0, type: 3}
+  m_Script: {fileID: 11500000, guid: 574dca7c1fc44f56b5ce337b5af6320f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: BelowTheWing.Cargo::BelowTheWing.Cargo.Carried
---- !u!114 &5175257882344385000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8467333282001237931}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7258755cd4fcc3542978cdc3a2e25564, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: BelowTheWing.Cargo::BelowTheWing.Cargo.SettlesOntoCarriers
-  m_AtRestBelow: 0.15
-  m_LooksDownMetres: 0.4
-  m_CouldCarryIt:
-    serializedVersion: 2
-    m_Bits: 4294967295
+  m_EditorClassIdentifier: BelowTheWing.Cargo::BelowTheWing.Cargo.HandUse
+  m_As: 0
 --- !u!114 &3315171990189831776
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -178,6 +161,8 @@ MonoBehaviour:
     leaveAloneBelow: 0.05
   m_ReportsPerSecond: 20
   m_AskAgainAfterSeconds: 0.5
+  m_AtRestBelow: 0.25
+  m_UndersideReachMetres: 0.1
 --- !u!114 &224881180372116424
 MonoBehaviour:
   m_ObjectHideFlags: 0

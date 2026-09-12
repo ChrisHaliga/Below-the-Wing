@@ -49,6 +49,7 @@ namespace BelowTheWing.Crew
 
         Rigidbody m_Body;
         CapsuleCollider m_Collider;
+        PhysicsMaterial m_Feet;
         VehicleController m_Seated;
         float m_LastJumpedAt = -1f;
 
@@ -86,12 +87,6 @@ namespace BelowTheWing.Crew
         /// player at this machine reshapes trains from here.
         /// </summary>
         public CouplingHand Hitching { get; set; }
-
-        /// <summary>
-        /// Whatever this character is riding on, if anything. Present on every character, not only
-        /// the local one, because a rider has to be carried on every machine that can see them.
-        /// </summary>
-        public Carried Riding { get; set; }
 
         /// <summary>
         /// This player's hands. Only the character belonging to the person at this machine has
@@ -149,7 +144,30 @@ namespace BelowTheWing.Crew
             m_Collider.radius = profile.radiusMetres;
             m_Collider.center = Vector3.zero;
 
+            // The feet are the grip, and the legs are the only thing that pushes against the
+            // ground. A capsule with friction of its own fights every step the legs take, and holds
+            // a rider on a deck through a corner the legs could not.
+            if (m_Feet == null)
+            {
+                m_Feet = new PhysicsMaterial("Feet")
+                {
+                    dynamicFriction = 0f,
+                    staticFriction = 0f,
+                    frictionCombine = PhysicsMaterialCombine.Minimum
+                };
+            }
+
+            m_Collider.material = m_Feet;
+
             Stance = new Crouching(profile, m_Collider, m_FitsUnder);
+        }
+
+        void OnDestroy()
+        {
+            if (m_Feet != null)
+            {
+                Destroy(m_Feet);
+            }
         }
 
         /// <summary>
@@ -207,6 +225,10 @@ namespace BelowTheWing.Crew
         {
             m_Seated = vehicle;
 
+            // A driver's hands are on the wheel. A tether left running from a body parked inside
+            // the tractor would haul whatever it held after the tractor.
+            Handling?.LetGoOfEverything();
+
             Body.linearVelocity = Vector3.zero;
             Body.angularVelocity = Vector3.zero;
             Body.isKinematic = true;
@@ -245,21 +267,31 @@ namespace BelowTheWing.Crew
         }
 
         /// <summary>Whether there is something underneath close enough to push off.</summary>
-        public bool Grounded
+        public bool Grounded => StandingOn(out _);
+
+        /// <summary>Where the feet are, just above the bottom of the capsule.</summary>
+        Vector3 Feet => transform.position - (Vector3.up * ((m_Profile.heightMetres * 0.5f) - 0.05f));
+
+        /// <summary>What is underfoot, if anything is close enough to push against.</summary>
+        bool StandingOn(out Collider what) => Jumping.StandingOnSomething(Feet, 0.2f, m_StandsOn, out what);
+
+        /// <summary>
+        /// How fast the thing underfoot is moving where the feet touch it. The tarmac is not going
+        /// anywhere; a cart deck is.
+        /// </summary>
+        static Vector3 MovingAt(Collider underfoot, Vector3 feet)
         {
-            get
-            {
-                var feet = transform.position - (Vector3.up * ((m_Profile.heightMetres * 0.5f) - 0.05f));
-                return Jumping.StandingOnSomething(feet, 0.2f, m_StandsOn, out _);
-            }
+            var body = underfoot.attachedRigidbody;
+            return body != null ? body.GetPointVelocity(feet) : Vector3.zero;
         }
 
         /// <summary>
         /// Pushes off whatever is underneath.
         ///
-        /// Jumping off a carrier lets go of it, so the jump carries wherever the carrier was going.
-        /// Somebody springing off a cart doing six metres a second lands well ahead of where they
-        /// left, which is both correct and the funnier outcome.
+        /// The body already carries whatever speed the thing under it gave it, because standing on
+        /// a moving deck is friction and nothing else. Somebody springing off a cart doing six
+        /// metres a second therefore lands well ahead of where they left, which is both correct and
+        /// the funnier outcome.
         /// </summary>
         public void Jump()
         {
@@ -272,15 +304,8 @@ namespace BelowTheWing.Crew
 
             m_LastJumpedAt = Time.time;
 
-            var carriedAt = Vector3.zero;
-            if (Riding != null && Riding.Attached)
-            {
-                carriedAt = Riding.On.VelocityAt(transform.position);
-                Riding.Wake(Time.time);
-            }
-
             var up = Jumping.TakeOffSpeed(m_Profile.jumpHeightMetres, Mathf.Abs(Physics.gravity.y));
-            var velocity = Body.linearVelocity + carriedAt;
+            var velocity = Body.linearVelocity;
             velocity.y = up;
 
             Body.linearVelocity = velocity;
@@ -310,6 +335,10 @@ namespace BelowTheWing.Crew
             }
 
             Seat?.Refresh();
+
+            // Before anything else moves this step, so that a bag torn out of a hand or a grip
+            // broken by a crash is known about before the next press is read.
+            Handling?.Tick();
 
             // Every step, and on every machine. How tall somebody is has to be right everywhere
             // that can see them -- drawn standing while they are crouched inside a cart puts their
@@ -362,21 +391,41 @@ namespace BelowTheWing.Crew
 
             Stance.Want(asked.Crouch);
 
+            // Walking is pushing against whatever is underfoot. Nothing there, nothing to push
+            // against: somebody in the air keeps the speed they left the ground with.
+            if (!StandingOn(out var underfoot))
+            {
+                return;
+            }
+
             var cameraYaw = Camera != null ? Camera.YawDegrees : transform.eulerAngles.y;
-            var wanted = CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile)
-                         * Stance.SpeedMultiplier;
+            var walking = CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile)
+                          * Stance.SpeedMultiplier;
+
+            // Relative to what is underfoot. Standing still on a moving deck is moving with it, and
+            // walking forward on one is that and a bit more -- which is the whole of riding a cart,
+            // and needs nothing to attach the rider to it.
+            var deck = MovingAt(underfoot, Feet);
+            var deckAcrossTheGround = new Vector3(deck.x, 0f, deck.z);
+            var wanted = deckAcrossTheGround + walking;
 
             var velocity = Body.linearVelocity;
             var acrossTheGround = new Vector3(velocity.x, 0f, velocity.z);
 
+            // Capped at what the feet can push before they slip. That cap is also what lets a
+            // corner taken hard enough take a deck out from under somebody.
             var canChangeThisStep = m_Profile.accelerationMetresPerSecondSquared * Time.fixedDeltaTime;
             var change = Vector3.ClampMagnitude(wanted - acrossTheGround, canChangeThisStep);
             Body.AddForce(change, ForceMode.VelocityChange);
 
-            if (acrossTheGround.magnitude > WalkingPaceMetresPerSecond)
+            // Facing follows where they are trying to go, not where they are being taken. A
+            // passenger dragged along by a deck, or yanked by the bag they just picked up, is not
+            // walking anywhere -- and turning them to face the drag would, with the camera's yaw
+            // as their own, turn "forward" round with them.
+            if (walking.magnitude > WalkingPaceMetresPerSecond)
             {
                 transform.rotation = CrewLocomotion.FaceTravel(
-                    transform.rotation, acrossTheGround, Time.fixedDeltaTime, m_Profile);
+                    transform.rotation, walking, Time.fixedDeltaTime, m_Profile);
             }
         }
     }

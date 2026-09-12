@@ -17,17 +17,17 @@ namespace BelowTheWing.Cargo
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(BoxCollider))]
-    [RequireComponent(typeof(Carried))]
     [DisallowMultipleComponent]
     public sealed class Bag : MonoBehaviour
     {
-        [SerializeField, Tooltip("What this bag weighs and what it takes to shake it loose.")]
+        [SerializeField, Tooltip("What this bag weighs and how big it is.")]
         BagProfile m_Profile;
 
         Rigidbody m_Body;
         BoxCollider m_Collider;
+        PhysicsMaterial m_Grip;
 
-        /// <summary>What this bag's weight, size and thresholds come from.</summary>
+        /// <summary>What this bag's weight and size come from.</summary>
         public BagProfile Profile => m_Profile;
 
         /// <summary>The body this bag is thrown about as.</summary>
@@ -44,15 +44,7 @@ namespace BelowTheWing.Cargo
             }
         }
 
-        /// <summary>
-        /// Gives this bag the weight and size its profile describes, and tells the thing that
-        /// carries it what it takes to shake this bag loose.
-        ///
-        /// The thresholds are applied here rather than left on the carried component's defaults,
-        /// because a profile whose numbers reach nothing is a set of dials that turn nothing. The
-        /// shipped bag ran on hardcoded thresholds that happened to match its profile, and the first
-        /// retune would have been made, saved, and had no effect at all.
-        /// </summary>
+        /// <summary>Gives this bag the weight, size and grip its profile describes.</summary>
         public void Configure(BagProfile profile)
         {
             m_Profile = profile != null ? profile : throw new System.ArgumentNullException(nameof(profile));
@@ -70,10 +62,25 @@ namespace BelowTheWing.Cargo
             m_Collider.size = profile.sizeMetres;
             m_Collider.center = Vector3.zero;
 
-            var carried = GetComponent<Carried>();
-            carried.ComesOffAt = new WakeThresholds(
-                profile.wakeAtLateralAcceleration, profile.wakeAtTiltDegrees, profile.wakeAtImpactImpulse);
-            carried.CannotSettleForSeconds = profile.cannotSettleForSeconds;
+            // The bag's grip wins over the deck's. A steel deck has a friction of its own, and
+            // averaging the two would make every bag half as slippery as its profile says.
+            if (m_Grip == null)
+            {
+                m_Grip = new PhysicsMaterial($"{profile.name} grip");
+            }
+
+            m_Grip.dynamicFriction = profile.frictionCoefficient;
+            m_Grip.staticFriction = profile.frictionCoefficient;
+            m_Grip.frictionCombine = PhysicsMaterialCombine.Minimum;
+            m_Collider.material = m_Grip;
+        }
+
+        void OnDestroy()
+        {
+            if (m_Grip != null)
+            {
+                Destroy(m_Grip);
+            }
         }
 
         void Awake()

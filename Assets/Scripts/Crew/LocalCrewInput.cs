@@ -1,5 +1,7 @@
+using BelowTheWing.Cargo;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 namespace BelowTheWing.Crew
 {
@@ -25,6 +27,7 @@ namespace BelowTheWing.Crew
     {
         CrewCharacter m_Character;
         MouseCapture m_Pointer;
+        bool m_PointerWasHeld;
 
         public CrewIntent Current { get; private set; } = CrewIntent.Idle;
 
@@ -57,7 +60,6 @@ namespace BelowTheWing.Crew
                 // "get off the ground" either way, and never both at once, because a player in a
                 // seat is not standing on anything.
                 jump: keyboard.spaceKey.wasPressedThisFrame,
-                holdingOn: keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed,
 
                 // Held rather than toggled. A cart interior is low enough that a player wants to be
                 // sure they are still crouched without watching their own knees.
@@ -99,37 +101,44 @@ namespace BelowTheWing.Crew
         }
 
         /// <summary>
-        /// Picking things up and throwing them, on the left button.
+        /// The two mouse buttons, one per hand: the left button works the left hand and the right
+        /// button the right.
         ///
-        /// Empty hands pick up; full hands wind up and throw. The two never overlap, so one button
-        /// does both without a player having to decide which they meant -- and a tap with something
-        /// held puts it down rather than launching it, which is what stacking a cart needs.
+        /// Each is a press and a release and nothing more. What a press means -- take hold of
+        /// something, start winding up a throw -- is the hand's to decide from what it is holding,
+        /// so that the keyboard never has to know.
+        ///
+        /// A press counts only if the pointer already belonged to the game on the previous frame,
+        /// so the click that brings it back from the desktop is not a grab whichever order this and
+        /// the pointer's own component run in. A release always counts: a button let go of while
+        /// the pointer was elsewhere still lets go of the cart.
         /// </summary>
         void Handle()
         {
             var mouse = Mouse.current;
             var hands = m_Character.Handling;
+            var pressesCount = m_PointerWasHeld;
+            m_PointerWasHeld = m_Pointer.Held;
 
             if (mouse == null || hands == null)
             {
                 return;
             }
 
-            if (mouse.leftButton.wasPressedThisFrame)
+            Work(hands.Left, mouse.leftButton, pressesCount);
+            Work(hands.Right, mouse.rightButton, pressesCount);
+        }
+
+        void Work(Hand hand, ButtonControl button, bool pressesCount)
+        {
+            if (pressesCount && button.wasPressedThisFrame)
             {
-                if (hands.Full)
-                {
-                    hands.StartWindingUp(Time.time);
-                }
-                else
-                {
-                    hands.PickUp(Time.time);
-                }
+                hand.Press(Time.time);
             }
 
-            if (mouse.leftButton.wasReleasedThisFrame && hands.Full)
+            if (button.wasReleasedThisFrame)
             {
-                hands.LetGo(Time.time, ThrowingTowards());
+                hand.Release(Time.time, ThrowingTowards());
             }
         }
 

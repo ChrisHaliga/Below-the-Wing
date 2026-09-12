@@ -77,6 +77,23 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void ABagGripsADeckAsMuchAsItsProfileSays()
+        {
+            // Nothing like the default, so that a bag left on it cannot pass by coincidence.
+            m_Profile.frictionCoefficient = 0.12f;
+
+            Configured();
+            var grip = m_Object.GetComponent<BoxCollider>().material;
+
+            Assert.That(grip, Is.Not.Null, "a bag with no material of its own has whatever grip the " +
+                                          "deck has, and a cart cannot corner hard enough to shed that");
+            Assert.That(grip.dynamicFriction, Is.EqualTo(0.12f).Within(1e-4f));
+            Assert.That(grip.staticFriction, Is.EqualTo(0.12f).Within(1e-4f));
+            Assert.That(grip.frictionCombine, Is.EqualTo(PhysicsMaterialCombine.Minimum),
+                "averaged with a steel deck, every bag is half as slippery as its profile says");
+        }
+
+        [Test]
         public void ABagSweepsRatherThanStepping()
         {
             var bag = Configured();
@@ -84,27 +101,6 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(bag.Body.collisionDetectionMode, Is.Not.EqualTo(CollisionDetectionMode.Discrete),
                 "at twelve metres a second a thrown bag moves most of its own length in one step, so " +
                 "a discrete check has it on one side of a cart wall and then the other");
-        }
-
-        [Test]
-        public void ABagComesOffACartAtWhatItsProfileSays()
-        {
-            // Nothing like the defaults, so that a bag left on them cannot pass by coincidence.
-            m_Profile.wakeAtLateralAcceleration = 9.5f;
-            m_Profile.wakeAtTiltDegrees = 33f;
-            m_Profile.wakeAtImpactImpulse = 777f;
-            m_Profile.cannotSettleForSeconds = 2.5f;
-
-            Configured();
-            var carried = m_Object.GetComponent<Carried>();
-
-            Assert.That(carried.ComesOffAt.LateralAcceleration, Is.EqualTo(9.5f).Within(1e-4f),
-                "a profile whose thresholds reach nothing is a set of dials that turn nothing. The " +
-                "shipped bag ran on hardcoded numbers that happened to match its profile, and the " +
-                "first retune would have been saved and had no effect at all");
-            Assert.That(carried.ComesOffAt.TiltDegrees, Is.EqualTo(33f).Within(1e-4f));
-            Assert.That(carried.ComesOffAt.Impulse, Is.EqualTo(777f).Within(1e-4f));
-            Assert.That(carried.CannotSettleForSeconds, Is.EqualTo(2.5f).Within(1e-4f));
         }
 
         [Test]

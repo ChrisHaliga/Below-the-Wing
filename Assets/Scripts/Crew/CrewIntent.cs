@@ -27,15 +27,6 @@ namespace BelowTheWing.Crew
         public readonly bool Jump;
 
         /// <summary>
-        /// Whether they are holding on to whatever they are riding.
-        ///
-        /// Occupies the hands, which is the point of it: holding on is a trade a rider makes rather
-        /// than a rule the game enforces, and it gives the driver and the passenger something to
-        /// shout at each other about.
-        /// </summary>
-        public readonly bool HoldingOn;
-
-        /// <summary>
         /// Whether they are asking to be crouched.
         ///
         /// Held rather than toggled, so that letting go is asking to stand. The asking is what gets
@@ -49,14 +40,12 @@ namespace BelowTheWing.Crew
             bool sprint = false,
             float brake = 0f,
             bool jump = false,
-            bool holdingOn = false,
             bool crouch = false)
         {
             Move = move;
             Sprint = sprint;
             Brake = brake;
             Jump = jump;
-            HoldingOn = holdingOn;
             Crouch = crouch;
         }
 

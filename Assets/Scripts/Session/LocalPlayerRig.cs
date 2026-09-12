@@ -27,7 +27,6 @@ namespace BelowTheWing.Session
             FollowCamera camera,
             IOwnershipBroker broker,
             Func<IReadOnlyList<VehicleController>> nearbyVehicles,
-            Func<IReadOnlyList<Carried>> nearbyCargo,
             RampSession session)
         {
             m_Character = character != null ? character : throw new ArgumentNullException(nameof(character));
@@ -50,12 +49,20 @@ namespace BelowTheWing.Session
                     session.Reshaped(back, session.ATrainNumberNobodyIsUsing());
                 });
 
-            // Hands, so that bags can be picked up and thrown. The carrier is on the prefab; what
-            // is built here is the part that reads what the player is doing with it.
-            var hands = m_Character.GetComponentInChildren<Carrier>();
-            if (hands != null)
+            // Hands, so that bags can be picked up and thrown and carts held onto. Where they are
+            // is marked on the prefab; what is built here is the part that works them.
+            var left = m_Character.transform.Find(Hands.LeftAnchorName);
+            var right = m_Character.transform.Find(Hands.RightAnchorName);
+            if (left != null && right != null)
             {
-                m_Character.Handling = new Hands(hands, nearbyCargo, ThrowSettings.Default);
+                m_Character.Handling = new Hands(left, right, m_Character.Body, m_Character.Profile.hands);
+            }
+            else
+            {
+                Debug.LogError(
+                    $"'{m_Character.name}' has no '{Hands.LeftAnchorName}' and '{Hands.RightAnchorName}' " +
+                    "under it, so this player has no hands: nothing can be picked up or held onto.",
+                    m_Character);
             }
 
             // Before the input, so that the first frame of looking around already has the pointer.

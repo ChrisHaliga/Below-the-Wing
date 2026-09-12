@@ -137,6 +137,16 @@ namespace BelowTheWing.Session
                 return;
             }
 
+            ReportNow();
+        }
+
+        /// <summary>
+        /// Tells everybody else where this is, now, whatever the rate says. For the moments a
+        /// report cannot wait: a body's last word before it falls silent has to be where it stopped,
+        /// or every copy extrapolates the speed it last heard and drifts.
+        /// </summary>
+        protected void ReportNow()
+        {
             m_SinceLastReport = 0f;
             m_Reported.Value = ReportedMotion.Taken(Body, NetworkManager.ServerTime.Time);
         }

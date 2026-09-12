@@ -1,110 +1,69 @@
 using System.Collections.Generic;
 using BelowTheWing.Cargo;
-using Unity.Netcode;
+using BelowTheWing.Vehicles;
 using UnityEngine;
 
 namespace BelowTheWing.Session
 {
-    /// <summary>Where something being carried is riding, as its owner reports it.</summary>
-    public struct RideReport : INetworkSerializable
-    {
-        /// <summary>Whether it is riding on anything at all.</summary>
-        public bool Riding;
-
-        /// <summary>The networked object the carrier belongs to.</summary>
-        public ulong CarrierObject;
-
-        /// <summary>Which carrier on that object, as numbered by <see cref="CarrierSlots"/>.</summary>
-        public int CarrierSlot;
-
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-        {
-            serializer.SerializeValue(ref Riding);
-            serializer.SerializeValue(ref CarrierObject);
-            serializer.SerializeValue(ref CarrierSlot);
-        }
-
-        /// <summary>
-        /// Whether these two reports say the same thing.
-        ///
-        /// Two reports of riding nothing are the same report whatever else they hold. A variable
-        /// nobody has written yet reads as all zeroes, and treating that as different from "riding
-        /// nothing" would have every machine conclude, on the first step of every bag's life, that
-        /// somebody here had just picked it up.
-        /// </summary>
-        public bool Matches(RideReport other)
-        {
-            if (!Riding || !other.Riding)
-            {
-                return Riding == other.Riding;
-            }
-
-            return CarrierObject == other.CarrierObject && CarrierSlot == other.CarrierSlot;
-        }
-
-        /// <summary>Loose in the world, riding on nothing.</summary>
-        public static RideReport Nothing => new RideReport { Riding = false, CarrierSlot = CarrierSlots.None };
-    }
-
     /// <summary>
-    /// Keeping every machine's copy of one piece of cargo in the same place: riding on the same
-    /// thing, or loose and moving the same way.
+    /// Keeping every machine's copy of one bag where the machine simulating it says it is, and
+    /// moving that job to whichever machine ought to have it.
     ///
-    /// Cargo has two quite different lives and needs both replicated. While it rides on something it
-    /// has no motion of its own -- it is part of a cart or a pair of hands, and all that has to
-    /// agree is which thing it is part of. While it is loose it is an ordinary rigidbody tumbling
-    /// across the apron, and what has to agree is where it is and how fast.
+    /// A bag is an ordinary body everywhere. It is never attached to anything and never told where
+    /// it is; it is pulled about by joints, carried by friction, and thrown by having a velocity.
+    /// What the network carries is the bag's motion, as reported by the one machine simulating it,
+    /// and the copies elsewhere are steered toward that with force like every other body.
     ///
-    /// One machine decides and everybody else follows. Letting each machine work out for itself
-    /// whether a bag has been shaken off a cart produces the worst outcome available: the bag flies
-    /// on one screen and rides on for another ten seconds on the next, and the two never reconcile.
-    /// A bag that comes off two hundred milliseconds late everywhere is a far smaller problem, and
-    /// it is the one this takes.
+    /// Which machine simulates it follows <see cref="CargoOwnership"/>: whoever takes hold of it,
+    /// or whoever owns the cart it comes to rest on. Taking hold happens on the machine of the
+    /// person reaching -- waiting for a round trip before the bag leaves the ground would make the
+    /// apron feel like treacle -- and ownership is asked for in the same moment and kept being
+    /// asked for until it arrives. Handing a bag to a cart's owner is the owner's decision alone,
+    /// because only the owner's physics knows what the bag is resting on.
     ///
-    /// The machine that decides is whichever one owns the cargo, and that moves about. Picking a bag
-    /// up happens immediately on the machine of whoever reached for it -- waiting for a round trip
-    /// before the bag leaves the ground would make the apron feel like treacle -- and ownership is
-    /// asked for in the same moment. Until it is granted, this machine keeps asking, so a refusal or
-    /// an answer that never comes cannot leave somebody holding a bag nobody else agrees they hold.
+    /// A bag at rest says so once and then falls silent, so that forty parked bags cost nothing on
+    /// the wire and are free to fall asleep on every machine.
     /// </summary>
-    [RequireComponent(typeof(Carried))]
+    [RequireComponent(typeof(Bag))]
     [DisallowMultipleComponent]
     public sealed class CargoMotion : MotionReplication
     {
-        [SerializeField, Tooltip("Seconds before asking again for cargo somebody here has taken hold of.")]
+        [SerializeField, Tooltip("Seconds before asking again for a bag somebody here has hold of.")]
         float m_AskAgainAfterSeconds = 0.5f;
 
-        readonly NetworkVariable<RideReport> m_Ride =
-            new NetworkVariable<RideReport>(default, NetworkVariableReadPermission.Everyone,
-                NetworkVariableWritePermission.Owner);
+        [SerializeField, Tooltip("Below this speed relative to whatever it is lying on, a bag counts " +
+                                 "as at rest on it, in metres per second.")]
+        float m_AtRestBelow = 0.25f;
 
-        readonly List<Carrier> m_Scratch = new List<Carrier>();
+        [SerializeField, Tooltip("How far below a bag's underside to look for what it is lying on, " +
+                                 "in metres.")]
+        float m_UndersideReachMetres = 0.1f;
 
-        Carried m_Carried;
-        SettlesOntoCarriers m_Settling;
+        [SerializeField, Tooltip("How tall a stack of bags may be and still count as lying on the " +
+                                 "vehicle at the bottom of it, in metres.")]
+        float m_StackReachMetres = 2f;
 
-        RideReport m_LastApplied;
-        float m_SinceLastAsked;
+        readonly List<Joint> m_Joints = new List<Joint>();
+        readonly RaycastHit[] m_Below = new RaycastHit[8];
+
+        Bag m_Bag;
+        Collider m_Box;
+        bool m_WasAwake;
         bool m_Asking;
+        float m_SinceLastAsked;
 
         void Awake()
         {
-            m_Carried = GetComponent<Carried>();
-            m_Settling = GetComponent<SettlesOntoCarriers>();
-            m_LastApplied = RideReport.Nothing;
+            m_Bag = GetComponent<Bag>();
+            m_Box = GetComponent<Collider>();
         }
 
-        protected override Rigidbody Body => m_Carried.Body;
-
-        /// <summary>
-        /// Zero while it rides on something, because then it is not being steered at all -- it is
-        /// wherever the thing carrying it has taken it.
-        /// </summary>
-        public override float MetresOutOfPlace => m_Carried.Attached ? 0f : base.MetresOutOfPlace;
+        protected override Rigidbody Body => m_Bag.Body;
 
         void FixedUpdate()
         {
-            if (Body == null)
+            // Nothing to decide before spawn: there is no session to ask which machine this is.
+            if (Body == null || !IsSpawned)
             {
                 return;
             }
@@ -113,63 +72,108 @@ namespace BelowTheWing.Session
             // vehicles and characters do: an object spawned elsewhere runs its spawn callback before
             // ownership has been applied, and no later change event arrives to correct it.
             var ours = IsOwner;
+            var us = NetworkManager.LocalClientId;
 
-            if (m_Settling != null)
-            {
-                // Only the deciding machine judges that a bag has come to rest on a deck. Every
-                // machine judging separately is how the same bag ends up aboard different carts.
-                m_Settling.OursToDecide = ours;
-            }
+            var shouldBe = CargoOwnership.WhoShouldOwn(
+                OwnerClientId, us, HeldHere(), ours ? RestingOnSomethingOwnedBy() : CargoOwnership.Nobody);
 
             if (ours)
             {
                 m_Asking = false;
-                m_LastApplied = WhatItIsActuallyRiding();
 
-                // Only when it has actually changed. What a bag is riding on changes a handful of
-                // times a minute; writing it every step would put fifty messages a second on the
-                // wire for every bag on the apron to say nothing at all.
-                if (!m_Ride.Value.Matches(m_LastApplied))
+                if (shouldBe != us)
                 {
-                    m_Ride.Value = m_LastApplied;
+                    NetworkObject.ChangeOwnership(shouldBe);
+                    return;
                 }
 
-                // Riding cargo has no motion worth sending. It is wherever the cart took it, and
-                // the cart already reports that -- sending it again would spend bandwidth saying the
-                // same thing twice and give the two reports a chance to disagree.
-                if (!m_Carried.Attached)
-                {
-                    Report();
-                }
-
+                SayWhereItIs();
                 return;
             }
 
-            Follow();
-        }
-
-        /// <summary>
-        /// Take what the owner says -- or, if somebody on this machine has taken hold of it, ask to
-        /// be given it so that this machine's version becomes the one everybody follows.
-        /// </summary>
-        void Follow()
-        {
-            var said = m_Ride.Value;
-
-            if (!said.Matches(m_LastApplied))
-            {
-                Apply(said);
-                m_LastApplied = said;
-                m_Asking = false;
-            }
-
-            if (!WhatItIsActuallyRiding().Matches(m_LastApplied))
+            if (shouldBe == us)
             {
                 KeepAskingForIt();
                 return;
             }
 
             KeepUp();
+        }
+
+        /// <summary>
+        /// Whether a hand on this machine has hold of this bag: there is a joint on it that reaches
+        /// a body this machine moves.
+        /// </summary>
+        bool HeldHere()
+        {
+            GetComponents(m_Joints);
+
+            foreach (var joint in m_Joints)
+            {
+                var to = joint.connectedBody;
+                if (to != null && to.TryGetComponent<IMovedFromHere>(out var mover) && mover.OursToMove)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// The owner of the vehicle this bag is lying still on, if it is lying still on one. Other
+        /// bags between this one and the vehicle are looked through, so that a stack on a cart
+        /// ends up on one machine -- and a stack on the tarmac stays where it was.
+        /// </summary>
+        ulong RestingOnSomethingOwnedBy()
+        {
+            var touching = m_Box.bounds.extents.y + m_UndersideReachMetres;
+            var found = Physics.RaycastNonAlloc(
+                Body.position, Vector3.down, m_Below, m_StackReachMetres, ~0, QueryTriggerInteraction.Ignore);
+
+            // Whatever is directly underneath, and the first thing under it that is not a bag.
+            var nearest = float.MaxValue;
+            RaycastHit? beneath = null;
+            for (var i = 0; i < found; i++)
+            {
+                var hit = m_Below[i];
+                nearest = Mathf.Min(nearest, hit.distance);
+
+                var isABag = hit.rigidbody != null && hit.rigidbody.TryGetComponent<CargoMotion>(out _);
+                if (!isABag && (beneath == null || hit.distance < beneath.Value.distance))
+                {
+                    beneath = hit;
+                }
+            }
+
+            if (nearest > touching || beneath == null || beneath.Value.rigidbody == null
+                || !beneath.Value.rigidbody.TryGetComponent<VehicleMotion>(out var vehicle))
+            {
+                return CargoOwnership.Nobody;
+            }
+
+            var relative = Body.linearVelocity - beneath.Value.rigidbody.GetPointVelocity(beneath.Value.point);
+            return relative.magnitude > m_AtRestBelow ? CargoOwnership.Nobody : vehicle.OwnerClientId;
+        }
+
+        /// <summary>
+        /// Reports while moving, and once more on coming to rest so the last word is where it
+        /// stopped. A sleeping bag that kept reporting would keep every copy of it awake.
+        /// </summary>
+        void SayWhereItIs()
+        {
+            var awake = !Body.IsSleeping();
+
+            if (awake)
+            {
+                Report();
+            }
+            else if (m_WasAwake)
+            {
+                ReportNow();
+            }
+
+            m_WasAwake = awake;
         }
 
         /// <summary>
@@ -195,65 +199,5 @@ namespace BelowTheWing.Session
 
             NetworkObject.RequestOwnership();
         }
-
-        /// <summary>Puts this copy onto whatever the report names, or takes it off.</summary>
-        void Apply(RideReport said)
-        {
-            if (!said.Riding)
-            {
-                // Shaken loose rather than simply unparented, so this copy takes the same moment of
-                // grace before settling again that the deciding machine took. A copy free to settle
-                // immediately re-attaches to the deck the bag has just left.
-                m_Carried.Wake(Time.time);
-                return;
-            }
-
-            var carrier = CarrierSlots.Resolve(NetworkManager, said.CarrierObject, said.CarrierSlot, m_Scratch);
-            if (carrier == null)
-            {
-                // Whatever it rides on has not been spawned here yet. Leaving it loose for now is
-                // right: nothing has been applied, so this will be tried again next step, and it
-                // will keep being tried until the cart arrives.
-                return;
-            }
-
-            if (m_Carried.On == carrier)
-            {
-                return;
-            }
-
-            if (m_Carried.Attached)
-            {
-                m_Carried.Wake(Time.time);
-            }
-
-            m_Carried.AttachTo(carrier);
-        }
-
-        RideReport WhatItIsActuallyRiding()
-        {
-            if (!m_Carried.Attached)
-            {
-                return RideReport.Nothing;
-            }
-
-            var networked = m_Carried.On.GetComponentInParent<NetworkObject>();
-            var slot = CarrierSlots.SlotOf(m_Carried.On, m_Scratch);
-
-            if (networked == null || slot == CarrierSlots.None)
-            {
-                // Riding something that exists only on this machine -- scenery, or a test rig. There
-                // is nothing to say about it that another machine could act on.
-                return RideReport.Nothing;
-            }
-
-            return new RideReport
-            {
-                Riding = true,
-                CarrierObject = networked.NetworkObjectId,
-                CarrierSlot = slot
-            };
-        }
-
     }
 }
