@@ -41,15 +41,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_TractorProfile);
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         VehicleController ACart(Vector3 at)
             => m_Apron.AddVehicle(m_CartProfile, "Cart 1", at, Quaternion.identity, TestShapes.Cart());
 
@@ -58,7 +49,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var cart = ACart(Vector3.zero);
 
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             Assert.That(cart.transform.position.y, Is.EqualTo(0f).Within(0.03f),
                 $"settled at {cart.transform.position.y:F3} m. The origin is ground level now, so a " +
@@ -72,7 +63,7 @@ namespace BelowTheWing.Tests.PlayMode
             var cart = ACart(Vector3.zero);
             var shape = cart.GetComponent<VehicleShape>();
 
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             foreach (var wheelLocal in shape.WheelCentresLocal)
             {
@@ -91,7 +82,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var cart = ACart(Vector3.zero);
 
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             var expected = VehicleController.SuspensionCompressionAtRest(m_CartProfile);
 
@@ -107,7 +98,7 @@ namespace BelowTheWing.Tests.PlayMode
                 m_TractorProfile, m_CartProfile, cartCount: 2, Vector3.zero,
                 tractorShape: TestShapes.Tractor(), cartShape: TestShapes.Cart());
 
-            yield return Step(4f);
+            yield return Steps.Seconds(4f);
 
             foreach (var member in train.Members)
             {
@@ -128,7 +119,7 @@ namespace BelowTheWing.Tests.PlayMode
                 m_TractorProfile, m_CartProfile, cartCount: 2, Vector3.zero,
                 tractorShape: TestShapes.Tractor(), cartShape: TestShapes.Cart());
 
-            yield return Step(4f);
+            yield return Steps.Seconds(4f);
 
             for (var i = 0; i < train.Members.Count - 1; i++)
             {
@@ -175,15 +166,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         /// <summary>A cart with something standing in for each of its four visible wheels.</summary>
         (VehicleController cart, WheelLook look, Transform[] wheels) ACartWithWheels()
         {
@@ -212,7 +194,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var (_, look, _) = ACartWithWheels();
 
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             Assert.That(look.TurnedDegrees, Is.EqualTo(0f).Within(1f),
                 "wheels creeping round on a parked cart is what an angle accumulated from noise " +
@@ -223,12 +205,12 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator ADrivingCartTurnsItsWheelsAtRoadSpeed()
         {
             var (cart, look, _) = ACartWithWheels();
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
 
             cart.Body.linearVelocity = new Vector3(0f, 0f, 4f);
             var before = look.TurnedDegrees;
 
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
 
             // One second at 4 m/s on a 0.157 m wheel: 4 / 0.157 radians, in degrees.
             var expected = 4f / m_CartProfile.wheelRadiusMetres * Mathf.Rad2Deg;
@@ -243,7 +225,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var (cart, _, wheels) = ACartWithWheels();
 
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             foreach (var wheel in wheels)
             {

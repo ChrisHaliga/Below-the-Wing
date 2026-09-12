@@ -52,15 +52,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_CrewProfile);
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         [UnityTest]
         public IEnumerator LandingOnADeckStartsRidingItImmediately()
         {
@@ -83,7 +74,7 @@ namespace BelowTheWing.Tests.PlayMode
             var stoodAt = m_CartObject.transform.InverseTransformPoint(m_Crew.transform.position);
 
             m_CartObject.GetComponent<Rigidbody>().linearVelocity = new Vector3(0f, 0f, 8f);
-            yield return Step(3f);
+            yield return Steps.Seconds(3f);
 
             var standsAt = m_CartObject.transform.InverseTransformPoint(m_Crew.transform.position);
             Assert.That(Vector3.Distance(standsAt, stoodAt), Is.LessThan(0.01f),
@@ -95,7 +86,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             m_Riding.LandedOn(m_Deck, Time.time);
             m_CartObject.GetComponent<Rigidbody>().linearVelocity = new Vector3(0f, 0f, 6f);
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             m_Riding.SteppedOff(Time.time);
 
@@ -179,7 +170,7 @@ namespace BelowTheWing.Tests.PlayMode
             var stoodAt = m_CartObject.transform.InverseTransformPoint(m_Crew.transform.position);
 
             m_CartObject.GetComponent<Rigidbody>().linearVelocity = new Vector3(0f, 0f, 8f);
-            yield return Step(3f);
+            yield return Steps.Seconds(3f);
 
             var standsAt = m_CartObject.transform.InverseTransformPoint(m_Crew.transform.position);
 
@@ -216,7 +207,7 @@ namespace BelowTheWing.Tests.PlayMode
                 holdingOn: true);
 
             bag.AttachTo(m_Deck);
-            yield return Step(0.2f);
+            yield return Steps.Seconds(0.2f);
 
             for (var i = 0; i < 6; i++)
             {

@@ -1,5 +1,6 @@
 using System.Collections;
 using BelowTheWing.Cargo;
+using BelowTheWing.Tests.Support;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -58,22 +59,13 @@ namespace BelowTheWing.Tests.PlayMode
             }
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         [UnityTest]
         public IEnumerator ACartDrivingGentlyKeepsItsLoad()
         {
             m_Bag.AttachTo(m_Deck);
             m_CartBody.linearVelocity = new Vector3(0f, 0f, 4f);
 
-            yield return Step(3f);
+            yield return Steps.Seconds(3f);
 
             Assert.That(m_Bag.Attached, Is.True,
                 "driving in a straight line has to be uneventful, or nobody will ever move a bag " +
@@ -86,7 +78,7 @@ namespace BelowTheWing.Tests.PlayMode
             m_Bag.AttachTo(m_Deck);
             m_CartObject.transform.rotation = Quaternion.Euler(0f, 0f, 40f);
 
-            yield return Step(0.2f);
+            yield return Steps.Seconds(0.2f);
 
             Assert.That(m_Bag.Attached, Is.False,
                 "a cart on its side holding onto its bags is the most obviously wrong thing this " +
@@ -97,7 +89,7 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator ACartThrownSidewaysDropsItsLoad()
         {
             m_Bag.AttachTo(m_Deck);
-            yield return Step(0.2f);
+            yield return Steps.Seconds(0.2f);
 
             // Swung hard sideways, which is what a corner taken too fast does to a deck.
             for (var i = 0; i < 6; i++)
@@ -120,7 +112,7 @@ namespace BelowTheWing.Tests.PlayMode
 
             m_Bag.AttachTo(m_Deck);
             rider.AttachTo(m_Deck);
-            yield return Step(0.2f);
+            yield return Steps.Seconds(0.2f);
 
             // Hard enough to empty the deck of bags, not hard enough to tear off somebody gripping
             // a rail. A fifth of a metre a second per step is about fifteen metres per second
@@ -145,7 +137,7 @@ namespace BelowTheWing.Tests.PlayMode
             m_Bag.AttachTo(m_Deck);
             m_CartObject.transform.rotation = Quaternion.Euler(0f, 0f, 60f);
 
-            yield return Step(0.3f);
+            yield return Steps.Seconds(0.3f);
 
             Assert.That(m_Bag.Attached, Is.True,
                 "every machine deciding for itself means a bag that flies on one screen and rides on " +

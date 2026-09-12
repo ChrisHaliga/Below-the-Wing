@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using BelowTheWing.Cargo;
+using BelowTheWing.Tests.Support;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -58,15 +59,6 @@ namespace BelowTheWing.Tests.PlayMode
             if (m_PlayerObject != null)
             {
                 Object.DestroyImmediate(m_PlayerObject);
-            }
-        }
-
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
             }
         }
 
@@ -153,7 +145,7 @@ namespace BelowTheWing.Tests.PlayMode
             m_Holding.PickUp(Time.time);
 
             m_Holding.StartWindingUp(Time.time);
-            yield return Step(1.5f);
+            yield return Steps.Seconds(1.5f);
 
             m_Holding.LetGo(Time.time, Vector3.forward);
 
@@ -170,10 +162,10 @@ namespace BelowTheWing.Tests.PlayMode
             m_Holding.PickUp(Time.time);
 
             m_Holding.StartWindingUp(Time.time);
-            yield return Step(0.4f);
+            yield return Steps.Seconds(0.4f);
             var halfWay = m_Holding.Charge(Time.time);
 
-            yield return Step(1.2f);
+            yield return Steps.Seconds(1.2f);
 
             Assert.That(halfWay, Is.GreaterThan(0f).And.LessThan(1f), "part way is part way");
             Assert.That(m_Holding.Charge(Time.time), Is.EqualTo(1f).Within(1e-3f),
@@ -198,10 +190,10 @@ namespace BelowTheWing.Tests.PlayMode
             m_Holding.PickUp(Time.time);
 
             cartBody.linearVelocity = new Vector3(0f, 0f, 6f);
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             m_Holding.StartWindingUp(Time.time);
-            yield return Step(1.5f);
+            yield return Steps.Seconds(1.5f);
             m_Holding.LetGo(Time.time, Vector3.forward);
 
             Assert.That(m_Bag.Body.linearVelocity.z, Is.GreaterThan(12f),

@@ -172,7 +172,7 @@ namespace BelowTheWing.Tests.PlayMode
             shape.RememberHowItWasPlaced();
             shape.CatchUpNow();
 
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             var lyingDown = Quaternion.Angle(
                 shape.transform.rotation, vehicle.transform.rotation * Quaternion.Euler(90f, 0f, 0f));
@@ -199,7 +199,7 @@ namespace BelowTheWing.Tests.PlayMode
             vehicle.Body.position = new Vector3(0f, 0f, 6f);
             vehicle.transform.position = vehicle.Body.position;
 
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
 
             var offset = vehicle.transform.InverseTransformPoint(shape.transform.position);
 
@@ -229,32 +229,10 @@ namespace BelowTheWing.Tests.PlayMode
             appearance.Show("Tug 1");
             yield return null;
 
-            Assert.That(model.transform.localPosition, Is.EqualTo(Vector3.zero).Using(Near),
+            Assert.That(model.transform.localPosition, Is.EqualTo(Vector3.zero).Using(Nearly.Within(0.01f)),
                 "a grey primitive is built at the object's origin and has to be lifted to where the " +
                 "bodywork is. A model is already there, and lifting it too puts the cart you see a " +
                 "metre above the cart you drive into");
-        }
-
-        static readonly System.Collections.Generic.IEqualityComparer<Vector3> Near = new Within(0.01f);
-
-        sealed class Within : System.Collections.Generic.IEqualityComparer<Vector3>
-        {
-            readonly float m_Tolerance;
-
-            public Within(float tolerance) => m_Tolerance = tolerance;
-
-            public bool Equals(Vector3 a, Vector3 b) => Vector3.Distance(a, b) <= m_Tolerance;
-
-            public int GetHashCode(Vector3 of) => of.GetHashCode();
-        }
-
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
         }
     }
 }

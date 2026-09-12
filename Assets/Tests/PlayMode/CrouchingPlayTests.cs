@@ -53,15 +53,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_Profile);
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         /// <summary>A slab low enough that a standing person does not fit under it.</summary>
         void PutACeilingAt(float heightMetres, Vector3 over)
         {
@@ -74,11 +65,11 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator ACrouchedPersonIsShorterThanAStandingOne()
         {
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             var standing = m_Crew.HeightMetres;
             m_Keys.Crouch = true;
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             Assert.That(m_Crew.HeightMetres, Is.LessThan(standing));
             Assert.That(m_Crew.HeightMetres, Is.EqualTo(m_Profile.crouchedHeightMetres).Within(0.01f));
@@ -90,7 +81,7 @@ namespace BelowTheWing.Tests.PlayMode
             // The clear space above a baggage cart's deck. A person has to get in there to load it.
             const float clearInsideACart = 1.626f;
 
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             Assert.That(m_Profile.heightMetres, Is.GreaterThan(clearInsideACart),
                 "this test means nothing unless a standing person genuinely does not fit");
@@ -102,15 +93,15 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator CrouchingCostsSpeed()
         {
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             m_Keys.Move = new Vector2(0f, 1f);
 
-            yield return Step(1.5f);
+            yield return Steps.Seconds(1.5f);
             var standingSpeed = new Vector2(m_Crew.Body.linearVelocity.x, m_Crew.Body.linearVelocity.z).magnitude;
 
             m_Keys.Crouch = true;
-            yield return Step(1.5f);
+            yield return Steps.Seconds(1.5f);
             var crouchedSpeed = new Vector2(m_Crew.Body.linearVelocity.x, m_Crew.Body.linearVelocity.z).magnitude;
 
             Assert.That(standingSpeed, Is.GreaterThan(0.5f), "they have to have been walking");
@@ -122,16 +113,16 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator SomebodyUnderSomethingLowStaysCrouched()
         {
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             m_Keys.Crouch = true;
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             PutACeilingAt(1.4f, m_Crew.transform.position);
-            yield return Step(0.2f);
+            yield return Steps.Seconds(0.2f);
 
             m_Keys.Crouch = false;
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             Assert.That(m_Crew.Stance.Crouched, Is.True,
                 "standing into a ceiling puts half a capsule inside a collider, and the solver's " +
@@ -142,16 +133,16 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator SomebodyWhoWalksOutFromUnderItStandsUp()
         {
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             m_Keys.Crouch = true;
-            yield return Step(0.3f);
+            yield return Steps.Seconds(0.3f);
 
             PutACeilingAt(1.4f, m_Crew.transform.position);
-            yield return Step(0.2f);
+            yield return Steps.Seconds(0.2f);
 
             m_Keys.Crouch = false;
-            yield return Step(0.3f);
+            yield return Steps.Seconds(0.3f);
             Assert.That(m_Crew.Stance.Crouched, Is.True, "still underneath it");
 
             // Out into the open, under their own steam. Straight ahead rather than sideways: with
@@ -159,7 +150,7 @@ namespace BelowTheWing.Tests.PlayMode
             // turns to face the way they are walking -- so holding strafe walks them in a circle
             // and they never leave the ceiling at all.
             m_Keys.Move = new Vector2(0f, 1f);
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             Assert.That(Vector3.Distance(m_Crew.transform.position, m_Ceiling.transform.position),
                 Is.GreaterThan(2.5f),
@@ -170,14 +161,5 @@ namespace BelowTheWing.Tests.PlayMode
                 "A player who crouched into a cart and walked out of it would otherwise stay bent " +
                 "double for the rest of the session");
         }
-    }
-
-    /// <summary>Keys a player is holding down right now, changeable mid-test.</summary>
-    sealed class HeldKeys : ICrewIntentSource
-    {
-        public Vector2 Move;
-        public bool Crouch;
-
-        public CrewIntent Current => new CrewIntent(Move, crouch: Crouch);
     }
 }

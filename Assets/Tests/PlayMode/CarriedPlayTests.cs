@@ -1,5 +1,6 @@
 using System.Collections;
 using BelowTheWing.Cargo;
+using BelowTheWing.Tests.Support;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -58,15 +59,6 @@ namespace BelowTheWing.Tests.PlayMode
             }
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         [UnityTest]
         public IEnumerator SomethingRidingACarrierDoesNotMoveRelativeToIt()
         {
@@ -78,7 +70,7 @@ namespace BelowTheWing.Tests.PlayMode
             var satAt = m_CartObject.transform.InverseTransformPoint(m_BagObject.transform.position);
 
             m_CartObject.GetComponent<Rigidbody>().linearVelocity = new Vector3(0f, 0f, 8f);
-            yield return Step(3f);
+            yield return Steps.Seconds(3f);
 
             var sitsAt = m_CartObject.transform.InverseTransformPoint(m_BagObject.transform.position);
             Assert.That(Vector3.Distance(sitsAt, satAt), Is.LessThan(0.001f),
@@ -104,7 +96,7 @@ namespace BelowTheWing.Tests.PlayMode
             m_Bag.AttachTo(m_Deck);
 
             m_CartObject.GetComponent<Rigidbody>().linearVelocity = new Vector3(0f, 0f, 8f);
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             m_Bag.Wake(Time.time);
 
@@ -119,7 +111,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             m_Bag.AttachTo(m_Deck);
             m_CartObject.GetComponent<Rigidbody>().linearVelocity = new Vector3(0f, 0f, 6f);
-            yield return Step(0.3f);
+            yield return Steps.Seconds(0.3f);
 
             m_Bag.Wake(Time.time, ofItsOwn: new Vector3(0f, 0f, 5f));
 
@@ -167,7 +159,7 @@ namespace BelowTheWing.Tests.PlayMode
             m_Bag.AttachTo(m_Deck);
 
             m_CartObject.GetComponent<Rigidbody>().linearVelocity = new Vector3(0f, 0f, 6f);
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             // The cart quits the session mid-drive.
             Object.DestroyImmediate(m_CartObject);

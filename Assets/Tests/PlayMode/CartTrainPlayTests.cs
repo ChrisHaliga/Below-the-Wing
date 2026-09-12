@@ -39,15 +39,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         List<float> CouplingLengths()
         {
             var lengths = new List<float>();
@@ -64,11 +55,11 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator EveryCartIsStillThereAfterBeingTowedInAStraightLine()
         {
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
             var atRest = CouplingLengths();
 
             m_Train.Leader.IntentSource = new FixedIntent(throttle: 1f);
-            yield return Step(5f);
+            yield return Steps.Seconds(5f);
 
             var whileMoving = CouplingLengths();
             for (var i = 0; i < atRest.Count; i++)
@@ -85,10 +76,10 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator CartsFollowATractorRoundACornerRatherThanCopyingItsHeading()
         {
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             m_Train.Leader.IntentSource = new FixedIntent(steer: 1f, throttle: 1f);
-            yield return Step(6f);
+            yield return Steps.Seconds(6f);
 
             var tractorHeading = m_Train.Leader.transform.eulerAngles.y;
             var lastCartHeading = m_Train.Members[^1].transform.eulerAngles.y;
@@ -107,10 +98,10 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator ATrainStaysUprightThroughAnOrdinaryTurn()
         {
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             m_Train.Leader.IntentSource = new FixedIntent(steer: 0.5f, throttle: 0.6f);
-            yield return Step(6f);
+            yield return Steps.Seconds(6f);
 
             foreach (var member in m_Train.Members)
             {
@@ -134,13 +125,13 @@ namespace BelowTheWing.Tests.PlayMode
             var train = m_Train;
             train.Leader.IntentSource = new FixedIntent(throttle: 1f);
 
-            yield return Step(4f);
+            yield return Steps.Seconds(4f);
             Assert.That(train.Leader.Body.linearVelocity.magnitude, Is.GreaterThan(2f),
                 "it has to have been moving for letting go to mean anything");
 
             // Let go. Nothing is driving it and nothing is correcting it.
             train.Leader.IntentSource = null;
-            yield return Step(12f);
+            yield return Steps.Seconds(12f);
 
             foreach (var member in train.Members)
             {
@@ -156,7 +147,7 @@ namespace BelowTheWing.Tests.PlayMode
                 restedAt[i] = train.Members[i].transform.position;
             }
 
-            yield return Step(5f);
+            yield return Steps.Seconds(5f);
 
             for (var i = 0; i < restedAt.Length; i++)
             {
@@ -172,12 +163,12 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator ASplitTrainLeavesItsBackHalfBehind()
         {
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
             var (front, back) = m_Train.SplitAfter(2);
             var abandonedAt = back.Leader.transform.position;
 
             front.Leader.IntentSource = new FixedIntent(throttle: 1f);
-            yield return Step(4f);
+            yield return Steps.Seconds(4f);
 
             Assert.That(Vector3.Distance(front.Leader.transform.position, Vector3.zero), Is.GreaterThan(3f));
             Assert.That(Vector3.Distance(back.Leader.transform.position, abandonedAt), Is.LessThan(1f),

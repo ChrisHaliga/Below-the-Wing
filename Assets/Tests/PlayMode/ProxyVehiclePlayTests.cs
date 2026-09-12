@@ -39,15 +39,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_TractorProfile);
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         VehicleController Tractor(string called, Vector3 where)
             => m_Apron.AddVehicle(m_TractorProfile, called, where, Quaternion.identity);
 
@@ -58,7 +49,7 @@ namespace BelowTheWing.Tests.PlayMode
             theirs.OursToMove = false;
 
             // Ten seconds without a single update from whoever owns it.
-            yield return Step(10f);
+            yield return Steps.Seconds(10f);
 
             const float resting = 0f;
             Assert.That(theirs.transform.position.y, Is.EqualTo(resting).Within(0.1f),
@@ -71,7 +62,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var vehicle = Tractor("Tug 1", new Vector3(0f, 1f, 0f));
             vehicle.IntentSource = new FixedIntent(throttle: 1f);
-            yield return Step(4f);
+            yield return Steps.Seconds(4f);
 
             var carriedSpeed = vehicle.Body.linearVelocity;
             Assert.That(carriedSpeed.magnitude, Is.GreaterThan(2f), "it has to be moving for this to mean anything");
@@ -91,7 +82,7 @@ namespace BelowTheWing.Tests.PlayMode
             theirs.IntentSource = new FixedIntent(throttle: 1f);
 
             var from = theirs.transform.position;
-            yield return Step(4f);
+            yield return Steps.Seconds(4f);
 
             var travelled = Vector3.Distance(
                 new Vector3(from.x, 0f, from.z),
@@ -107,7 +98,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var theirs = Tractor("Tug 1", new Vector3(0f, 1f, 0f));
             theirs.OursToMove = false;
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
 
             Assert.That(theirs.Body.isKinematic, Is.False,
                 "a kinematic body has infinite mass: nothing can shove it, and it shoves everything");
@@ -126,10 +117,10 @@ namespace BelowTheWing.Tests.PlayMode
             var ours = Tractor("Tug 1", new Vector3(0f, 1f, 0f));
             ours.IntentSource = new FixedIntent(throttle: 1f);
 
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
             var whereTheyStood = theirs.transform.position;
 
-            yield return Step(6f);
+            yield return Steps.Seconds(6f);
 
             var shovedBy = Vector3.Distance(
                 new Vector3(whereTheyStood.x, 0f, whereTheyStood.z),

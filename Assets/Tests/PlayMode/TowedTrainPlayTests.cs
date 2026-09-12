@@ -41,15 +41,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         /// <summary>A train nobody here owns: coupled up, and not driven by anything local.</summary>
         CartChain SomebodyElsesTrain(int carts = 4)
         {
@@ -89,7 +80,7 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator ATrainNobodyHereOwnsIsStillHookedTogether()
         {
             var train = SomebodyElsesTrain();
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
 
             Assert.That(train.CouplingsEngaged, Is.True,
                 "a train left uncoupled on every machine but its owner's is five loose boxes. They " +
@@ -101,7 +92,7 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator ATrainNobodyHereOwnsDoesNotComeApart()
         {
             var train = SomebodyElsesTrain();
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
             var spacedAt = GapsBetweenMembers(train);
 
             // The owner says the tractor is exactly where it already is, throughout.
@@ -156,7 +147,7 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator ATrainPutBackArrivesStillHitchedUpInOrder()
         {
             var train = SomebodyElsesTrain();
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
             var spacedAt = GapsBetweenMembers(train);
 
             // Far enough away that blending is given up on and the train is moved outright.
@@ -164,7 +155,7 @@ namespace BelowTheWing.Tests.PlayMode
             said.Position += new Vector3(0f, 0f, 30f);
 
             Correction.Apply(Bodies(train), train.Leader.Body, said, secondsSince: 0f, Settings);
-            yield return Step(1.5f);
+            yield return Steps.Seconds(1.5f);
 
             Assert.That(Vector3.Distance(train.Leader.transform.position, said.Position), Is.LessThan(2f),
                 "it has to have actually arrived");
@@ -184,7 +175,7 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator ATrainBeingPulledAlongKeepsItsShape()
         {
             var train = SomebodyElsesTrain();
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
             var spacedAt = GapsBetweenMembers(train);
 
             // Its owner is driving away steadily: always a little ahead of where this copy is.
@@ -213,7 +204,7 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator OnlyTheFrontOfATrainIsWorthCorrecting()
         {
             var train = SomebodyElsesTrain();
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
 
             Assert.That(train.Leader, Is.SameAs(train.Members[0]));
             foreach (var cart in train.Members)

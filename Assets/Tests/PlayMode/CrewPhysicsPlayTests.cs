@@ -36,26 +36,17 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_TractorProfile);
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         [UnityTest]
         public IEnumerator ACharacterWithNothingPressedComesToRestAndStaysThere()
         {
             var crew = m_Apron.AddCrew(m_CrewProfile, new Vector3(0f, 1.5f, 0f));
-            crew.IntentSource = new FixedCrewIntent(new Vector2(0f, 1f));
-            yield return Step(2f);
+            crew.IntentSource = new HeldKeys(new Vector2(0f, 1f));
+            yield return Steps.Seconds(2f);
 
-            crew.IntentSource = new FixedCrewIntent(Vector2.zero);
-            yield return Step(1.5f);
+            crew.IntentSource = new HeldKeys();
+            yield return Steps.Seconds(1.5f);
             var stopped = crew.transform.position;
-            yield return Step(1.5f);
+            yield return Steps.Seconds(1.5f);
 
             Assert.That(crew.Body.linearVelocity.magnitude, Is.LessThan(0.15f), "the character is still sliding");
             Assert.That(Vector3.Distance(crew.transform.position, stopped), Is.LessThan(0.1f),
@@ -71,11 +62,11 @@ namespace BelowTheWing.Tests.PlayMode
             m_Apron.Track(ledge.transform);
 
             var crew = m_Apron.AddCrew(m_CrewProfile, new Vector3(0f, 3f, 0f));
-            yield return Step(1.5f);
+            yield return Steps.Seconds(1.5f);
             var onTheLedge = crew.transform.position.y;
 
-            crew.IntentSource = new FixedCrewIntent(new Vector2(0f, 1f));
-            yield return Step(4f);
+            crew.IntentSource = new HeldKeys(new Vector2(0f, 1f));
+            yield return Steps.Seconds(4f);
 
             Assert.That(onTheLedge, Is.GreaterThan(1.9f), "the character should have been standing on the ledge");
             Assert.That(crew.transform.position.y, Is.LessThan(onTheLedge - 1f), "they never walked off it");
@@ -91,10 +82,10 @@ namespace BelowTheWing.Tests.PlayMode
             // that only ever happens in a test -- production goes straight from construction to
             // un-simulated and never passes through the setter at all.
             var crew = m_Apron.AddRemoteCrew(m_CrewProfile, new Vector3(0f, 1.5f, 0f));
-            crew.IntentSource = new FixedCrewIntent(new Vector2(0f, 1f));
+            crew.IntentSource = new HeldKeys(new Vector2(0f, 1f));
 
             var leftAt = crew.transform.position;
-            yield return Step(3f);
+            yield return Steps.Seconds(3f);
 
             Assert.That(crew.OursToMove, Is.False, "nobody gave this character a seat, so it is not ours");
             Assert.That(crew.Body.useGravity, Is.True,
@@ -118,11 +109,11 @@ namespace BelowTheWing.Tests.PlayMode
             var crew = m_Apron.AddCrew(m_CrewProfile, new Vector3(0f, 1.5f, 0f));
             var tractor = m_Apron.AddVehicle(
                 m_TractorProfile, "Tug 1", new Vector3(0f, 1f, -14f), Quaternion.identity);
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             var stoodAt = crew.transform.position;
             tractor.IntentSource = new FixedIntent(throttle: 1f);
-            yield return Step(6f);
+            yield return Steps.Seconds(6f);
 
             var shifted = Vector3.Distance(
                 new Vector3(stoodAt.x, 0f, stoodAt.z),
@@ -132,13 +123,5 @@ namespace BelowTheWing.Tests.PlayMode
                 "a person struck by three tonnes must move; a character that cannot be pushed is a bollard, " +
                 "and the whole game is built on being able to shove and be shoved");
         }
-    }
-
-    /// <summary>A player who is always pressing the same thing.</summary>
-    sealed class FixedCrewIntent : ICrewIntentSource
-    {
-        public CrewIntent Current { get; }
-
-        public FixedCrewIntent(Vector2 move, bool sprint = false) => Current = new CrewIntent(move, sprint);
     }
 }

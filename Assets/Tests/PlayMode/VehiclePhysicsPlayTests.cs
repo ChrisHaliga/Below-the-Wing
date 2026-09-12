@@ -36,23 +36,14 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         [UnityTest]
         public IEnumerator ATractorDroppedOntoTheApronSettlesAndStaysThere()
         {
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 2f, 0f), Quaternion.identity);
 
-            yield return Step(4f);
+            yield return Steps.Seconds(4f);
             var settled = tractor.transform.position.y;
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
             var later = tractor.transform.position.y;
 
             Assert.That(settled, Is.GreaterThan(0f), "the tractor has sunk through the apron");
@@ -66,7 +57,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
 
-            yield return Step(4f);
+            yield return Steps.Seconds(4f);
 
             var lean = Vector3.Angle(tractor.transform.up, Vector3.up);
             Assert.That(lean, Is.LessThan(3f), "four equal corners on flat ground should hold the body level");
@@ -76,11 +67,11 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator OpeningTheThrottleMovesATractorForward()
         {
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
             var from = tractor.transform.position;
 
             tractor.IntentSource = new FixedIntent(throttle: 1f);
-            yield return Step(3f);
+            yield return Steps.Seconds(3f);
 
             var travelled = Vector3.Dot(tractor.transform.position - from, tractor.transform.forward);
             Assert.That(travelled, Is.GreaterThan(3f), "three seconds at full throttle should get a tug moving");
@@ -90,14 +81,14 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator ATractorReleasedFromTheThrottleCoastsToAStopOnItsOwn()
         {
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             tractor.IntentSource = new FixedIntent(throttle: 1f);
-            yield return Step(3f);
+            yield return Steps.Seconds(3f);
             Assert.That(tractor.Body.linearVelocity.magnitude, Is.GreaterThan(2f), "it should be moving by now");
 
             tractor.IntentSource = new FixedIntent();
-            yield return Step(10f);
+            yield return Steps.Seconds(10f);
 
             Assert.That(tractor.Body.linearVelocity.magnitude, Is.LessThan(0.1f),
                 "letting go of the throttle has to bring a tractor to rest without touching the brake; " +
@@ -108,13 +99,13 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator BrakingBringsAMovingTractorToAStopWithoutDrivingItBackwards()
         {
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
             tractor.IntentSource = new FixedIntent(throttle: 1f);
-            yield return Step(3f);
+            yield return Steps.Seconds(3f);
 
             var whereItStartedBraking = tractor.transform.position;
             tractor.IntentSource = new FixedIntent(brake: 1f);
-            yield return Step(4f);
+            yield return Steps.Seconds(4f);
 
             var afterBraking = Vector3.Dot(tractor.transform.position - whereItStartedBraking, tractor.transform.forward);
             Assert.That(tractor.Body.linearVelocity.magnitude, Is.LessThan(0.5f), "it should have stopped");
@@ -128,14 +119,14 @@ namespace BelowTheWing.Tests.PlayMode
             var crewProfile = TestProfiles.CrewMember();
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
             var crew = m_Apron.AddCrew(crewProfile, new Vector3(0f, 1.5f, -4f));
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             tractor.OursToMove = false;
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
 
             // Walk into it and see whether anything is there.
-            crew.IntentSource = new FixedCrewIntent(new Vector2(0f, 1f));
-            yield return Step(4f);
+            crew.IntentSource = new HeldKeys(new Vector2(0f, 1f));
+            yield return Steps.Seconds(4f);
 
             var reachedTheTractor = crew.transform.position.z;
             Assert.That(reachedTheTractor, Is.LessThan(tractor.transform.position.z),
@@ -151,7 +142,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
             var cart = m_Apron.AddVehicle(m_CartProfile, "Cart 1-1", new Vector3(20f, 1f, 0f), Quaternion.identity);
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             Assert.That(cart.GetType(), Is.EqualTo(tractor.GetType()),
                 "a cart is not a different class, it is the same one with different numbers");
@@ -162,7 +153,7 @@ namespace BelowTheWing.Tests.PlayMode
             var cartFrom = cart.transform.position;
             tractor.IntentSource = new FixedIntent(throttle: 1f);
             cart.IntentSource = new FixedIntent(throttle: 1f);
-            yield return Step(3f);
+            yield return Steps.Seconds(3f);
 
             Assert.That(Vector3.Distance(tractor.transform.position, tractorFrom), Is.GreaterThan(3f));
             Assert.That(Vector3.Distance(cart.transform.position, cartFrom), Is.LessThan(0.5f),

@@ -45,15 +45,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         [UnityTest]
         public IEnumerator ALabelSaysWhatItWasGivenAndFloatsAboveIt()
         {
@@ -126,11 +117,11 @@ namespace BelowTheWing.Tests.PlayMode
             readout.Observe(new List<CartChain> { train }, new RecordingBroker(grant: true));
 
             train.Leader.IntentSource = new FixedIntent(throttle: 1f);
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
             var whileDriving = readout.AwakeBodyCount;
 
             train.Leader.IntentSource = new FixedIntent();
-            yield return Step(12f);
+            yield return Steps.Seconds(12f);
             var afterSettling = readout.AwakeBodyCount;
 
             Assert.That(whileDriving, Is.GreaterThan(0), "a train being driven has bodies awake");
@@ -145,7 +136,7 @@ namespace BelowTheWing.Tests.PlayMode
             var readout = m_Apron.Track(new GameObject("Readout").AddComponent<RampReadout>());
             readout.Observe(new List<CartChain> { train }, new RecordingBroker(grant: true));
 
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
 
             Assert.That(readout.PhysicsStepMilliseconds, Is.GreaterThan(0f));
         }

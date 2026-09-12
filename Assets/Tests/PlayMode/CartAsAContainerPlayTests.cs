@@ -47,15 +47,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_BagProfile);
         }
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         /// <summary>A bag, dropped in the cart's own space at the given spot.</summary>
         Rigidbody ABagAt(Vector3 inTheCart)
         {
@@ -76,7 +67,7 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator TheInsideOfACartIsEmpty()
         {
-            yield return Step(0.5f);
+            yield return Steps.Seconds(0.5f);
 
             var interior = m_Shape.InteriorLocal;
             var middle = m_Cart.transform.TransformPoint(interior.center);
@@ -98,7 +89,7 @@ namespace BelowTheWing.Tests.PlayMode
             var deckTop = m_Shape.InteriorLocal.min.y;
             var bag = ABagAt(new Vector3(0f, deckTop + 0.6f, 0f));
 
-            yield return Step(2.5f);
+            yield return Steps.Seconds(2.5f);
 
             var restingAt = m_Cart.transform.InverseTransformPoint(bag.position);
 
@@ -114,13 +105,13 @@ namespace BelowTheWing.Tests.PlayMode
             var deckTop = m_Shape.InteriorLocal.min.y;
             var bag = ABagAt(new Vector3(0.5f, deckTop + 0.3f, 0f));
 
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             // Shoved about, the way a cart is when something bumps into it on a busy apron.
             for (var i = 0; i < 5; i++)
             {
                 bag.AddForce(new Vector3(40f, 0f, 0f), ForceMode.Impulse);
-                yield return Step(0.3f);
+                yield return Steps.Seconds(0.3f);
             }
 
             var where = m_Cart.transform.InverseTransformPoint(bag.position);
@@ -136,7 +127,7 @@ namespace BelowTheWing.Tests.PlayMode
             var deckTop = m_Shape.InteriorLocal.min.y;
             var bag = ABagAt(new Vector3(0f, deckTop + 0.2f, 0f));
 
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             // Far harder than a bump: the kind of sideways throw a corner taken too fast gives a
             // deck. The lips have to be a lip rather than a wall.
@@ -146,7 +137,7 @@ namespace BelowTheWing.Tests.PlayMode
                 yield return new WaitForFixedUpdate();
             }
 
-            yield return Step(1.5f);
+            yield return Steps.Seconds(1.5f);
 
             var where = m_Cart.transform.InverseTransformPoint(bag.position);
 

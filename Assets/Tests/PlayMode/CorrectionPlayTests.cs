@@ -179,22 +179,10 @@ namespace BelowTheWing.Tests.PlayMode
 
             yield return KeptInStepFor(1f, vehicle, Standing(new Vector3(0f, 0f, 20f)));
 
-            Assert.That(vehicle.transform.position, Is.EqualTo(restingAt).Using(new Vector3Within(1e-3f)),
+            Assert.That(vehicle.transform.position, Is.EqualTo(restingAt).Using(Nearly.Within(1e-3f)),
                 "a carried body has to be left where its carrier put it. Pushing one does nothing " +
                 "except fill the log with an error on every step of every copy of every rider on " +
                 "the apron");
-        }
-
-        /// <summary>Compares two positions to within a tolerance, since floats never land exactly.</summary>
-        sealed class Vector3Within : System.Collections.Generic.IEqualityComparer<Vector3>
-        {
-            readonly float m_Tolerance;
-
-            public Vector3Within(float tolerance) => m_Tolerance = tolerance;
-
-            public bool Equals(Vector3 a, Vector3 b) => Vector3.Distance(a, b) <= m_Tolerance;
-
-            public int GetHashCode(Vector3 of) => of.GetHashCode();
         }
     }
 }
