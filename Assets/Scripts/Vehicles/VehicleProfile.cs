@@ -13,6 +13,10 @@ namespace BelowTheWing.Vehicles
     /// Masses and dimensions are real-world figures for the equipment being modelled, so that
     /// suspension and drive values can be reasoned about as physical quantities rather than
     /// tuned as arbitrary numbers.
+    ///
+    /// Where a vehicle's parts are is not in here. That is <see cref="VehicleShape"/>, which for a
+    /// modelled vehicle reads them off the model itself. A wheelbase written down in two places is
+    /// how the invisible suspension probes ended up fourteen centimetres from the visible wheels.
     /// </summary>
     [CreateAssetMenu(menuName = "Below the Wing/Vehicle Profile", fileName = "VehicleProfile")]
     public sealed class VehicleProfile : ScriptableObject
@@ -26,23 +30,15 @@ namespace BelowTheWing.Vehicles
         [Tooltip("Kerb mass in kilograms, unloaded.")]
         public float massKg = 1000f;
 
-        [Tooltip("Overall size of the body in metres: width (x), height (y), length (z).")]
+        [Tooltip("Overall size of the body in metres: width (x), height (y), length (z). Only " +
+                 "the size of the stand-in shape drawn for a vehicle that has no model yet. What a " +
+                 "vehicle collides as comes from its VehicleShape.")]
         public Vector3 bodySizeMetres = new Vector3(1.5f, 1.5f, 3f);
 
         [Tooltip("Centre of mass relative to the body centre, in metres. Negative y sits it low.")]
         public Vector3 centerOfMassOffset = new Vector3(0f, -0.4f, 0f);
 
-        [Tooltip("How far the coupling sticks out past the bodywork at each end, in metres. This " +
-                 "is what leaves a gap between two hitched vehicles rather than having them touch.")]
-        public float drawbarLengthMetres = 0.3f;
-
         [Header("Wheels")]
-        [Tooltip("Distance between the front and rear axles, in metres.")]
-        public float wheelbaseMetres = 2f;
-
-        [Tooltip("Distance between the left and right wheels, in metres.")]
-        public float trackMetres = 1.3f;
-
         [Tooltip("Wheel radius in metres. The suspension ray reaches this far past its rest length.")]
         public float wheelRadiusMetres = 0.3f;
 

@@ -36,11 +36,27 @@ namespace BelowTheWing.Tests.Support
             m_Spawned.Add(Ground);
         }
 
-        /// <summary>Puts one vehicle on the apron, configured from a profile, and returns it.</summary>
-        public VehicleController AddVehicle(VehicleProfile profile, string displayName, Vector3 position, Quaternion rotation)
+        /// <summary>
+        /// Puts one vehicle on the apron and returns it.
+        ///
+        /// A vehicle needs two things said about it: how it drives, which is its profile, and where
+        /// its parts are, which is its shape. Tests that care about neither get a plain box on four
+        /// wheels, so that remodelling a cart cannot turn a test about braking red.
+        /// </summary>
+        public VehicleController AddVehicle(
+            VehicleProfile profile,
+            string displayName,
+            Vector3 position,
+            Quaternion rotation,
+            VehicleShape.Measurements? shape = null)
         {
             var go = new GameObject(displayName);
             go.transform.SetPositionAndRotation(position, rotation);
+
+            // Before the controller is configured: it reads the shape while it is being set up, and
+            // a vehicle with no shape has nowhere to hang its suspension from.
+            TestShapes.On(go, shape ?? TestShapes.BoxVehicle(profile.bodySizeMetres));
+
             var vehicle = go.AddComponent<VehicleController>();
             vehicle.Configure(profile, displayName);
             m_Spawned.Add(go);
@@ -62,8 +78,18 @@ namespace BelowTheWing.Tests.Support
         }
 
         /// <summary>Puts a tractor and a row of carts on the apron and hooks them together.</summary>
-        public CartChain AddTrain(VehicleProfile tractor, VehicleProfile cart, int cartCount, Vector3 tractorPosition, string name = "Tug 1")
+        public CartChain AddTrain(
+            VehicleProfile tractor,
+            VehicleProfile cart,
+            int cartCount,
+            Vector3 tractorPosition,
+            string name = "Tug 1",
+            VehicleShape.Measurements? tractorShape = null,
+            VehicleShape.Measurements? cartShape = null)
         {
+            var tractorMeasurements = tractorShape ?? TestShapes.BoxVehicle(tractor.bodySizeMetres);
+            var cartMeasurements = cartShape ?? TestShapes.BoxVehicle(cart.bodySizeMetres);
+
             // Built from the real apron layout rather than by working the spacing out again here.
             // A test train parked differently from a shipped one exercises different geometry, and
             // this spacing is exactly the arithmetic whose mismatch made a parked train wander.
@@ -72,17 +98,26 @@ namespace BelowTheWing.Tests.Support
             settings.cartsPerTrain = cartCount;
             settings.firstTractorPosition = tractorPosition;
 
-            var plan = ApronLayout.Build(settings, tractor, cart, TestProfiles.Aircraft(), Vector3.one)
+            var measuring = new GameObject("Measuring");
+            var tractorShapeOn = TestShapes.On(measuring, tractorMeasurements);
+            var cartMeasuring = new GameObject("Measuring cart");
+            var cartShapeOn = TestShapes.On(cartMeasuring, cartMeasurements);
+
+            var plan = ApronLayout.Build(settings, tractorShapeOn, cartShapeOn, TestProfiles.Aircraft(), Vector3.one)
                 .Trains[0];
+
+            Object.DestroyImmediate(measuring);
+            Object.DestroyImmediate(cartMeasuring);
 
             var members = new List<VehicleController>
             {
-                AddVehicle(tractor, name, plan.Tractor.Position, plan.Tractor.Rotation)
+                AddVehicle(tractor, name, plan.Tractor.Position, plan.Tractor.Rotation, tractorMeasurements)
             };
 
             for (var i = 0; i < plan.Carts.Count; i++)
             {
-                members.Add(AddVehicle(cart, $"{name} cart {i + 1}", plan.Carts[i].Position, plan.Carts[i].Rotation));
+                members.Add(AddVehicle(
+                    cart, $"{name} cart {i + 1}", plan.Carts[i].Position, plan.Carts[i].Rotation, cartMeasurements));
             }
 
             // A test apron is a machine simulating this train, so it holds the couplings too.

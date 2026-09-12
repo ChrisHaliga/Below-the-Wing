@@ -159,5 +159,62 @@ namespace BelowTheWing.Tests.PlayMode
 
             yield return null;
         }
+
+        [UnityTest]
+        public IEnumerator AShapeAuthoredLyingOnItsSideIsStillLyingOnItsSide()
+        {
+            var vehicle = SomebodyElsesTractor();
+            var shape = ShapeOf(vehicle);
+
+            // What an aircraft is: a capsule primitive, whose own axis runs up, turned a quarter
+            // turn so that it lies along the length of the fuselage.
+            shape.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            shape.RememberHowItWasPlaced();
+            shape.CatchUpNow();
+
+            yield return Step(0.5f);
+
+            var lyingDown = Quaternion.Angle(
+                shape.transform.rotation, vehicle.transform.rotation * Quaternion.Euler(90f, 0f, 0f));
+
+            Assert.That(lyingDown, Is.LessThan(1f),
+                "writing the body's rotation straight onto the shape throws away the quarter turn " +
+                "that lays a fuselage down, and the aircraft stands on its tail in the middle of " +
+                "the apron");
+        }
+
+        [UnityTest]
+        public IEnumerator AShapeAuthoredAwayFromItsOriginStaysThere()
+        {
+            var vehicle = SomebodyElsesTractor();
+            var shape = ShapeOf(vehicle);
+
+            // A vehicle's origin is on the ground between its wheels, so anything drawn for it sits
+            // above that origin rather than on it.
+            var placedAt = new Vector3(0f, 0.8f, 0f);
+            shape.transform.localPosition = placedAt;
+            shape.RememberHowItWasPlaced();
+            shape.CatchUpNow();
+
+            vehicle.Body.position = new Vector3(0f, 0f, 6f);
+            vehicle.transform.position = vehicle.Body.position;
+
+            yield return Step(1f);
+
+            var offset = vehicle.transform.InverseTransformPoint(shape.transform.position);
+
+            Assert.That(Vector3.Distance(offset, placedAt), Is.LessThan(0.05f),
+                $"the shape settled {offset} from its body rather than {placedAt}. Catching up by " +
+                "writing the body's own position collapses every offset a model was authored with");
+        }
+
+        static IEnumerator Step(float seconds)
+        {
+            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
+            for (var i = 0; i < steps; i++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+        }
     }
 }

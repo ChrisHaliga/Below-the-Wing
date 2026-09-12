@@ -48,6 +48,7 @@ namespace BelowTheWing.EditorTools
         const string AircraftProfilePath = "Assets/Content/Aircraft/NarrowbodyAirliner.asset";
         const string CrewProfilePath = "Assets/Content/Crew/RampWorker.asset";
         const string BagProfilePath = "Assets/Content/Cargo/CheckedBag.asset";
+        const string CartModelPath = "Assets/Content/Vehicles/baggage_cart.fbx";
 
         static readonly Color TractorBlue = new Color(0.35f, 0.55f, 0.75f);
         static readonly Color CartGrey = new Color(0.55f, 0.55f, 0.58f);
@@ -93,79 +94,285 @@ namespace BelowTheWing.EditorTools
             return SaveAndDiscard(go, $"{PrefabFolder}/BaggageTractor.prefab");
         }
 
-        /// <summary>How thick the walkable deck is, in metres.</summary>
-        const float DeckThicknessMetres = 0.08f;
-
         static GameObject BuildCart(VehicleProfile profile)
         {
-            var go = NewVehicle("BaggageCart", profile, CartGrey);
-            AddDeck(go, profile);
+            var go = NewVehicle("BaggageCart", profile, CartGrey, CartModelPath);
 
             return SaveAndDiscard(go, $"{PrefabFolder}/BaggageCart.prefab");
         }
 
         /// <summary>
-        /// The flat top of a baggage cart: something bags sit on and people stand on.
+        /// Measures the baggage cart model and fills in everything the game needs to know about its
+        /// geometry.
         ///
-        /// A thin collider on top of the cart, and for now that is all it is: the cart underneath
-        /// keeps the shape and weight distribution it has been tuned with. Flattening the whole cart
-        /// into a low deck moved its centre of mass, and the couplings -- anchored at a fixed height
-        /// above the ground -- then pulled from well above it, which fed energy into a coasting
-        /// train and stopped it ever settling. That is the bug this project has already chased
-        /// twice, and it wants somebody watching the apron rather than a test threshold to say when
-        /// it is fixed.
+        /// Read off the model rather than typed in here, because a number typed in here is a second
+        /// copy of a measurement and a second copy eventually disagrees with the first. The one
+        /// thing that is decided rather than measured is which way round the model goes: it was
+        /// exported with its drawbar along what Unity calls backwards, so it is turned to face the
+        /// way the game drives.
         ///
-        /// Deliberately no lip. A bare board means nothing ever slides or catches, so friction plays
-        /// no part and what throws a bag off is the wake threshold and nothing else. That is the one
-        /// number this slice exists to measure, and it is worth measuring with nothing else in the
-        /// way. A lip is easy to add afterwards if carts read better with one.
+        /// Note the two kinds of hitch in the model. HITCH_Male and HITCH_Female are empties marking
+        /// the exact points a coupling meets; Hitch, Hitch Pin and Hitch_Female are the drawbar
+        /// meshes that sit near them. The names differ only by case, so these are looked up exactly
+        /// and checked for being what they claim to be -- taking the mesh instead would put every
+        /// coupling in the game tens of centimetres out.
         /// </summary>
-        static void AddDeck(GameObject cart, VehicleProfile profile)
+        static void ShapeFromTheCartModel(GameObject cart, Transform model)
         {
-            var deck = new GameObject("Deck");
-            deck.transform.SetParent(cart.transform, worldPositionStays: false);
+            const float deckTopMetres = 0.4727f;
+            const float deckWidthMetres = 1.7211f;
+            const float deckLengthMetres = 3.1538f;
+            const float slabThicknessMetres = 0.15f;
+            const float clearInsideMetres = 1.626f;
+            const float lipHeightMetres = 0.18f;
+            const float lipThicknessMetres = 0.05f;
 
-            // Sitting on top of the chassis, so its underside meets the chassis roof.
-            var topOfChassis = profile.bodySizeMetres.y * 0.5f;
-            deck.transform.localPosition = new Vector3(0f, topOfChassis + (DeckThicknessMetres * 0.5f), 0f);
+            Vector3 Local(string landmark)
+            {
+                var found = model.Find(landmark);
+                if (found == null)
+                {
+                    Debug.LogError($"The cart model has no '{landmark}'.");
+                    return Vector3.zero;
+                }
 
-            var surface = deck.AddComponent<BoxCollider>();
-            surface.size = new Vector3(profile.bodySizeMetres.x, DeckThicknessMetres, profile.bodySizeMetres.z);
+                if (found.GetComponent<MeshFilter>() != null)
+                {
+                    Debug.LogError(
+                        $"'{landmark}' is a mesh rather than a marker. The cart model has both, and " +
+                        "their names differ only by case.");
+                }
 
-            // The space something has to come to rest in to be carried: the deck's own footprint,
-            // standing high enough to take a person as well as a bag.
-            var carrier = deck.AddComponent<Carrier>();
-            carrier.Covers(
-                new Vector3(0f, 1f, 0f),
-                new Vector3(profile.bodySizeMetres.x, 2f, profile.bodySizeMetres.z));
+                return cart.transform.InverseTransformPoint(found.position);
+            }
 
-            // Something has to decide when the deck can no longer hold what is on it.
-            deck.AddComponent<CarrierWatch>();
+            var wheels = new List<Vector3>();
+            for (var i = 1; i <= 4; i++)
+            {
+                var wheel = model.Find($"Wheel_{i}");
+                if (wheel == null)
+                {
+                    Debug.LogError($"The cart model has no 'Wheel_{i}'.");
+                    continue;
+                }
 
-            // And one machine has to do the deciding. Judged on a copy, the nudges that keep the
-            // copy in step read as sideways acceleration the cart never felt, and bags leap off
-            // decks on every screen except the one where the cart is really being driven.
+                wheels.Add(cart.transform.InverseTransformPoint(wheel.position));
+            }
+
+            var roofUnderside = deckTopMetres + clearInsideMetres;
+
+            var solid = new List<VehicleShape.SolidPart>
+            {
+                new VehicleShape.SolidPart(
+                    "Deck",
+                    new Vector3(deckWidthMetres, slabThicknessMetres, deckLengthMetres),
+                    new Vector3(0f, deckTopMetres - (slabThicknessMetres * 0.5f), 0f)),
+
+                new VehicleShape.SolidPart(
+                    "Lip left",
+                    new Vector3(lipThicknessMetres, lipHeightMetres, deckLengthMetres),
+                    new Vector3(
+                        -((deckWidthMetres * 0.5f) - (lipThicknessMetres * 0.5f)),
+                        deckTopMetres + (lipHeightMetres * 0.5f),
+                        0f)),
+
+                new VehicleShape.SolidPart(
+                    "Lip right",
+                    new Vector3(lipThicknessMetres, lipHeightMetres, deckLengthMetres),
+                    new Vector3(
+                        (deckWidthMetres * 0.5f) - (lipThicknessMetres * 0.5f),
+                        deckTopMetres + (lipHeightMetres * 0.5f),
+                        0f)),
+
+                new VehicleShape.SolidPart(
+                    "End front",
+                    new Vector3(deckWidthMetres, clearInsideMetres, slabThicknessMetres),
+                    new Vector3(
+                        0f,
+                        (deckTopMetres + roofUnderside) * 0.5f,
+                        (deckLengthMetres + slabThicknessMetres) * 0.5f)),
+
+                new VehicleShape.SolidPart(
+                    "End rear",
+                    new Vector3(deckWidthMetres, clearInsideMetres, slabThicknessMetres),
+                    new Vector3(
+                        0f,
+                        (deckTopMetres + roofUnderside) * 0.5f,
+                        -(deckLengthMetres + slabThicknessMetres) * 0.5f)),
+
+                new VehicleShape.SolidPart(
+                    "Roof",
+                    new Vector3(deckWidthMetres, slabThicknessMetres, deckLengthMetres),
+                    new Vector3(0f, roofUnderside + (slabThicknessMetres * 0.5f), 0f))
+            };
+
+            cart.AddComponent<VehicleShape>().Describe(new VehicleShape.Measurements
+            {
+                WheelCentresLocal = wheels,
+                FrontCouplingLocal = Local("HITCH_Male"),
+                RearCouplingLocal = Local("HITCH_Female"),
+                EnvelopeSizeMetres = new Vector3(1.8855f, 2.0155f, 3.8152f),
+                EnvelopeCentreLocal = new Vector3(0f, 1.0909f, 0.1296f),
+                InteriorLocal = new Bounds(
+                    new Vector3(0f, deckTopMetres + (clearInsideMetres * 0.5f), 0f),
+                    new Vector3(deckWidthMetres, clearInsideMetres, deckLengthMetres)),
+                SolidParts = solid
+            });
+
+            AddCarriers(cart, deckTopMetres, deckWidthMetres, deckLengthMetres, clearInsideMetres);
+            WatchTheWheels(cart, model);
+        }
+
+        /// <summary>
+        /// The two places things ride on a cart: inside it, and on top of it.
+        ///
+        /// Inside is where bags go and where somebody crouching can stand. On top is out of jumping
+        /// reach from the tarmac, so getting up there means climbing from the drawbar or from
+        /// another cart -- which is the point of it being worth doing.
+        /// </summary>
+        static void AddCarriers(
+            GameObject cart, float deckTop, float deckWidth, float deckLength, float clearInside)
+        {
+            var inside = new GameObject("Deck");
+            inside.transform.SetParent(cart.transform, worldPositionStays: false);
+            inside.transform.localPosition = new Vector3(0f, deckTop + (clearInside * 0.5f), 0f);
+            inside.AddComponent<Carrier>()
+                .Covers(Vector3.zero, new Vector3(deckWidth, clearInside, deckLength));
+            inside.AddComponent<CarrierWatch>();
+
+            var onTop = new GameObject("Roof");
+            onTop.transform.SetParent(cart.transform, worldPositionStays: false);
+            onTop.transform.localPosition = new Vector3(0f, deckTop + clearInside + 0.15f, 0f);
+            onTop.AddComponent<Carrier>()
+                .Covers(new Vector3(0f, 1f, 0f), new Vector3(deckWidth, 2f, deckLength));
+            onTop.AddComponent<CarrierWatch>();
+
+            // One machine decides what comes off, for both of them. Judged on a copy, the nudges
+            // that keep the copy in step read as sideways acceleration the cart never felt, and bags
+            // leap off decks on every screen except the one where the cart is really being driven.
             cart.AddComponent<CarrierAuthority>();
         }
 
-        static GameObject NewVehicle(string name, VehicleProfile profile, Color colour)
+        /// <summary>Hands the visible wheels to whatever turns them and keeps them on the ground.</summary>
+        static void WatchTheWheels(GameObject cart, Transform model)
+        {
+            var wheels = new List<Transform>();
+            for (var i = 1; i <= 4; i++)
+            {
+                var wheel = model.Find($"Wheel_{i}");
+                if (wheel != null)
+                {
+                    wheels.Add(wheel);
+                }
+            }
+
+            cart.AddComponent<WheelLook>().Watch(wheels);
+        }
+
+        /// <summary>
+        /// A vehicle: its body, its shape, and something to look at.
+        ///
+        /// No collider is added here. What a vehicle is solid where is described by its shape and
+        /// built from it when the vehicle is configured, which is what lets a cart be a container
+        /// rather than a solid block the size of a cart.
+        /// </summary>
+        static GameObject NewVehicle(string name, VehicleProfile profile, Color colour, string modelPath = null)
         {
             var go = new GameObject(name);
             go.AddComponent<Rigidbody>();
-            go.AddComponent<BoxCollider>();
 
             var vehicle = go.AddComponent<VehicleController>();
             Set(vehicle, "m_Profile", profile);
 
+            var model = modelPath != null ? AddModel(go, modelPath) : null;
+            if (model != null)
+            {
+                ShapeFromTheCartModel(go, model);
+            }
+            else
+            {
+                ShapeFromNumbers(go, profile);
+            }
+
             AddNetworking(go, outlivesItsOwner: true);
             go.AddComponent<TrainMember>();
 
-            Dress(go, ApronAppearance.Shape.Box,
+            var shape = go.GetComponent<VehicleShape>();
+            Dress(go,
+                model != null ? ApronAppearance.Shape.AlreadyModelled : ApronAppearance.Shape.Box,
                 profile.bodySizeMetres,
                 colour,
-                profile.bodySizeMetres.y * 0.7f);
+                shape.EnvelopeCentreLocal.y + (shape.EnvelopeSizeMetres.y * 0.6f),
+                shape.EnvelopeCentreLocal);
 
             return go;
+        }
+
+        /// <summary>
+        /// Puts the model on a vehicle, facing the way the game drives.
+        ///
+        /// The cart was modelled with its drawbar along what Unity ends up calling backwards, so the
+        /// whole model is turned half a turn. Doing it here, once, means nothing downstream has to
+        /// know which way any particular artist happened to build something.
+        /// </summary>
+        static Transform AddModel(GameObject vehicle, string path)
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (asset == null)
+            {
+                Debug.LogWarning($"No model at {path}; leaving {vehicle.name} as a grey box.");
+                return null;
+            }
+
+            var model = (GameObject)PrefabUtility.InstantiatePrefab(asset);
+            model.name = ApronAppearance.LookName;
+            model.transform.SetParent(vehicle.transform, worldPositionStays: false);
+            model.transform.localRotation = Quaternion.Euler(0f, 180f, 0f) * model.transform.localRotation;
+
+            return model.transform;
+        }
+
+        /// <summary>
+        /// Describes a vehicle that has no model, from the numbers in its profile.
+        ///
+        /// Exactly the same terms a measured vehicle is described in, so nothing downstream can tell
+        /// which kind it is dealing with. A box on four wheels with a coupling at each end, its
+        /// origin on the ground between them.
+        /// </summary>
+        static void ShapeFromNumbers(GameObject vehicle, VehicleProfile profile)
+        {
+            var size = profile.bodySizeMetres;
+            var halfWheelbase = size.z * 0.35f;
+            var halfTrack = size.x * 0.42f;
+            var reach = (size.z * 0.5f) + 0.3f;
+            var couplingHeight = profile.wheelRadiusMetres + 0.05f;
+
+            // Clear of the tarmac by a wheel's radius, because the origin is on the ground now and a
+            // body box sitting on that origin has its underside level with the apron. It then
+            // carries the vehicle's weight itself, the suspension never compresses, and what should
+            // be a tractor on wheels is a crate sliding about on the floor -- which steers nowhere.
+            var underside = profile.wheelRadiusMetres;
+            var middle = new Vector3(0f, underside + (size.y * 0.5f), 0f);
+
+            vehicle.AddComponent<VehicleShape>().Describe(new VehicleShape.Measurements
+            {
+                WheelCentresLocal = new List<Vector3>
+                {
+                    new Vector3(-halfTrack, profile.wheelRadiusMetres, halfWheelbase),
+                    new Vector3(halfTrack, profile.wheelRadiusMetres, halfWheelbase),
+                    new Vector3(-halfTrack, profile.wheelRadiusMetres, -halfWheelbase),
+                    new Vector3(halfTrack, profile.wheelRadiusMetres, -halfWheelbase)
+                },
+                FrontCouplingLocal = new Vector3(0f, couplingHeight, reach),
+                RearCouplingLocal = new Vector3(0f, couplingHeight, -reach),
+                EnvelopeSizeMetres = size,
+                EnvelopeCentreLocal = middle,
+                InteriorLocal = new Bounds(Vector3.zero, Vector3.zero),
+                SolidParts = new List<VehicleShape.SolidPart>
+                {
+                    new VehicleShape.SolidPart("Body", size, middle)
+                }
+            });
         }
 
         static GameObject BuildAircraft(AircraftProfile profile)
@@ -251,9 +458,16 @@ namespace BelowTheWing.EditorTools
         /// The name travels over the network, and appearance is built when it arrives, so a player
         /// who joins sees the apron rather than an empty grey plane full of invisible colliders.
         /// </summary>
-        static void Dress(GameObject go, ApronAppearance.Shape shape, Vector3 sizeMetres, Color colour, float labelHeightMetres)
+        static void Dress(
+            GameObject go,
+            ApronAppearance.Shape shape,
+            Vector3 sizeMetres,
+            Color colour,
+            float labelHeightMetres,
+            Vector3 drawnAtLocal = default)
         {
-            go.AddComponent<ApronAppearance>().DescribeAs(shape, sizeMetres, colour, labelHeightMetres);
+            go.AddComponent<ApronAppearance>()
+                .DescribeAs(shape, sizeMetres, colour, labelHeightMetres, drawnAtLocal);
             go.AddComponent<ApronIdentity>();
         }
 
@@ -345,8 +559,6 @@ namespace BelowTheWing.EditorTools
             sessionObject.AddComponent<NetworkObject>();
             var session = sessionObject.AddComponent<RampSession>();
 
-            Set(session, "m_TractorProfile", tractorProfile);
-            Set(session, "m_CartProfile", cartProfile);
             Set(session, "m_AircraftProfile", aircraftProfile);
             Set(session, "m_CrewProfile", crewProfile);
             Set(session, "m_TractorPrefab", tractor.GetComponent<NetworkObject>());

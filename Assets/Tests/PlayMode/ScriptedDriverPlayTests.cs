@@ -47,7 +47,7 @@ namespace BelowTheWing.Tests.PlayMode
 
         ScriptedDriver Driving(float speed, float radius = 0f)
         {
-            var vehicle = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
+            var vehicle = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);
             var driver = vehicle.gameObject.AddComponent<ScriptedDriver>();
             vehicle.IntentSource = driver;
 
@@ -120,7 +120,7 @@ namespace BelowTheWing.Tests.PlayMode
             yield return new WaitForFixedUpdate();
             var wideSteer = Mathf.Abs(wide.Current.Steer);
 
-            var tight = m_Apron.AddVehicle(m_TractorProfile, "Tug 2", new Vector3(40f, 1f, 0f), Quaternion.identity);
+            var tight = m_Apron.AddVehicle(m_TractorProfile, "Tug 2", new Vector3(40f, 0f, 0f), Quaternion.identity);
             var tightDriver = tight.gameObject.AddComponent<ScriptedDriver>();
             tight.IntentSource = tightDriver;
             tightDriver.TurnRadiusMetres = 5f;

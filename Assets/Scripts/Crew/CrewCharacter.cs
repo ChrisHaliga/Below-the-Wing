@@ -94,6 +94,18 @@ namespace BelowTheWing.Crew
         public Hands Handling { get; set; }
 
         /// <summary>
+        /// Whether this character is crouched, and getting them up and down.
+        ///
+        /// Present on every character rather than only the local one, because how tall somebody is
+        /// has to be right on every machine that can see them -- a person drawn standing while they
+        /// are crouched inside a cart has their head through its roof.
+        /// </summary>
+        public Crouching Stance { get; private set; }
+
+        /// <summary>How tall this character is right now, in metres.</summary>
+        public float HeightMetres => m_Collider != null ? m_Collider.height : 0f;
+
+        /// <summary>
         /// What this character is asking a vehicle to do. Meaningful only while it is driving one:
         /// the same stick that walks a character forward opens a throttle once they are in a seat.
         /// </summary>
@@ -130,6 +142,8 @@ namespace BelowTheWing.Crew
             m_Collider.height = profile.heightMetres;
             m_Collider.radius = profile.radiusMetres;
             m_Collider.center = Vector3.zero;
+
+            Stance = new Crouching(profile, m_Collider, m_StandsOn);
         }
 
         /// <summary>
@@ -292,6 +306,12 @@ namespace BelowTheWing.Crew
 
             Seat?.Refresh();
 
+            // Every step, and on every machine. How tall somebody is has to be right everywhere
+            // that can see them -- drawn standing while they are crouched inside a cart puts their
+            // head through its roof -- and standing up is something the world has to be able to
+            // refuse, which it can only do while they are still under whatever is over them.
+            Stance.Settle();
+
             if (Hitching != null)
             {
                 // Only meaningful while driving, and the train being driven is what it acts on.
@@ -335,8 +355,11 @@ namespace BelowTheWing.Crew
                 Jump();
             }
 
+            Stance.Want(asked.Crouch);
+
             var cameraYaw = Camera != null ? Camera.YawDegrees : transform.eulerAngles.y;
-            var wanted = CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile);
+            var wanted = CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile)
+                         * Stance.SpeedMultiplier;
 
             var velocity = Body.linearVelocity;
             var acrossTheGround = new Vector3(velocity.x, 0f, velocity.z);

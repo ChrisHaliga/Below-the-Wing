@@ -18,8 +18,6 @@ namespace BelowTheWing.Session
         /// <summary>Places everything the plan describes.</summary>
         public static void Build(
             ApronLayoutSettings layout,
-            VehicleProfile tractorProfile,
-            VehicleProfile cartProfile,
             AircraftProfile aircraftProfile,
             CrewProfile crewProfile,
             NetworkObject tractorPrefab,
@@ -31,7 +29,15 @@ namespace BelowTheWing.Session
             var crewSize = new Vector3(
                 crewProfile.radiusMetres * 2f, crewProfile.heightMetres, crewProfile.radiusMetres * 2f);
 
-            var plan = ApronLayout.Build(layout, tractorProfile, cartProfile, aircraftProfile, crewSize);
+            // Measured off the prefabs rather than described again here. A vehicle's shape is a
+            // property of the thing itself, and a layout working from a second copy of it is how
+            // trains end up spaced at a distance their couplings cannot reach.
+            var plan = ApronLayout.Build(
+                layout,
+                tractorPrefab.GetComponent<VehicleShape>(),
+                cartPrefab.GetComponent<VehicleShape>(),
+                aircraftProfile,
+                crewSize);
 
             Place(aircraftPrefab, plan.Aircraft);
 

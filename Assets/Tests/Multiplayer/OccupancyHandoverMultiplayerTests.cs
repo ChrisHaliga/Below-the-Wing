@@ -28,6 +28,7 @@ namespace BelowTheWing.Tests.Multiplayer
             m_TractorProfile = TestProfiles.Tractor();
 
             m_TractorPrefab = CreateNetworkObjectPrefab("Tractor");
+            TestShapes.On(m_TractorPrefab, TestShapes.Tractor());
             m_TractorPrefab.AddComponent<VehicleController>().Configure(m_TractorProfile, "Tug 1");
             m_TractorPrefab.AddComponent<VehicleOccupant>();
 

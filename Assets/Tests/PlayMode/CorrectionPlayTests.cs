@@ -58,7 +58,7 @@ namespace BelowTheWing.Tests.PlayMode
         VehicleState Standing(Vector3 at)
             => new VehicleState
             {
-                Position = new Vector3(at.x, VehicleController.RestingHeightMetres(m_TractorProfile), at.z),
+                Position = new Vector3(at.x, 0f, at.z),
                 Rotation = Quaternion.identity,
                 Velocity = Vector3.zero,
                 Spin = Vector3.zero

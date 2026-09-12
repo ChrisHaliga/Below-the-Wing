@@ -32,8 +32,6 @@ namespace BelowTheWing.Session
         ChainJointSettings m_Coupling = ChainJointSettings.Default;
 
         [Header("Equipment")]
-        [SerializeField] VehicleProfile m_TractorProfile;
-        [SerializeField] VehicleProfile m_CartProfile;
         [SerializeField] AircraftProfile m_AircraftProfile;
         [SerializeField] CrewProfile m_CrewProfile;
 
@@ -95,7 +93,7 @@ namespace BelowTheWing.Session
         public IReadOnlyList<Carried> LooseCargo()
         {
             m_Cargo.Clear();
-            m_Cargo.AddRange(FindObjectsByType<Carried>(FindObjectsSortMode.None));
+            m_Cargo.AddRange(FindObjectsByType<Carried>(FindObjectsInactive.Exclude));
 
             return m_Cargo;
         }
@@ -116,7 +114,7 @@ namespace BelowTheWing.Session
 
             if (NetworkManager.LocalClient.IsSessionOwner)
             {
-                ApronBuilder.Build(m_Layout, m_TractorProfile, m_CartProfile, m_AircraftProfile, m_CrewProfile,
+                ApronBuilder.Build(m_Layout, m_AircraftProfile, m_CrewProfile,
                     m_TractorPrefab, m_CartPrefab, m_AircraftPrefab, m_BagPrefab, m_BagsPerTrain);
             }
 
@@ -264,7 +262,11 @@ namespace BelowTheWing.Session
         void SpawnOwnCrew()
         {
             var plan = ApronLayout.Build(
-                m_Layout, m_TractorProfile, m_CartProfile, m_AircraftProfile, CrewSize());
+                m_Layout,
+                m_TractorPrefab.GetComponent<VehicleShape>(),
+                m_CartPrefab.GetComponent<VehicleShape>(),
+                m_AircraftProfile,
+                CrewSize());
 
             // The first arrival point with nobody standing on it.
             //

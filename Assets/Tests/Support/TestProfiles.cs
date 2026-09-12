@@ -1,4 +1,5 @@
 using BelowTheWing.Apron;
+using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Vehicles;
 using UnityEngine;
@@ -25,8 +26,6 @@ namespace BelowTheWing.Tests.Support
             p.massKg = 3000f;
             p.bodySizeMetres = new Vector3(1.3f, 1.6f, 3.0f);
             p.centerOfMassOffset = new Vector3(0f, -0.45f, 0f);
-            p.wheelbaseMetres = 1.8f;
-            p.trackMetres = 1.1f;
             p.wheelRadiusMetres = 0.3f;
             p.suspensionRestLengthMetres = 0.35f;
             p.springStrengthNewtons = 60000f;
@@ -53,12 +52,10 @@ namespace BelowTheWing.Tests.Support
             p.massKg = 550f;
             p.bodySizeMetres = new Vector3(1.5f, 1.7f, 3.0f);
             p.centerOfMassOffset = new Vector3(0f, -0.3f, 0f);
-            p.wheelbaseMetres = 2.0f;
-            p.trackMetres = 1.3f;
-            p.wheelRadiusMetres = 0.3f;
-            p.suspensionRestLengthMetres = 0.35f;
-            p.springStrengthNewtons = 12000f;
-            p.damperNewtonsPerMetrePerSecond = 1400f;
+            p.wheelRadiusMetres = 0.157f;
+            p.suspensionRestLengthMetres = 0.08f;
+            p.springStrengthNewtons = 9000f;
+            p.damperNewtonsPerMetrePerSecond = 3500f;
             p.lateralGripCurve = PeakingGripCurve();
             p.maxDriveForceNewtons = 0f;
             p.sprintDriveMultiplier = 1f;
@@ -81,6 +78,20 @@ namespace BelowTheWing.Tests.Support
             p.sprintSpeedMetresPerSecond = 7f;
             p.accelerationMetresPerSecondSquared = 30f;
             p.turnRateDegreesPerSecond = 720f;
+            return p;
+        }
+
+        /// <summary>A checked bag: twenty kilograms of soft-sided suitcase.</summary>
+        public static BagProfile CheckedBag()
+        {
+            var p = ScriptableObject.CreateInstance<BagProfile>();
+            p.massKg = 20f;
+            p.sizeMetres = new Vector3(0.4f, 0.25f, 0.6f);
+            p.wakeAtLateralAcceleration = 6f;
+            p.wakeAtTiltDegrees = 25f;
+            p.wakeAtImpactImpulse = 400f;
+            p.cannotSettleForSeconds = 1f;
+            p.damagedAtImpulse = 250f;
             return p;
         }
 
