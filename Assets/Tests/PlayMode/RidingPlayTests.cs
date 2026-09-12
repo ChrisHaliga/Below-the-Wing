@@ -11,7 +11,7 @@ namespace BelowTheWing.Tests.PlayMode
     /// <summary>
     /// A player standing on something that moves.
     ///
-    /// Riding is half of what this slice is for. The other half is coming off, at a moment the
+    /// Riding is half of what a cart deck is for. The other half is coming off, at a moment the
     /// driver caused and the passenger can see coming.
     /// </summary>
     public sealed class RidingPlayTests

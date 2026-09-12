@@ -98,16 +98,9 @@ namespace BelowTheWing.Tests.Support
             settings.cartsPerTrain = cartCount;
             settings.firstTractorPosition = tractorPosition;
 
-            var measuring = new GameObject("Measuring");
-            var tractorShapeOn = TestShapes.On(measuring, tractorMeasurements);
-            var cartMeasuring = new GameObject("Measuring cart");
-            var cartShapeOn = TestShapes.On(cartMeasuring, cartMeasurements);
-
-            var plan = ApronLayout.Build(settings, tractorShapeOn, cartShapeOn, TestProfiles.Aircraft(), Vector3.one)
+            var plan = ApronLayout.Build(
+                    settings, tractorMeasurements.Footprint, cartMeasurements.Footprint, TestProfiles.Aircraft(), Vector3.one)
                 .Trains[0];
-
-            Object.DestroyImmediate(measuring);
-            Object.DestroyImmediate(cartMeasuring);
 
             var members = new List<VehicleController>
             {

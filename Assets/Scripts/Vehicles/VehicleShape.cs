@@ -58,6 +58,10 @@ namespace BelowTheWing.Vehicles
             public Vector3 EnvelopeCentreLocal;
             public Bounds InteriorLocal;
             public IReadOnlyList<SolidPart> SolidParts;
+
+            /// <summary>What laying this vehicle out needs to know about it.</summary>
+            public VehicleFootprint Footprint
+                => VehicleFootprint.Of(EnvelopeSizeMetres, FrontCouplingLocal, RearCouplingLocal);
         }
 
         [SerializeField, Tooltip("Where the four wheels sit, in this vehicle's own space.")]
@@ -93,18 +97,20 @@ namespace BelowTheWing.Vehicles
         public Vector3 RearCouplingLocal => m_RearCouplingLocal;
 
         /// <summary>
-        /// How far the front coupling reaches past the origin, in metres.
+        /// What laying this vehicle out needs to know about it: the room it takes up and how far
+        /// each coupling reaches.
         ///
-        /// Separate from the rear reach because on a real cart they are nothing like each other:
-        /// the drawbar sticks out in front and the socket is recessed behind. Two hitched vehicles
-        /// stand the rear reach of the one in front plus the front reach of the one behind apart,
-        /// and anything that assumes one number for both leaves every coupling in a train holding a
-        /// gap open.
+        /// The two reaches are nothing like each other on a real cart -- the drawbar sticks out in
+        /// front and the socket is recessed behind -- which is why they are two numbers.
         /// </summary>
-        public float FrontReachMetres => m_FrontCouplingLocal.z;
+        public VehicleFootprint Footprint
+            => VehicleFootprint.Of(m_EnvelopeSizeMetres, m_FrontCouplingLocal, m_RearCouplingLocal);
+
+        /// <summary>How far the front coupling reaches past the origin, in metres.</summary>
+        public float FrontReachMetres => Footprint.FrontReachMetres;
 
         /// <summary>How far the rear coupling reaches past the origin, in metres.</summary>
-        public float RearReachMetres => -m_RearCouplingLocal.z;
+        public float RearReachMetres => Footprint.RearReachMetres;
 
         /// <summary>Width, height and length of the room this vehicle takes up, in metres.</summary>
         public Vector3 EnvelopeSizeMetres => m_EnvelopeSizeMetres;

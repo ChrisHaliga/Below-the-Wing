@@ -49,7 +49,7 @@ namespace BelowTheWing.Crew
 
         Rigidbody m_Body;
         CapsuleCollider m_Collider;
-        VehicleController m_RidingIn;
+        VehicleController m_Seated;
         float m_LastJumpedAt = -1f;
 
         /// <summary>The profile this character's mass, size and speeds come from.</summary>
@@ -205,7 +205,7 @@ namespace BelowTheWing.Crew
         /// </summary>
         void ClimbIn(VehicleController vehicle)
         {
-            m_RidingIn = vehicle;
+            m_Seated = vehicle;
 
             Body.linearVelocity = Vector3.zero;
             Body.angularVelocity = Vector3.zero;
@@ -224,8 +224,8 @@ namespace BelowTheWing.Crew
         /// <summary>Puts the body back on the apron, clear of the vehicle it came out of.</summary>
         void ClimbOut()
         {
-            var left = m_RidingIn;
-            m_RidingIn = null;
+            var left = m_Seated;
+            m_Seated = null;
 
             transform.SetParent(null, worldPositionStays: true);
 
@@ -325,7 +325,7 @@ namespace BelowTheWing.Crew
             }
 
             var drivingNow = Seat?.Driving;
-            if (drivingNow != m_RidingIn)
+            if (drivingNow != m_Seated)
             {
                 if (drivingNow != null)
                 {
@@ -339,7 +339,7 @@ namespace BelowTheWing.Crew
 
             // Somebody in a seat is cargo. Their controls are going to the vehicle, and walking at
             // the same time would drag the capsule out through the bodywork.
-            if (m_RidingIn != null)
+            if (m_Seated != null)
             {
                 return;
             }

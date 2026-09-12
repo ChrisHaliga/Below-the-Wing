@@ -57,7 +57,7 @@ namespace BelowTheWing.Crew
         ///
         /// Being hit is not made survivable by a better grip. Holding a rail through a head-on
         /// collision and staying put would read as the game ignoring the crash, which is the one
-        /// thing slice 2 spent its length making sure could not happen.
+        /// thing networked physics here goes to the most trouble to avoid.
         /// </summary>
         public WakeThresholds Thresholds(in WakeThresholds standing, bool holdingOn)
             => holdingOn ? standing.HoldingOn(GripMultiplier) : standing;

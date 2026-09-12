@@ -177,8 +177,8 @@ namespace BelowTheWing.Apron
         /// </summary>
         public static ApronPlan Build(
             ApronLayoutSettings settings,
-            VehicleShape tractor,
-            VehicleShape cart,
+            VehicleFootprint tractor,
+            VehicleFootprint cart,
             AircraftProfile aircraft,
             Vector3 crewSizeMetres)
         {

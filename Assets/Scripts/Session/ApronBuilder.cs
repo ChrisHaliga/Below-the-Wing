@@ -34,8 +34,8 @@ namespace BelowTheWing.Session
             // trains end up spaced at a distance their couplings cannot reach.
             var plan = ApronLayout.Build(
                 layout,
-                tractorPrefab.GetComponent<VehicleShape>(),
-                cartPrefab.GetComponent<VehicleShape>(),
+                tractorPrefab.GetComponent<VehicleShape>().Footprint,
+                cartPrefab.GetComponent<VehicleShape>().Footprint,
                 aircraftProfile,
                 crewSize);
 

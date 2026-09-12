@@ -87,10 +87,7 @@ namespace BelowTheWing.Cargo
         /// <summary>Whether a throw is being wound up right now.</summary>
         public bool WindingUp => m_ChargingSince >= 0f;
 
-        /// <summary>
-        /// How far into a wind-up, from 0 to 1. Replicated so that other machines can see somebody
-        /// about to throw something at them.
-        /// </summary>
+        /// <summary>How far into a wind-up, from 0 to 1.</summary>
         public float Charge(float now)
         {
             if (!WindingUp || m_Throw.fullChargeSeconds <= 0f)

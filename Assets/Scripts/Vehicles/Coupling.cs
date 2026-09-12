@@ -23,14 +23,14 @@ namespace BelowTheWing.Vehicles
 
         /// <summary>
         /// Where a cart has to stand to be hitched behind this vehicle, so that the two hitch points
-        /// land on the same spot.
+        /// line up.
         ///
-        /// This matters more than it looks. The joint anchors each end at its own vehicle's hitch,
-        /// and at this distance those two points coincide, so the coupling begins life already
-        /// satisfied with nothing to pull against. Created while the cart is somewhere else, the
-        /// joint starts out violated and never stops trying to close -- which drags the whole train
-        /// sideways across the apron for the rest of the session. That bug has been fixed here once
-        /// already, for parked trains; hitching at runtime is the second way in.
+        /// This matters more than it looks. The joint between two vehicles is anchored where their
+        /// hitches meet, and at this distance it begins life already satisfied with nothing to pull
+        /// against. Created while the cart is somewhere else, the joint starts out violated and never
+        /// stops trying to close -- which drags the whole train sideways across the apron for the
+        /// rest of the session. Parked trains are placed at this distance by the layout; hitching at
+        /// runtime is the other way a train gets made.
         /// </summary>
         public static (Vector3 Position, Quaternion Rotation) WhereToStand(
             VehicleController behind, VehicleController cart)
@@ -38,10 +38,9 @@ namespace BelowTheWing.Vehicles
             var facing = behind.transform.rotation;
 
             // Worked back from where the two hitches have to meet rather than by measuring along the
-            // ground. A tractor and a cart settle at different heights on their own suspension, so
-            // their hitch points sit at different offsets within their own bodies -- placing the
-            // cart at the tractor's height leaves the two hitches a few centimetres apart
-            // vertically, which is enough for the joint to start out violated.
+            // ground. The two halves of a coupling sit at different heights on purpose, so the cart is
+            // placed by its front coupling rather than by its origin; the height difference is then
+            // the joint's to accept, not a gap for it to close.
             var meetHere = behind.transform.TransformPoint(behind.RearHitchLocal);
 
             return (meetHere - (facing * cart.FrontHitchLocal), facing);

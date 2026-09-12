@@ -19,22 +19,16 @@ namespace BelowTheWing.Tests.EditMode
     /// </summary>
     public sealed class ApronLayoutTests
     {
-        GameObject m_TractorObject;
-        GameObject m_CartObject;
-        VehicleShape m_Tractor;
-        VehicleShape m_Cart;
+        VehicleFootprint m_Tractor;
+        VehicleFootprint m_Cart;
         AircraftProfile m_Aircraft;
         CrewProfile m_Crew;
 
         [SetUp]
         public void SetUp()
         {
-            m_TractorObject = new GameObject("Tractor");
-            m_Tractor = TestShapes.On(m_TractorObject, TestShapes.Tractor());
-
-            m_CartObject = new GameObject("Cart");
-            m_Cart = TestShapes.On(m_CartObject, TestShapes.Cart());
-
+            m_Tractor = TestShapes.Tractor().Footprint;
+            m_Cart = TestShapes.Cart().Footprint;
             m_Aircraft = TestProfiles.Aircraft();
             m_Crew = TestProfiles.CrewMember();
         }
@@ -42,8 +36,6 @@ namespace BelowTheWing.Tests.EditMode
         [TearDown]
         public void TearDown()
         {
-            Object.DestroyImmediate(m_TractorObject);
-            Object.DestroyImmediate(m_CartObject);
             Object.DestroyImmediate(m_Aircraft);
             Object.DestroyImmediate(m_Crew);
         }
@@ -126,7 +118,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void BiggerEquipmentTakesUpMoreRoomRatherThanOverlapping()
         {
-            TestShapes.On(m_CartObject, TestShapes.BoxVehicle(new Vector3(2.5f, 2.5f, 6f)));
+            m_Cart = TestShapes.BoxVehicle(new Vector3(2.5f, 2.5f, 6f)).Footprint;
 
             var plan = Plan(ApronLayoutSettings.Default);
             var carts = plan.Trains[0].Carts;

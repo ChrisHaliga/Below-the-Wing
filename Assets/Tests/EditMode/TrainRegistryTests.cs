@@ -231,7 +231,7 @@ namespace BelowTheWing.Tests.EditMode
             }
 
             Assert.That(m_Registry.Trains[0].CouplingsEngaged, Is.True,
-                "this supersedes the slice 1 rule that couplings belonged only to the machine owning " +
+                "couplings used to belong only to the machine owning the train, and this replaces that: " +
                 "every member. That rule protected a hinge from being pulled against by a correction " +
                 "applied to the body on its other end -- and carts are no longer corrected at all, so " +
                 "there is nothing left for the hinge to fight. Uncoupled, a train nobody here owns is " +

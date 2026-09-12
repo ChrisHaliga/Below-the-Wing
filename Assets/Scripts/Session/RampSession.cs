@@ -19,8 +19,8 @@ namespace BelowTheWing.Session
     /// named place is what lets the rest stay separate.
     ///
     /// Its jobs are to build the apron once per session, keep the register of which vehicles form
-    /// which trains up to date as objects arrive, and decide which of those trains this machine is
-    /// responsible for simulating.
+    /// which trains up to date as objects arrive, and take back whole any train a departing player
+    /// left behind.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class RampSession : NetworkBehaviour
@@ -81,7 +81,7 @@ namespace BelowTheWing.Session
         /// enough to hitch onto the back of a train. One list, because keeping two of the same
         /// vehicles in step by hand is a bug waiting for the day they disagree.
         /// </summary>
-        public IReadOnlyList<VehicleController> Vehicles() => m_OnTheApron;
+        public IReadOnlyList<VehicleController> Vehicles => m_OnTheApron;
 
         /// <summary>
         /// Everything on the apron that a person could pick up.
@@ -271,8 +271,8 @@ namespace BelowTheWing.Session
         {
             var plan = ApronLayout.Build(
                 m_Layout,
-                m_TractorPrefab.GetComponent<VehicleShape>(),
-                m_CartPrefab.GetComponent<VehicleShape>(),
+                m_TractorPrefab.GetComponent<VehicleShape>().Footprint,
+                m_CartPrefab.GetComponent<VehicleShape>().Footprint,
                 m_AircraftProfile,
                 CrewSize());
 
@@ -288,7 +288,7 @@ namespace BelowTheWing.Session
             crew.Spawn();
 
             m_LocalPlayer = new LocalPlayerRig(
-                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, Vehicles, LooseCargo, this);
+                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, () => Vehicles, LooseCargo, this);
         }
 
         /// <summary>

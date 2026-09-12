@@ -60,7 +60,7 @@ namespace BelowTheWing.Tests.EditMode
 
             Assert.That(crew.jumpHeightMetres, Is.GreaterThan(deckHeight),
                 "if a standing jump cannot reach a cart deck then riding is unreachable, and riding " +
-                "is half of what this slice is for");
+                "is the whole reason to be able to jump");
 
             Object.DestroyImmediate(crew);
         }
