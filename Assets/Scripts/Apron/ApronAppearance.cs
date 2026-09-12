@@ -92,6 +92,15 @@ namespace BelowTheWing.Apron
             {
                 Draw();
                 look = transform.Find(LookName);
+
+                // Only what was just drawn. A grey primitive is built at this object's origin and
+                // has to be lifted to where the bodywork is; a model was placed by whoever built the
+                // prefab and is already right, and every measurement taken off it was taken there.
+                // Moving one would put the cart you see a metre above the cart you drive into.
+                if (look != null)
+                {
+                    look.localPosition += m_DrawnAtLocal;
+                }
             }
 
             // What you see trails the body slightly, so that a vehicle moved outright rather than
@@ -100,7 +109,6 @@ namespace BelowTheWing.Apron
             // not drawn.
             if (look != null && look.GetComponent<SmoothedLook>() == null)
             {
-                look.localPosition += m_DrawnAtLocal;
                 look.gameObject.AddComponent<SmoothedLook>();
             }
 

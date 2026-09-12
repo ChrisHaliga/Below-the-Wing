@@ -41,6 +41,12 @@ namespace BelowTheWing.Crew
                                  "cart deck is as good a floor as the apron.")]
         LayerMask m_StandsOn = ~0;
 
+        [SerializeField, Tooltip("What counts as being over somebody's head, so they cannot stand " +
+                                 "up into it. Separate from what they can stand on: narrowing one " +
+                                 "so players cannot climb onto cart roofs must not quietly let a " +
+                                 "crouched player stand up through one.")]
+        LayerMask m_FitsUnder = ~0;
+
         Rigidbody m_Body;
         CapsuleCollider m_Collider;
         VehicleController m_RidingIn;
@@ -143,7 +149,7 @@ namespace BelowTheWing.Crew
             m_Collider.radius = profile.radiusMetres;
             m_Collider.center = Vector3.zero;
 
-            Stance = new Crouching(profile, m_Collider, m_StandsOn);
+            Stance = new Crouching(profile, m_Collider, m_FitsUnder);
         }
 
         /// <summary>

@@ -35,8 +35,11 @@ namespace BelowTheWing.Vehicles
                  "vehicle collides as comes from its VehicleShape.")]
         public Vector3 bodySizeMetres = new Vector3(1.5f, 1.5f, 3f);
 
-        [Tooltip("Centre of mass relative to the body centre, in metres. Negative y sits it low.")]
-        public Vector3 centerOfMassOffset = new Vector3(0f, -0.4f, 0f);
+        [Tooltip("Centre of mass in the vehicle's own space, in metres. The origin is on the " +
+                 "ground between the wheels, so this is how high the weight sits above the tarmac " +
+                 "and is always positive. Low is stable; at or below zero puts the mass under the " +
+                 "contact patches and weight transfer inverts.")]
+        public Vector3 centerOfMassOffset = new Vector3(0f, 0.4f, 0f);
 
         [Header("Wheels")]
         [Tooltip("Wheel radius in metres. The suspension ray reaches this far past its rest length.")]

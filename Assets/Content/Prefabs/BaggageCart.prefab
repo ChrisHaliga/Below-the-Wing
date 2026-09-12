@@ -294,7 +294,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Apron::BelowTheWing.Apron.ApronAppearance
   m_Shape: 3
-  m_SizeMetres: {x: 1.5, y: 1.7, z: 3}
+  m_SizeMetres: {x: 1.8855, y: 2.0155, z: 3.8152}
   m_Colour: {r: 0.55, g: 0.55, b: 0.58, a: 1}
   m_LabelHeightMetres: 2.3002
   m_DrawnAtLocal: {x: 0, y: 1.0909, z: 0.1296}

@@ -69,7 +69,7 @@ namespace BelowTheWing.EditorTools
                 + "this class.";
             profile.massKg = 3000f;
             profile.bodySizeMetres = new Vector3(1.3f, 1.6f, 3.0f);
-            profile.centerOfMassOffset = new Vector3(0f, -0.45f, 0f);
+            profile.centerOfMassOffset = new Vector3(0f, 0.35f, 0f);
             profile.wheelRadiusMetres = 0.3f;
             profile.suspensionRestLengthMetres = 0.35f;
             profile.springStrengthNewtons = 60000f;

@@ -154,9 +154,16 @@ namespace BelowTheWing.Tests.PlayMode
             yield return Step(0.3f);
             Assert.That(m_Crew.Stance.Crouched, Is.True, "still underneath it");
 
-            // Out into the open, under their own steam.
-            m_Keys.Move = new Vector2(1f, 0f);
+            // Out into the open, under their own steam. Straight ahead rather than sideways: with
+            // no camera, which way is "forward" is the character's own facing, and a character
+            // turns to face the way they are walking -- so holding strafe walks them in a circle
+            // and they never leave the ceiling at all.
+            m_Keys.Move = new Vector2(0f, 1f);
             yield return Step(2f);
+
+            Assert.That(Vector3.Distance(m_Crew.transform.position, m_Ceiling.transform.position),
+                Is.GreaterThan(2.5f),
+                "they have to have actually walked out from under it");
 
             Assert.That(m_Crew.Stance.Crouched, Is.False,
                 "asking to stand is not a one-off that gets thrown away when it cannot be granted. " +

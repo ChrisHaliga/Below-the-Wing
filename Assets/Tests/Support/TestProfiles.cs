@@ -25,7 +25,7 @@ namespace BelowTheWing.Tests.Support
             p.equipmentNote = "Baggage tractor, empty. Roughly 3 tonnes.";
             p.massKg = 3000f;
             p.bodySizeMetres = new Vector3(1.3f, 1.6f, 3.0f);
-            p.centerOfMassOffset = new Vector3(0f, -0.45f, 0f);
+            p.centerOfMassOffset = new Vector3(0f, 0.35f, 0f);
             p.wheelRadiusMetres = 0.3f;
             p.suspensionRestLengthMetres = 0.35f;
             p.springStrengthNewtons = 60000f;
@@ -51,7 +51,7 @@ namespace BelowTheWing.Tests.Support
             p.equipmentNote = "Four-wheel baggage cart, tare, unloaded. Roughly 550 kg.";
             p.massKg = 550f;
             p.bodySizeMetres = new Vector3(1.5f, 1.7f, 3.0f);
-            p.centerOfMassOffset = new Vector3(0f, -0.3f, 0f);
+            p.centerOfMassOffset = new Vector3(0f, 0.5f, 0f);
             p.wheelRadiusMetres = 0.157f;
             p.suspensionRestLengthMetres = 0.08f;
             p.springStrengthNewtons = 9000f;

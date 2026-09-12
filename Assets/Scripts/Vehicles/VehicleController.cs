@@ -264,6 +264,14 @@ namespace BelowTheWing.Vehicles
             }
 
             m_Body.mass = profile.massKg;
+            if (profile.centerOfMassOffset.y <= 0f)
+            {
+                Debug.LogError(
+                    $"'{name}' carries its centre of mass at or below its own origin, which is on " +
+                    "the ground. Weight transfer then works backwards -- braking pitches the nose " +
+                    "up -- and nothing can tip the vehicle over.", this);
+            }
+
             m_Body.centerOfMass = profile.centerOfMassOffset;
             m_Body.interpolation = RigidbodyInterpolation.Interpolate;
 

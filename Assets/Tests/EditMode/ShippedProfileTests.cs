@@ -53,6 +53,46 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void TheShippedCartRunsOnTheNumbersItsModelWasMeasuredAt()
+        {
+            var cart = Load<VehicleProfile>(CartPath);
+
+            // Off the model. The cart prefab hangs its suspension from wheel positions read out of
+            // the mesh, and this is the one wheel figure that stays in the profile because it is a
+            // physics quantity rather than a position. If the two disagree, the invisible wheels
+            // holding the cart up are a different size from the visible ones turning on it.
+            Assert.That(cart.wheelRadiusMetres, Is.EqualTo(0.157f).Within(0.005f),
+                "the modelled cart runs on 0.157 m wheels. This asset is written once, when it does " +
+                "not exist, and never again -- so retuning the cart in the bootstrap and assuming " +
+                "the game picked it up is exactly how the shipped cart ends up running on numbers " +
+                "nothing else in the project uses");
+
+            Assert.That(cart.suspensionRestLengthMetres, Is.LessThan(cart.wheelRadiusMetres),
+                $"{cart.suspensionRestLengthMetres:F2} m of travel on a {cart.wheelRadiusMetres:F3} m " +
+                "wheel. More travel than the wheel has radius and the cart visibly floats above its " +
+                "own axles");
+        }
+
+        [Test]
+        public void EveryVehicleCarriesItsWeightAboveTheGroundItStandsOn()
+        {
+            foreach (var path in new[] { TractorPath, CartPath })
+            {
+                var profile = Load<VehicleProfile>(path);
+
+                Assert.That(profile.centerOfMassOffset.y, Is.GreaterThan(0f),
+                    $"{path} puts its centre of mass at or below its own origin. A vehicle's origin " +
+                    "is on the tarmac between its wheels now, so that is mass underneath every " +
+                    "contact patch: braking pitches the nose up, accelerating dives it, and nothing " +
+                    "can tip the vehicle over");
+
+                Assert.That(profile.centerOfMassOffset.y,
+                    Is.LessThan(profile.bodySizeMetres.y),
+                    $"{path} carries its weight above its own roof");
+            }
+        }
+
+        [Test]
         public void ATractorOutweighsAnEmptyCartAboutAsMuchAsARealOneDoes()
         {
             var tractor = Load<VehicleProfile>(TractorPath);

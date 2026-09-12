@@ -61,37 +61,60 @@ namespace BelowTheWing.Crew
         /// <summary>
         /// Whether there is room above them to stand up.
         ///
-        /// Asked as a sweep of the body they would have rather than a ray from their head, because a
-        /// ray up the middle misses a shelf they are standing half under and lets them stand into
-        /// its edge.
+        /// Asked as "would the body they would have fit where they are standing", rather than as a
+        /// ray or a sweep upward. Two reasons, and the second is the one that bites. A ray up the
+        /// middle misses a shelf somebody is standing half under and lets them stand into its edge.
+        /// And anything cast upward from inside the crouched capsule starts out overlapping that
+        /// capsule, which physics reports as an immediate hit -- so a character would find their own
+        /// body over their head and could never stand up anywhere.
         /// </summary>
         public bool RoomToStand
         {
             get
             {
-                if (m_Body == null)
+                if (m_Body == null || !Crouched)
                 {
                     return true;
                 }
 
-                var standing = m_Profile.heightMetres;
                 var radius = m_Profile.radiusMetres;
 
-                // From the top of the crouched capsule to the top of the standing one: the space
-                // that has to be empty for standing up to be possible.
-                var feet = m_Body.transform.position - (Vector3.up * (HeightMetres * 0.5f));
-                var from = feet + (Vector3.up * (HeightMetres - radius));
-                var reach = standing + RoomToSpareMetres - HeightMetres;
+                // Measured from the feet, which are not half a crouched capsule below the origin:
+                // crouching shortens the capsule from the head down and moves its centre with it, so
+                // the soles stay where they were.
+                var feet = m_Body.transform.position + m_Body.center - (Vector3.up * (m_Body.height * 0.5f));
+                var standing = m_Profile.heightMetres + RoomToSpareMetres;
 
-                if (reach <= 0f)
+                // Only the space standing would newly take up: from the top of their crouched head
+                // to the top of their standing one. Testing the whole standing body instead reaches
+                // back down to their feet, and a capsule resting on the ground is always slightly
+                // inside it -- so the tarmac itself would count as something overhead and nobody
+                // could ever stand up anywhere.
+                var crouchedCrown = feet.y + HeightMetres;
+                var standingCrown = feet.y + standing;
+                var middle = (crouchedCrown + standingCrown) * 0.5f;
+                var half = Mathf.Max((standingCrown - crouchedCrown) * 0.5f - radius, 0f);
+
+                var lower = new Vector3(feet.x, middle - half, feet.z);
+                var upper = new Vector3(feet.x, middle + half, feet.z);
+
+                var count = Physics.OverlapCapsuleNonAlloc(
+                    lower, upper, radius * 0.95f, s_Overhead, m_Blocks, QueryTriggerInteraction.Ignore);
+
+                for (var i = 0; i < count; i++)
                 {
-                    return true;
+                    // Their own body is not something they are standing under.
+                    if (s_Overhead[i] != m_Body)
+                    {
+                        return false;
+                    }
                 }
 
-                return !Physics.SphereCast(
-                    from, radius * 0.95f, Vector3.up, out _, reach, m_Blocks, QueryTriggerInteraction.Ignore);
+                return true;
             }
         }
+
+        static readonly Collider[] s_Overhead = new Collider[8];
 
         /// <summary>
         /// Asks to be crouched or standing.

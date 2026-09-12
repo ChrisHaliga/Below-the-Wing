@@ -154,6 +154,9 @@ MonoBehaviour:
   m_StandsOn:
     serializedVersion: 2
     m_Bits: 4294967295
+  m_FitsUnder:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!114 &4615826504113086820
 MonoBehaviour:
   m_ObjectHideFlags: 0

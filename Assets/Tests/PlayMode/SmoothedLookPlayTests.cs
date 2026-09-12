@@ -208,6 +208,46 @@ namespace BelowTheWing.Tests.PlayMode
                 "writing the body's own position collapses every offset a model was authored with");
         }
 
+        [UnityTest]
+        public IEnumerator SomethingThatAlreadyHasAModelIsNotMovedOffIt()
+        {
+            var vehicle = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);
+
+            // A model, placed by whoever built the prefab, exactly where its measurements were
+            // taken from.
+            var model = new GameObject(ApronAppearance.LookName);
+            model.transform.SetParent(vehicle.transform, worldPositionStays: false);
+
+            var appearance = vehicle.gameObject.AddComponent<ApronAppearance>();
+            appearance.DescribeAs(
+                ApronAppearance.Shape.AlreadyModelled,
+                Vector3.one,
+                Color.grey,
+                labelHeightMetres: 2f,
+                drawnAtLocal: new Vector3(0f, 1.09f, 0.13f));
+
+            appearance.Show("Tug 1");
+            yield return null;
+
+            Assert.That(model.transform.localPosition, Is.EqualTo(Vector3.zero).Using(Near),
+                "a grey primitive is built at the object's origin and has to be lifted to where the " +
+                "bodywork is. A model is already there, and lifting it too puts the cart you see a " +
+                "metre above the cart you drive into");
+        }
+
+        static readonly System.Collections.Generic.IEqualityComparer<Vector3> Near = new Within(0.01f);
+
+        sealed class Within : System.Collections.Generic.IEqualityComparer<Vector3>
+        {
+            readonly float m_Tolerance;
+
+            public Within(float tolerance) => m_Tolerance = tolerance;
+
+            public bool Equals(Vector3 a, Vector3 b) => Vector3.Distance(a, b) <= m_Tolerance;
+
+            public int GetHashCode(Vector3 of) => of.GetHashCode();
+        }
+
         static IEnumerator Step(float seconds)
         {
             var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);

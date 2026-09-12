@@ -105,9 +105,13 @@ namespace BelowTheWing.EditorTools
         /// Measures the baggage cart model and fills in everything the game needs to know about its
         /// geometry.
         ///
-        /// Read off the model rather than typed in here, because a number typed in here is a second
-        /// copy of a measurement and a second copy eventually disagrees with the first. The one
-        /// thing that is decided rather than measured is which way round the model goes: it was
+        /// The wheels, the two couplings and the overall envelope come from the model and the
+        /// profile, so re-exporting the cart moves them without anybody editing code. The deck
+        /// figures below are typed in, and that is worth being honest about: they were measured off
+        /// the model by hand, and the mesh merges the deck into the rest of the bodywork so there is
+        /// no node to read them from. If the cart is remodelled they have to be re-measured.
+        ///
+        /// The one thing decided rather than measured is which way round the model goes: it was
         /// exported with its drawbar along what Unity calls backwards, so it is turned to face the
         /// way the game drives.
         ///
@@ -117,7 +121,7 @@ namespace BelowTheWing.EditorTools
         /// and checked for being what they claim to be -- taking the mesh instead would put every
         /// coupling in the game tens of centimetres out.
         /// </summary>
-        static void ShapeFromTheCartModel(GameObject cart, Transform model)
+        static void ShapeFromTheCartModel(GameObject cart, Transform model, VehicleProfile profile)
         {
             const float deckTopMetres = 0.4727f;
             const float deckWidthMetres = 1.7211f;
@@ -211,7 +215,7 @@ namespace BelowTheWing.EditorTools
                 WheelCentresLocal = wheels,
                 FrontCouplingLocal = Local("HITCH_Male"),
                 RearCouplingLocal = Local("HITCH_Female"),
-                EnvelopeSizeMetres = new Vector3(1.8855f, 2.0155f, 3.8152f),
+                EnvelopeSizeMetres = profile.bodySizeMetres,
                 EnvelopeCentreLocal = new Vector3(0f, 1.0909f, 0.1296f),
                 InteriorLocal = new Bounds(
                     new Vector3(0f, deckTopMetres + (clearInsideMetres * 0.5f), 0f),
@@ -287,7 +291,7 @@ namespace BelowTheWing.EditorTools
             var model = modelPath != null ? AddModel(go, modelPath) : null;
             if (model != null)
             {
-                ShapeFromTheCartModel(go, model);
+                ShapeFromTheCartModel(go, model, profile);
             }
             else
             {
@@ -342,6 +346,11 @@ namespace BelowTheWing.EditorTools
         static void ShapeFromNumbers(GameObject vehicle, VehicleProfile profile)
         {
             var size = profile.bodySizeMetres;
+
+            // Axles set in from the ends and the sides by roughly what a small four-wheeled vehicle
+            // has: a wheelbase of seven tenths of the body length, a track of five sixths of its
+            // width. Invented figures, and they are allowed to be, because this describes a vehicle
+            // nobody has modelled yet -- the moment one is modelled its wheels are read off it.
             var halfWheelbase = size.z * 0.35f;
             var halfTrack = size.x * 0.42f;
             var reach = (size.z * 0.5f) + 0.3f;
