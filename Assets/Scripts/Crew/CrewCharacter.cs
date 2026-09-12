@@ -26,7 +26,7 @@ namespace BelowTheWing.Crew
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(CapsuleCollider))]
     [DisallowMultipleComponent]
-    public sealed class CrewCharacter : MonoBehaviour, IDriveIntentSource
+    public sealed class CrewCharacter : MonoBehaviour, IDriveIntentSource, IMovedFromHere
     {
         /// <summary>Below this speed a character is treated as standing still and stops turning.</summary>
         const float WalkingPaceMetresPerSecond = 0.1f;

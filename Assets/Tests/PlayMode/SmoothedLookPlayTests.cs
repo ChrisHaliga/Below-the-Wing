@@ -110,6 +110,25 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator YourOwnCharacterIsDrawnExactlyWhereItIs()
+        {
+            var crew = m_Apron.AddCrew(TestProfiles.CrewMember(), Vector3.zero);
+            crew.gameObject.AddComponent<ApronAppearance>().Show("Player 1");
+            var shape = crew.GetComponentInChildren<SmoothedLook>();
+            shape.CatchUpNow();
+
+            crew.transform.position += new Vector3(0f, 0f, 4f);
+            shape.Follow(1f / 60f);
+
+            Assert.That(shape.TrailingByMetres, Is.LessThan(0.01f),
+                "the body you walk is the one body that must never trail. Smoothing only knew how to " +
+                "ask a vehicle whether it was yours, so every player's own capsule was drawn a tenth " +
+                "of a second behind their feet");
+
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator AShapeLeftFarBehindStopsPretendingAndCatchesUpAtOnce()
         {
             var vehicle = SomebodyElsesTractor();

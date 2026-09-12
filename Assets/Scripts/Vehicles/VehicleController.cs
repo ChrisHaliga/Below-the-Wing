@@ -18,7 +18,7 @@ namespace BelowTheWing.Vehicles
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     [DisallowMultipleComponent]
-    public sealed class VehicleController : MonoBehaviour
+    public sealed class VehicleController : MonoBehaviour, IMovedFromHere
     {
         /// <summary>One corner of the vehicle: where its suspension hangs and what it does.</summary>
         readonly struct Wheel
@@ -164,11 +164,7 @@ namespace BelowTheWing.Vehicles
         /// Gives this vehicle the name a player sees when offered it. Separate from configuring it,
         /// because a vehicle is built from its prefab before anybody has said which tractor it is.
         /// </summary>
-        public void Rename(string displayName)
-        {
-            m_DisplayName = displayName;
-            name = displayName;
-        }
+        public void Rename(string displayName) => m_DisplayName = displayName;
 
         /// <summary>
         /// Whether somebody is in this vehicle's seat, on whichever machine they are playing from.

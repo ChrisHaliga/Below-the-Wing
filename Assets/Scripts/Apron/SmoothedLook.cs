@@ -35,7 +35,7 @@ namespace BelowTheWing.Apron
         public const float TooFarToFollowMetres = 8f;
 
         Transform m_Body;
-        VehicleController m_Vehicle;
+        IMovedFromHere m_Mover;
 
         /// <summary>
         /// Where the shape is being drawn, kept here rather than read back off its own transform.
@@ -66,17 +66,18 @@ namespace BelowTheWing.Apron
         /// Whether the shape should trail at all.
         ///
         /// Only for things this machine does not decide the position of. A vehicle you are driving
-        /// never gets snapped -- there is nothing to hide -- and putting a tenth of a second between
-        /// the wheel and what you see would be felt immediately as the controls going soft.
+        /// or the character you are walking never gets snapped -- there is nothing to hide -- and
+        /// putting a tenth of a second between the controls and what you see would be felt at once
+        /// as them going soft.
         /// </summary>
-        public bool WorthSmoothing => m_Vehicle == null || !m_Vehicle.OursToMove;
+        public bool WorthSmoothing => m_Mover == null || !m_Mover.OursToMove;
 
         void Awake()
         {
             // Stays a child. Its world pose is written every frame, which overrides whatever it
             // inherited, so there is nothing to detach and nothing left behind when the body goes.
             m_Body = transform.parent;
-            m_Vehicle = m_Body != null ? m_Body.GetComponent<VehicleController>() : null;
+            m_Mover = m_Body != null ? m_Body.GetComponent<IMovedFromHere>() : null;
             RememberHowItWasPlaced();
             CatchUpNow();
         }
