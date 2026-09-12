@@ -205,7 +205,7 @@ namespace BelowTheWing.Crew
         }
 
         bool WithinReachOf(VehicleController vehicle)
-            => Vector3.Distance(m_Crew.position, vehicle.Position) <= m_ReachMetres;
+            => Vector3.Distance(m_Crew.position, vehicle.transform.position) <= m_ReachMetres;
 
         void StepOut()
         {

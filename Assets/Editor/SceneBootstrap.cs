@@ -75,7 +75,7 @@ namespace BelowTheWing.EditorTools
             var crew = BuildCrew(crewProfile);
             var bagPrefab = BuildBag();
 
-            BuildScene(tractorProfile, cartProfile, aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
+            BuildScene(aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -534,8 +534,6 @@ namespace BelowTheWing.EditorTools
         }
 
         static void BuildScene(
-            VehicleProfile tractorProfile,
-            VehicleProfile cartProfile,
             AircraftProfile aircraftProfile,
             CrewProfile crewProfile,
             GameObject tractor,

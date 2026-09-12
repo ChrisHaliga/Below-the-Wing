@@ -45,15 +45,14 @@ namespace BelowTheWing.Cargo
         }
 
         /// <summary>
-        /// Whether this bag has been hit hard enough to matter.
+        /// Gives this bag the weight and size its profile describes, and tells the thing that
+        /// carries it what it takes to shake this bag loose.
         ///
-        /// Nothing acts on it yet beyond being able to see which ones it happened to. It is here
-        /// now because the impact that causes it is only knowable at the moment it happens, and
-        /// adding the flag later would mean every bag damaged before then quietly was not.
+        /// The thresholds are applied here rather than left on the carried component's defaults,
+        /// because a profile whose numbers reach nothing is a set of dials that turn nothing. The
+        /// shipped bag ran on hardcoded thresholds that happened to match its profile, and the first
+        /// retune would have been made, saved, and had no effect at all.
         /// </summary>
-        public bool Damaged { get; private set; }
-
-        /// <summary>Gives this bag the weight and size its profile describes.</summary>
         public void Configure(BagProfile profile)
         {
             m_Profile = profile != null ? profile : throw new System.ArgumentNullException(nameof(profile));
@@ -70,6 +69,11 @@ namespace BelowTheWing.Cargo
             m_Collider = GetComponent<BoxCollider>();
             m_Collider.size = profile.sizeMetres;
             m_Collider.center = Vector3.zero;
+
+            var carried = GetComponent<Carried>();
+            carried.ComesOffAt = new WakeThresholds(
+                profile.wakeAtLateralAcceleration, profile.wakeAtTiltDegrees, profile.wakeAtImpactImpulse);
+            carried.CannotSettleForSeconds = profile.cannotSettleForSeconds;
         }
 
         void Awake()
@@ -89,19 +93,6 @@ namespace BelowTheWing.Cargo
                     "say -- usually one kilogram -- and will be thrown across the apron by anything " +
                     "that touches it.", this);
                 enabled = false;
-            }
-        }
-
-        void OnCollisionEnter(Collision other)
-        {
-            if (m_Profile == null || Damaged)
-            {
-                return;
-            }
-
-            if (other.impulse.magnitude >= m_Profile.damagedAtImpulse)
-            {
-                Damaged = true;
             }
         }
     }

@@ -24,7 +24,6 @@ namespace BelowTheWing.Tests.EditMode
             m_Profile = ScriptableObject.CreateInstance<BagProfile>();
             m_Profile.massKg = 20f;
             m_Profile.sizeMetres = new Vector3(0.4f, 0.25f, 0.6f);
-            m_Profile.damagedAtImpulse = 250f;
 
             m_Object = new GameObject("Bag");
             m_Object.AddComponent<Rigidbody>();
@@ -88,9 +87,24 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void ABagStartsUndamaged()
+        public void ABagComesOffACartAtWhatItsProfileSays()
         {
-            Assert.That(Configured().Damaged, Is.False);
+            // Nothing like the defaults, so that a bag left on them cannot pass by coincidence.
+            m_Profile.wakeAtLateralAcceleration = 9.5f;
+            m_Profile.wakeAtTiltDegrees = 33f;
+            m_Profile.wakeAtImpactImpulse = 777f;
+            m_Profile.cannotSettleForSeconds = 2.5f;
+
+            Configured();
+            var carried = m_Object.GetComponent<Carried>();
+
+            Assert.That(carried.ComesOffAt.LateralAcceleration, Is.EqualTo(9.5f).Within(1e-4f),
+                "a profile whose thresholds reach nothing is a set of dials that turn nothing. The " +
+                "shipped bag ran on hardcoded numbers that happened to match its profile, and the " +
+                "first retune would have been saved and had no effect at all");
+            Assert.That(carried.ComesOffAt.TiltDegrees, Is.EqualTo(33f).Within(1e-4f));
+            Assert.That(carried.ComesOffAt.Impulse, Is.EqualTo(777f).Within(1e-4f));
+            Assert.That(carried.CannotSettleForSeconds, Is.EqualTo(2.5f).Within(1e-4f));
         }
 
         [Test]

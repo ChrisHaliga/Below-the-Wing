@@ -56,7 +56,6 @@ namespace BelowTheWing.Cargo
         readonly Func<IReadOnlyList<Carried>> m_Nearby;
         readonly ThrowSettings m_Throw;
 
-
         float m_ChargingSince = -1f;
 
         public Hands(Carrier holding, Func<IReadOnlyList<Carried>> nearby, ThrowSettings settings)

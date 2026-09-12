@@ -91,7 +91,6 @@ namespace BelowTheWing.Tests.Support
             p.wakeAtTiltDegrees = 25f;
             p.wakeAtImpactImpulse = 400f;
             p.cannotSettleForSeconds = 1f;
-            p.damagedAtImpulse = 250f;
             return p;
         }
 

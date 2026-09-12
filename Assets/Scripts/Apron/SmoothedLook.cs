@@ -62,9 +62,6 @@ namespace BelowTheWing.Apron
         /// <summary>How far behind the body the shape currently is, in metres.</summary>
         public float TrailingByMetres => m_Body == null ? 0f : Vector3.Distance(m_ShownAt, m_Body.position);
 
-        /// <summary>Where the shape sits on its body, in the body's own space.</summary>
-        public Vector3 PlacedAt => m_PlacedAt;
-
         /// <summary>
         /// Whether the shape should trail at all.
         ///

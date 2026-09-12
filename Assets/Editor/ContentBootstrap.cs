@@ -97,7 +97,6 @@ namespace BelowTheWing.EditorTools
             profile.wakeAtTiltDegrees = 25f;
             profile.wakeAtImpactImpulse = 400f;
             profile.cannotSettleForSeconds = 1f;
-            profile.damagedAtImpulse = 250f;
 
             return profile;
         }

@@ -18,4 +18,3 @@ MonoBehaviour:
   wakeAtTiltDegrees: 25
   wakeAtImpactImpulse: 400
   cannotSettleForSeconds: 1
-  damagedAtImpulse: 250

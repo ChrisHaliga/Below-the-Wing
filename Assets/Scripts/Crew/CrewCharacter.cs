@@ -182,7 +182,6 @@ namespace BelowTheWing.Crew
             {
                 ConfigureBody(m_Profile);
             }
-
         }
 
         void Start()

@@ -41,10 +41,5 @@ namespace BelowTheWing.Cargo
         [Tooltip("Seconds after being thrown off before a bag may settle onto a carrier again. " +
                  "Without it a bag flung on a corner sticks straight back down during the same corner.")]
         public float cannotSettleForSeconds = 1f;
-
-        [Header("Damage")]
-        [Tooltip("Impact in newton seconds that marks a bag as damaged. No consequence yet beyond " +
-                 "being able to see which ones it happened to.")]
-        public float damagedAtImpulse = 250f;
     }
 }

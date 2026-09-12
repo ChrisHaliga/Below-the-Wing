@@ -170,8 +170,6 @@ namespace BelowTheWing.Vehicles
             name = displayName;
         }
 
-        public Vector3 Position => transform.position;
-
         /// <summary>
         /// Whether somebody is in this vehicle's seat, on whichever machine they are playing from.
         ///
@@ -475,7 +473,6 @@ namespace BelowTheWing.Vehicles
                 Body.AddForceAtPosition(total, mount);
             }
         }
-
 
         static bool NobodyIsAskingForAnything(in DriveIntent intent)
             => Mathf.Approximately(intent.Throttle, 0f)

@@ -30,7 +30,7 @@ namespace BelowTheWing.Vehicles
                     continue;
                 }
 
-                var distance = Vector3.Distance(from, candidate.Position);
+                var distance = Vector3.Distance(from, candidate.transform.position);
                 if (distance > nearestDistance)
                 {
                     continue;
