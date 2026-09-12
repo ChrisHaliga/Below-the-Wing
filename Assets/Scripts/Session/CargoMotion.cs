@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using BelowTheWing.Cargo;
-using BelowTheWing.Vehicles;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -70,14 +69,8 @@ namespace BelowTheWing.Session
     /// </summary>
     [RequireComponent(typeof(Carried))]
     [DisallowMultipleComponent]
-    public sealed class CargoMotion : NetworkBehaviour, IKeepsInStep
+    public sealed class CargoMotion : MotionReplication
     {
-        [SerializeField, Tooltip("How hard a copy is steered back towards what its owner reports.")]
-        CorrectionSettings m_Correction = CorrectionSettings.Default;
-
-        [SerializeField, Tooltip("How many times a second the owner reports where loose cargo is.")]
-        float m_ReportsPerSecond = 20f;
-
         [SerializeField, Tooltip("Seconds before asking again for cargo somebody here has taken hold of.")]
         float m_AskAgainAfterSeconds = 0.5f;
 
@@ -85,18 +78,12 @@ namespace BelowTheWing.Session
             new NetworkVariable<RideReport>(default, NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Owner);
 
-        readonly NetworkVariable<ReportedMotion> m_Reported =
-            new NetworkVariable<ReportedMotion>(default, NetworkVariableReadPermission.Everyone,
-                NetworkVariableWritePermission.Owner);
-
         readonly List<Carrier> m_Scratch = new List<Carrier>();
 
         Carried m_Carried;
         SettlesOntoCarriers m_Settling;
-        Rigidbody[] m_JustThisOne;
 
         RideReport m_LastApplied;
-        float m_SinceLastReport;
         float m_SinceLastAsked;
         bool m_Asking;
 
@@ -104,37 +91,20 @@ namespace BelowTheWing.Session
         {
             m_Carried = GetComponent<Carried>();
             m_Settling = GetComponent<SettlesOntoCarriers>();
-            m_JustThisOne = new[] { m_Carried.Body };
             m_LastApplied = RideReport.Nothing;
         }
 
-        /// <summary>Whether anything has been heard from the machine that owns this cargo yet.</summary>
-        public bool HeardFromTheOwner => m_Reported.Value.TakenAt > 0d;
+        protected override Rigidbody Body => m_Carried.Body;
 
         /// <summary>
-        /// How far this copy of a loose piece of cargo is from where its owner says it should be by
-        /// now, in metres. Zero while it rides on something, because then it is not being steered at
-        /// all -- it is wherever the thing carrying it has taken it.
+        /// Zero while it rides on something, because then it is not being steered at all -- it is
+        /// wherever the thing carrying it has taken it.
         /// </summary>
-        public float MetresOutOfPlace
-        {
-            get
-            {
-                if (IsOwner || m_Carried.Attached || !HeardFromTheOwner)
-                {
-                    return 0f;
-                }
-
-                var shouldBe = Correction.WhereItShouldBeNow(
-                    m_Reported.Value.AsState(), SecondsSinceReading(), m_Correction);
-
-                return Vector3.Distance(m_Carried.Body.position, shouldBe);
-            }
-        }
+        public override float MetresOutOfPlace => m_Carried.Attached ? 0f : base.MetresOutOfPlace;
 
         void FixedUpdate()
         {
-            if (m_Carried.Body == null)
+            if (Body == null)
             {
                 return;
             }
@@ -164,7 +134,14 @@ namespace BelowTheWing.Session
                     m_Ride.Value = m_LastApplied;
                 }
 
-                ReportWhereItIs();
+                // Riding cargo has no motion worth sending. It is wherever the cart took it, and
+                // the cart already reports that -- sending it again would spend bandwidth saying the
+                // same thing twice and give the two reports a chance to disagree.
+                if (!m_Carried.Attached)
+                {
+                    Report();
+                }
+
                 return;
             }
 
@@ -192,12 +169,7 @@ namespace BelowTheWing.Session
                 return;
             }
 
-            if (HeardFromTheOwner)
-            {
-                Correction.Apply(
-                    m_JustThisOne, m_Carried.Body, m_Reported.Value.AsState(), SecondsSinceReading(),
-                    m_Correction);
-            }
+            KeepUp();
         }
 
         /// <summary>
@@ -283,31 +255,5 @@ namespace BelowTheWing.Session
             };
         }
 
-        /// <summary>
-        /// Tells everybody else where this is and how fast, but only while it is loose.
-        ///
-        /// Riding cargo has no motion worth sending. It is wherever the cart took it, and the cart
-        /// already reports that -- sending it again would spend bandwidth saying the same thing
-        /// twice and give the two reports a chance to disagree.
-        /// </summary>
-        void ReportWhereItIs()
-        {
-            if (m_Carried.Attached)
-            {
-                return;
-            }
-
-            m_SinceLastReport += Time.fixedDeltaTime;
-            if (m_SinceLastReport < 1f / Mathf.Max(m_ReportsPerSecond, 1f))
-            {
-                return;
-            }
-
-            m_SinceLastReport = 0f;
-            m_Reported.Value = ReportedMotion.Taken(m_Carried.Body, NetworkManager.ServerTime.Time);
-        }
-
-        float SecondsSinceReading()
-            => Mathf.Max(0f, (float)(NetworkManager.ServerTime.Time - m_Reported.Value.TakenAt));
     }
 }
