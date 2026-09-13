@@ -56,6 +56,7 @@ namespace BelowTheWing.Cargo
         readonly Func<IReadOnlyList<Carried>> m_Nearby;
         readonly ThrowSettings m_Throw;
 
+
         float m_ChargingSince = -1f;
 
         public Hands(Carrier holding, Func<IReadOnlyList<Carried>> nearby, ThrowSettings settings)
@@ -64,6 +65,19 @@ namespace BelowTheWing.Cargo
             m_Nearby = nearby ?? throw new ArgumentNullException(nameof(nearby));
             m_Throw = settings;
         }
+
+        /// <summary>
+        /// The body these hands are part of, if it is something that can itself be carried.
+        ///
+        /// A person can ride a cart, so a person is carriable, so a person turns up in any list of
+        /// things that might be picked up -- and their own body is closer to their own hands than
+        /// any bag will ever be. Picking it up makes them kinematic and riding their own hands,
+        /// which move with them, so they slide off across the apron unable to walk.
+        ///
+        /// Looked up when it is needed rather than remembered when the hands are made, because the
+        /// hands can be made before the rest of the body is.
+        /// </summary>
+        Carried Wearer => m_Holding.GetComponentInParent<Carried>();
 
         /// <summary>What is being held, or null.</summary>
         public Carried Carrying => m_Holding.Riding.Count > 0 ? m_Holding.Riding[0] : null;
@@ -99,10 +113,11 @@ namespace BelowTheWing.Cargo
         {
             Carried nearest = null;
             var nearestDistance = m_Throw.reachMetres;
+            var wearer = Wearer;
 
             foreach (var candidate in m_Nearby())
             {
-                if (candidate == null || candidate.Attached || !candidate.WouldSettle(now))
+                if (candidate == null || candidate == wearer || candidate.Attached || !candidate.WouldSettle(now))
                 {
                     continue;
                 }

@@ -31,6 +31,18 @@ namespace BelowTheWing.Session
             new NetworkVariable<ReportedMotion>(default, NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Owner);
 
+        /// <summary>
+        /// Whether this character is crouched, as the machine they are played on reports it.
+        ///
+        /// Separate from their motion because it changes far less often and is worth sending on its
+        /// own. It has to be sent at all: how tall somebody is decides where their head is, and a
+        /// character drawn standing while they are crouched inside a cart has their head through
+        /// its roof on every screen but their own.
+        /// </summary>
+        readonly NetworkVariable<bool> m_Crouched =
+            new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Owner);
+
         CrewCharacter m_Crew;
         Rigidbody[] m_JustThisOne;
         float m_SinceLastReport;
@@ -77,9 +89,22 @@ namespace BelowTheWing.Session
 
             if (IsOwner)
             {
+                if (m_Crouched.Value != m_Crew.Stance.Crouched)
+                {
+                    m_Crouched.Value = m_Crew.Stance.Crouched;
+                }
+
                 Report();
             }
-            else if (HeardFromTheOwner)
+            else
+            {
+                // Asked for rather than applied outright, so that a copy standing under something
+                // low stays down for the same reason the original does. Both machines then agree
+                // about a player who is crouched because they have to be.
+                m_Crew.Stance.Want(m_Crouched.Value);
+            }
+
+            if (!IsOwner && HeardFromTheOwner)
             {
                 Correction.Apply(
                     m_JustThisOne, m_Crew.Body, m_Reported.Value.AsState(), SecondsSinceReading(),

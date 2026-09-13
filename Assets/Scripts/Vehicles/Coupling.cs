@@ -62,7 +62,7 @@ namespace BelowTheWing.Vehicles
             }
 
             var back = train.Members[train.Members.Count - 1];
-            var from = back.transform.position - (back.transform.rotation * Vector3.forward * back.HitchReach);
+            var from = back.transform.position - (back.transform.rotation * Vector3.forward * back.RearReach);
 
             VehicleController nearest = null;
             var nearestDistance = float.MaxValue;

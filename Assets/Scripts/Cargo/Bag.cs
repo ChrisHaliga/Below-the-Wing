@@ -17,6 +17,7 @@ namespace BelowTheWing.Cargo
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(BoxCollider))]
+    [RequireComponent(typeof(Carried))]
     [DisallowMultipleComponent]
     public sealed class Bag : MonoBehaviour
     {

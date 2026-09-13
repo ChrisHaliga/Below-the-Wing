@@ -98,7 +98,7 @@ namespace BelowTheWing.Tests.EditMode
 
             foreach (var field in new[]
                      {
-                         "m_TractorProfile", "m_CartProfile", "m_AircraftProfile", "m_CrewProfile",
+                         "m_AircraftProfile", "m_CrewProfile",
                          "m_TractorPrefab", "m_CartPrefab", "m_AircraftPrefab", "m_CrewPrefab", "m_BagPrefab",
                          "m_Broker", "m_Camera", "m_Readout"
                      })
@@ -124,10 +124,10 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void TheApronItselfHoldsNoEquipment()
         {
-            Assert.That(Object.FindObjectsByType<VehicleController>(FindObjectsSortMode.None), Is.Empty,
+            Assert.That(Object.FindObjectsByType<VehicleController>(FindObjectsInactive.Exclude), Is.Empty,
                 "vehicles are placed at runtime from one description of the layout. A vehicle sitting " +
                 "in the scene as well is a second description that nothing keeps in agreement");
-            Assert.That(Object.FindObjectsByType<CrewCharacter>(FindObjectsSortMode.None), Is.Empty,
+            Assert.That(Object.FindObjectsByType<CrewCharacter>(FindObjectsInactive.Exclude), Is.Empty,
                 "a character in the scene belongs to nobody and is simulated by everybody");
         }
 
@@ -156,6 +156,35 @@ namespace BelowTheWing.Tests.EditMode
             }
 
             var cart = Prefab("BaggageCart");
+
+            var cartShape = cart.GetComponent<VehicleShape>();
+            Assert.That(cartShape, Is.Not.Null,
+                "BaggageCart: nothing says where its wheels and couplings are, so its suspension has " +
+                "nowhere to hang from and it falls through the apron");
+            Assert.That(cartShape.WheelCentresLocal.Count, Is.EqualTo(4),
+                "BaggageCart: four wheels, read off the model");
+            Assert.That(cartShape.FrontReachMetres, Is.EqualTo(3.1617f).Within(0.02f),
+                "BaggageCart: the front coupling is the HITCH_Male empty. Hitch, Hitch Pin and " +
+                "Hitch_Female are drawbar meshes sitting near it, and their names differ from the " +
+                "markers only by case -- picking one of those puts every coupling tens of " +
+                "centimetres out");
+            Assert.That(cartShape.RearReachMetres, Is.EqualTo(1.8159f).Within(0.02f),
+                "BaggageCart: the rear coupling is the HITCH_Female empty");
+            Assert.That(cartShape.InteriorLocal.size.y, Is.GreaterThan(1f),
+                "BaggageCart: with no interior there is nowhere for a bag to be inside the cart");
+
+            Assert.That(cart.transform.Find(ApronAppearance.LookName), Is.Not.Null,
+                "BaggageCart: nothing to look at. The model is what a player sees now, and a cart " +
+                "drawn as nothing is a cart that appears to be a floating label");
+            Assert.That(cart.GetComponentInChildren<WheelLook>(), Is.Not.Null,
+                "BaggageCart: with nothing driving the visible wheels they neither turn nor stay on " +
+                "the tarmac, and the body sinks onto its springs leaving them buried");
+
+            var carriers = cart.GetComponentsInChildren<Carrier>();
+            Assert.That(carriers.Length, Is.EqualTo(2),
+                "BaggageCart: two places to ride -- inside it, where bags go and somebody crouching " +
+                "can stand, and on top of it");
+
             Assert.That(cart.GetComponentInChildren<CarrierWatch>(), Is.Not.Null,
                 "BaggageCart: nothing decides that a corner was taken too hard, so a cart can be " +
                 "rolled onto its roof with its bags still glued to the deck");
@@ -175,6 +204,9 @@ namespace BelowTheWing.Tests.EditMode
                 "players would notice being wrong");
 
             var tractor = Prefab("BaggageTractor");
+            Assert.That(tractor.GetComponent<VehicleShape>(), Is.Not.Null,
+                "BaggageTractor: a vehicle with no model is described in exactly the same terms as " +
+                "one with a model, or everything downstream needs a branch for it");
             Assert.That(tractor.GetComponent<VehicleOccupant>(), Is.Not.Null,
                 "only the tractor can be sat in, and without this nothing refuses a request for one " +
                 "somebody is already driving");

@@ -126,9 +126,9 @@ namespace BelowTheWing.Vehicles
                 return 0f;
             }
 
-            var profile = m_Vehicle.Profile;
-            var wanted = Mathf.Atan(profile.wheelbaseMetres / Mathf.Abs(m_TurnRadiusMetres)) * Mathf.Rad2Deg;
-            var asFraction = wanted / Mathf.Max(profile.maxSteerAngleDegrees, 1e-3f);
+            var wheelbase = m_Vehicle.Shape != null ? m_Vehicle.Shape.WheelbaseMetres : 0f;
+            var wanted = Mathf.Atan(wheelbase / Mathf.Abs(m_TurnRadiusMetres)) * Mathf.Rad2Deg;
+            var asFraction = wanted / Mathf.Max(m_Vehicle.Profile.maxSteerAngleDegrees, 1e-3f);
 
             return Mathf.Clamp(asFraction, 0f, 1f) * Mathf.Sign(m_TurnRadiusMetres);
         }

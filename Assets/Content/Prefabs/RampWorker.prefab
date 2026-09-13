@@ -154,6 +154,9 @@ MonoBehaviour:
   m_StandsOn:
     serializedVersion: 2
     m_Bits: 4294967295
+  m_FitsUnder:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!114 &4615826504113086820
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -229,6 +232,7 @@ MonoBehaviour:
   m_SizeMetres: {x: 0.6, y: 1.8, z: 0.6}
   m_Colour: {r: 0.95, g: 0.75, b: 0.15, a: 1}
   m_LabelHeightMetres: 1.26
+  m_DrawnAtLocal: {x: 0, y: 0, z: 0}
   m_DisplayName: 
 --- !u!114 &2455670644777418200
 MonoBehaviour:

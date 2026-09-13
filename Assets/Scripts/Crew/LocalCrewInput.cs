@@ -57,7 +57,11 @@ namespace BelowTheWing.Crew
                 // "get off the ground" either way, and never both at once, because a player in a
                 // seat is not standing on anything.
                 jump: keyboard.spaceKey.wasPressedThisFrame,
-                holdingOn: keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed);
+                holdingOn: keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed,
+
+                // Held rather than toggled. A cart interior is low enough that a player wants to be
+                // sure they are still crouched without watching their own knees.
+                crouch: keyboard.cKey.isPressed);
 
             Look();
 

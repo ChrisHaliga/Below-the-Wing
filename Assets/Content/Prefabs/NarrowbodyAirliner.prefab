@@ -191,6 +191,7 @@ MonoBehaviour:
   m_SizeMetres: {x: 3.76, y: 39.5, z: 3.76}
   m_Colour: {r: 0.82, g: 0.82, b: 0.85, a: 1}
   m_LabelHeightMetres: 3.76
+  m_DrawnAtLocal: {x: 0, y: 0, z: 0}
   m_DisplayName: 
 --- !u!114 &9071467641969174353
 MonoBehaviour:

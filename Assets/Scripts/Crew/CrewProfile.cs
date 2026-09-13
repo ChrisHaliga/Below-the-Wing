@@ -22,6 +22,14 @@ namespace BelowTheWing.Crew
         [Tooltip("Radius of the capsule in metres, roughly shoulder width halved.")]
         public float radiusMetres = 0.3f;
 
+        [Tooltip("How tall they are crouched, in metres. Has to clear the inside of a baggage cart, " +
+                 "which is the lowest thing anybody is expected to get into.")]
+        public float crouchedHeightMetres = 1.2f;
+
+        [Tooltip("How much of their walking speed they keep while crouched. Crouching has to cost " +
+                 "something or nobody ever stands up.")]
+        public float crouchSpeedMultiplier = 0.45f;
+
         [Header("Movement")]
         [Tooltip("Metres per second at a walk.")]
         public float walkSpeedMetresPerSecond = 4f;

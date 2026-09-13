@@ -71,6 +71,25 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator HandsDoNotPickUpTheBodyTheyBelongTo()
+        {
+            // What the game actually hands to a pair of hands: everything on the apron that can be
+            // carried -- and the player is one of those things, since they can ride a cart. Their
+            // own body is half a metre from their own hands, closer than any bag will ever be.
+            var self = m_PlayerObject.AddComponent<Carried>();
+            m_Loose.Add(self);
+
+            m_BagObject.transform.position = new Vector3(0f, 0f, 1f);
+            yield return null;
+
+            Assert.That(m_Holding.PickUp(Time.time), Is.True);
+            Assert.That(self.Attached, Is.False,
+                "a player who picks themselves up is kinematic, riding their own hands, and the " +
+                "hands move with them -- so they slide off across the apron and cannot walk");
+            Assert.That(m_Holding.Carrying, Is.SameAs(m_Bag));
+        }
+
+        [UnityTest]
         public IEnumerator ABagWithinReachCanBePickedUp()
         {
             m_BagObject.transform.position = new Vector3(0f, 0f, 1f);

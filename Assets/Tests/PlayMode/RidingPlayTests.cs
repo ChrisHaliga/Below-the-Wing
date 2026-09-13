@@ -158,5 +158,76 @@ namespace BelowTheWing.Tests.PlayMode
 
             yield return null;
         }
+    
+        [UnityTest]
+        public IEnumerator SomebodyOnTheRoofRidesAlongWithTheCart()
+        {
+            // A second place to stand, on top rather than inside. Riding never knew what a deck
+            // was, so a roof needs a carrier and nothing else.
+            var roof = new GameObject("Roof");
+            roof.transform.SetParent(m_CartObject.transform, worldPositionStays: false);
+            roof.transform.localPosition = new Vector3(0f, 2.1f, 0f);
+            var onTop = roof.AddComponent<Carrier>();
+            onTop.Covers(Vector3.zero, new Vector3(1.7f, 2f, 3.2f));
+
+            m_Crew.transform.position = roof.transform.position;
+            yield return null;
+
+            m_Riding.LandedOn(onTop, Time.time);
+            Assert.That(m_Riding.Attached, Is.True, "they have to be up there for this to mean anything");
+
+            var stoodAt = m_CartObject.transform.InverseTransformPoint(m_Crew.transform.position);
+
+            m_CartObject.GetComponent<Rigidbody>().linearVelocity = new Vector3(0f, 0f, 8f);
+            yield return Step(3f);
+
+            var standsAt = m_CartObject.transform.InverseTransformPoint(m_Crew.transform.position);
+
+            Assert.That(Vector3.Distance(standsAt, stoodAt), Is.LessThan(0.01f),
+                "the roof is somewhere to ride, which is the whole reason a carrier is a carrier " +
+                "and not a deck");
+        }
+
+        [UnityTest]
+        public IEnumerator AGripOnTheRoofSurvivesACornerThatEmptiesTheDeck()
+        {
+            var roof = new GameObject("Roof");
+            roof.transform.SetParent(m_CartObject.transform, worldPositionStays: false);
+            roof.transform.localPosition = new Vector3(0f, 2.1f, 0f);
+            var onTop = roof.AddComponent<Carrier>();
+            onTop.Covers(Vector3.zero, new Vector3(1.7f, 2f, 3.2f));
+
+            var bagObject = new GameObject("Bag");
+            var bagBody = bagObject.AddComponent<Rigidbody>();
+            bagBody.useGravity = false;
+            var bag = bagObject.AddComponent<Carried>();
+            bag.ComesOffAt = new WakeThresholds(lateralAcceleration: 6f, tiltDegrees: 25f, impulse: 400f);
+            m_Apron.Track(bagObject.transform);
+
+            var watch = m_CartObject.AddComponent<CarrierWatch>();
+            Assert.That(watch, Is.Not.Null);
+
+            m_Crew.transform.position = roof.transform.position;
+            yield return null;
+
+            m_Riding.LandedOn(onTop, Time.time);
+            m_Rider.ComesOffAt = m_Riding.Thresholds(
+                new WakeThresholds(lateralAcceleration: 6f, tiltDegrees: 25f, impulse: 400f),
+                holdingOn: true);
+
+            bag.AttachTo(m_Deck);
+            yield return Step(0.2f);
+
+            for (var i = 0; i < 6; i++)
+            {
+                m_CartObject.GetComponent<Rigidbody>().linearVelocity += new Vector3(0.3f, 0f, 0f);
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(bag.Attached, Is.False, "the load goes");
+            Assert.That(m_Riding.Attached, Is.True,
+                "and somebody gripping the roof rails does not, which is what makes holding on " +
+                "worth the hands it costs");
+        }
     }
 }

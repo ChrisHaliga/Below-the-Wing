@@ -69,10 +69,7 @@ namespace BelowTheWing.EditorTools
                 + "this class.";
             profile.massKg = 3000f;
             profile.bodySizeMetres = new Vector3(1.3f, 1.6f, 3.0f);
-            profile.centerOfMassOffset = new Vector3(0f, -0.45f, 0f);
-            profile.drawbarLengthMetres = 0.3f;
-            profile.wheelbaseMetres = 1.8f;
-            profile.trackMetres = 1.1f;
+            profile.centerOfMassOffset = new Vector3(0f, 0.35f, 0f);
             profile.wheelRadiusMetres = 0.3f;
             profile.suspensionRestLengthMetres = 0.35f;
             profile.springStrengthNewtons = 60000f;
@@ -114,15 +111,24 @@ namespace BelowTheWing.EditorTools
                 + "driven, so it has no engine and no steering of its own.";
             profile.massKg = 550f;
 
-            profile.bodySizeMetres = new Vector3(1.5f, 1.7f, 3.0f);
-            profile.centerOfMassOffset = new Vector3(0f, -0.3f, 0f);
-            profile.drawbarLengthMetres = 0.3f;
-            profile.wheelbaseMetres = 2.0f;
-            profile.trackMetres = 1.3f;
-            profile.wheelRadiusMetres = 0.3f;
-            profile.suspensionRestLengthMetres = 0.35f;
-            profile.springStrengthNewtons = 12000f;
-            profile.damperNewtonsPerMetrePerSecond = 1400f;
+            profile.bodySizeMetres = new Vector3(1.8855f, 2.0155f, 3.8152f);
+
+            // Low, and measured from an origin that is on the ground rather than in the middle of
+            // the bodywork. A loaded cart that leans into a corner throws its load out of itself.
+            profile.centerOfMassOffset = new Vector3(0f, 0.5f, 0f);
+
+            // Measured off the model. Small wheels, and correspondingly little suspension: 0.35 m
+            // of travel on a 0.157 m wheel is more than twice the wheel radius, and the cart would
+            // visibly float above its own axles.
+            profile.wheelRadiusMetres = 0.157f;
+            profile.suspensionRestLengthMetres = 0.08f;
+
+            // 1349 N on each corner at 550 kg gives about 15% compression at rest, leaving room to
+            // squash under a load and to extend over a bump. The damper is around 0.45 of critical
+            // for that stiffness, which settles a bounce inside one oscillation without making the
+            // cart feel welded to the ground.
+            profile.springStrengthNewtons = 9000f;
+            profile.damperNewtonsPerMetrePerSecond = 3500f;
             profile.coastingDragPerSecond = 0.4f;
             profile.lateralGripCurve = TireCurve();
             profile.maxDriveForceNewtons = 0f;

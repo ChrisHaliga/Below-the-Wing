@@ -19,16 +19,22 @@ namespace BelowTheWing.Tests.EditMode
     /// </summary>
     public sealed class ApronLayoutTests
     {
-        VehicleProfile m_Tractor;
-        VehicleProfile m_Cart;
+        GameObject m_TractorObject;
+        GameObject m_CartObject;
+        VehicleShape m_Tractor;
+        VehicleShape m_Cart;
         AircraftProfile m_Aircraft;
         CrewProfile m_Crew;
 
         [SetUp]
         public void SetUp()
         {
-            m_Tractor = TestProfiles.Tractor();
-            m_Cart = TestProfiles.Cart();
+            m_TractorObject = new GameObject("Tractor");
+            m_Tractor = TestShapes.On(m_TractorObject, TestShapes.Tractor());
+
+            m_CartObject = new GameObject("Cart");
+            m_Cart = TestShapes.On(m_CartObject, TestShapes.Cart());
+
             m_Aircraft = TestProfiles.Aircraft();
             m_Crew = TestProfiles.CrewMember();
         }
@@ -36,8 +42,8 @@ namespace BelowTheWing.Tests.EditMode
         [TearDown]
         public void TearDown()
         {
-            Object.DestroyImmediate(m_Tractor);
-            Object.DestroyImmediate(m_Cart);
+            Object.DestroyImmediate(m_TractorObject);
+            Object.DestroyImmediate(m_CartObject);
             Object.DestroyImmediate(m_Aircraft);
             Object.DestroyImmediate(m_Crew);
         }
@@ -112,7 +118,7 @@ namespace BelowTheWing.Tests.EditMode
             for (var i = 1; i < carts.Count; i++)
             {
                 var gap = Vector3.Distance(carts[i - 1].Position, carts[i].Position);
-                Assert.That(gap, Is.GreaterThanOrEqualTo(m_Cart.bodySizeMetres.z),
+                Assert.That(gap, Is.GreaterThanOrEqualTo(m_Cart.EnvelopeSizeMetres.z),
                     "consecutive carts must be at least a cart length apart");
             }
         }
@@ -120,7 +126,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void BiggerEquipmentTakesUpMoreRoomRatherThanOverlapping()
         {
-            m_Cart.bodySizeMetres = new Vector3(2.5f, 2.5f, 6f);
+            TestShapes.On(m_CartObject, TestShapes.BoxVehicle(new Vector3(2.5f, 2.5f, 6f)));
 
             var plan = Plan(ApronLayoutSettings.Default);
             var carts = plan.Trains[0].Carts;
@@ -173,8 +179,8 @@ namespace BelowTheWing.Tests.EditMode
             var plan = Plan(ApronLayoutSettings.Default);
 
             Assert.That(plan.Aircraft.SizeMetres.z, Is.EqualTo(m_Aircraft.lengthMetres).Within(0.01f));
-            Assert.That(plan.Trains[0].Tractor.SizeMetres, Is.EqualTo(m_Tractor.bodySizeMetres));
-            Assert.That(plan.Trains[0].Carts[0].SizeMetres, Is.EqualTo(m_Cart.bodySizeMetres));
+            Assert.That(plan.Trains[0].Tractor.SizeMetres, Is.EqualTo(m_Tractor.EnvelopeSizeMetres));
+            Assert.That(plan.Trains[0].Carts[0].SizeMetres, Is.EqualTo(m_Cart.EnvelopeSizeMetres));
         }
     }
 }
