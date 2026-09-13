@@ -200,12 +200,12 @@ namespace BelowTheWing.Crew
         /// </summary>
         public Vector3 DismountPosition(VehicleController vehicle)
         {
-            var clearOfTheBodywork = (vehicle.Profile.bodySizeMetres.x * 0.5f) + DismountClearanceMetres;
+            var clearOfTheBodywork = (vehicle.Shape.EnvelopeSizeMetres.x * 0.5f) + DismountClearanceMetres;
             return vehicle.transform.position + (vehicle.transform.right * clearOfTheBodywork);
         }
 
         bool WithinReachOf(VehicleController vehicle)
-            => Vector3.Distance(m_Crew.position, vehicle.Position) <= m_ReachMetres;
+            => Vector3.Distance(m_Crew.position, vehicle.transform.position) <= m_ReachMetres;
 
         void StepOut()
         {

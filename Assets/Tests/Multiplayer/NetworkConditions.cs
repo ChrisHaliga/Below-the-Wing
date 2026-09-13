@@ -63,7 +63,7 @@ namespace BelowTheWing.Tests.Multiplayer
         public static readonly NetworkCondition Typical =
             new NetworkCondition("Typical", roundTripMilliseconds: 80, jitterMilliseconds: 10, lossPercent: 1);
 
-        /// <summary>A bad connection, and the one the slice 2 gate is decided on.</summary>
+        /// <summary>A bad connection: the worst the game is expected to work on.</summary>
         public static readonly NetworkCondition Bad =
             new NetworkCondition("Bad", roundTripMilliseconds: 150, jitterMilliseconds: 30, lossPercent: 5);
     }

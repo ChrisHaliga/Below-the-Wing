@@ -1,3 +1,4 @@
+using BelowTheWing.Cargo;
 using UnityEngine;
 
 namespace BelowTheWing.Crew
@@ -22,6 +23,14 @@ namespace BelowTheWing.Crew
         [Tooltip("Radius of the capsule in metres, roughly shoulder width halved.")]
         public float radiusMetres = 0.3f;
 
+        [Tooltip("How tall they are crouched, in metres. Has to clear the inside of a baggage cart, " +
+                 "which is the lowest thing anybody is expected to get into.")]
+        public float crouchedHeightMetres = 1.2f;
+
+        [Tooltip("How much of their walking speed they keep while crouched. Crouching has to cost " +
+                 "something or nobody ever stands up.")]
+        public float crouchSpeedMultiplier = 0.45f;
+
         [Header("Movement")]
         [Tooltip("Metres per second at a walk.")]
         public float walkSpeedMetresPerSecond = 4f;
@@ -29,10 +38,23 @@ namespace BelowTheWing.Crew
         [Tooltip("Metres per second while sprinting.")]
         public float sprintSpeedMetresPerSecond = 7f;
 
-        [Tooltip("How hard the legs push to reach the requested speed, in metres per second squared.")]
-        public float accelerationMetresPerSecondSquared = 30f;
+        [Tooltip("The most the feet can push against whatever is underfoot, in metres per second " +
+                 "squared. How quickly they get up to speed, and also how hard a corner a cart deck " +
+                 "can take before it goes out from under them. This is the whole of their grip: the " +
+                 "body has no friction of its own.")]
+        public float accelerationMetresPerSecondSquared = 8f;
 
         [Tooltip("How fast the body comes round to face where it is going, in degrees per second.")]
         public float turnRateDegreesPerSecond = 720f;
+
+        [Header("Jumping")]
+        [Tooltip("How high a standing jump clears, in metres. Tuned to reach a cart deck with room " +
+                 "to spare, because that is the one thing jumping is for -- and once set, every " +
+                 "vertical decision in the game is measured against it.")]
+        public float jumpHeightMetres = 1.4f;
+
+        [Header("Hands")]
+        [Tooltip("How far they reach, how hard they grip, and how hard they throw.")]
+        public HandSettings hands = HandSettings.Default;
     }
 }

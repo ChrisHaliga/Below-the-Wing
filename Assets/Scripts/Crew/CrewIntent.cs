@@ -23,11 +23,30 @@ namespace BelowTheWing.Crew
         /// <summary>How hard the brake is being asked for, from 0 to 1. Ignored on foot.</summary>
         public readonly float Brake;
 
-        public CrewIntent(Vector2 move, bool sprint = false, float brake = 0f)
+        /// <summary>Whether a jump was asked for this step.</summary>
+        public readonly bool Jump;
+
+        /// <summary>
+        /// Whether they are asking to be crouched.
+        ///
+        /// Held rather than toggled, so that letting go is asking to stand. The asking is what gets
+        /// remembered: a request to stand under a cart roof is granted the moment they walk out,
+        /// rather than being dropped because it could not be granted the step it was made.
+        /// </summary>
+        public readonly bool Crouch;
+
+        public CrewIntent(
+            Vector2 move,
+            bool sprint = false,
+            float brake = 0f,
+            bool jump = false,
+            bool crouch = false)
         {
             Move = move;
             Sprint = sprint;
             Brake = brake;
+            Jump = jump;
+            Crouch = crouch;
         }
 
         /// <summary>A character being asked to do nothing.</summary>

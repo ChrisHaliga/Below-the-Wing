@@ -81,23 +81,21 @@ namespace BelowTheWing.Tests.Support
     /// ownership request to whichever client the object records as its owner, and if that client is
     /// gone the request simply goes nowhere -- no grant, no refusal, no error.
     /// </summary>
-    public sealed class SilentBroker : BelowTheWing.Vehicles.IOwnershipBroker
+    public sealed class SilentBroker : IOwnershipBroker
     {
-        public System.Collections.Generic.List<System.Collections.Generic.IReadOnlyList<BelowTheWing.Vehicles.VehicleController>> Requests { get; }
-            = new System.Collections.Generic.List<System.Collections.Generic.IReadOnlyList<BelowTheWing.Vehicles.VehicleController>>();
+        /// <summary>Every batch of vehicles that has been asked for, none of them ever answered.</summary>
+        public List<IReadOnlyList<VehicleController>> Requests { get; } = new List<IReadOnlyList<VehicleController>>();
 
         public ulong LocalClientId => 1;
 
-        public ulong OwnerOf(BelowTheWing.Vehicles.VehicleController vehicle) => 9;
+        public ulong OwnerOf(VehicleController vehicle) => 9;
 
-        public bool OwnedByUs(BelowTheWing.Vehicles.VehicleController vehicle) => false;
+        public bool OwnedByUs(VehicleController vehicle) => false;
 
-        public void RequestAll(
-            System.Collections.Generic.IReadOnlyList<BelowTheWing.Vehicles.VehicleController> vehicles,
-            System.Action<bool> onResult)
-            => Requests.Add(new System.Collections.Generic.List<BelowTheWing.Vehicles.VehicleController>(vehicles));
+        public void RequestAll(IReadOnlyList<VehicleController> vehicles, Action<bool> onResult)
+            => Requests.Add(new List<VehicleController>(vehicles));
 
-        public void HandBack(System.Collections.Generic.IReadOnlyList<BelowTheWing.Vehicles.VehicleController> vehicles)
+        public void HandBack(IReadOnlyList<VehicleController> vehicles)
         {
         }
     }

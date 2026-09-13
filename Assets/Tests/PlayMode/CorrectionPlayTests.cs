@@ -58,7 +58,7 @@ namespace BelowTheWing.Tests.PlayMode
         VehicleState Standing(Vector3 at)
             => new VehicleState
             {
-                Position = new Vector3(at.x, VehicleController.RestingHeightMetres(m_TractorProfile), at.z),
+                Position = new Vector3(at.x, 0f, at.z),
                 Rotation = Quaternion.identity,
                 Velocity = Vector3.zero,
                 Spin = Vector3.zero
@@ -163,6 +163,25 @@ namespace BelowTheWing.Tests.PlayMode
             Assert.That(off, Is.LessThan(15f),
                 $"still {off:F0} degrees from the way its owner says it points. A tractor facing one " +
                 "way here and another way there is one you cannot line a cart up behind");
+        }
+
+        [UnityTest]
+        public IEnumerator SomethingBeingCarriedIsNotSteeredAtAll()
+        {
+            var vehicle = Copy(new Vector3(0f, 1f, 0f));
+            yield return null;
+
+            // What a body the solver no longer moves looks like: a driver's character, parked
+            // inside the vehicle they are driving and carried about by it.
+            vehicle.Body.isKinematic = true;
+            var restingAt = vehicle.transform.position;
+
+            yield return KeptInStepFor(1f, vehicle, Standing(new Vector3(0f, 0f, 20f)));
+
+            Assert.That(vehicle.transform.position, Is.EqualTo(restingAt).Using(Nearly.Within(1e-3f)),
+                "a body being carried has to be left where its carrier put it. Pushing one does " +
+                "nothing except fill the log with an error on every step of every copy of every " +
+                "driver on the apron");
         }
     }
 }

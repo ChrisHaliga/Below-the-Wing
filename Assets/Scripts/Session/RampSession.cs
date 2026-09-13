@@ -18,8 +18,8 @@ namespace BelowTheWing.Session
     /// named place is what lets the rest stay separate.
     ///
     /// Its jobs are to build the apron once per session, keep the register of which vehicles form
-    /// which trains up to date as objects arrive, and decide which of those trains this machine is
-    /// responsible for simulating.
+    /// which trains up to date as objects arrive, and take back whole any train a departing player
+    /// left behind.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class RampSession : NetworkBehaviour
@@ -31,8 +31,6 @@ namespace BelowTheWing.Session
         ChainJointSettings m_Coupling = ChainJointSettings.Default;
 
         [Header("Equipment")]
-        [SerializeField] VehicleProfile m_TractorProfile;
-        [SerializeField] VehicleProfile m_CartProfile;
         [SerializeField] AircraftProfile m_AircraftProfile;
         [SerializeField] CrewProfile m_CrewProfile;
 
@@ -48,6 +46,12 @@ namespace BelowTheWing.Session
 
         [SerializeField, Tooltip("A ramp worker.")]
         NetworkObject m_CrewPrefab;
+
+        [SerializeField, Tooltip("A piece of baggage.")]
+        NetworkObject m_BagPrefab;
+
+        [SerializeField, Tooltip("How many bags to leave beside each train.")]
+        int m_BagsPerTrain = 4;
 
         [Header("Wiring")]
         [SerializeField] NetworkOwnershipBroker m_Broker;
@@ -75,7 +79,7 @@ namespace BelowTheWing.Session
         /// enough to hitch onto the back of a train. One list, because keeping two of the same
         /// vehicles in step by hand is a bug waiting for the day they disagree.
         /// </summary>
-        public IReadOnlyList<VehicleController> Vehicles() => m_OnTheApron;
+        public IReadOnlyList<VehicleController> Vehicles => m_OnTheApron;
 
         void Awake() => m_Trains = new TrainRegistry(m_Coupling);
 
@@ -93,8 +97,8 @@ namespace BelowTheWing.Session
 
             if (NetworkManager.LocalClient.IsSessionOwner)
             {
-                ApronBuilder.Build(m_Layout, m_TractorProfile, m_CartProfile, m_AircraftProfile, m_CrewProfile,
-                    m_TractorPrefab, m_CartPrefab, m_AircraftPrefab);
+                ApronBuilder.Build(m_Layout, m_AircraftProfile, m_CrewProfile,
+                    m_TractorPrefab, m_CartPrefab, m_AircraftPrefab, m_BagPrefab, m_BagsPerTrain);
             }
 
             // Nothing redistributes vehicles automatically any more, which is deliberate: doing it
@@ -241,7 +245,11 @@ namespace BelowTheWing.Session
         void SpawnOwnCrew()
         {
             var plan = ApronLayout.Build(
-                m_Layout, m_TractorProfile, m_CartProfile, m_AircraftProfile, CrewSize());
+                m_Layout,
+                m_TractorPrefab.GetComponent<VehicleShape>().Footprint,
+                m_CartPrefab.GetComponent<VehicleShape>().Footprint,
+                m_AircraftProfile,
+                CrewSize());
 
             // The first arrival point with nobody standing on it.
             //
@@ -255,7 +263,7 @@ namespace BelowTheWing.Session
             crew.Spawn();
 
             m_LocalPlayer = new LocalPlayerRig(
-                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, Vehicles, this);
+                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, () => Vehicles, this);
         }
 
         /// <summary>

@@ -1,5 +1,7 @@
+using BelowTheWing.Cargo;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 
 namespace BelowTheWing.Crew
 {
@@ -25,6 +27,7 @@ namespace BelowTheWing.Crew
     {
         CrewCharacter m_Character;
         MouseCapture m_Pointer;
+        bool m_PointerWasHeld;
 
         public CrewIntent Current { get; private set; } = CrewIntent.Idle;
 
@@ -51,7 +54,16 @@ namespace BelowTheWing.Crew
             Current = new CrewIntent(
                 move,
                 sprint: keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed,
-                brake: keyboard.spaceKey.isPressed ? 1f : 0f);
+                brake: keyboard.spaceKey.isPressed ? 1f : 0f,
+
+                // Space is the brake while driving and the jump while on foot. The same key for
+                // "get off the ground" either way, and never both at once, because a player in a
+                // seat is not standing on anything.
+                jump: keyboard.spaceKey.wasPressedThisFrame,
+
+                // Held rather than toggled. A cart interior is low enough that a player wants to be
+                // sure they are still crouched without watching their own knees.
+                crouch: keyboard.cKey.isPressed);
 
             Look();
 
@@ -66,6 +78,8 @@ namespace BelowTheWing.Crew
             {
                 m_Character.Hitching?.Act();
             }
+
+            Handle();
         }
 
         /// <summary>
@@ -84,6 +98,65 @@ namespace BelowTheWing.Crew
             }
 
             m_Character.Camera.Look(m_Pointer.Movement(mouse.delta.ReadValue()));
+        }
+
+        /// <summary>
+        /// The two mouse buttons, one per hand: the left button works the left hand and the right
+        /// button the right.
+        ///
+        /// Each is a press and a release and nothing more. What a press means -- take hold of
+        /// something, start winding up a throw -- is the hand's to decide from what it is holding,
+        /// so that the keyboard never has to know.
+        ///
+        /// A press counts only if the pointer already belonged to the game on the previous frame,
+        /// so the click that brings it back from the desktop is not a grab whichever order this and
+        /// the pointer's own component run in. A release always counts: a button let go of while
+        /// the pointer was elsewhere still lets go of the cart.
+        /// </summary>
+        void Handle()
+        {
+            var mouse = Mouse.current;
+            var hands = m_Character.Handling;
+            var pressesCount = m_PointerWasHeld;
+            m_PointerWasHeld = m_Pointer.Held;
+
+            if (mouse == null || hands == null)
+            {
+                return;
+            }
+
+            Work(hands.Left, mouse.leftButton, pressesCount);
+            Work(hands.Right, mouse.rightButton, pressesCount);
+        }
+
+        void Work(Hand hand, ButtonControl button, bool pressesCount)
+        {
+            if (pressesCount && button.wasPressedThisFrame)
+            {
+                hand.Press(Time.time);
+            }
+
+            if (button.wasReleasedThisFrame)
+            {
+                hand.Release(Time.time, ThrowingTowards());
+            }
+        }
+
+        /// <summary>
+        /// Which way a throw goes: where the player is looking, rather than where their feet point.
+        ///
+        /// Somebody throwing a bag into a cart is aiming at the cart, and their body may well be
+        /// facing the way they were running.
+        /// </summary>
+        Vector3 ThrowingTowards()
+        {
+            if (m_Character.Camera == null)
+            {
+                return m_Character.transform.forward;
+            }
+
+            var looking = Quaternion.Euler(0f, m_Character.Camera.YawDegrees, 0f) * Vector3.forward;
+            return looking;
         }
 
         static float Held(Keyboard keyboard, Key key) => keyboard[key].isPressed ? 1f : 0f;

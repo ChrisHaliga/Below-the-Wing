@@ -199,15 +199,6 @@ namespace BelowTheWing.Tests.PlayMode
 
         // --- what handing the pointer back does not do ---
 
-        static IEnumerator Step(float seconds)
-        {
-            var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
-            for (var i = 0; i < steps; i++)
-            {
-                yield return new WaitForFixedUpdate();
-            }
-        }
-
         static float AcrossTheGround(Vector3 from, Vector3 to)
             => Vector3.Distance(new Vector3(from.x, 0f, from.z), new Vector3(to.x, 0f, to.z));
 
@@ -226,7 +217,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var crew = m_Apron.AddCrew(m_CrewProfile, new Vector3(0f, 1.5f, 0f));
             crew.Camera = m_Apron.Track(new GameObject("Camera").AddComponent<FollowCamera>());
-            crew.IntentSource = new FixedCrewIntent(new Vector2(0f, 1f));
+            crew.IntentSource = new HeldKeys(new Vector2(0f, 1f));
 
             var capture = crew.gameObject.AddComponent<MouseCapture>();
             capture.Pointer = m_Pointer;
@@ -235,10 +226,10 @@ namespace BelowTheWing.Tests.PlayMode
             Assert.That(capture.Held, Is.False, "the pointer has to actually be gone for this to mean anything");
 
             // Let them land first, or the drop onto the apron counts as having gone somewhere.
-            yield return Step(1f);
+            yield return Steps.Seconds(1f);
             var from = crew.transform.position;
 
-            yield return Step(2f);
+            yield return Steps.Seconds(2f);
 
             Assert.That(AcrossTheGround(from, crew.transform.position), Is.GreaterThan(1f),
                 "Escape frees the pointer; it does not pause the game");

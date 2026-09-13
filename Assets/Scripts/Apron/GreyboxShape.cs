@@ -16,9 +16,6 @@ namespace BelowTheWing.Apron
     /// </summary>
     public static class GreyboxShape
     {
-        /// <summary>What the stand-in shape is called, so it can be found again rather than duplicated.</summary>
-        public const string ShapeName = "Greybox";
-
         /// <summary>
         /// How tall Unity's capsule primitive is at a scale of one, in units. Dividing a wanted
         /// height in metres by this gives the scale to ask for.
@@ -55,7 +52,7 @@ namespace BelowTheWing.Apron
         static Transform Build(Transform target, PrimitiveType type, Color colour)
         {
             var primitive = GameObject.CreatePrimitive(type);
-            primitive.name = ShapeName;
+            primitive.name = ApronAppearance.LookName;
 
             // The object it hangs on already has whatever collider it is supposed to have, and a
             // second one inside the first would fight it.

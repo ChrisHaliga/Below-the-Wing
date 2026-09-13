@@ -33,16 +33,16 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void RestingHeightFollowsTheGravityPhysicsIsActuallyUsing()
+        public void SuspensionMountHeightFollowsTheGravityPhysicsIsActuallyUsing()
         {
-            var onEarth = VehicleController.RestingHeightMetres(m_Tractor);
+            var onEarth = VehicleController.SuspensionMountHeightMetres(m_Tractor);
 
             Physics.gravity = m_RealGravity * 2f;
-            var underTwiceTheWeight = VehicleController.RestingHeightMetres(m_Tractor);
+            var underTwiceTheWeight = VehicleController.SuspensionMountHeightMetres(m_Tractor);
 
             Assert.That(underTwiceTheWeight, Is.LessThan(onEarth),
-                "twice the weight compresses the springs further, so the vehicle sits lower. A hard-coded " +
-                "9.81 here would put the coupling point somewhere physics disagrees with");
+                "twice the weight compresses the springs further, so the body sits lower on them. A " +
+                "hard-coded 9.81 here would hang the suspension somewhere physics disagrees with");
         }
 
         [Test]

@@ -1,3 +1,4 @@
+using BelowTheWing.Net;
 using BelowTheWing.Vehicles;
 using Unity.Netcode;
 using UnityEngine;
@@ -23,11 +24,8 @@ namespace BelowTheWing.Session
     [RequireComponent(typeof(VehicleController))]
     public sealed class VehicleOccupant : NetworkBehaviour
     {
-        /// <summary>Stands for "nobody", since client ids start at zero and zero is a real client.</summary>
-        const ulong Nobody = ulong.MaxValue;
-
         readonly NetworkVariable<ulong> m_Driver = new NetworkVariable<ulong>(
-            Nobody, writePerm: NetworkVariableWritePermission.Owner);
+            NetworkOwnershipBroker.Nobody, writePerm: NetworkVariableWritePermission.Owner);
 
         VehicleController m_Vehicle;
 
@@ -70,7 +68,7 @@ namespace BelowTheWing.Session
             // driver being dispossessed -- and nothing is ever cleared.
             if (m_Driver.Value != NetworkManager.LocalClientId)
             {
-                m_Driver.Value = Nobody;
+                m_Driver.Value = NetworkOwnershipBroker.Nobody;
             }
         }
 
@@ -83,11 +81,11 @@ namespace BelowTheWing.Session
                 return;
             }
 
-            m_Driver.Value = occupied ? NetworkManager.LocalClientId : Nobody;
+            m_Driver.Value = occupied ? NetworkManager.LocalClientId : NetworkOwnershipBroker.Nobody;
         }
 
         void OnDriverChanged(ulong previous, ulong current) => ApplyToVehicle();
 
-        void ApplyToVehicle() => m_Vehicle.Occupied = m_Driver.Value != Nobody;
+        void ApplyToVehicle() => m_Vehicle.Occupied = m_Driver.Value != NetworkOwnershipBroker.Nobody;
     }
 }

@@ -16,15 +16,15 @@ MonoBehaviour:
     550 kg empty, and rated to carry roughly three times that again in bags. It is
     towed and never driven, so it has no engine and no steering of its own.
   massKg: 550
-  bodySizeMetres: {x: 1.5, y: 1.7, z: 3}
-  centerOfMassOffset: {x: 0, y: -0.3, z: 0}
+  bodySizeMetres: {x: 1.8855, y: 2.0155, z: 3.8152}
+  centerOfMassOffset: {x: 0, y: 0.5, z: 0}
   drawbarLengthMetres: 0.3
   wheelbaseMetres: 2
   trackMetres: 1.3
-  wheelRadiusMetres: 0.3
-  suspensionRestLengthMetres: 0.35
-  springStrengthNewtons: 12000
-  damperNewtonsPerMetrePerSecond: 1400
+  wheelRadiusMetres: 0.157
+  suspensionRestLengthMetres: 0.08
+  springStrengthNewtons: 9000
+  damperNewtonsPerMetrePerSecond: 3500
   lateralGripCurve:
     serializedVersion: 2
     m_Curve:

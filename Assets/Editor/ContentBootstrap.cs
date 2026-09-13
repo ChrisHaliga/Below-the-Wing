@@ -1,5 +1,6 @@
 using System.IO;
 using BelowTheWing.Apron;
+using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Vehicles;
 using UnityEditor;
@@ -28,6 +29,7 @@ namespace BelowTheWing.EditorTools
         const string VehiclesFolder = "Assets/Content/Vehicles";
         const string AircraftFolder = "Assets/Content/Aircraft";
         const string CrewFolder = "Assets/Content/Crew";
+        const string CargoFolder = "Assets/Content/Cargo";
 
         [MenuItem("Below the Wing/Create missing content")]
         public static void CreateMissingContent()
@@ -36,6 +38,7 @@ namespace BelowTheWing.EditorTools
             CreateIfMissing($"{VehiclesFolder}/BaggageCart.asset", BuildCart);
             CreateIfMissing($"{AircraftFolder}/NarrowbodyAirliner.asset", BuildAircraft);
             CreateIfMissing($"{CrewFolder}/RampWorker.asset", BuildRampWorker);
+            CreateIfMissing($"{CargoFolder}/CheckedBag.asset", BuildCheckedBag);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -66,10 +69,7 @@ namespace BelowTheWing.EditorTools
                 + "this class.";
             profile.massKg = 3000f;
             profile.bodySizeMetres = new Vector3(1.3f, 1.6f, 3.0f);
-            profile.centerOfMassOffset = new Vector3(0f, -0.45f, 0f);
-            profile.drawbarLengthMetres = 0.3f;
-            profile.wheelbaseMetres = 1.8f;
-            profile.trackMetres = 1.1f;
+            profile.centerOfMassOffset = new Vector3(0f, 0.35f, 0f);
             profile.wheelRadiusMetres = 0.3f;
             profile.suspensionRestLengthMetres = 0.35f;
             profile.springStrengthNewtons = 60000f;
@@ -85,6 +85,19 @@ namespace BelowTheWing.EditorTools
             return profile;
         }
 
+        static BagProfile BuildCheckedBag()
+        {
+            var profile = ScriptableObject.CreateInstance<BagProfile>();
+
+            // A checked suitcase. Airlines allow up to twenty-three kilograms and most people fill
+            // it, so twenty is the everyday bag rather than a light one.
+            profile.massKg = 20f;
+            profile.sizeMetres = new Vector3(0.4f, 0.25f, 0.6f);
+            profile.frictionCoefficient = 0.3f;
+
+            return profile;
+        }
+
         static VehicleProfile BuildCart()
         {
             var profile = ScriptableObject.CreateInstance<VehicleProfile>();
@@ -93,15 +106,25 @@ namespace BelowTheWing.EditorTools
                 + "rated to carry roughly three times that again in bags. It is towed and never "
                 + "driven, so it has no engine and no steering of its own.";
             profile.massKg = 550f;
-            profile.bodySizeMetres = new Vector3(1.5f, 1.7f, 3.0f);
-            profile.centerOfMassOffset = new Vector3(0f, -0.3f, 0f);
-            profile.drawbarLengthMetres = 0.3f;
-            profile.wheelbaseMetres = 2.0f;
-            profile.trackMetres = 1.3f;
-            profile.wheelRadiusMetres = 0.3f;
-            profile.suspensionRestLengthMetres = 0.35f;
-            profile.springStrengthNewtons = 12000f;
-            profile.damperNewtonsPerMetrePerSecond = 1400f;
+
+            profile.bodySizeMetres = new Vector3(1.8855f, 2.0155f, 3.8152f);
+
+            // Low, and measured from an origin that is on the ground rather than in the middle of
+            // the bodywork. A loaded cart that leans into a corner throws its load out of itself.
+            profile.centerOfMassOffset = new Vector3(0f, 0.5f, 0f);
+
+            // Measured off the model. Small wheels, and correspondingly little suspension: 0.35 m
+            // of travel on a 0.157 m wheel is more than twice the wheel radius, and the cart would
+            // visibly float above its own axles.
+            profile.wheelRadiusMetres = 0.157f;
+            profile.suspensionRestLengthMetres = 0.08f;
+
+            // 1349 N on each corner at 550 kg gives about 15% compression at rest, leaving room to
+            // squash under a load and to extend over a bump. The damper is around 0.45 of critical
+            // for that stiffness, which settles a bounce inside one oscillation without making the
+            // cart feel welded to the ground.
+            profile.springStrengthNewtons = 9000f;
+            profile.damperNewtonsPerMetrePerSecond = 3500f;
             profile.coastingDragPerSecond = 0.4f;
             profile.lateralGripCurve = TireCurve();
             profile.maxDriveForceNewtons = 0f;
@@ -137,7 +160,7 @@ namespace BelowTheWing.EditorTools
             profile.radiusMetres = 0.3f;
             profile.walkSpeedMetresPerSecond = 4f;
             profile.sprintSpeedMetresPerSecond = 7f;
-            profile.accelerationMetresPerSecondSquared = 30f;
+            profile.accelerationMetresPerSecondSquared = 8f;
             profile.turnRateDegreesPerSecond = 720f;
             return profile;
         }

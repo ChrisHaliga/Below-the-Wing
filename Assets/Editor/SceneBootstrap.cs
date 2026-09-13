@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using BelowTheWing.Apron;
+using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Diagnostics;
 using BelowTheWing.Net;
@@ -46,10 +47,13 @@ namespace BelowTheWing.EditorTools
         const string CartProfilePath = "Assets/Content/Vehicles/BaggageCart.asset";
         const string AircraftProfilePath = "Assets/Content/Aircraft/NarrowbodyAirliner.asset";
         const string CrewProfilePath = "Assets/Content/Crew/RampWorker.asset";
+        const string BagProfilePath = "Assets/Content/Cargo/CheckedBag.asset";
+        const string CartModelPath = "Assets/Content/Vehicles/baggage_cart.fbx";
 
         static readonly Color TractorBlue = new Color(0.35f, 0.55f, 0.75f);
         static readonly Color CartGrey = new Color(0.55f, 0.55f, 0.58f);
         static readonly Color HiVisYellow = new Color(0.95f, 0.75f, 0.15f);
+        static readonly Color BagCanvas = new Color(0.45f, 0.38f, 0.32f);
         static readonly Color FuselageWhite = new Color(0.82f, 0.82f, 0.85f);
 
         [MenuItem("Below the Wing/Rebuild apron scene and prefabs")]
@@ -69,8 +73,9 @@ namespace BelowTheWing.EditorTools
             var cart = BuildCart(cartProfile);
             var aircraft = BuildAircraft(aircraftProfile);
             var crew = BuildCrew(crewProfile);
+            var bagPrefab = BuildBag();
 
-            BuildScene(tractorProfile, cartProfile, aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
+            BuildScene(aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -90,26 +95,265 @@ namespace BelowTheWing.EditorTools
         }
 
         static GameObject BuildCart(VehicleProfile profile)
-            => SaveAndDiscard(NewVehicle("BaggageCart", profile, CartGrey), $"{PrefabFolder}/BaggageCart.prefab");
+        {
+            var go = NewVehicle("BaggageCart", profile, CartGrey, CartModelPath);
 
-        static GameObject NewVehicle(string name, VehicleProfile profile, Color colour)
+            return SaveAndDiscard(go, $"{PrefabFolder}/BaggageCart.prefab");
+        }
+
+        /// <summary>
+        /// Measures the baggage cart model and fills in everything the game needs to know about its
+        /// geometry.
+        ///
+        /// The wheels, the two couplings and the overall envelope come from the model and the
+        /// profile, so re-exporting the cart moves them without anybody editing code. The deck
+        /// figures below are typed in, and that is worth being honest about: they were measured off
+        /// the model by hand, and the mesh merges the deck into the rest of the bodywork so there is
+        /// no node to read them from. If the cart is remodelled they have to be re-measured.
+        ///
+        /// The one thing decided rather than measured is which way round the model goes: it was
+        /// exported with its drawbar along what Unity calls backwards, so it is turned to face the
+        /// way the game drives.
+        ///
+        /// Note the two kinds of hitch in the model. HITCH_Male and HITCH_Female are empties marking
+        /// the exact points a coupling meets; Hitch, Hitch Pin and Hitch_Female are the drawbar
+        /// meshes that sit near them. The names differ only by case, so these are looked up exactly
+        /// and checked for being what they claim to be -- taking the mesh instead would put every
+        /// coupling in the game tens of centimetres out.
+        /// </summary>
+        static void ShapeFromTheCartModel(GameObject cart, Transform model, VehicleProfile profile)
+        {
+            const float deckTopMetres = 0.4727f;
+            const float deckWidthMetres = 1.7211f;
+            const float deckLengthMetres = 3.1538f;
+            const float slabThicknessMetres = 0.15f;
+            const float clearInsideMetres = 1.626f;
+            const float lipHeightMetres = 0.18f;
+            const float lipThicknessMetres = 0.05f;
+
+            Vector3 Local(string landmark)
+            {
+                var found = model.Find(landmark);
+                if (found == null)
+                {
+                    Debug.LogError($"The cart model has no '{landmark}'.");
+                    return Vector3.zero;
+                }
+
+                if (found.GetComponent<MeshFilter>() != null)
+                {
+                    Debug.LogError(
+                        $"'{landmark}' is a mesh rather than a marker. The cart model has both, and " +
+                        "their names differ only by case.");
+                }
+
+                return cart.transform.InverseTransformPoint(found.position);
+            }
+
+            var wheels = new List<Vector3>();
+            for (var i = 1; i <= 4; i++)
+            {
+                var wheel = model.Find($"Wheel_{i}");
+                if (wheel == null)
+                {
+                    Debug.LogError($"The cart model has no 'Wheel_{i}'.");
+                    continue;
+                }
+
+                wheels.Add(cart.transform.InverseTransformPoint(wheel.position));
+            }
+
+            var roofUnderside = deckTopMetres + clearInsideMetres;
+
+            var solid = new List<VehicleShape.SolidPart>
+            {
+                new VehicleShape.SolidPart(
+                    "Deck",
+                    new Vector3(deckWidthMetres, slabThicknessMetres, deckLengthMetres),
+                    new Vector3(0f, deckTopMetres - (slabThicknessMetres * 0.5f), 0f)),
+
+                new VehicleShape.SolidPart(
+                    "Lip left",
+                    new Vector3(lipThicknessMetres, lipHeightMetres, deckLengthMetres),
+                    new Vector3(
+                        -((deckWidthMetres * 0.5f) - (lipThicknessMetres * 0.5f)),
+                        deckTopMetres + (lipHeightMetres * 0.5f),
+                        0f)),
+
+                new VehicleShape.SolidPart(
+                    "Lip right",
+                    new Vector3(lipThicknessMetres, lipHeightMetres, deckLengthMetres),
+                    new Vector3(
+                        (deckWidthMetres * 0.5f) - (lipThicknessMetres * 0.5f),
+                        deckTopMetres + (lipHeightMetres * 0.5f),
+                        0f)),
+
+                new VehicleShape.SolidPart(
+                    "End front",
+                    new Vector3(deckWidthMetres, clearInsideMetres, slabThicknessMetres),
+                    new Vector3(
+                        0f,
+                        (deckTopMetres + roofUnderside) * 0.5f,
+                        (deckLengthMetres + slabThicknessMetres) * 0.5f)),
+
+                new VehicleShape.SolidPart(
+                    "End rear",
+                    new Vector3(deckWidthMetres, clearInsideMetres, slabThicknessMetres),
+                    new Vector3(
+                        0f,
+                        (deckTopMetres + roofUnderside) * 0.5f,
+                        -(deckLengthMetres + slabThicknessMetres) * 0.5f)),
+
+                new VehicleShape.SolidPart(
+                    "Roof",
+                    new Vector3(deckWidthMetres, slabThicknessMetres, deckLengthMetres),
+                    new Vector3(0f, roofUnderside + (slabThicknessMetres * 0.5f), 0f))
+            };
+
+            cart.AddComponent<VehicleShape>().Describe(new VehicleShape.Measurements
+            {
+                WheelCentresLocal = wheels,
+                FrontCouplingLocal = Local("HITCH_Male"),
+                RearCouplingLocal = Local("HITCH_Female"),
+                EnvelopeSizeMetres = profile.bodySizeMetres,
+                EnvelopeCentreLocal = new Vector3(0f, 1.0909f, 0.1296f),
+                InteriorLocal = new Bounds(
+                    new Vector3(0f, deckTopMetres + (clearInsideMetres * 0.5f), 0f),
+                    new Vector3(deckWidthMetres, clearInsideMetres, deckLengthMetres)),
+                SolidParts = solid
+            });
+
+            WatchTheWheels(cart, model);
+        }
+
+        /// <summary>Hands the visible wheels to whatever turns them and keeps them on the ground.</summary>
+        static void WatchTheWheels(GameObject cart, Transform model)
+        {
+            var wheels = new List<Transform>();
+            for (var i = 1; i <= 4; i++)
+            {
+                var wheel = model.Find($"Wheel_{i}");
+                if (wheel != null)
+                {
+                    wheels.Add(wheel);
+                }
+            }
+
+            cart.AddComponent<WheelLook>().Watch(wheels);
+        }
+
+        /// <summary>
+        /// A vehicle: its body, its shape, and something to look at.
+        ///
+        /// No collider is added here. What a vehicle is solid where is described by its shape and
+        /// built from it when the vehicle is configured, which is what lets a cart be a container
+        /// rather than a solid block the size of a cart.
+        /// </summary>
+        static GameObject NewVehicle(string name, VehicleProfile profile, Color colour, string modelPath = null)
         {
             var go = new GameObject(name);
             go.AddComponent<Rigidbody>();
-            go.AddComponent<BoxCollider>();
 
             var vehicle = go.AddComponent<VehicleController>();
             Set(vehicle, "m_Profile", profile);
 
+            var model = modelPath != null ? AddModel(go, modelPath) : null;
+            if (model != null)
+            {
+                ShapeFromTheCartModel(go, model, profile);
+            }
+            else
+            {
+                ShapeFromNumbers(go, profile);
+            }
+
             AddNetworking(go, outlivesItsOwner: true);
             go.AddComponent<TrainMember>();
 
-            Dress(go, ApronAppearance.Shape.Box,
+            // Something to hold onto, and so something a rider goes round corners with.
+            go.AddComponent<HandUse>().As = HandUse.Category.HoldOnto;
+
+            var shape = go.GetComponent<VehicleShape>();
+            Dress(go,
+                model != null ? ApronAppearance.Shape.AlreadyModelled : ApronAppearance.Shape.Box,
                 profile.bodySizeMetres,
                 colour,
-                profile.bodySizeMetres.y * 0.7f);
+                shape.EnvelopeCentreLocal.y + (shape.EnvelopeSizeMetres.y * 0.6f),
+                shape.EnvelopeCentreLocal);
 
             return go;
+        }
+
+        /// <summary>
+        /// Puts the model on a vehicle, facing the way the game drives.
+        ///
+        /// The cart was modelled with its drawbar along what Unity ends up calling backwards, so the
+        /// whole model is turned half a turn. Doing it here, once, means nothing downstream has to
+        /// know which way any particular artist happened to build something.
+        /// </summary>
+        static Transform AddModel(GameObject vehicle, string path)
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (asset == null)
+            {
+                Debug.LogWarning($"No model at {path}; leaving {vehicle.name} as a grey box.");
+                return null;
+            }
+
+            var model = (GameObject)PrefabUtility.InstantiatePrefab(asset);
+            model.name = ApronAppearance.LookName;
+            model.transform.SetParent(vehicle.transform, worldPositionStays: false);
+            model.transform.localRotation = Quaternion.Euler(0f, 180f, 0f) * model.transform.localRotation;
+
+            return model.transform;
+        }
+
+        /// <summary>
+        /// Describes a vehicle that has no model, from the numbers in its profile.
+        ///
+        /// Exactly the same terms a measured vehicle is described in, so nothing downstream can tell
+        /// which kind it is dealing with. A box on four wheels with a coupling at each end, its
+        /// origin on the ground between them.
+        /// </summary>
+        static void ShapeFromNumbers(GameObject vehicle, VehicleProfile profile)
+        {
+            var size = profile.bodySizeMetres;
+
+            // Axles set in from the ends and the sides by roughly what a small four-wheeled vehicle
+            // has: a wheelbase of seven tenths of the body length, a track of five sixths of its
+            // width. Invented figures, and they are allowed to be, because this describes a vehicle
+            // nobody has modelled yet -- the moment one is modelled its wheels are read off it.
+            var halfWheelbase = size.z * 0.35f;
+            var halfTrack = size.x * 0.42f;
+            var reach = (size.z * 0.5f) + 0.3f;
+            var couplingHeight = profile.wheelRadiusMetres + 0.05f;
+
+            // Clear of the tarmac by a wheel's radius, because the origin is on the ground now and a
+            // body box sitting on that origin has its underside level with the apron. It then
+            // carries the vehicle's weight itself, the suspension never compresses, and what should
+            // be a tractor on wheels is a crate sliding about on the floor -- which steers nowhere.
+            var underside = profile.wheelRadiusMetres;
+            var middle = new Vector3(0f, underside + (size.y * 0.5f), 0f);
+
+            vehicle.AddComponent<VehicleShape>().Describe(new VehicleShape.Measurements
+            {
+                WheelCentresLocal = new List<Vector3>
+                {
+                    new Vector3(-halfTrack, profile.wheelRadiusMetres, halfWheelbase),
+                    new Vector3(halfTrack, profile.wheelRadiusMetres, halfWheelbase),
+                    new Vector3(-halfTrack, profile.wheelRadiusMetres, -halfWheelbase),
+                    new Vector3(halfTrack, profile.wheelRadiusMetres, -halfWheelbase)
+                },
+                FrontCouplingLocal = new Vector3(0f, couplingHeight, reach),
+                RearCouplingLocal = new Vector3(0f, couplingHeight, -reach),
+                EnvelopeSizeMetres = size,
+                EnvelopeCentreLocal = middle,
+                InteriorLocal = new Bounds(Vector3.zero, Vector3.zero),
+                SolidParts = new List<VehicleShape.SolidPart>
+                {
+                    new VehicleShape.SolidPart("Body", size, middle)
+                }
+            });
         }
 
         static GameObject BuildAircraft(AircraftProfile profile)
@@ -121,6 +365,7 @@ namespace BelowTheWing.EditorTools
             go.AddComponent<CapsuleCollider>();
 
             Set(go.AddComponent<AircraftBody>(), "m_Profile", profile);
+            go.AddComponent<HandUse>().As = HandUse.Category.HoldOnto;
 
             AddNetworking(go, outlivesItsOwner: true);
 
@@ -132,6 +377,38 @@ namespace BelowTheWing.EditorTools
             return SaveAndDiscard(go, $"{PrefabFolder}/NarrowbodyAirliner.prefab");
         }
 
+        /// <summary>
+        /// A piece of baggage: a box that can be carried, thrown, and stood on top of.
+        ///
+        /// Built here with everything else rather than by hand, so that the one description of what
+        /// a bag is lives in one place and every bag in the game is that.
+        /// </summary>
+        static GameObject BuildBag()
+        {
+            var profile = AssetDatabase.LoadAssetAtPath<BagProfile>(BagProfilePath);
+            if (profile == null)
+            {
+                Debug.LogWarning($"No bag profile at {BagProfilePath}; skipping the bag prefab.");
+                return null;
+            }
+
+            var go = new GameObject("Bag");
+            go.AddComponent<Rigidbody>();
+            go.AddComponent<BoxCollider>();
+
+            Set(go.AddComponent<Bag>(), "m_Profile", profile);
+
+            // What hands may do with it, said on the bag so that hands never have to know what a
+            // bag is.
+            go.AddComponent<HandUse>().As = HandUse.Category.Carry;
+
+            AddNetworking(go, outlivesItsOwner: true);
+
+            Dress(go, ApronAppearance.Shape.Box, profile.sizeMetres, BagCanvas, profile.sizeMetres.y * 1.2f);
+
+            return SaveAndDiscard(go, $"{PrefabFolder}/Bag.prefab");
+        }
+
         static GameObject BuildCrew(CrewProfile profile)
         {
             var go = new GameObject("RampWorker");
@@ -139,6 +416,12 @@ namespace BelowTheWing.EditorTools
             go.AddComponent<CapsuleCollider>();
 
             Set(go.AddComponent<CrewCharacter>(), "m_Profile", profile);
+
+            // Where the hands are: a little apart, a little below the shoulders, and far enough
+            // in front that a bag pulled to one hangs clear of the body.
+            var reach = profile.radiusMetres + 0.45f;
+            HandAnchor(go, Hands.LeftAnchorName, new Vector3(-0.3f, 0.2f, reach));
+            HandAnchor(go, Hands.RightAnchorName, new Vector3(0.3f, 0.2f, reach));
 
             AddNetworking(go, outlivesItsOwner: false);
 
@@ -150,15 +433,29 @@ namespace BelowTheWing.EditorTools
             return SaveAndDiscard(go, $"{PrefabFolder}/RampWorker.prefab");
         }
 
+        static void HandAnchor(GameObject character, string name, Vector3 local)
+        {
+            var anchor = new GameObject(name);
+            anchor.transform.SetParent(character.transform, worldPositionStays: false);
+            anchor.transform.localPosition = local;
+        }
+
         /// <summary>
         /// Gives an object its stand-in shape and the name-carrying component that shows it.
         ///
         /// The name travels over the network, and appearance is built when it arrives, so a player
         /// who joins sees the apron rather than an empty grey plane full of invisible colliders.
         /// </summary>
-        static void Dress(GameObject go, ApronAppearance.Shape shape, Vector3 sizeMetres, Color colour, float labelHeightMetres)
+        static void Dress(
+            GameObject go,
+            ApronAppearance.Shape shape,
+            Vector3 sizeMetres,
+            Color colour,
+            float labelHeightMetres,
+            Vector3 drawnAtLocal = default)
         {
-            go.AddComponent<ApronAppearance>().DescribeAs(shape, sizeMetres, colour, labelHeightMetres);
+            go.AddComponent<ApronAppearance>()
+                .DescribeAs(shape, sizeMetres, colour, labelHeightMetres, drawnAtLocal);
             go.AddComponent<ApronIdentity>();
         }
 
@@ -179,20 +476,29 @@ namespace BelowTheWing.EditorTools
             networked.DontDestroyWithOwner = outlivesItsOwner;
 
             // Movement is not replicated by a transform component at all. Both of the ones netcode
-            // offers write a position onto the copy -- and a vehicle whose position is written
+            // offers write a position onto the copy -- and anything whose position is written
             // arrives somewhere without having travelled, so the impulse a collision should have
-            // exchanged never happens and the crash comes out different on each screen. NetworkRigidbody
-            // goes further and makes every non-owning copy kinematic, which is infinite mass: you
-            // would drive into somebody else's tractor and bounce off a wall while on their screen
-            // the mirror image happened.
+            // exchanged never happens and the crash comes out different on each screen.
+            // NetworkRigidbody goes further and makes every non-owning copy kinematic, which is
+            // infinite mass: you would drive into somebody else's tractor and bounce off a wall
+            // while on their screen the mirror image happened.
             //
-            // Vehicles carry VehicleMotion instead, which reports what the owner's vehicle is doing
-            // and steers every other copy toward it with force. Crew keep a transform component,
-            // because a person is not something anybody crashes into on purpose and their position
-            // arriving late matters more than their momentum surviving.
+            // Everything that can be crashed into reports what it is doing and is steered toward
+            // that with force instead. That includes people: players run each other over on purpose.
             if (go.GetComponent<VehicleController>() != null)
             {
                 go.AddComponent<VehicleMotion>();
+            }
+            else if (go.GetComponent<CrewCharacter>() != null)
+            {
+                go.AddComponent<CrewMotion>();
+            }
+            else if (go.GetComponent<Bag>() != null)
+            {
+                // Bags have the same problem and one more besides: which machine simulates a bag
+                // changes with who picks it up and whose cart it lands in, and no transform
+                // component has anything to say about that.
+                go.AddComponent<CargoMotion>();
             }
             else
             {
@@ -208,8 +514,6 @@ namespace BelowTheWing.EditorTools
         }
 
         static void BuildScene(
-            VehicleProfile tractorProfile,
-            VehicleProfile cartProfile,
             AircraftProfile aircraftProfile,
             CrewProfile crewProfile,
             GameObject tractor,
@@ -242,14 +546,18 @@ namespace BelowTheWing.EditorTools
             sessionObject.AddComponent<NetworkObject>();
             var session = sessionObject.AddComponent<RampSession>();
 
-            Set(session, "m_TractorProfile", tractorProfile);
-            Set(session, "m_CartProfile", cartProfile);
             Set(session, "m_AircraftProfile", aircraftProfile);
             Set(session, "m_CrewProfile", crewProfile);
             Set(session, "m_TractorPrefab", tractor.GetComponent<NetworkObject>());
             Set(session, "m_CartPrefab", cart.GetComponent<NetworkObject>());
             Set(session, "m_AircraftPrefab", aircraft.GetComponent<NetworkObject>());
             Set(session, "m_CrewPrefab", crew.GetComponent<NetworkObject>());
+
+            var bag = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabFolder}/Bag.prefab");
+            if (bag != null)
+            {
+                Set(session, "m_BagPrefab", bag.GetComponent<NetworkObject>());
+            }
             Set(session, "m_Broker", broker);
             Set(session, "m_Camera", camera);
             Set(session, "m_Readout", readout);

@@ -2,6 +2,7 @@
     "name": "BelowTheWing.Crew",
     "rootNamespace": "BelowTheWing.Crew",
     "references": [
+        "BelowTheWing.Cargo",
         "BelowTheWing.Vehicles",
         "Unity.InputSystem"
     ],

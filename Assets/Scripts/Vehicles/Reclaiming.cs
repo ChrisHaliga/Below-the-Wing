@@ -96,16 +96,6 @@ namespace BelowTheWing.Vehicles
             }
         }
 
-        /// <summary>Stops chasing a train, for when it has gone off the apron entirely.</summary>
-        public void Forget(CartChain train)
-        {
-            var found = Find(train);
-            if (found != null)
-            {
-                m_Wanted.Remove(found);
-            }
-        }
-
         static bool Ours(CartChain train, IOwnershipBroker broker)
         {
             foreach (var member in train.Members)

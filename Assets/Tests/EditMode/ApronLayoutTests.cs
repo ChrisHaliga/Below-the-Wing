@@ -19,16 +19,16 @@ namespace BelowTheWing.Tests.EditMode
     /// </summary>
     public sealed class ApronLayoutTests
     {
-        VehicleProfile m_Tractor;
-        VehicleProfile m_Cart;
+        VehicleFootprint m_Tractor;
+        VehicleFootprint m_Cart;
         AircraftProfile m_Aircraft;
         CrewProfile m_Crew;
 
         [SetUp]
         public void SetUp()
         {
-            m_Tractor = TestProfiles.Tractor();
-            m_Cart = TestProfiles.Cart();
+            m_Tractor = TestShapes.Tractor().Footprint;
+            m_Cart = TestShapes.Cart().Footprint;
             m_Aircraft = TestProfiles.Aircraft();
             m_Crew = TestProfiles.CrewMember();
         }
@@ -36,8 +36,6 @@ namespace BelowTheWing.Tests.EditMode
         [TearDown]
         public void TearDown()
         {
-            Object.DestroyImmediate(m_Tractor);
-            Object.DestroyImmediate(m_Cart);
             Object.DestroyImmediate(m_Aircraft);
             Object.DestroyImmediate(m_Crew);
         }
@@ -112,7 +110,7 @@ namespace BelowTheWing.Tests.EditMode
             for (var i = 1; i < carts.Count; i++)
             {
                 var gap = Vector3.Distance(carts[i - 1].Position, carts[i].Position);
-                Assert.That(gap, Is.GreaterThanOrEqualTo(m_Cart.bodySizeMetres.z),
+                Assert.That(gap, Is.GreaterThanOrEqualTo(m_Cart.EnvelopeSizeMetres.z),
                     "consecutive carts must be at least a cart length apart");
             }
         }
@@ -120,7 +118,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void BiggerEquipmentTakesUpMoreRoomRatherThanOverlapping()
         {
-            m_Cart.bodySizeMetres = new Vector3(2.5f, 2.5f, 6f);
+            m_Cart = TestShapes.BoxVehicle(new Vector3(2.5f, 2.5f, 6f)).Footprint;
 
             var plan = Plan(ApronLayoutSettings.Default);
             var carts = plan.Trains[0].Carts;
@@ -173,8 +171,8 @@ namespace BelowTheWing.Tests.EditMode
             var plan = Plan(ApronLayoutSettings.Default);
 
             Assert.That(plan.Aircraft.SizeMetres.z, Is.EqualTo(m_Aircraft.lengthMetres).Within(0.01f));
-            Assert.That(plan.Trains[0].Tractor.SizeMetres, Is.EqualTo(m_Tractor.bodySizeMetres));
-            Assert.That(plan.Trains[0].Carts[0].SizeMetres, Is.EqualTo(m_Cart.bodySizeMetres));
+            Assert.That(plan.Trains[0].Tractor.SizeMetres, Is.EqualTo(m_Tractor.EnvelopeSizeMetres));
+            Assert.That(plan.Trains[0].Carts[0].SizeMetres, Is.EqualTo(m_Cart.EnvelopeSizeMetres));
         }
     }
 }

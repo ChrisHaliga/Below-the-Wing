@@ -35,7 +35,7 @@ namespace BelowTheWing.Apron
         public const float TooFarToFollowMetres = 8f;
 
         Transform m_Body;
-        VehicleController m_Vehicle;
+        IMovedFromHere m_Mover;
 
         /// <summary>
         /// Where the shape is being drawn, kept here rather than read back off its own transform.
@@ -47,6 +47,18 @@ namespace BelowTheWing.Apron
         Vector3 m_ShownAt;
         Quaternion m_ShownFacing = Quaternion.identity;
 
+        /// <summary>
+        /// Where and how the shape was placed on its body, in the body's own space.
+        ///
+        /// Trailing means writing the shape's world pose every frame, and a world pose written
+        /// outright throws away whatever the shape was authored with. That is not a corner case: an
+        /// aircraft's stand-in is a capsule turned on its side, and a vehicle's real model sits
+        /// above an origin that is down on the tarmac between its wheels. Both are a local offset
+        /// or rotation, and both are destroyed by catching up unless the catching up puts them back.
+        /// </summary>
+        Vector3 m_PlacedAt;
+        Quaternion m_PlacedFacing = Quaternion.identity;
+
         /// <summary>How far behind the body the shape currently is, in metres.</summary>
         public float TrailingByMetres => m_Body == null ? 0f : Vector3.Distance(m_ShownAt, m_Body.position);
 
@@ -54,17 +66,19 @@ namespace BelowTheWing.Apron
         /// Whether the shape should trail at all.
         ///
         /// Only for things this machine does not decide the position of. A vehicle you are driving
-        /// never gets snapped -- there is nothing to hide -- and putting a tenth of a second between
-        /// the wheel and what you see would be felt immediately as the controls going soft.
+        /// or the character you are walking never gets snapped -- there is nothing to hide -- and
+        /// putting a tenth of a second between the controls and what you see would be felt at once
+        /// as them going soft.
         /// </summary>
-        public bool WorthSmoothing => m_Vehicle == null || !m_Vehicle.OursToMove;
+        public bool WorthSmoothing => m_Mover == null || !m_Mover.OursToMove;
 
         void Awake()
         {
             // Stays a child. Its world pose is written every frame, which overrides whatever it
             // inherited, so there is nothing to detach and nothing left behind when the body goes.
             m_Body = transform.parent;
-            m_Vehicle = m_Body != null ? m_Body.GetComponent<VehicleController>() : null;
+            m_Mover = m_Body != null ? m_Body.GetComponent<IMovedFromHere>() : null;
+            RememberHowItWasPlaced();
             CatchUpNow();
         }
 
@@ -95,7 +109,20 @@ namespace BelowTheWing.Apron
             m_ShownAt = Vector3.Lerp(m_ShownAt, m_Body.position, caughtUp);
             m_ShownFacing = Quaternion.Slerp(m_ShownFacing, m_Body.rotation, caughtUp);
 
-            transform.SetPositionAndRotation(m_ShownAt, m_ShownFacing);
+            ShowIt();
+        }
+
+        /// <summary>
+        /// Takes note of where and how the shape has been placed on its body, so that trailing the
+        /// body does not throw it away.
+        ///
+        /// Called when the shape is built. Called again by anything that moves a shape afterwards,
+        /// which in practice means a test.
+        /// </summary>
+        public void RememberHowItWasPlaced()
+        {
+            m_PlacedAt = transform.localPosition;
+            m_PlacedFacing = transform.localRotation;
         }
 
         /// <summary>Puts the shape exactly on the body, for when it is first placed.</summary>
@@ -108,7 +135,19 @@ namespace BelowTheWing.Apron
 
             m_ShownAt = m_Body.position;
             m_ShownFacing = m_Body.rotation;
-            transform.SetPositionAndRotation(m_ShownAt, m_ShownFacing);
+            ShowIt();
         }
+
+        /// <summary>
+        /// Puts the shape where it is currently being drawn, keeping how it was placed on its body.
+        ///
+        /// The pose that gets written is the trailed body pose with the shape's own offset and
+        /// rotation applied on top, which is exactly what being a child of the body would have given
+        /// -- only a tenth of a second late.
+        /// </summary>
+        void ShowIt()
+            => transform.SetPositionAndRotation(
+                m_ShownAt + (m_ShownFacing * m_PlacedAt),
+                m_ShownFacing * m_PlacedFacing);
     }
 }

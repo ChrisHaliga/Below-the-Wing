@@ -1,4 +1,5 @@
 using BelowTheWing.Apron;
+using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Session;
 using BelowTheWing.Vehicles;
@@ -70,8 +71,24 @@ namespace BelowTheWing.Tests.EditMode
                 known += list.PrefabList.Count;
             }
 
-            Assert.That(known, Is.GreaterThanOrEqualTo(4),
-                "the apron needs a tractor, a cart, an aircraft and a ramp worker");
+            Assert.That(known, Is.GreaterThanOrEqualTo(5),
+                "the apron needs a tractor, a cart, an aircraft, a ramp worker and a bag");
+
+            var bag = Prefab("Bag").GetComponent<NetworkObject>();
+            var registered = false;
+            foreach (var list in lists)
+            {
+                foreach (var entry in list.PrefabList)
+                {
+                    registered |= entry.Prefab != null
+                                  && entry.Prefab.GetComponent<NetworkObject>() == bag;
+                }
+            }
+
+            Assert.That(registered, Is.True,
+                "the session spawns bags, so every other machine has to know how to make one. " +
+                "Unregistered, the machine that builds the apron gets its bags and everybody else " +
+                "is told the prefab could not be found and creates nothing");
         }
 
         [Test]
@@ -81,8 +98,8 @@ namespace BelowTheWing.Tests.EditMode
 
             foreach (var field in new[]
                      {
-                         "m_TractorProfile", "m_CartProfile", "m_AircraftProfile", "m_CrewProfile",
-                         "m_TractorPrefab", "m_CartPrefab", "m_AircraftPrefab", "m_CrewPrefab",
+                         "m_AircraftProfile", "m_CrewProfile",
+                         "m_TractorPrefab", "m_CartPrefab", "m_AircraftPrefab", "m_CrewPrefab", "m_BagPrefab",
                          "m_Broker", "m_Camera", "m_Readout"
                      })
             {
@@ -107,10 +124,10 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void TheApronItselfHoldsNoEquipment()
         {
-            Assert.That(Object.FindObjectsByType<VehicleController>(FindObjectsSortMode.None), Is.Empty,
+            Assert.That(Object.FindObjectsByType<VehicleController>(FindObjectsInactive.Exclude), Is.Empty,
                 "vehicles are placed at runtime from one description of the layout. A vehicle sitting " +
                 "in the scene as well is a second description that nothing keeps in agreement");
-            Assert.That(Object.FindObjectsByType<CrewCharacter>(FindObjectsSortMode.None), Is.Empty,
+            Assert.That(Object.FindObjectsByType<CrewCharacter>(FindObjectsInactive.Exclude), Is.Empty,
                 "a character in the scene belongs to nobody and is simulated by everybody");
         }
 
@@ -138,7 +155,59 @@ namespace BelowTheWing.Tests.EditMode
                     "One of the two has to own where a vehicle goes, and it is not this");
             }
 
+            var cart = Prefab("BaggageCart");
+
+            var cartShape = cart.GetComponent<VehicleShape>();
+            Assert.That(cartShape, Is.Not.Null,
+                "BaggageCart: nothing says where its wheels and couplings are, so its suspension has " +
+                "nowhere to hang from and it falls through the apron");
+            Assert.That(cartShape.WheelCentresLocal.Count, Is.EqualTo(4),
+                "BaggageCart: four wheels, read off the model");
+            Assert.That(cartShape.FrontReachMetres, Is.EqualTo(3.1617f).Within(0.02f),
+                "BaggageCart: the front coupling is the HITCH_Male empty. Hitch, Hitch Pin and " +
+                "Hitch_Female are drawbar meshes sitting near it, and their names differ from the " +
+                "markers only by case -- picking one of those puts every coupling tens of " +
+                "centimetres out");
+            Assert.That(cartShape.RearReachMetres, Is.EqualTo(1.8159f).Within(0.02f),
+                "BaggageCart: the rear coupling is the HITCH_Female empty");
+            Assert.That(cartShape.InteriorLocal.size.y, Is.GreaterThan(1f),
+                "BaggageCart: with no interior there is nowhere for a bag to be inside the cart");
+
+            Assert.That(cart.transform.Find(ApronAppearance.LookName), Is.Not.Null,
+                "BaggageCart: nothing to look at. The model is what a player sees now, and a cart " +
+                "drawn as nothing is a cart that appears to be a floating label");
+            Assert.That(cart.GetComponentInChildren<WheelLook>(), Is.Not.Null,
+                "BaggageCart: with nothing driving the visible wheels they neither turn nor stay on " +
+                "the tarmac, and the body sinks onto its springs leaving them buried");
+
+            Assert.That(cart.GetComponent<HandUse>()?.As, Is.EqualTo(HandUse.Category.HoldOnto),
+                "BaggageCart: a cart that says nothing about what hands may do with it cannot be " +
+                "held onto, and a rider who cannot hold on walks off it at the first corner");
+
+            var bag = Prefab("Bag");
+            Assert.That(bag.GetComponent<CargoMotion>(), Is.Not.Null,
+                "Bag: nothing tells the other machines where this bag is, and nothing moves it to " +
+                "the machine whose cart it lands in");
+            Assert.That(bag.GetComponent<HandUse>()?.As, Is.EqualTo(HandUse.Category.Carry),
+                "Bag: a bag that says nothing about what hands may do with it cannot be picked up");
+
+            Assert.That(Prefab("BaggageTractor").GetComponent<HandUse>()?.As, Is.EqualTo(HandUse.Category.HoldOnto),
+                "BaggageTractor: nothing to hold onto");
+
+            var worker = Prefab("RampWorker");
+            Assert.That(worker.transform.Find(Hands.LeftAnchorName), Is.Not.Null,
+                "RampWorker: no left hand, so nothing can be held in it");
+            Assert.That(worker.transform.Find(Hands.RightAnchorName), Is.Not.Null,
+                "RampWorker: no right hand, so nothing can be held in it");
+            Assert.That(bag.GetComponent<AnticipatedNetworkTransform>(), Is.Null,
+                "Bag: a transform component writes a position onto the copy every update, so a " +
+                "copy cannot take part in a collision, and it has nothing to say about which " +
+                "machine should be simulating the bag");
+
             var tractor = Prefab("BaggageTractor");
+            Assert.That(tractor.GetComponent<VehicleShape>(), Is.Not.Null,
+                "BaggageTractor: a vehicle with no model is described in exactly the same terms as " +
+                "one with a model, or everything downstream needs a branch for it");
             Assert.That(tractor.GetComponent<VehicleOccupant>(), Is.Not.Null,
                 "only the tractor can be sat in, and without this nothing refuses a request for one " +
                 "somebody is already driving");

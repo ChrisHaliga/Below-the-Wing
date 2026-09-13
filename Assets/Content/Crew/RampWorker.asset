@@ -17,5 +17,5 @@ MonoBehaviour:
   radiusMetres: 0.3
   walkSpeedMetresPerSecond: 4
   sprintSpeedMetresPerSecond: 7
-  accelerationMetresPerSecondSquared: 30
+  accelerationMetresPerSecondSquared: 8
   turnRateDegreesPerSecond: 720

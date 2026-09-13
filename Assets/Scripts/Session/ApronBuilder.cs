@@ -18,18 +18,26 @@ namespace BelowTheWing.Session
         /// <summary>Places everything the plan describes.</summary>
         public static void Build(
             ApronLayoutSettings layout,
-            VehicleProfile tractorProfile,
-            VehicleProfile cartProfile,
             AircraftProfile aircraftProfile,
             CrewProfile crewProfile,
             NetworkObject tractorPrefab,
             NetworkObject cartPrefab,
-            NetworkObject aircraftPrefab)
+            NetworkObject aircraftPrefab,
+            NetworkObject bagPrefab,
+            int bagsPerTrain)
         {
             var crewSize = new Vector3(
                 crewProfile.radiusMetres * 2f, crewProfile.heightMetres, crewProfile.radiusMetres * 2f);
 
-            var plan = ApronLayout.Build(layout, tractorProfile, cartProfile, aircraftProfile, crewSize);
+            // Measured off the prefabs rather than described again here. A vehicle's shape is a
+            // property of the thing itself, and a layout working from a second copy of it is how
+            // trains end up spaced at a distance their couplings cannot reach.
+            var plan = ApronLayout.Build(
+                layout,
+                tractorPrefab.GetComponent<VehicleShape>().Footprint,
+                cartPrefab.GetComponent<VehicleShape>().Footprint,
+                aircraftProfile,
+                crewSize);
 
             Place(aircraftPrefab, plan.Aircraft);
 
@@ -43,6 +51,40 @@ namespace BelowTheWing.Session
                 {
                     Place(cartPrefab, train.Carts[c], t, placeInTrain: c + 1);
                 }
+
+                Scatter(bagPrefab, train, bagsPerTrain);
+            }
+        }
+
+        /// <summary>
+        /// Drops a few bags on the ground beside a train.
+        ///
+        /// On the ground rather than on the decks. Loading a cart is the players' job: a bag is
+        /// carried or thrown aboard and lies there by friction, and putting bags straight onto the
+        /// decks here would be a second way for cargo to arrive that nothing else in the game uses.
+        /// </summary>
+        static void Scatter(NetworkObject bagPrefab, TrainPlan train, int howMany)
+        {
+            if (bagPrefab == null || howMany <= 0 || train.Carts.Count == 0)
+            {
+                return;
+            }
+
+            var beside = train.Carts[0];
+
+            for (var i = 0; i < howMany; i++)
+            {
+                // In a line along the side of the train, clear of its wheels.
+                var where = beside.Position
+                            + (Vector3.right * 2.5f)
+                            + (Vector3.back * (i * 0.9f))
+                            + (Vector3.up * 0.4f);
+
+                var bag = Object.Instantiate(bagPrefab, where, Quaternion.identity);
+                bag.GetComponent<ApronIdentity>()?.Called($"Bag {i + 1}");
+                bag.Spawn();
+
+                OnlyByAsking(bag);
             }
         }
 
