@@ -278,7 +278,8 @@ namespace BelowTheWing.Vehicles
             // Not one box the size of the vehicle. A cart is a container, and a box that size fills
             // the space bags are supposed to go in -- so what a vehicle is solid where comes from
             // its shape, which for a modelled vehicle is a floor, some walls and a roof.
-            VehicleBody.Build(gameObject, Shape);
+            DiscardBodywork();
+            m_Bodywork = VehicleBody.Build(gameObject, Shape, profile.bounciness);
 
             BuildWheels(profile);
 
@@ -372,6 +373,30 @@ namespace BelowTheWing.Vehicles
                     "of wiring that was missed, not a vehicle that happens to be idle.", this);
                 enabled = false;
             }
+        }
+
+        /// <summary>What the solid parts are made of. Created with them, and destroyed with this.</summary>
+        PhysicsMaterial m_Bodywork;
+
+        void OnDestroy() => DiscardBodywork();
+
+        void DiscardBodywork()
+        {
+            if (m_Bodywork == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(m_Bodywork);
+            }
+            else
+            {
+                DestroyImmediate(m_Bodywork);
+            }
+
+            m_Bodywork = null;
         }
 
         void FixedUpdate()

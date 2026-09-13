@@ -159,5 +159,80 @@ namespace BelowTheWing.Tests.PlayMode
             Assert.That(Vector3.Distance(cart.transform.position, cartFrom), Is.LessThan(0.5f),
                 "a cart has no engine, and flooring a throttle it does not have should move it nowhere");
         }
+
+        [UnityTest]
+        public IEnumerator FullThrottleGetsATractorToEightMetresASecondInABitOverASecond()
+        {
+            var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);
+            yield return Steps.Seconds(2f);
+
+            tractor.IntentSource = new FixedIntent(throttle: 1f);
+            yield return Steps.Seconds(1.2f);
+
+            Assert.That(tractor.Body.linearVelocity.magnitude, Is.GreaterThan(8f),
+                $"{tractor.Body.linearVelocity.magnitude:F1} m/s after 1.2 s of full throttle. A tractor " +
+                "that pulls away like a loaded lorry makes the whole apron feel like treacle");
+        }
+
+        [UnityTest]
+        public IEnumerator ATractorNeverExceedsItsTopSpeedAndGetsCloseToIt()
+        {
+            // Room to run: at top speed a tractor covers the ordinary test apron in ten seconds and
+            // then falls off the edge of the world.
+            m_Apron.TearDown();
+            m_Apron = new TestApron(sizeMetres: 1000f);
+            var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);
+            yield return Steps.Seconds(2f);
+
+            tractor.IntentSource = new FixedIntent(throttle: 1f);
+            var fastest = 0f;
+            for (var i = 0; i < 500; i++)
+            {
+                yield return new WaitForFixedUpdate();
+                fastest = Mathf.Max(fastest, tractor.Body.linearVelocity.magnitude);
+            }
+
+            var top = m_TractorProfile.topSpeedMetresPerSecond;
+            Assert.That(fastest, Is.LessThanOrEqualTo(top + 0.1f), "the top speed is a top speed");
+            Assert.That(tractor.Body.linearVelocity.magnitude, Is.GreaterThan(top * 0.95f),
+                $"settled at {tractor.Body.linearVelocity.magnitude:F1} m/s against a top speed of {top}: " +
+                "the dial on the profile has to be the speed you actually get");
+        }
+
+        [UnityTest]
+        public IEnumerator SprintingTakesATractorPastItsOrdinaryTopSpeed()
+        {
+            m_Apron.TearDown();
+            m_Apron = new TestApron(sizeMetres: 1000f);
+            var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);
+            yield return Steps.Seconds(2f);
+
+            tractor.IntentSource = new FixedIntent(throttle: 1f) { Current = new DriveIntent(0f, 1f, 0f, true) };
+            yield return Steps.Seconds(10f);
+
+            var top = m_TractorProfile.topSpeedMetresPerSecond * m_TractorProfile.sprintDriveMultiplier;
+            Assert.That(tractor.Body.linearVelocity.magnitude, Is.GreaterThan(m_TractorProfile.topSpeedMetresPerSecond * 1.2f));
+            Assert.That(tractor.Body.linearVelocity.magnitude, Is.LessThanOrEqualTo(top + 0.1f));
+        }
+
+        [UnityTest]
+        public IEnumerator ATractorReleasedAtTenMetresASecondIsBelowSixTwoSecondsLater()
+        {
+            var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);
+            yield return Steps.Seconds(2f);
+
+            tractor.IntentSource = new FixedIntent(throttle: 1f);
+            while (tractor.Body.linearVelocity.magnitude < 10f)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            tractor.IntentSource = new FixedIntent();
+            yield return Steps.Seconds(2f);
+
+            Assert.That(tractor.Body.linearVelocity.magnitude, Is.LessThan(6f),
+                "off the throttle the driveline drags: a tractor that coasts on at speed is one " +
+                "nobody can stop in time");
+        }
     }
 }

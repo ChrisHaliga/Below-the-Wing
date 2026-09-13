@@ -59,10 +59,12 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   rollingResistanceCoefficient: 0.02
-  coastingDragPerSecond: 0.4
+  coastingDragPerSecond: 0.1
   maxDriveForceNewtons: 0
   sprintDriveMultiplier: 1
+  topSpeedMetresPerSecond: 0
   maxBrakeForceNewtons: 2000
+  bounciness: 0.4
   maxSteerAngleDegrees: 0
   steerRateDegreesPerSecond: 0
   driveable: 0

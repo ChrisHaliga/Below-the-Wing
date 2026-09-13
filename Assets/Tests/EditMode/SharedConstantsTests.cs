@@ -49,10 +49,10 @@ namespace BelowTheWing.Tests.EditMode
         public void RollingResistanceFollowsTheGravityPhysicsIsActuallyUsing()
         {
             const float load = 750f;
-            var onEarth = Mathf.Abs(WheelPhysics.RollingResistance(4f, load, 0.02f, m_Tractor));
+            var onEarth = Mathf.Abs(WheelPhysics.RollingResistance(4f, load, 0.02f, drivingWithTheMotion: false, m_Tractor));
 
             Physics.gravity = m_RealGravity * 2f;
-            var underTwiceTheWeight = Mathf.Abs(WheelPhysics.RollingResistance(4f, load, 0.02f, m_Tractor));
+            var underTwiceTheWeight = Mathf.Abs(WheelPhysics.RollingResistance(4f, load, 0.02f, drivingWithTheMotion: false, m_Tractor));
 
             Assert.That(underTwiceTheWeight, Is.GreaterThan(onEarth),
                 "a tire carrying twice the weight costs more to roll");

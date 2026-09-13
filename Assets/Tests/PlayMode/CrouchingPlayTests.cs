@@ -161,5 +161,23 @@ namespace BelowTheWing.Tests.PlayMode
                 "A player who crouched into a cart and walked out of it would otherwise stay bent " +
                 "double for the rest of the session");
         }
+
+        [UnityTest]
+        public IEnumerator CrouchingBringsTheEyesDownWithTheHead()
+        {
+            yield return Steps.Seconds(0.5f);
+            var standing = m_Crew.EyeMetresAboveOrigin;
+            Assert.That(standing, Is.GreaterThan(0.5f), "standing, the eyes are well up the capsule");
+
+            m_Keys.Crouch = true;
+            yield return Steps.Seconds(1f);
+
+            var top = m_Crew.transform.position.y + m_Crew.EyeMetresAboveOrigin;
+            var head = m_Crew.transform.position.y + (m_Crew.HeightMetres * 0.5f) - (m_Profile.heightMetres - m_Crew.HeightMetres) * 0.5f;
+            Assert.That(m_Crew.EyeMetresAboveOrigin, Is.LessThan(standing - 0.3f),
+                "eyes still at standing height inside a crouch look out through the roof of the cart " +
+                "the crouch exists to fit under");
+            Assert.That(top, Is.LessThan(head + 0.01f), "and not above the crouched head");
+        }
     }
 }

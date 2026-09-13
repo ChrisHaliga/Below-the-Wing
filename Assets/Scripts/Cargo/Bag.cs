@@ -72,6 +72,11 @@ namespace BelowTheWing.Cargo
             m_Grip.dynamicFriction = profile.frictionCoefficient;
             m_Grip.staticFriction = profile.frictionCoefficient;
             m_Grip.frictionCombine = PhysicsMaterialCombine.Minimum;
+
+            // A soft bag does not bounce, whatever it lands on. Said with the mode that beats a
+            // vehicle's averaging, or a bag thrown into a cart springs off the far lip and out.
+            m_Grip.bounciness = 0f;
+            m_Grip.bounceCombine = PhysicsMaterialCombine.Minimum;
             m_Collider.material = m_Grip;
         }
 

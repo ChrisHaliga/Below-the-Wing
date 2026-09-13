@@ -76,9 +76,13 @@ namespace BelowTheWing.Vehicles
         [Tooltip("Newtons of forward force at full throttle, shared across the driven wheels.")]
         public float maxDriveForceNewtons = 12000f;
 
-        [Tooltip("How much more force the driven wheels get while sprinting. 1 means sprinting does " +
-                 "nothing; 1.5 is half as much again.")]
+        [Tooltip("How much more force the driven wheels get while sprinting, and how much higher the " +
+                 "top speed is. 1 means sprinting does nothing; 1.5 is half as much again.")]
         public float sprintDriveMultiplier = 1.5f;
+
+        [Tooltip("The speed the drive can no longer push past, in metres per second. Drive force " +
+                 "fades away as it is approached. Zero for a vehicle with no drive.")]
+        public float topSpeedMetresPerSecond = 20f;
 
         [Tooltip("Newtons of braking force available, shared across the wheels.")]
         public float maxBrakeForceNewtons = 20000f;
@@ -89,6 +93,11 @@ namespace BelowTheWing.Vehicles
         [Tooltip("How fast the steer angle can change, in degrees per second. This is what stops " +
                  "steering snapping instantly from lock to lock.")]
         public float steerRateDegreesPerSecond = 120f;
+
+        [Header("Bodywork")]
+        [Tooltip("How much of a bump comes back, from 0 (clay) to 1 (a ball bearing). Applied to " +
+                 "every solid part of the body.")]
+        public float bounciness = 0.4f;
 
         /// <summary>
         /// Whether a player can take control of a vehicle carrying this profile. Baggage carts are

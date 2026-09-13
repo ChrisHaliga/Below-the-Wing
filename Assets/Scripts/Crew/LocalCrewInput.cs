@@ -143,10 +143,8 @@ namespace BelowTheWing.Crew
         }
 
         /// <summary>
-        /// Which way a throw goes: where the player is looking, rather than where their feet point.
-        ///
-        /// Somebody throwing a bag into a cart is aiming at the cart, and their body may well be
-        /// facing the way they were running.
+        /// Which way a throw goes: along the camera, pitch included. Looking up is how a lob is
+        /// aimed into a cart, and a throw that only ever went level could not be.
         /// </summary>
         Vector3 ThrowingTowards()
         {
@@ -155,8 +153,7 @@ namespace BelowTheWing.Crew
                 return m_Character.transform.forward;
             }
 
-            var looking = Quaternion.Euler(0f, m_Character.Camera.YawDegrees, 0f) * Vector3.forward;
-            return looking;
+            return m_Character.Camera.transform.forward;
         }
 
         static float Held(Keyboard keyboard, Key key) => keyboard[key].isPressed ? 1f : 0f;

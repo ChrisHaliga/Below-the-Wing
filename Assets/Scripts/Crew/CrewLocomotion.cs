@@ -34,21 +34,5 @@ namespace BelowTheWing.Crew
 
             return awayFromTheCamera * new Vector3(asked.x, 0f, asked.y) * speed;
         }
-
-        /// <summary>
-        /// Which way the character should be facing one step later: turning toward the direction it
-        /// is travelling, no faster than the profile allows, and staying put when it is not moving.
-        /// </summary>
-        public static Quaternion FaceTravel(Quaternion current, Vector3 travelDirection, float deltaTime, CrewProfile profile)
-        {
-            var acrossTheGround = new Vector3(travelDirection.x, 0f, travelDirection.z);
-            if (acrossTheGround.sqrMagnitude < 1e-6f)
-            {
-                return current;
-            }
-
-            var facingTravel = Quaternion.LookRotation(acrossTheGround.normalized, Vector3.up);
-            return Quaternion.RotateTowards(current, facingTravel, profile.turnRateDegreesPerSecond * deltaTime);
-        }
     }
 }

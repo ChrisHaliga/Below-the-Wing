@@ -86,29 +86,6 @@ namespace BelowTheWing.Tests.EditMode
                 "walking north-east must not be faster than walking north");
         }
 
-        [Test]
-        public void TheBodyTurnsTowardTravelOverTimeRatherThanSnappingToIt()
-        {
-            var facingNorth = Quaternion.LookRotation(Vector3.forward);
-            const float step = 0.02f;
 
-            var afterOneStep = CrewLocomotion.FaceTravel(facingNorth, Vector3.back, step, m_Profile);
-
-            var turned = Quaternion.Angle(facingNorth, afterOneStep);
-            Assert.That(turned, Is.GreaterThan(0f), "the character must begin coming round");
-            Assert.That(turned, Is.LessThanOrEqualTo((m_Profile.turnRateDegreesPerSecond * step) + 1e-2f),
-                "but it must not spin to face the other way inside one step");
-        }
-
-        [Test]
-        public void AStandingCharacterKeepsFacingWhereItWas()
-        {
-            var facing = Quaternion.LookRotation(Vector3.right);
-
-            var after = CrewLocomotion.FaceTravel(facing, Vector3.zero, 0.02f, m_Profile);
-
-            Assert.That(Quaternion.Angle(facing, after), Is.EqualTo(0f).Within(1e-3f),
-                "somebody who has stopped walking does not swing round to face north");
-        }
     }
 }

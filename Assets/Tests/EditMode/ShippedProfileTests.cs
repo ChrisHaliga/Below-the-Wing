@@ -143,5 +143,20 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(springAtFullCompression, Is.LessThan(weightPerCorner * 20f),
                 "and one far stronger than the weight on it barely compresses, so the vehicle rides on stilts");
         }
+
+        [Test]
+        public void TheTractorIsQuickAndTheCartRollsFree()
+        {
+            var tractor = Load<VehicleProfile>(TractorPath);
+            var cart = Load<VehicleProfile>(CartPath);
+
+            Assert.That(tractor.topSpeedMetresPerSecond, Is.InRange(15f, 40f), "BaggageTractor: a top speed worth having");
+            Assert.That(tractor.maxDriveForceNewtons / tractor.massKg, Is.GreaterThan(6f),
+                "BaggageTractor: pulls away at more than six metres per second squared");
+            Assert.That(tractor.bounciness, Is.GreaterThan(0.2f), "BaggageTractor: bumps have to come back");
+            Assert.That(cart.bounciness, Is.GreaterThan(0.2f), "BaggageCart: bumps have to come back");
+            Assert.That(cart.coastingDragPerSecond, Is.LessThan(0.2f),
+                "BaggageCart: a shoved cart has to roll away, not be dragged to a halt by a driveline it does not have");
+        }
     }
 }

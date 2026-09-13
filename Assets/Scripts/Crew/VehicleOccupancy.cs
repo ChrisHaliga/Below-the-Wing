@@ -34,6 +34,9 @@ namespace BelowTheWing.Crew
         /// <summary>Metres of clear ground left between a player and the vehicle they step out of.</summary>
         const float DismountClearanceMetres = 1f;
 
+        /// <summary>A little air under the feet, so the capsule is not created touching the tarmac.</summary>
+        const float StandingClearanceMetres = 0.05f;
+
         readonly Transform m_Crew;
         readonly IOwnershipBroker m_Broker;
         readonly Func<IReadOnlyList<VehicleController>> m_NearbyVehicles;
@@ -198,10 +201,17 @@ namespace BelowTheWing.Crew
         /// Where a player who has just got out should be put: clear of the vehicle they were in,
         /// rather than inside it.
         /// </summary>
-        public Vector3 DismountPosition(VehicleController vehicle)
+        public Vector3 DismountPosition(VehicleController vehicle, float standingHeightMetres)
         {
+            // Beside the bodywork, and up on their feet. The vehicle's origin is on the tarmac
+            // between its wheels, so its height is the ground's, and a person whose middle is put
+            // there is half underground.
             var clearOfTheBodywork = (vehicle.Shape.EnvelopeSizeMetres.x * 0.5f) + DismountClearanceMetres;
-            return vehicle.transform.position + (vehicle.transform.right * clearOfTheBodywork);
+            var standing = (standingHeightMetres * 0.5f) + StandingClearanceMetres;
+
+            return vehicle.transform.position
+                   + (vehicle.transform.right * clearOfTheBodywork)
+                   + (Vector3.up * standing);
         }
 
         bool WithinReachOf(VehicleController vehicle)
