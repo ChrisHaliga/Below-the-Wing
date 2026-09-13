@@ -39,7 +39,7 @@ namespace BelowTheWing.Tests.Multiplayer
             // Named the way the game names things -- over the network, on arrival -- rather than by
             // the test writing a name in and then asserting the name it wrote.
             m_CartPrefab.AddComponent<ApronAppearance>().DescribeAs(
-                ApronAppearance.Shape.Box, m_CartProfile.bodySizeMetres, Color.grey, 1.2f);
+                ApronAppearance.Shape.Box, TestShapes.StandInSizeMetres, Color.grey, 1.2f);
             m_CartPrefab.AddComponent<ApronIdentity>();
 
             base.OnServerAndClientsCreated();

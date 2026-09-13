@@ -36,8 +36,15 @@ namespace BelowTheWing.Vehicles
         /// how far back. Two hitched vehicles stand the rear reach of the one in front plus the
         /// front reach of the one behind apart, and anything that assumes one number for both
         /// leaves every coupling in a train holding a gap open.
+        ///
+        /// An end with no coupling reaches nowhere. A baggage tractor has nothing at its front, and
+        /// nothing is ever laid out ahead of one.
         /// </summary>
-        public static VehicleFootprint Of(Vector3 envelopeSizeMetres, Vector3 frontCouplingLocal, Vector3 rearCouplingLocal)
-            => new VehicleFootprint(envelopeSizeMetres, frontCouplingLocal.z, -rearCouplingLocal.z);
+        public static VehicleFootprint Of(
+            Vector3 envelopeSizeMetres, Vector3? frontCouplingLocal, Vector3? rearCouplingLocal)
+            => new VehicleFootprint(
+                envelopeSizeMetres,
+                frontCouplingLocal?.z ?? 0f,
+                -(rearCouplingLocal?.z ?? 0f));
     }
 }

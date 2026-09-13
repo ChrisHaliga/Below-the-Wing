@@ -98,12 +98,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab9d7d19d12edde41acb1fda44bda226, type: 3}
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Vehicles::BelowTheWing.Vehicles.VehicleShape
-  m_WheelCentresLocal:
-  - {x: -0.79253507, y: 0.15567946, z: 1.5804386}
-  - {x: 0.7925354, y: 0.15567946, z: 1.5804385}
-  - {x: -0.7925353, y: 0.15568006, z: -1.5804381}
-  - {x: 0.79253507, y: 0.15567994, z: -1.5804383}
+  m_Wheels:
+  - CentreLocal: {x: -0.79253507, y: 0.15567946, z: 1.5804386}
+    RadiusMetres: 0.15702271
+  - CentreLocal: {x: 0.7925354, y: 0.15567946, z: 1.5804385}
+    RadiusMetres: 0.15702271
+  - CentreLocal: {x: -0.7925353, y: 0.15568006, z: -1.5804381}
+    RadiusMetres: 0.15702271
+  - CentreLocal: {x: 0.79253507, y: 0.15567994, z: -1.5804383}
+    RadiusMetres: 0.15702271
+  m_HasFrontCoupling: 1
   m_FrontCouplingLocal: {x: 0.00000027640633, y: 0.20751238, z: 3.1617198}
+  m_HasRearCoupling: 1
   m_RearCouplingLocal: {x: -0.00000015874664, y: 0.13095415, z: -1.8158497}
   m_EnvelopeSizeMetres: {x: 1.8855, y: 2.0155, z: 3.8152}
   m_EnvelopeCentreLocal: {x: 0, y: 1.0909, z: 0.1296}
@@ -232,10 +238,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Apron::BelowTheWing.Apron.ApronAppearance
   m_Shape: 3
-  m_SizeMetres: {x: 1.8855, y: 2.0155, z: 3.8152}
-  m_Colour: {r: 0.55, g: 0.55, b: 0.58, a: 1}
+  m_SizeMetres: {x: 1, y: 1, z: 1}
+  m_Colour: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_LabelHeightMetres: 2.3002
-  m_DrawnAtLocal: {x: 0, y: 1.0909, z: 0.1296}
+  m_DrawnAtLocal: {x: 0, y: 0, z: 0}
   m_DisplayName: 
 --- !u!114 &7284710948490794246
 MonoBehaviour:

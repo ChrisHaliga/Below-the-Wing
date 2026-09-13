@@ -161,8 +161,17 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(cartShape, Is.Not.Null,
                 "BaggageCart: nothing says where its wheels and couplings are, so its suspension has " +
                 "nowhere to hang from and it falls through the apron");
-            Assert.That(cartShape.WheelCentresLocal.Count, Is.EqualTo(4),
+            Assert.That(cartShape.Wheels.Count, Is.EqualTo(4),
                 "BaggageCart: four wheels, read off the model");
+
+            foreach (var wheel in cartShape.Wheels)
+            {
+                Assert.That(wheel.RadiusMetres, Is.EqualTo(0.157f).Within(0.005f),
+                    "BaggageCart: a wheel is measured off its own mesh. This figure used to be " +
+                    "typed into the profile, where nothing kept it agreeing with the model, and " +
+                    "the invisible wheels holding the cart up were then a different size from the " +
+                    "visible ones turning on it");
+            }
             Assert.That(cartShape.FrontReachMetres, Is.EqualTo(3.1617f).Within(0.02f),
                 "BaggageCart: the front coupling is the HITCH_Male empty. Hitch, Hitch Pin and " +
                 "Hitch_Female are drawbar meshes sitting near it, and their names differ from the " +
@@ -205,9 +214,82 @@ namespace BelowTheWing.Tests.EditMode
                 "machine should be simulating the bag");
 
             var tractor = Prefab("BaggageTractor");
-            Assert.That(tractor.GetComponent<VehicleShape>(), Is.Not.Null,
-                "BaggageTractor: a vehicle with no model is described in exactly the same terms as " +
-                "one with a model, or everything downstream needs a branch for it");
+            var tractorShape = tractor.GetComponent<VehicleShape>();
+            Assert.That(tractorShape, Is.Not.Null,
+                "BaggageTractor: nothing says where its wheels and couplings are, so its suspension " +
+                "has nowhere to hang from and it falls through the apron");
+
+            Assert.That(tractor.transform.Find(ApronAppearance.LookName), Is.Not.Null,
+                "BaggageTractor: nothing to look at");
+            Assert.That(tractor.GetComponentInChildren<WheelLook>(), Is.Not.Null,
+                "BaggageTractor: with nothing driving the visible wheels they neither turn nor stay " +
+                "on the tarmac");
+
+            Assert.That(tractorShape.Wheels.Count, Is.EqualTo(4),
+                "BaggageTractor: four wheels, read off the model. The front pair hang under the " +
+                "steering pivots they were modelled on rather than off the model root, and a search " +
+                "of direct children finds neither of them -- silently, leaving a tractor on two");
+
+            var front = 0;
+            var rear = 0;
+            foreach (var wheel in tractorShape.Wheels)
+            {
+                if (wheel.CentreLocal.z > 0f)
+                {
+                    front++;
+                    Assert.That(wheel.RadiusMetres, Is.EqualTo(0.2203f).Within(0.005f),
+                        "BaggageTractor: the front wheels measure 0.2203 m off the model");
+                }
+                else
+                {
+                    rear++;
+                    Assert.That(wheel.RadiusMetres, Is.EqualTo(0.2647f).Within(0.005f),
+                        "BaggageTractor: the rear wheels measure 0.2647 m off the model");
+                }
+
+                Assert.That(wheel.CentreLocal.y, Is.EqualTo(wheel.RadiusMetres).Within(0.01f),
+                    "BaggageTractor: the origin is on the tarmac, so a wheel's centre is its own " +
+                    "radius above it");
+            }
+
+            Assert.That(front, Is.EqualTo(2), "BaggageTractor: two wheels ahead of the origin");
+            Assert.That(rear, Is.EqualTo(2), "BaggageTractor: two behind it");
+
+            Assert.That(tractorShape.HasFrontCoupling, Is.False,
+                "BaggageTractor: nothing tows a tractor, and its model has no coupling at the front. " +
+                "Recorded as (0,0,0) instead it is a hitch on the tarmac between its front wheels");
+            Assert.That(tractorShape.RearReachMetres, Is.EqualTo(1.3692f).Within(0.02f),
+                "BaggageTractor: the rear coupling is the HITCH_Female empty. Hitch_Pin is the mesh " +
+                "sitting 8 cm below it");
+            Assert.That(tractorShape.RearCouplingLocal.Value.y, Is.EqualTo(0.2075f).Within(0.01f),
+                "BaggageTractor: a tractor's socket and a cart's drawbar meet at the same height, so " +
+                "a coupled pair stands level");
+
+            Assert.That(tractorShape.InteriorLocal.size, Is.EqualTo(Vector3.zero),
+                "BaggageTractor: nothing rides inside a tractor, and an interior nobody can reach is " +
+                "a hole in its side waiting to be found");
+            Assert.That(tractorShape.SolidParts.Count, Is.EqualTo(1),
+                "BaggageTractor: one box, the bodywork");
+
+            var solid = tractorShape.SolidParts[0];
+            Assert.That(solid.CentreLocal.y - (solid.SizeMetres.y * 0.5f), Is.GreaterThan(0.1f),
+                "BaggageTractor: the solid body reaches the tarmac. Resting on the ground it carries " +
+                "the tractor's own weight, the suspension never compresses, and what should be a " +
+                "tractor on wheels is a crate sliding about on the floor");
+            Assert.That(solid.SizeMetres, Is.EqualTo(tractorShape.EnvelopeSizeMetres),
+                "BaggageTractor: solid through and through, so what it collides as is the room it " +
+                "takes up");
+
+            var headlights = tractor.transform.Find($"{ApronAppearance.LookName}/Headlights");
+            Assert.That(headlights, Is.Not.Null,
+                "BaggageTractor: the model has no Headlights, so there is nothing here that can tell " +
+                "which way round it ended up");
+            Assert.That(tractor.transform.InverseTransformPoint(headlights.position).z, Is.GreaterThan(0f),
+                "BaggageTractor: its headlights are behind it. Both models are built facing what " +
+                "Unity calls backwards and are turned half a turn on the way in; a model exported " +
+                "the other way round drives in reverse, steers with its driven axle and tows from " +
+                "its nose, and every measurement taken off it is still perfectly self-consistent");
+
             Assert.That(tractor.GetComponent<VehicleOccupant>(), Is.Not.Null,
                 "only the tractor can be sat in, and without this nothing refuses a request for one " +
                 "somebody is already driving");
@@ -240,20 +322,55 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void WhatAVehicleLooksLikeMatchesWhatItCollidesAs()
+        public void EveryVehicleIsDrawnAsItsModelRatherThanAsAStandInBox()
         {
             foreach (var name in new[] { "BaggageTractor", "BaggageCart" })
             {
                 var prefab = Prefab(name);
-                var profile = (VehicleProfile)new SerializedObject(prefab.GetComponent<VehicleController>())
-                    .FindProperty("m_Profile").objectReferenceValue;
 
-                var drawnAt = prefab.GetComponent<ApronAppearance>().SizeMetres;
+                Assert.That(prefab.GetComponent<ApronAppearance>().DrawnAs,
+                    Is.EqualTo(ApronAppearance.Shape.AlreadyModelled),
+                    $"{name} would draw a stand-in box on top of the model it already has, and a " +
+                    "player would see a grey crate with a tractor inside it");
 
-                Assert.That(drawnAt, Is.EqualTo(profile.bodySizeMetres),
-                    $"{name} is drawn at {drawnAt} and collides as {profile.bodySizeMetres}. Everything " +
-                    "on the apron is a grey box, so its size is the only thing telling a player how " +
-                    "much room it needs");
+                var look = prefab.transform.Find(ApronAppearance.LookName);
+                Assert.That(look, Is.Not.Null, $"{name}: nothing to look at");
+                Assert.That(look.GetComponentsInChildren<MeshRenderer>(), Is.Not.Empty,
+                    $"{name} says it is already modelled and then draws nothing at all, which on the " +
+                    "apron is a floating label with an invisible three-tonne machine under it");
+            }
+        }
+
+        [Test]
+        public void TheWheelsAVehicleDrawsAreTheOnesItsSuspensionProbesFrom()
+        {
+            foreach (var name in new[] { "BaggageTractor", "BaggageCart" })
+            {
+                var prefab = Prefab(name);
+                var shape = prefab.GetComponent<VehicleShape>();
+                var drawn = new SerializedObject(prefab.GetComponentInChildren<WheelLook>())
+                    .FindProperty("m_Wheels");
+
+                Assert.That(drawn.arraySize, Is.EqualTo(shape.Wheels.Count),
+                    $"{name} draws {drawn.arraySize} wheels and hangs its suspension from " +
+                    $"{shape.Wheels.Count}");
+
+                for (var i = 0; i < drawn.arraySize; i++)
+                {
+                    var wheel = (Transform)drawn.GetArrayElementAtIndex(i).objectReferenceValue;
+                    Assert.That(wheel, Is.Not.Null, $"{name}: wheel {i + 1} is missing");
+
+                    var where = prefab.transform.InverseTransformPoint(wheel.position);
+                    var axle = shape.Wheels[i].CentreLocal;
+
+                    Assert.That(new Vector2(where.x - axle.x, where.z - axle.z).magnitude,
+                        Is.LessThan(0.02f),
+                        $"{name}: the wheel drawn {i + 1}th is at {where}, and the {i + 1}th axle " +
+                        $"its suspension probes from is at {axle}. These are two lists that have to " +
+                        "stay in the same order: each visible wheel is moved to the height its own " +
+                        "corner's ray found and turned at its own corner's radius, so a swap draws " +
+                        "the rear wheels at the front axle's ride height and spins them 20% wrong");
+                }
             }
         }
     }

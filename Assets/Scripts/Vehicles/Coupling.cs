@@ -22,8 +22,8 @@ namespace BelowTheWing.Vehicles
         public const float ReachMetres = 6f;
 
         /// <summary>
-        /// Where a cart has to stand to be hitched behind this vehicle, so that the two hitch points
-        /// line up.
+        /// Where a cart has to stand to be hitched behind this vehicle so that the two hitch points
+        /// line up, or null if one of them has no coupling at that end to line up.
         ///
         /// This matters more than it looks. The joint between two vehicles is anchored where their
         /// hitches meet, and at this distance it begins life already satisfied with nothing to pull
@@ -32,25 +32,37 @@ namespace BelowTheWing.Vehicles
         /// rest of the session. Parked trains are placed at this distance by the layout; hitching at
         /// runtime is the other way a train gets made.
         /// </summary>
-        public static (Vector3 Position, Quaternion Rotation) WhereToStand(
+        public static (Vector3 Position, Quaternion Rotation)? WhereToStand(
             VehicleController behind, VehicleController cart)
         {
+            var theirEnd = behind.RearHitchLocal;
+            var ourEnd = cart.FrontHitchLocal;
+
+            if (theirEnd == null || ourEnd == null)
+            {
+                return null;
+            }
+
             var facing = behind.transform.rotation;
 
             // Worked back from where the two hitches have to meet rather than by measuring along the
             // ground. The two halves of a coupling sit at different heights on purpose, so the cart is
             // placed by its front coupling rather than by its origin; the height difference is then
             // the joint's to accept, not a gap for it to close.
-            var meetHere = behind.transform.TransformPoint(behind.RearHitchLocal);
+            var meetHere = behind.transform.TransformPoint(theirEnd.Value);
 
-            return (meetHere - (facing * cart.FrontHitchLocal), facing);
+            return (meetHere - (facing * ourEnd.Value), facing);
         }
 
         /// <summary>
         /// The nearest vehicle that could be hitched to the back of this train, or null.
         ///
-        /// A candidate has to be a vehicle nobody is driving, not already part of a train of more
-        /// than itself, not this train, and within reach of the back of it.
+        /// A candidate has to be something that can be towed at all, nobody driving it, not already
+        /// part of a train of more than itself, not this train, and within reach of the back of it.
+        ///
+        /// Being towable is a fact about the vehicle's shape rather than about this situation: a
+        /// baggage tractor has no coupling at its front, so there is nothing to hitch it by and
+        /// nowhere for the joint to pull from.
         /// </summary>
         public static VehicleController WorthHitching(
             CartChain train, IReadOnlyList<VehicleController> nearby)
@@ -89,6 +101,14 @@ namespace BelowTheWing.Vehicles
         {
             if (candidate == null || train == null || train.Contains(candidate))
             {
+                return false;
+            }
+
+            if (!candidate.CanBeTowed)
+            {
+                // Nothing tows a baggage tractor. Its model has no coupling at the front, so a
+                // joint made here would be anchored at its origin -- a point on the tarmac between
+                // its front wheels -- and the train would drag it along by its own axle.
                 return false;
             }
 

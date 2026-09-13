@@ -45,11 +45,11 @@ namespace BelowTheWing.Tests.EditMode
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);
             var cart = LooseCart("Cart", new Vector3(3f, 0f, -20f));
 
-            var (position, rotation) = Coupling.WhereToStand(tractor, cart);
+            var (position, rotation) = Coupling.WhereToStand(tractor, cart).Value;
             cart.transform.SetPositionAndRotation(position, rotation);
 
-            var tractorHitch = tractor.transform.TransformPoint(tractor.RearHitchLocal);
-            var cartHitch = cart.transform.TransformPoint(cart.FrontHitchLocal);
+            var tractorHitch = tractor.transform.TransformPoint(tractor.RearHitchLocal.Value);
+            var cartHitch = cart.transform.TransformPoint(cart.FrontHitchLocal.Value);
 
             Assert.That(Vector3.Distance(tractorHitch, cartHitch), Is.LessThan(0.01f),
                 "the two hitch points have to land on each other. A coupling created while they are " +
@@ -63,7 +63,7 @@ namespace BelowTheWing.Tests.EditMode
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);
             var cart = LooseCart("Cart", new Vector3(30f, 0f, 0f));
 
-            var (position, _) = Coupling.WhereToStand(tractor, cart);
+            var (position, _) = Coupling.WhereToStand(tractor, cart).Value;
 
             Assert.That(position.z, Is.LessThan(0f), "behind, not in front of, and not on top of");
         }
@@ -80,6 +80,43 @@ namespace BelowTheWing.Tests.EditMode
             var offered = Coupling.WorthHitching(train, new List<VehicleController> { further, close });
 
             Assert.That(offered, Is.SameAs(close), "reaching past a nearer cart to grab a further one is wrong");
+        }
+
+        [Test]
+        public void ThereIsNowhereToStandAVehicleThatCannotBeTowed()
+        {
+            var train = m_Apron.AddTrain(m_TractorProfile, m_CartProfile, cartCount: 1, Vector3.zero);
+            var back = train.Members[train.Members.Count - 1];
+
+            var spare = m_Apron.AddVehicle(
+                m_TractorProfile, "Tug 2", new Vector3(3f, 0f, -20f), Quaternion.identity, TestShapes.Tractor());
+
+            Assert.That(Coupling.WhereToStand(back, spare), Is.Null,
+                "there is no place to put a tractor that lines its front coupling up with anything, " +
+                "because it has no front coupling. Answering with a position worked out from its " +
+                "origin parks it with the cart's hitch buried between its front wheels");
+        }
+
+        [Test]
+        public void ATractorParkedBehindATrainIsNotOfferedForHitching()
+        {
+            var train = m_Apron.AddTrain(m_TractorProfile, m_CartProfile, cartCount: 2, Vector3.zero);
+            var back = train.Members[train.Members.Count - 1];
+            var where = back.transform.position - new Vector3(0f, 0f, 4f);
+
+            var spare = m_Apron.AddVehicle(
+                m_TractorProfile, "Tug 2", where, Quaternion.identity, TestShapes.Tractor());
+            var cart = LooseCart("Cart", where);
+
+            Assert.That(Coupling.WorthHitching(train, new List<VehicleController> { spare }), Is.Null,
+                "nothing tows a tractor: its model has no coupling at the front, so a joint made " +
+                "here would be anchored at its origin -- a point on the tarmac between its front " +
+                "wheels -- and the train would drag it along by its own axle");
+
+            Assert.That(Coupling.WorthHitching(train, new List<VehicleController> { spare, cart }),
+                Is.SameAs(cart),
+                "and the cart standing in the same place is still offered, so this is about what a " +
+                "tractor is rather than about where it was parked");
         }
 
         [Test]

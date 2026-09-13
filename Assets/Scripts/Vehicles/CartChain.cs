@@ -364,6 +364,21 @@ namespace BelowTheWing.Vehicles
 
         static HingeJoint Hitch(VehicleController inFront, VehicleController behind, ChainJointSettings settings)
         {
+            // No coupling at one of the two ends means there is no joint to make. A baggage
+            // tractor has nothing at its front: anchoring there would anchor at its origin, a point
+            // on the tarmac between its front wheels, and the train would drag it along by its axle.
+            // Refused rather than approximated, and the train is left uncoupled at that joint, which
+            // is a state it already has a meaning for -- a train this machine is not simulating.
+            if (behind.FrontHitchLocal == null || inFront.RearHitchLocal == null)
+            {
+                Debug.LogError(
+                    $"'{behind.name}' cannot be hitched behind '{inFront.name}': " +
+                    $"{(behind.FrontHitchLocal == null ? behind.name + " has no coupling at its front" : inFront.name + " has no coupling at its back")}.",
+                    behind);
+
+                return null;
+            }
+
             // The joint lives on the vehicle being towed, which is the one whose movement it
             // constrains, and connects forward to the one doing the towing.
             var coupling = behind.gameObject.AddComponent<HingeJoint>();
@@ -381,11 +396,13 @@ namespace BelowTheWing.Vehicles
             // Meeting in the middle leaves the difference as fixed geometry the joint never argues
             // with. Parked at coupling distance -- which is how the layout places them -- the two
             // anchors land on the same world point and the joint begins life already satisfied.
-            var meetAt = 0.5f * (behind.FrontHitchLocal.y + inFront.RearHitchLocal.y);
+            var ourEnd = behind.FrontHitchLocal.Value;
+            var theirEnd = inFront.RearHitchLocal.Value;
+            var meetAt = 0.5f * (ourEnd.y + theirEnd.y);
 
             coupling.autoConfigureConnectedAnchor = false;
-            coupling.anchor = new Vector3(0f, meetAt, behind.FrontHitchLocal.z);
-            coupling.connectedAnchor = new Vector3(0f, meetAt, inFront.RearHitchLocal.z);
+            coupling.anchor = new Vector3(0f, meetAt, ourEnd.z);
+            coupling.connectedAnchor = new Vector3(0f, meetAt, theirEnd.z);
 
             coupling.axis = Vector3.up;
             coupling.useLimits = true;

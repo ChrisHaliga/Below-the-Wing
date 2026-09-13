@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using BelowTheWing.Apron;
@@ -20,9 +21,10 @@ namespace BelowTheWing.EditorTools
     /// Builds the apron scene and the four prefabs it spawns.
     ///
     /// One prefab per kind of thing, each carrying the profile it runs on. That is what makes a cart
-    /// a cart: not a value it is told after it exists, but the thing it was made from. The stand-in
-    /// shape is filled in here from the same profile, so what a vehicle looks like and what it
-    /// collides as cannot drift apart.
+    /// a cart: not a value it is told after it exists, but the thing it was made from. A vehicle's
+    /// geometry is measured off its model here, so what a player sees, what the physics hangs its
+    /// suspension from and what the vehicle collides as cannot drift apart -- they are one
+    /// measurement, taken once.
     ///
     /// The scene deliberately contains no aircraft, tractors or carts. It holds the machinery --
     /// networking, the camera, the readout -- and everything on the apron is put there at runtime by
@@ -49,9 +51,8 @@ namespace BelowTheWing.EditorTools
         const string CrewProfilePath = "Assets/Content/Crew/RampWorker.asset";
         const string BagProfilePath = "Assets/Content/Cargo/CheckedBag.asset";
         const string CartModelPath = "Assets/Content/Vehicles/baggage_cart.fbx";
+        const string TractorModelPath = "Assets/Content/Vehicles/baggage_tractor.fbx";
 
-        static readonly Color TractorBlue = new Color(0.35f, 0.55f, 0.75f);
-        static readonly Color CartGrey = new Color(0.55f, 0.55f, 0.58f);
         static readonly Color HiVisYellow = new Color(0.95f, 0.75f, 0.15f);
         static readonly Color BagCanvas = new Color(0.45f, 0.38f, 0.32f);
         static readonly Color FuselageWhite = new Color(0.82f, 0.82f, 0.85f);
@@ -85,7 +86,7 @@ namespace BelowTheWing.EditorTools
 
         static GameObject BuildTractor(VehicleProfile profile)
         {
-            var go = NewVehicle("BaggageTractor", profile, TractorBlue);
+            var go = NewVehicle("BaggageTractor", profile, TractorModelPath, MeasureTheTractor);
 
             // Only something a player can sit in needs to say whether somebody is sitting in it, and
             // to refuse to change hands while they are.
@@ -96,32 +97,95 @@ namespace BelowTheWing.EditorTools
 
         static GameObject BuildCart(VehicleProfile profile)
         {
-            var go = NewVehicle("BaggageCart", profile, CartGrey, CartModelPath);
+            var go = NewVehicle("BaggageCart", profile, CartModelPath, MeasureTheCart);
 
             return SaveAndDiscard(go, $"{PrefabFolder}/BaggageCart.prefab");
+        }
+
+        /// <summary>
+        /// What measuring a vehicle's model produces: where its parts are, and the visible wheels.
+        ///
+        /// The two come back together because their order has to match. The suspension hangs from
+        /// the wheel positions in the shape, and the visible wheels are moved to agree with what
+        /// each of those rays found, so the third wheel in one list must be the third in the other.
+        /// Searched for twice, in two places, they agree only until somebody edits one of them.
+        /// </summary>
+        readonly struct MeasuredVehicle
+        {
+            public readonly VehicleShape.Measurements Shape;
+            public readonly IReadOnlyList<Transform> Wheels;
+
+            public MeasuredVehicle(VehicleShape.Measurements shape, IReadOnlyList<Transform> wheels)
+            {
+                Shape = shape;
+                Wheels = wheels;
+            }
+        }
+
+        /// <summary>
+        /// Measures the baggage tractor model and fills in everything the game needs to know about
+        /// its geometry.
+        ///
+        /// A tractor is solid through and through: nothing rides inside one, so the box it collides
+        /// as is the box its bodywork fills. That box deliberately stops above the wheels -- the
+        /// bodywork's underside is 0.15 m off the tarmac on this model -- because a solid part that
+        /// reaches the ground carries the vehicle's weight itself, and then the suspension never
+        /// compresses and what should be a tractor on wheels is a crate sliding about on the floor.
+        ///
+        /// Nothing tows a tractor, so it has no coupling at the front and says so. It is not a
+        /// coupling at the origin: the origin is a point on the tarmac between the front wheels,
+        /// and a train hitched there would drag the tractor along by its own axle.
+        /// </summary>
+        static MeasuredVehicle MeasureTheTractor(GameObject tractor, Transform model)
+        {
+            // Named by their path, because the front pair hang under the steering pivots they were
+            // modelled on rather than off the root of the model. Transform.Find looks at direct
+            // children only: asked for "Wheel_Front_Left" it answers null, and the tractor quietly
+            // ends up with two wheels and nothing to say why.
+            var measured = Wheels(tractor, model, new[]
+            {
+                "Steer_Left/Wheel_Front_Left",
+                "Steer_Right/Wheel_Front_Right",
+                "Wheel_Back_Left",
+                "Wheel_Back_Right"
+            });
+
+            var bodywork = MeshBoxLocal(tractor, model, "Body");
+
+            return new MeasuredVehicle(
+                new VehicleShape.Measurements
+                {
+                    Wheels = measured.Placements,
+                    FrontCouplingLocal = null,
+                    RearCouplingLocal = MarkerLocal(tractor, model, "HITCH_Female"),
+                    EnvelopeSizeMetres = bodywork.size,
+                    EnvelopeCentreLocal = bodywork.center,
+                    InteriorLocal = new Bounds(Vector3.zero, Vector3.zero),
+                    SolidParts = new List<VehicleShape.SolidPart>
+                    {
+                        new VehicleShape.SolidPart("Body", bodywork.size, bodywork.center)
+                    }
+                },
+                measured.Visible);
         }
 
         /// <summary>
         /// Measures the baggage cart model and fills in everything the game needs to know about its
         /// geometry.
         ///
-        /// The wheels, the two couplings and the overall envelope come from the model and the
-        /// profile, so re-exporting the cart moves them without anybody editing code. The deck
-        /// figures below are typed in, and that is worth being honest about: they were measured off
-        /// the model by hand, and the mesh merges the deck into the rest of the bodywork so there is
-        /// no node to read them from. If the cart is remodelled they have to be re-measured.
-        ///
-        /// The one thing decided rather than measured is which way round the model goes: it was
-        /// exported with its drawbar along what Unity calls backwards, so it is turned to face the
-        /// way the game drives.
+        /// The wheels and the two couplings come from the model, so re-exporting the cart moves
+        /// them without anybody editing code. The deck and envelope figures below are typed in, and
+        /// that is worth being honest about: they were measured off the model by hand, and the mesh
+        /// merges the deck into the rest of the bodywork so there is no node to read them from. If
+        /// the cart is remodelled they have to be re-measured.
         ///
         /// Note the two kinds of hitch in the model. HITCH_Male and HITCH_Female are empties marking
         /// the exact points a coupling meets; Hitch, Hitch Pin and Hitch_Female are the drawbar
-        /// meshes that sit near them. The names differ only by case, so these are looked up exactly
-        /// and checked for being what they claim to be -- taking the mesh instead would put every
-        /// coupling in the game tens of centimetres out.
+        /// meshes that sit near them. The names differ only by case, so a marker that turns out to
+        /// be a mesh is refused -- taking one would put every coupling in the game tens of
+        /// centimetres out.
         /// </summary>
-        static void ShapeFromTheCartModel(GameObject cart, Transform model, VehicleProfile profile)
+        static MeasuredVehicle MeasureTheCart(GameObject cart, Transform model)
         {
             const float deckTopMetres = 0.4727f;
             const float deckWidthMetres = 1.7211f;
@@ -131,37 +195,13 @@ namespace BelowTheWing.EditorTools
             const float lipHeightMetres = 0.18f;
             const float lipThicknessMetres = 0.05f;
 
-            Vector3 Local(string landmark)
-            {
-                var found = model.Find(landmark);
-                if (found == null)
-                {
-                    Debug.LogError($"The cart model has no '{landmark}'.");
-                    return Vector3.zero;
-                }
+            // Bumper to bumper and axle to roof, which is wider and lower than the bodywork mesh
+            // alone. The drawbar is left out of it: how far that reaches is the front coupling's
+            // business, and counting it here would have carts laid out a drawbar's length apart.
+            var envelopeSizeMetres = new Vector3(1.8855f, 2.0155f, 3.8152f);
+            var envelopeCentreLocal = new Vector3(0f, 1.0909f, 0.1296f);
 
-                if (found.GetComponent<MeshFilter>() != null)
-                {
-                    Debug.LogError(
-                        $"'{landmark}' is a mesh rather than a marker. The cart model has both, and " +
-                        "their names differ only by case.");
-                }
-
-                return cart.transform.InverseTransformPoint(found.position);
-            }
-
-            var wheels = new List<Vector3>();
-            for (var i = 1; i <= 4; i++)
-            {
-                var wheel = model.Find($"Wheel_{i}");
-                if (wheel == null)
-                {
-                    Debug.LogError($"The cart model has no 'Wheel_{i}'.");
-                    continue;
-                }
-
-                wheels.Add(cart.transform.InverseTransformPoint(wheel.position));
-            }
+            var measured = Wheels(cart, model, new[] { "Wheel_1", "Wheel_2", "Wheel_3", "Wheel_4" });
 
             var roofUnderside = deckTopMetres + clearInsideMetres;
 
@@ -210,46 +250,151 @@ namespace BelowTheWing.EditorTools
                     new Vector3(0f, roofUnderside + (slabThicknessMetres * 0.5f), 0f))
             };
 
-            cart.AddComponent<VehicleShape>().Describe(new VehicleShape.Measurements
-            {
-                WheelCentresLocal = wheels,
-                FrontCouplingLocal = Local("HITCH_Male"),
-                RearCouplingLocal = Local("HITCH_Female"),
-                EnvelopeSizeMetres = profile.bodySizeMetres,
-                EnvelopeCentreLocal = new Vector3(0f, 1.0909f, 0.1296f),
-                InteriorLocal = new Bounds(
-                    new Vector3(0f, deckTopMetres + (clearInsideMetres * 0.5f), 0f),
-                    new Vector3(deckWidthMetres, clearInsideMetres, deckLengthMetres)),
-                SolidParts = solid
-            });
-
-            WatchTheWheels(cart, model);
-        }
-
-        /// <summary>Hands the visible wheels to whatever turns them and keeps them on the ground.</summary>
-        static void WatchTheWheels(GameObject cart, Transform model)
-        {
-            var wheels = new List<Transform>();
-            for (var i = 1; i <= 4; i++)
-            {
-                var wheel = model.Find($"Wheel_{i}");
-                if (wheel != null)
+            return new MeasuredVehicle(
+                new VehicleShape.Measurements
                 {
-                    wheels.Add(wheel);
-                }
-            }
-
-            cart.AddComponent<WheelLook>().Watch(wheels);
+                    Wheels = measured.Placements,
+                    FrontCouplingLocal = MarkerLocal(cart, model, "HITCH_Male"),
+                    RearCouplingLocal = MarkerLocal(cart, model, "HITCH_Female"),
+                    EnvelopeSizeMetres = envelopeSizeMetres,
+                    EnvelopeCentreLocal = envelopeCentreLocal,
+                    InteriorLocal = new Bounds(
+                        new Vector3(0f, deckTopMetres + (clearInsideMetres * 0.5f), 0f),
+                        new Vector3(deckWidthMetres, clearInsideMetres, deckLengthMetres)),
+                    SolidParts = solid
+                },
+                measured.Visible);
         }
 
         /// <summary>
-        /// A vehicle: its body, its shape, and something to look at.
+        /// Measures a named set of wheels: where each one's centre is in the vehicle's own frame,
+        /// how big it is, and the transform a player sees.
+        ///
+        /// A wheel's radius is half the largest span of its own mesh, so a wheel modelled along any
+        /// axis measures the same. Read per wheel rather than once per vehicle because axles need
+        /// not match: the tractor runs 0.22 m wheels at the front and 0.26 m at the back.
+        /// </summary>
+        static (List<VehicleShape.WheelPlacement> Placements, List<Transform> Visible) Wheels(
+            GameObject vehicle, Transform model, IReadOnlyList<string> paths)
+        {
+            var placements = new List<VehicleShape.WheelPlacement>();
+            var visible = new List<Transform>();
+
+            foreach (var path in paths)
+            {
+                var wheel = PartOfTheModel(vehicle, model, path);
+                var box = MeshBoxLocal(vehicle, wheel);
+                var across = Mathf.Max(box.size.x, Mathf.Max(box.size.y, box.size.z));
+
+                placements.Add(new VehicleShape.WheelPlacement(
+                    vehicle.transform.InverseTransformPoint(wheel.position), across * 0.5f));
+
+                visible.Add(wheel);
+            }
+
+            return (placements, visible);
+        }
+
+        /// <summary>
+        /// Where a marker in the model sits, in the vehicle's own frame.
+        ///
+        /// A marker is an empty, and this refuses a mesh. Both models carry a marker and a mesh
+        /// under near-identical names for the same piece of hardware -- the cart's HITCH_Female and
+        /// Hitch_Female differ only by case, the tractor's HITCH_Female sits 8 cm above its
+        /// Hitch_Pin -- and reading the mesh puts a coupling tens of centimetres out while still
+        /// looking like a plausible measurement.
+        /// </summary>
+        static Vector3 MarkerLocal(GameObject vehicle, Transform model, string path)
+        {
+            var found = model.Find(path)
+                        ?? throw Unmeasurable(vehicle, $"its model has no '{path}'");
+
+            if (found.GetComponent<MeshFilter>() != null)
+            {
+                throw Unmeasurable(vehicle,
+                    $"'{path}' is a mesh rather than a marker, and reading a coupling off the metal " +
+                    "around it puts that coupling tens of centimetres out");
+            }
+
+            return vehicle.transform.InverseTransformPoint(found.position);
+        }
+
+        /// <summary>A part of the model that has to be a mesh.</summary>
+        static Transform PartOfTheModel(GameObject vehicle, Transform model, string path)
+        {
+            var found = model.Find(path)
+                        ?? throw Unmeasurable(vehicle,
+                            $"its model has no '{path}'. Anything that is not a direct child of the " +
+                            "model root needs its path: a plain name finds nothing at all");
+
+            if (found.GetComponent<MeshFilter>() == null)
+            {
+                throw Unmeasurable(vehicle, $"'{path}' is a marker rather than a part of the model");
+            }
+
+            return found;
+        }
+
+        /// <summary>
+        /// A vehicle that cannot be measured, which is not something to carry on past.
+        ///
+        /// Everything about a vehicle -- where its wheels are, how big they are, where it couples,
+        /// how much room it takes up -- is measured off its model. A measurement that quietly
+        /// returns nothing instead produces a prefab that is saved, shipped and perfectly
+        /// self-consistent: a cart claiming a drawbar at its own origin parks every train a
+        /// drawbar's length too close, and nothing downstream can tell.
+        /// </summary>
+        static InvalidOperationException Unmeasurable(GameObject vehicle, string why)
+            => new InvalidOperationException(
+                $"'{vehicle.name}' cannot be measured and so cannot be built: {why}.");
+
+        /// <summary>The box a named mesh in the model fills, in the vehicle's own frame.</summary>
+        static Bounds MeshBoxLocal(GameObject vehicle, Transform model, string path)
+            => MeshBoxLocal(vehicle, PartOfTheModel(vehicle, model, path));
+
+        /// <summary>
+        /// The box a mesh fills, in the vehicle's own frame.
+        ///
+        /// Worked out from the mesh's own corners rather than from a renderer's world bounds, which
+        /// are an axis-aligned box around whatever rotation the object happens to be at, and the
+        /// model is turned half a turn on the way in.
+        /// </summary>
+        static Bounds MeshBoxLocal(GameObject vehicle, Transform part)
+        {
+            var mesh = part.GetComponent<MeshFilter>().sharedMesh;
+            var least = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+            var most = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+
+            for (var corner = 0; corner < 8; corner++)
+            {
+                var offset = Vector3.Scale(
+                    mesh.bounds.extents,
+                    new Vector3(
+                        (corner & 1) == 0 ? -1f : 1f,
+                        (corner & 2) == 0 ? -1f : 1f,
+                        (corner & 4) == 0 ? -1f : 1f));
+
+                var inVehicle = vehicle.transform.InverseTransformPoint(
+                    part.TransformPoint(mesh.bounds.center + offset));
+
+                least = Vector3.Min(least, inVehicle);
+                most = Vector3.Max(most, inVehicle);
+            }
+
+            var box = new Bounds();
+            box.SetMinMax(least, most);
+            return box;
+        }
+
+        /// <summary>
+        /// A vehicle: its body, its shape, and the model a player sees.
         ///
         /// No collider is added here. What a vehicle is solid where is described by its shape and
         /// built from it when the vehicle is configured, which is what lets a cart be a container
         /// rather than a solid block the size of a cart.
         /// </summary>
-        static GameObject NewVehicle(string name, VehicleProfile profile, Color colour, string modelPath = null)
+        static GameObject NewVehicle(
+            string name, VehicleProfile profile, string modelPath, Func<GameObject, Transform, MeasuredVehicle> measure)
         {
             var go = new GameObject(name);
             go.AddComponent<Rigidbody>();
@@ -257,15 +402,14 @@ namespace BelowTheWing.EditorTools
             var vehicle = go.AddComponent<VehicleController>();
             Set(vehicle, "m_Profile", profile);
 
-            var model = modelPath != null ? AddModel(go, modelPath) : null;
-            if (model != null)
-            {
-                ShapeFromTheCartModel(go, model, profile);
-            }
-            else
-            {
-                ShapeFromNumbers(go, profile);
-            }
+            var measured = measure(go, AddModel(go, modelPath));
+
+            var shape = go.AddComponent<VehicleShape>();
+            shape.Describe(measured.Shape);
+
+            // Handed the wheels the shape was measured from, in that order, so that the wheel a
+            // player sees is the one whose suspension ray found the ground under it.
+            go.AddComponent<WheelLook>().Watch(measured.Wheels);
 
             AddNetworking(go, outlivesItsOwner: true);
             go.AddComponent<TrainMember>();
@@ -273,13 +417,9 @@ namespace BelowTheWing.EditorTools
             // Something to hold onto, and so something a rider goes round corners with.
             go.AddComponent<HandUse>().As = HandUse.Category.HoldOnto;
 
-            var shape = go.GetComponent<VehicleShape>();
-            Dress(go,
-                model != null ? ApronAppearance.Shape.AlreadyModelled : ApronAppearance.Shape.Box,
-                profile.bodySizeMetres,
-                colour,
-                shape.EnvelopeCentreLocal.y + (shape.EnvelopeSizeMetres.y * 0.6f),
-                shape.EnvelopeCentreLocal);
+            go.AddComponent<ApronAppearance>().DescribeAsModelled(
+                shape.EnvelopeCentreLocal.y + (shape.EnvelopeSizeMetres.y * 0.6f));
+            go.AddComponent<ApronIdentity>();
 
             return go;
         }
@@ -287,17 +427,23 @@ namespace BelowTheWing.EditorTools
         /// <summary>
         /// Puts the model on a vehicle, facing the way the game drives.
         ///
-        /// The cart was modelled with its drawbar along what Unity ends up calling backwards, so the
-        /// whole model is turned half a turn. Doing it here, once, means nothing downstream has to
-        /// know which way any particular artist happened to build something.
+        /// Both vehicles were modelled with their fronts along what Unity ends up calling backwards,
+        /// so the whole model is turned half a turn. Doing it here, once, means nothing downstream
+        /// has to know which way any particular artist happened to build something.
+        ///
+        /// A missing model is fatal rather than something to carry on past. Everything about a
+        /// vehicle -- where its wheels are, how big they are, where it couples, how much room it
+        /// takes up -- is measured off the model, so a prefab built without one is a vehicle with no
+        /// suspension and no couplings that falls through the apron.
         /// </summary>
         static Transform AddModel(GameObject vehicle, string path)
         {
             var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (asset == null)
             {
-                Debug.LogWarning($"No model at {path}; leaving {vehicle.name} as a grey box.");
-                return null;
+                throw new InvalidOperationException(
+                    $"No model at {path}, so '{vehicle.name}' cannot be measured and the apron " +
+                    "cannot be built. Check the file is in the project and has been imported.");
             }
 
             var model = (GameObject)PrefabUtility.InstantiatePrefab(asset);
@@ -306,54 +452,6 @@ namespace BelowTheWing.EditorTools
             model.transform.localRotation = Quaternion.Euler(0f, 180f, 0f) * model.transform.localRotation;
 
             return model.transform;
-        }
-
-        /// <summary>
-        /// Describes a vehicle that has no model, from the numbers in its profile.
-        ///
-        /// Exactly the same terms a measured vehicle is described in, so nothing downstream can tell
-        /// which kind it is dealing with. A box on four wheels with a coupling at each end, its
-        /// origin on the ground between them.
-        /// </summary>
-        static void ShapeFromNumbers(GameObject vehicle, VehicleProfile profile)
-        {
-            var size = profile.bodySizeMetres;
-
-            // Axles set in from the ends and the sides by roughly what a small four-wheeled vehicle
-            // has: a wheelbase of seven tenths of the body length, a track of five sixths of its
-            // width. Invented figures, and they are allowed to be, because this describes a vehicle
-            // nobody has modelled yet -- the moment one is modelled its wheels are read off it.
-            var halfWheelbase = size.z * 0.35f;
-            var halfTrack = size.x * 0.42f;
-            var reach = (size.z * 0.5f) + 0.3f;
-            var couplingHeight = profile.wheelRadiusMetres + 0.05f;
-
-            // Clear of the tarmac by a wheel's radius, because the origin is on the ground now and a
-            // body box sitting on that origin has its underside level with the apron. It then
-            // carries the vehicle's weight itself, the suspension never compresses, and what should
-            // be a tractor on wheels is a crate sliding about on the floor -- which steers nowhere.
-            var underside = profile.wheelRadiusMetres;
-            var middle = new Vector3(0f, underside + (size.y * 0.5f), 0f);
-
-            vehicle.AddComponent<VehicleShape>().Describe(new VehicleShape.Measurements
-            {
-                WheelCentresLocal = new List<Vector3>
-                {
-                    new Vector3(-halfTrack, profile.wheelRadiusMetres, halfWheelbase),
-                    new Vector3(halfTrack, profile.wheelRadiusMetres, halfWheelbase),
-                    new Vector3(-halfTrack, profile.wheelRadiusMetres, -halfWheelbase),
-                    new Vector3(halfTrack, profile.wheelRadiusMetres, -halfWheelbase)
-                },
-                FrontCouplingLocal = new Vector3(0f, couplingHeight, reach),
-                RearCouplingLocal = new Vector3(0f, couplingHeight, -reach),
-                EnvelopeSizeMetres = size,
-                EnvelopeCentreLocal = middle,
-                InteriorLocal = new Bounds(Vector3.zero, Vector3.zero),
-                SolidParts = new List<VehicleShape.SolidPart>
-                {
-                    new VehicleShape.SolidPart("Body", size, middle)
-                }
-            });
         }
 
         static GameObject BuildAircraft(AircraftProfile profile)
@@ -509,7 +607,7 @@ namespace BelowTheWing.EditorTools
         static GameObject SaveAndDiscard(GameObject go, string path)
         {
             var saved = PrefabUtility.SaveAsPrefabAsset(go, path);
-            Object.DestroyImmediate(go);
+            UnityEngine.Object.DestroyImmediate(go);
             return saved;
         }
 
@@ -671,7 +769,7 @@ namespace BelowTheWing.EditorTools
         /// a session to swap its prefabs. They are inspector wiring, and this is the editor doing
         /// the wiring, so it goes through the same serialization the inspector uses.
         /// </summary>
-        static void Set(Object target, string field, Object value)
+        static void Set(UnityEngine.Object target, string field, UnityEngine.Object value)
         {
             var serialized = new SerializedObject(target);
             var property = serialized.FindProperty(field);

@@ -116,9 +116,9 @@ namespace BelowTheWing.Vehicles
         /// How far the suspension is squashed, from 0 (fully extended, carrying nothing) to
         /// 1 (fully compressed). Values outside that range mean the wheel is beyond its travel.
         /// </summary>
-        public static float Compression(float distanceToGround, VehicleProfile profile)
+        public static float Compression(float distanceToGround, float wheelRadiusMetres, VehicleProfile profile)
         {
-            var fullyExtended = profile.wheelRadiusMetres + profile.suspensionRestLengthMetres;
+            var fullyExtended = wheelRadiusMetres + profile.suspensionRestLengthMetres;
             return (fullyExtended - distanceToGround) / profile.suspensionRestLengthMetres;
         }
 
@@ -253,6 +253,7 @@ namespace BelowTheWing.Vehicles
             in WheelLoad load,
             in DriveIntent intent,
             float vehicleMassKg,
+            float wheelRadiusMetres,
             float deltaTime,
             VehicleProfile profile)
         {
@@ -261,7 +262,7 @@ namespace BelowTheWing.Vehicles
                 return WheelForce.None;
             }
 
-            var compression = Compression(probe.DistanceToGround, profile);
+            var compression = Compression(probe.DistanceToGround, wheelRadiusMetres, profile);
             if (compression < 0f)
             {
                 return WheelForce.None;

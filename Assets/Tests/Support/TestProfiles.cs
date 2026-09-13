@@ -17,21 +17,19 @@ namespace BelowTheWing.Tests.Support
     {
         /// <summary>
         /// A baggage tractor: the small diesel or electric unit that tows carts around an apron.
-        /// Around three tonnes empty.
+        /// Two and a half tonnes empty, on 0.22 m front and 0.26 m rear wheels.
         /// </summary>
         public static VehicleProfile Tractor()
         {
             var p = ScriptableObject.CreateInstance<VehicleProfile>();
-            p.equipmentNote = "Baggage tractor, empty. Roughly 3 tonnes.";
-            p.massKg = 3000f;
-            p.bodySizeMetres = new Vector3(1.3f, 1.6f, 3.0f);
-            p.centerOfMassOffset = new Vector3(0f, 0.35f, 0f);
-            p.wheelRadiusMetres = 0.3f;
-            p.suspensionRestLengthMetres = 0.35f;
-            p.springStrengthNewtons = 60000f;
-            p.damperNewtonsPerMetrePerSecond = 6000f;
+            p.equipmentNote = "Baggage tractor, empty. Roughly 2.5 tonnes.";
+            p.massKg = 2500f;
+            p.centerOfMassOffset = new Vector3(0f, 0.55f, 0f);
+            p.suspensionRestLengthMetres = 0.10f;
+            p.springStrengthNewtons = 41000f;
+            p.damperNewtonsPerMetrePerSecond = 14000f;
             p.lateralGripCurve = PeakingGripCurve();
-            p.maxDriveForceNewtons = 25000f;
+            p.maxDriveForceNewtons = 20000f;
             p.sprintDriveMultiplier = 1.5f;
             p.topSpeedMetresPerSecond = 20f;
             p.coastingDragPerSecond = 0.4f;
@@ -52,9 +50,7 @@ namespace BelowTheWing.Tests.Support
             var p = ScriptableObject.CreateInstance<VehicleProfile>();
             p.equipmentNote = "Four-wheel baggage cart, tare, unloaded. Roughly 550 kg.";
             p.massKg = 550f;
-            p.bodySizeMetres = new Vector3(1.5f, 1.7f, 3.0f);
             p.centerOfMassOffset = new Vector3(0f, 0.5f, 0f);
-            p.wheelRadiusMetres = 0.157f;
             p.suspensionRestLengthMetres = 0.08f;
             p.springStrengthNewtons = 9000f;
             p.damperNewtonsPerMetrePerSecond = 3500f;

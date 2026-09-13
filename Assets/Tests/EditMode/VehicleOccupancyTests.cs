@@ -180,7 +180,7 @@ namespace BelowTheWing.Tests.EditMode
             var sideways = Vector3.Distance(
                 new Vector3(placed.x, 0f, placed.z),
                 new Vector3(tractor.transform.position.x, 0f, tractor.transform.position.z));
-            var halfWidth = tractor.Profile.bodySizeMetres.x * 0.5f;
+            var halfWidth = tractor.Shape.EnvelopeSizeMetres.x * 0.5f;
 
             Assert.That(sideways, Is.GreaterThan(halfWidth),
                 "stepping out inside the bodywork wedges a rigidbody inside another one");

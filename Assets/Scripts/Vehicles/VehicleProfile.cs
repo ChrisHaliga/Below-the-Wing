@@ -10,13 +10,15 @@ namespace BelowTheWing.Vehicles
     /// Adding a new kind of vehicle should therefore mean authoring a new asset, not writing
     /// a new class.
     ///
-    /// Masses and dimensions are real-world figures for the equipment being modelled, so that
-    /// suspension and drive values can be reasoned about as physical quantities rather than
-    /// tuned as arbitrary numbers.
+    /// Masses are real-world figures for the equipment being modelled, so that suspension and
+    /// drive values can be reasoned about as physical quantities rather than tuned as arbitrary
+    /// numbers.
     ///
-    /// Where a vehicle's parts are is not in here. That is <see cref="VehicleShape"/>, which for a
-    /// modelled vehicle reads them off the model itself. A wheelbase written down in two places is
-    /// how the invisible suspension probes ended up fourteen centimetres from the visible wheels.
+    /// No geometry lives in here -- not where a vehicle's parts are, and not how big they are.
+    /// That is <see cref="VehicleShape"/>, which reads it off the model itself. A wheelbase written
+    /// down in two places is how the invisible suspension probes ended up fourteen centimetres from
+    /// the visible wheels; a wheel radius written down twice is the same fault waiting for a
+    /// vehicle whose axles carry different wheels.
     /// </summary>
     [CreateAssetMenu(menuName = "Below the Wing/Vehicle Profile", fileName = "VehicleProfile")]
     public sealed class VehicleProfile : ScriptableObject
@@ -26,24 +28,15 @@ namespace BelowTheWing.Vehicles
         [TextArea(2, 4)]
         public string equipmentNote = "";
 
-        [Header("Mass and scale (real-world)")]
+        [Header("Mass (real-world)")]
         [Tooltip("Kerb mass in kilograms, unloaded.")]
         public float massKg = 1000f;
-
-        [Tooltip("Overall size of the body in metres: width (x), height (y), length (z). Only " +
-                 "the size of the stand-in shape drawn for a vehicle that has no model yet. What a " +
-                 "vehicle collides as comes from its VehicleShape.")]
-        public Vector3 bodySizeMetres = new Vector3(1.5f, 1.5f, 3f);
 
         [Tooltip("Centre of mass in the vehicle's own space, in metres. The origin is on the " +
                  "ground between the wheels, so this is how high the weight sits above the tarmac " +
                  "and is always positive. Low is stable; at or below zero puts the mass under the " +
                  "contact patches and weight transfer inverts.")]
         public Vector3 centerOfMassOffset = new Vector3(0f, 0.4f, 0f);
-
-        [Header("Wheels")]
-        [Tooltip("Wheel radius in metres. The suspension ray reaches this far past its rest length.")]
-        public float wheelRadiusMetres = 0.3f;
 
         [Header("Suspension")]
         [Tooltip("Travel of the suspension in metres, from fully extended to fully compressed.")]

@@ -10,11 +10,12 @@ namespace BelowTheWing.Tests.EditMode
     /// <summary>
     /// Where a vehicle's parts are, and what depends on knowing.
     ///
-    /// The measurements here are the real ones off the baggage cart model. They matter as
-    /// measurements rather than as arbitrary numbers because the cart is not symmetric: its drawbar
-    /// sticks 3.16 m out in front and its socket is recessed 1.82 m behind, and the two halves of a
-    /// coupling meet at different heights on purpose so that they do not try to occupy the same
-    /// space. Every one of those facts breaks something that assumed a vehicle was a box.
+    /// The measurements here are the real ones off the two models. They matter as measurements
+    /// rather than as arbitrary numbers because neither vehicle is the box anything assumed. The
+    /// cart is not symmetric: its drawbar sticks 3.16 m out in front, its socket is recessed 1.82 m
+    /// behind, and the two halves of a coupling meet at different heights on purpose so that they
+    /// do not try to occupy the same space. The tractor's axles carry different wheels, and it has
+    /// no coupling at its front at all. Every one of those facts breaks something.
     /// </summary>
     public sealed class VehicleShapeTests
     {
@@ -60,9 +61,9 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void TheTwoHalvesOfACouplingSitAtDifferentHeights()
         {
-            Assert.That(m_Cart.FrontCouplingLocal.y, Is.EqualTo(0.2075f).Within(1e-3f));
-            Assert.That(m_Cart.RearCouplingLocal.y, Is.EqualTo(0.1310f).Within(1e-3f));
-            Assert.That(m_Cart.FrontCouplingLocal.y - m_Cart.RearCouplingLocal.y,
+            Assert.That(m_Cart.FrontCouplingLocal.Value.y, Is.EqualTo(0.2075f).Within(1e-3f));
+            Assert.That(m_Cart.RearCouplingLocal.Value.y, Is.EqualTo(0.1310f).Within(1e-3f));
+            Assert.That(m_Cart.FrontCouplingLocal.Value.y - m_Cart.RearCouplingLocal.Value.y,
                 Is.EqualTo(0.0766f).Within(1e-3f),
                 "a real drawbar is offset vertically so the male and female halves do not intersect");
         }
@@ -79,10 +80,11 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void ACartsOriginSitsOnTheGroundBetweenItsWheels()
         {
-            foreach (var wheel in m_Cart.WheelCentresLocal)
+            foreach (var wheel in m_Cart.Wheels)
             {
-                Assert.That(wheel.y, Is.LessThan(0.3f),
-                    "the origin is at ground level, so a wheel centre is one wheel radius above it");
+                Assert.That(wheel.CentreLocal.y, Is.EqualTo(wheel.RadiusMetres).Within(0.01f),
+                    "the origin is at ground level, so a wheel standing on the tarmac has its " +
+                    "centre exactly one radius above it");
             }
 
             Assert.That(m_Cart.EnvelopeCentreLocal.y, Is.GreaterThan(0.5f),
@@ -90,12 +92,62 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void AVehicleWithNoModelIsDescribedInExactlyTheSameTerms()
+        public void NothingTowsATractorSoItHasNoCouplingInFront()
         {
-            Assert.That(m_Tractor.FrontReachMetres, Is.GreaterThan(0f));
-            Assert.That(m_Tractor.RearReachMetres, Is.GreaterThan(0f));
-            Assert.That(m_Tractor.WheelCentresLocal.Count, Is.EqualTo(4));
-            Assert.That(m_Tractor.SolidParts, Is.Not.Empty);
+            Assert.That(m_Tractor.HasFrontCoupling, Is.False,
+                "a tractor's model has no coupling at the front, and a coupling recorded at (0,0,0) " +
+                "instead is not none: it is a hitch on the tarmac between its front wheels, which " +
+                "is where a train hitched to it would drag it from");
+            Assert.That(m_Tractor.FrontCouplingLocal, Is.Null);
+            Assert.That(m_Tractor.FrontReachMetres, Is.EqualTo(0f),
+                "and nothing is ever laid out in front of one");
+
+            Assert.That(m_Tractor.HasRearCoupling, Is.True, "it tows from the back");
+            Assert.That(m_Tractor.RearReachMetres, Is.EqualTo(1.3692f).Within(1e-3f));
+
+            Assert.That(m_Cart.HasFrontCoupling, Is.True, "a cart is towed by its drawbar");
+            Assert.That(m_Cart.HasRearCoupling, Is.True, "and tows the next cart from its socket");
+        }
+
+        [Test]
+        public void ATractorAndACartStandTheirTwoReachesApart()
+        {
+            var apart = m_Tractor.RearReachMetres + m_Cart.FrontReachMetres;
+
+            Assert.That(apart, Is.EqualTo(4.5309f).Within(2e-3f),
+                "the tractor's socket reaches 1.369 m back and the cart's drawbar 3.162 m forward");
+        }
+
+        [Test]
+        public void EachWheelCarriesItsOwnSize()
+        {
+            Assert.That(m_Tractor.Wheels.Count, Is.EqualTo(4));
+
+            foreach (var wheel in m_Tractor.Wheels)
+            {
+                var atTheFront = wheel.CentreLocal.z > 0f;
+                Assert.That(wheel.RadiusMetres, Is.EqualTo(atTheFront ? 0.2203f : 0.2647f).Within(1e-3f),
+                    "this tractor's axles carry different wheels. One radius for all four puts an " +
+                    "axle 2.2 cm out in how far its suspension reaches, how high the body hangs " +
+                    "over it, and how fast the wheel turns");
+            }
+
+            foreach (var wheel in m_Cart.Wheels)
+            {
+                Assert.That(wheel.RadiusMetres, Is.EqualTo(0.157f).Within(1e-3f),
+                    "a cart's four wheels are the same, and that is a fact about the cart rather " +
+                    "than something anything else is entitled to assume");
+            }
+        }
+
+        [Test]
+        public void ATractorsWheelbaseIsWhatItsAxlesMeasure()
+        {
+            Assert.That(m_Tractor.WheelbaseMetres, Is.EqualTo(1.5152f).Within(1e-3f),
+                "1.52 m between the axles, off the model. Worked out from a body length instead it " +
+                "came to 2.1 m, and a tractor that steers on a wheelbase it does not have turns " +
+                "through a corner it cannot make");
+            Assert.That(m_Tractor.TrackMetres, Is.EqualTo(1.1975f).Within(2e-3f));
         }
 
         [Test]
@@ -201,6 +253,9 @@ namespace BelowTheWing.Tests.EditMode
             var gap = train.Tractor.Position.z - train.Carts[0].Position.z;
 
             Assert.That(gap, Is.EqualTo(m_Tractor.RearReachMetres + m_Cart.FrontReachMetres).Within(1e-3f));
+            Assert.That(gap, Is.EqualTo(4.5309f).Within(2e-3f),
+                "a tractor's socket 1.369 m back and a cart's drawbar 3.162 m forward, both off " +
+                "their models");
         }
 
         [Test]

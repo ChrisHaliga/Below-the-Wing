@@ -24,13 +24,15 @@ namespace BelowTheWing.Vehicles
         readonly struct Wheel
         {
             public readonly Vector3 MountLocal;
+            public readonly float RadiusMetres;
             public readonly bool Steers;
             public readonly float DriveShare;
             public readonly float BrakeShare;
 
-            public Wheel(Vector3 mountLocal, bool steers, float driveShare, float brakeShare)
+            public Wheel(Vector3 mountLocal, float radiusMetres, bool steers, float driveShare, float brakeShare)
             {
                 MountLocal = mountLocal;
+                RadiusMetres = radiusMetres;
                 Steers = steers;
                 DriveShare = driveShare;
                 BrakeShare = brakeShare;
@@ -115,6 +117,16 @@ namespace BelowTheWing.Vehicles
             => m_Wheels != null && corner >= 0 && corner < m_Wheels.Length && m_Wheels[corner].Steers;
 
         /// <summary>
+        /// How big the wheel in that corner is, in metres.
+        ///
+        /// Asked of the vehicle rather than read off the profile because a vehicle's axles need not
+        /// carry the same wheels: this tractor runs 0.22 m at the front and 0.26 m at the back, and
+        /// a wheel turned at the wrong radius for its size reads as the vehicle skidding.
+        /// </summary>
+        public float WheelRadiusMetres(int corner)
+            => m_Wheels != null && corner >= 0 && corner < m_Wheels.Length ? m_Wheels[corner].RadiusMetres : 0f;
+
+        /// <summary>
         /// How high the centre of the wheel in that corner is sitting right now, in this vehicle's
         /// own space.
         ///
@@ -194,17 +206,32 @@ namespace BelowTheWing.Vehicles
         public bool AcceptsDriver => m_Profile != null && m_Profile.driveable && !m_Occupied;
 
         /// <summary>
-        /// Where a vehicle in front of this one attaches, in this vehicle's local space.
+        /// Where a vehicle in front of this one attaches, in this vehicle's local space, or null if
+        /// nothing can tow this.
         ///
         /// Read off the shape, which for a modelled vehicle read it off the model. A real drawbar
         /// is nothing like symmetric -- a baggage cart reaches 3.16 m forward and 1.82 m back, and
         /// the two halves sit at different heights so that they do not try to occupy the same
         /// space -- so neither end can be worked out from the other.
+        ///
+        /// Null rather than the origin for a vehicle with no coupling there. A baggage tractor has
+        /// none: the origin is a point on the tarmac between its front wheels, and a joint anchored
+        /// there drags the tractor along the ground by its axle. Callers have to answer for that
+        /// case rather than being handed a number that looks like a hitch.
         /// </summary>
-        public Vector3 FrontHitchLocal => Shape != null ? Shape.FrontCouplingLocal : Vector3.zero;
+        public Vector3? FrontHitchLocal => Shape?.FrontCouplingLocal;
 
-        /// <summary>Where a vehicle behind this one attaches, in this vehicle's local space.</summary>
-        public Vector3 RearHitchLocal => Shape != null ? Shape.RearCouplingLocal : Vector3.zero;
+        /// <summary>
+        /// Where a vehicle behind this one attaches, in this vehicle's local space, or null if
+        /// nothing can follow it.
+        /// </summary>
+        public Vector3? RearHitchLocal => Shape?.RearCouplingLocal;
+
+        /// <summary>Whether anything can be hitched in front of this vehicle, and so whether it can be towed.</summary>
+        public bool CanBeTowed => FrontHitchLocal.HasValue;
+
+        /// <summary>Whether anything can be hitched behind this vehicle.</summary>
+        public bool CanTow => RearHitchLocal.HasValue;
 
         /// <summary>How far this vehicle's front coupling reaches past its origin, in metres.</summary>
         public float FrontReach => Shape != null ? Shape.FrontReachMetres : 0f;
@@ -235,13 +262,13 @@ namespace BelowTheWing.Vehicles
         /// wheels, it is also how far above that origin the mounts have to be for the vehicle to
         /// stand at the right height with nothing floating and nothing buried.
         /// </summary>
-        public static float SuspensionMountHeightMetres(VehicleProfile profile)
-            => profile.wheelRadiusMetres
+        public static float SuspensionMountHeightMetres(VehicleProfile profile, float wheelRadiusMetres)
+            => wheelRadiusMetres
                + (profile.suspensionRestLengthMetres * (1f - SuspensionCompressionAtRest(profile)));
 
         /// <summary>
-        /// Applies a profile to this vehicle: its mass, its centre of mass, the size of its
-        /// collider, and the wheel positions its suspension probes from.
+        /// Applies a profile to this vehicle: its mass and its centre of mass, the solid parts its
+        /// shape describes, and the wheels its suspension probes from.
         ///
         /// Called when a vehicle is built rather than left to the inspector, so that the profile is
         /// the single description of what this vehicle physically is.
@@ -312,7 +339,7 @@ namespace BelowTheWing.Vehicles
         /// </summary>
         void BuildWheels(VehicleProfile profile)
         {
-            var wheels = Shape != null ? Shape.WheelCentresLocal : null;
+            var wheels = Shape != null ? Shape.Wheels : null;
             if (wheels == null || wheels.Count == 0)
             {
                 Debug.LogError(
@@ -324,12 +351,11 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
-            var mountHeight = SuspensionMountHeightMetres(profile);
             var middleOfTheWheelbase = 0f;
 
             foreach (var wheel in wheels)
             {
-                middleOfTheWheelbase += wheel.z;
+                middleOfTheWheelbase += wheel.CentreLocal.z;
             }
 
             middleOfTheWheelbase /= wheels.Count;
@@ -337,10 +363,18 @@ namespace BelowTheWing.Vehicles
             m_Wheels = new Wheel[wheels.Count];
             for (var i = 0; i < wheels.Count; i++)
             {
-                var atTheFront = wheels[i].z > middleOfTheWheelbase;
+                var wheel = wheels[i];
+                var atTheFront = wheel.CentreLocal.z > middleOfTheWheelbase;
 
+                // Each corner hangs at the height its own wheel settles at. A vehicle with a bigger
+                // wheel on one axle carries that end of its body higher, and a single mount height
+                // for all four would bury the big wheels or leave the small ones in the air.
                 m_Wheels[i] = new Wheel(
-                    new Vector3(wheels[i].x, mountHeight, wheels[i].z),
+                    new Vector3(
+                        wheel.CentreLocal.x,
+                        SuspensionMountHeightMetres(profile, wheel.RadiusMetres),
+                        wheel.CentreLocal.z),
+                    wheel.RadiusMetres,
                     steers: atTheFront,
                     driveShare: atTheFront ? 0f : 2f / wheels.Count,
                     brakeShare: 1f / wheels.Count);
@@ -444,7 +478,6 @@ namespace BelowTheWing.Vehicles
             }
 
             var massPerWheel = m_Profile.massKg / m_Wheels.Length;
-            var rayLength = m_Profile.wheelRadiusMetres + m_Profile.suspensionRestLengthMetres;
             var up = transform.up;
             var steerRotation = Quaternion.AngleAxis(m_SteerAngleDegrees, up);
 
@@ -455,6 +488,9 @@ namespace BelowTheWing.Vehicles
                 var forward = wheel.Steers ? steerRotation * transform.forward : transform.forward;
                 var right = wheel.Steers ? steerRotation * transform.right : transform.right;
 
+                // As far as this wheel could reach if the body were at full extension over it.
+                var rayLength = wheel.RadiusMetres + m_Profile.suspensionRestLengthMetres;
+
                 var probe = Physics.Raycast(mount, -up, out var hit, rayLength, m_GroundMask, QueryTriggerInteraction.Ignore)
                     ? new GroundProbe(true, hit.distance)
                     : GroundProbe.Airborne;
@@ -464,7 +500,7 @@ namespace BelowTheWing.Vehicles
                 // frame apart find different ground on a moving vehicle, and the wheel you see
                 // would sit somewhere the wheel holding the cart up is not.
                 m_HangingBy[i] = probe.HitGround
-                    ? probe.DistanceToGround - m_Profile.wheelRadiusMetres
+                    ? probe.DistanceToGround - wheel.RadiusMetres
                     : m_Profile.suspensionRestLengthMetres;
 
                 var atTheContactPatch = Body.GetPointVelocity(mount);
@@ -479,6 +515,7 @@ namespace BelowTheWing.Vehicles
                     new WheelLoad(massPerWheel, wheel.DriveShare, wheel.BrakeShare),
                     intent,
                     m_Profile.massKg,
+                    wheel.RadiusMetres,
                     Time.fixedDeltaTime,
                     m_Profile);
 

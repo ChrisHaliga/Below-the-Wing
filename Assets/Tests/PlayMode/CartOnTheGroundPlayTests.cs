@@ -65,10 +65,10 @@ namespace BelowTheWing.Tests.PlayMode
 
             yield return Steps.Seconds(2f);
 
-            foreach (var wheelLocal in shape.WheelCentresLocal)
+            foreach (var wheel in shape.Wheels)
             {
-                var centre = cart.transform.TransformPoint(wheelLocal);
-                var bottom = centre.y - m_CartProfile.wheelRadiusMetres;
+                var centre = cart.transform.TransformPoint(wheel.CentreLocal);
+                var bottom = centre.y - wheel.RadiusMetres;
 
                 Assert.That(bottom, Is.EqualTo(0f).Within(0.06f),
                     $"a wheel's underside is at {bottom:F3} m. Floating wheels and buried wheels " +
@@ -126,8 +126,8 @@ namespace BelowTheWing.Tests.PlayMode
                 var inFront = train.Members[i];
                 var behind = train.Members[i + 1];
 
-                var theirEnd = inFront.transform.TransformPoint(inFront.RearHitchLocal);
-                var ourEnd = behind.transform.TransformPoint(behind.FrontHitchLocal);
+                var theirEnd = inFront.transform.TransformPoint(inFront.RearHitchLocal.Value);
+                var ourEnd = behind.transform.TransformPoint(behind.FrontHitchLocal.Value);
 
                 // Sideways and along only. The two halves of a real coupling meet at different
                 // heights on purpose, so a vertical difference here is geometry rather than strain.
@@ -187,14 +187,14 @@ namespace BelowTheWing.Tests.PlayMode
             model.localRotation = Quaternion.Euler(0f, 180f, 0f) * Quaternion.Euler(270f, 0f, 0f);
 
             var shape = cart.GetComponent<VehicleShape>();
-            var wheels = new Transform[shape.WheelCentresLocal.Count];
+            var wheels = new Transform[shape.Wheels.Count];
 
             for (var i = 0; i < wheels.Length; i++)
             {
                 var wheel = new GameObject($"Wheel_{i + 1}").transform;
                 wheel.SetParent(model, worldPositionStays: false);
                 wheel.localRotation = Quaternion.Euler(0f, 270f, 270f);
-                wheel.position = cart.transform.TransformPoint(shape.WheelCentresLocal[i]);
+                wheel.position = cart.transform.TransformPoint(shape.Wheels[i].CentreLocal);
                 wheels[i] = wheel;
             }
 
@@ -211,7 +211,7 @@ namespace BelowTheWing.Tests.PlayMode
 
             yield return Steps.Seconds(2f);
 
-            Assert.That(look.TurnedDegrees, Is.EqualTo(0f).Within(1f),
+            Assert.That(look.TurnedDegrees(0), Is.EqualTo(0f).Within(1f),
                 "wheels creeping round on a parked cart is what an angle accumulated from noise " +
                 "looks like");
         }
@@ -223,14 +223,14 @@ namespace BelowTheWing.Tests.PlayMode
             yield return Steps.Seconds(1f);
 
             cart.Body.linearVelocity = new Vector3(0f, 0f, 4f);
-            var before = look.TurnedDegrees;
+            var before = look.TurnedDegrees(0);
 
             yield return Steps.Seconds(1f);
 
             // One second at 4 m/s on a 0.157 m wheel: 4 / 0.157 radians, in degrees.
-            var expected = 4f / m_CartProfile.wheelRadiusMetres * Mathf.Rad2Deg;
+            var expected = 4f / cart.GetComponent<VehicleShape>().Wheels[0].RadiusMetres * Mathf.Rad2Deg;
 
-            Assert.That(look.TurnedDegrees - before, Is.EqualTo(expected).Within(expected * 0.25f),
+            Assert.That(look.TurnedDegrees(0) - before, Is.EqualTo(expected).Within(expected * 0.25f),
                 "a wheel that turns at anything but road speed reads as the cart skidding " +
                 "everywhere it goes");
         }
@@ -245,7 +245,7 @@ namespace BelowTheWing.Tests.PlayMode
 
             for (var i = 0; i < wheels.Length; i++)
             {
-                var bottom = wheels[i].position.y - m_CartProfile.wheelRadiusMetres;
+                var bottom = wheels[i].position.y - shape.Wheels[i].RadiusMetres;
 
                 Assert.That(bottom, Is.EqualTo(0f).Within(0.04f),
                     $"the visible wheel's underside is at {bottom:F3} m. Parented rigidly to the " +
@@ -254,7 +254,7 @@ namespace BelowTheWing.Tests.PlayMode
 
                 // Under its own axle, not off somewhere along an axis that was never the cart's.
                 var where = cart.transform.InverseTransformPoint(wheels[i].position);
-                var axle = shape.WheelCentresLocal[i];
+                var axle = shape.Wheels[i].CentreLocal;
                 Assert.That(new Vector2(where.x - axle.x, where.z - axle.z).magnitude, Is.LessThan(0.02f),
                     $"wheel {i + 1} is drawn {where} but its axle is at {axle}. A height written as " +
                     "a coordinate in the model's own frame is a distance along whichever axis the " +

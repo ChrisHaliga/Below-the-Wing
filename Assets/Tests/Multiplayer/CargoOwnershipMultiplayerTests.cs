@@ -46,7 +46,7 @@ namespace BelowTheWing.Tests.Multiplayer
             // Held still and out of the way. Three instances share one physics world, and a
             // dynamic cart in it -- the template included -- is shoved about by its own copies.
             m_CartPrefab = CreateNetworkObjectPrefab("Cart");
-            TestShapes.On(m_CartPrefab, TestShapes.BoxVehicle(m_CartProfile.bodySizeMetres));
+            TestShapes.On(m_CartPrefab, TestShapes.BoxVehicle());
             m_CartPrefab.AddComponent<VehicleController>().Configure(m_CartProfile, "Cart 1");
             m_CartPrefab.AddComponent<VehicleMotion>();
             m_CartPrefab.GetComponent<Rigidbody>().isKinematic = true;

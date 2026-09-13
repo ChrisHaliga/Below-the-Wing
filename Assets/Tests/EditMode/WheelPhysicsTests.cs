@@ -13,6 +13,11 @@ namespace BelowTheWing.Tests.EditMode
     /// </summary>
     public sealed class WheelPhysicsTests
     {
+        /// <summary>The tractor's two wheel sizes, as measured off its model.</summary>
+        const float FrontWheelRadius = 0.2203f;
+
+        const float RearWheelRadius = 0.2647f;
+
         VehicleProfile m_Tractor;
 
         [SetUp]
@@ -24,9 +29,10 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void SuspensionAtFullExtensionCarriesNothing()
         {
-            var justTouching = m_Tractor.suspensionRestLengthMetres + m_Tractor.wheelRadiusMetres;
+            var justTouching = m_Tractor.suspensionRestLengthMetres + FrontWheelRadius;
 
-            Assert.That(WheelPhysics.Compression(justTouching, m_Tractor), Is.EqualTo(0f).Within(1e-4f),
+            Assert.That(WheelPhysics.Compression(justTouching, FrontWheelRadius, m_Tractor),
+                Is.EqualTo(0f).Within(1e-4f),
                 "a wheel only just reaching the ground has not compressed its spring");
             Assert.That(WheelPhysics.SuspensionForce(0f, 0f, m_Tractor), Is.EqualTo(0f).Within(1e-4f),
                 "an uncompressed spring pushes with nothing");
@@ -35,9 +41,10 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void SuspensionAtHalfTravelPushesBackWithHalfItsSpring()
         {
-            var halfway = m_Tractor.wheelRadiusMetres + (m_Tractor.suspensionRestLengthMetres * 0.5f);
+            var halfway = FrontWheelRadius + (m_Tractor.suspensionRestLengthMetres * 0.5f);
 
-            Assert.That(WheelPhysics.Compression(halfway, m_Tractor), Is.EqualTo(0.5f).Within(1e-4f));
+            Assert.That(WheelPhysics.Compression(halfway, FrontWheelRadius, m_Tractor),
+                Is.EqualTo(0.5f).Within(1e-4f));
             Assert.That(WheelPhysics.SuspensionForce(0.5f, 0f, m_Tractor),
                 Is.EqualTo(m_Tractor.springStrengthNewtons * 0.5f).Within(0.01f));
         }
@@ -45,15 +52,31 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void DamperTakesForceOutOfSuspensionThatIsExtending()
         {
-            const float risingAt = 1.5f;
+            // Slow enough that the spring is still carrying something afterwards. Faster than the
+            // spring can answer and the wheel simply comes unloaded, which is the case below.
+            const float risingAt = 0.5f;
 
             var still = WheelPhysics.SuspensionForce(0.5f, 0f, m_Tractor);
             var rising = WheelPhysics.SuspensionForce(0.5f, risingAt, m_Tractor);
 
+            Assert.That(rising, Is.GreaterThan(0f), "this case is only about a wheel still carrying weight");
             Assert.That(rising, Is.LessThan(still), "a damper must resist the suspension's own movement");
             Assert.That(still - rising,
                 Is.EqualTo(risingAt * m_Tractor.damperNewtonsPerMetrePerSecond).Within(0.01f),
                 "and it must resist it in proportion to how fast it is moving");
+        }
+
+        [Test]
+        public void AWheelExtendingFasterThanItsSpringCanAnswerCarriesNothing()
+        {
+            var halfTheSpring = m_Tractor.springStrengthNewtons * 0.5f;
+            var fasterThanTheSpring = (halfTheSpring / m_Tractor.damperNewtonsPerMetrePerSecond) + 0.1f;
+
+            Assert.That(WheelPhysics.SuspensionForce(0.5f, fasterThanTheSpring, m_Tractor),
+                Is.EqualTo(0f).Within(1e-4f),
+                $"dropping away at {fasterThanTheSpring:F2} m/s, this wheel's damper wants more " +
+                "force than its spring has. A suspension that answered with the difference would " +
+                "be pulling the body down onto a wheel that is no longer touching anything");
         }
 
         [Test]
@@ -65,6 +88,7 @@ namespace BelowTheWing.Tests.EditMode
                 new WheelLoad(supportedMassKg: 750f, driveShare: 0.5f, brakeShare: 0.25f),
                 new DriveIntent(steer: 1f, throttle: 1f, brake: 0f),
                 vehicleMassKg: m_Tractor.massKg,
+                wheelRadiusMetres: FrontWheelRadius,
                 deltaTime: 0.02f,
                 m_Tractor);
 
@@ -72,6 +96,40 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(slidingAndFlooredIt.AlongSuspension, Is.EqualTo(0f), "nothing to push against");
             Assert.That(slidingAndFlooredIt.Lateral, Is.EqualTo(0f), "a wheel off the ground cannot grip");
             Assert.That(slidingAndFlooredIt.Forward, Is.EqualTo(0f), "and it cannot drive the vehicle either");
+        }
+
+        [Test]
+        public void CompressionIsMeasuredFromTheWheelsOwnRadius()
+        {
+            var travel = m_Tractor.suspensionRestLengthMetres;
+
+            Assert.That(WheelPhysics.Compression(RearWheelRadius + travel, RearWheelRadius, m_Tractor),
+                Is.EqualTo(0f).Within(1e-4f),
+                "the bigger wheel reaches further before its spring starts to take any load");
+            Assert.That(WheelPhysics.Compression(RearWheelRadius, RearWheelRadius, m_Tractor),
+                Is.EqualTo(1f).Within(1e-4f),
+                "and is bottomed out when the ground is exactly its own radius away");
+
+            var measuredAsTheSmallOne =
+                WheelPhysics.Compression(RearWheelRadius + travel, FrontWheelRadius, m_Tractor);
+
+            Assert.That(measuredAsTheSmallOne, Is.LessThan(0f),
+                $"a 0.2647 m wheel just touching the ground reads as {measuredAsTheSmallOne:F2} " +
+                "compressed when measured with the front wheel's radius -- past full extension, " +
+                "which is to say hanging in the air, so that corner of the tractor carries nothing");
+        }
+
+        [Test]
+        public void TheBodyHangsHigherOverABiggerWheel()
+        {
+            var overTheFront = VehicleController.SuspensionMountHeightMetres(m_Tractor, FrontWheelRadius);
+            var overTheRear = VehicleController.SuspensionMountHeightMetres(m_Tractor, RearWheelRadius);
+
+            Assert.That(overTheRear - overTheFront,
+                Is.EqualTo(RearWheelRadius - FrontWheelRadius).Within(1e-4f),
+                "the difference between the two axles' mounts is exactly the difference between " +
+                "their wheels. Hung at one height, the small wheels are left in the air and the big " +
+                "ones are pushed into the tarmac by 2.2 cm each");
         }
 
         [Test]

@@ -87,7 +87,7 @@ namespace BelowTheWing.Tests.PlayMode
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
             var before = tractor.GetComponentsInChildren<Collider>().Length;
 
-            GreyboxShape.AttachBox(tractor.transform, m_TractorProfile.bodySizeMetres, Color.grey);
+            GreyboxShape.AttachBox(tractor.transform, TestShapes.StandInSizeMetres, Color.grey);
             yield return null;
 
             Assert.That(tractor.GetComponentsInChildren<Collider>().Length, Is.EqualTo(before),
