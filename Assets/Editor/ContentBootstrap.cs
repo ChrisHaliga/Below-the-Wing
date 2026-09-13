@@ -174,7 +174,11 @@ namespace BelowTheWing.EditorTools
             profile.radiusMetres = 0.3f;
             profile.walkSpeedMetresPerSecond = 4f;
             profile.sprintSpeedMetresPerSecond = 7f;
-            profile.accelerationMetresPerSecondSquared = 8f;
+            // A feel figure rather than a physical one. Feet really can only push about as hard as they
+            // grip, which is nearer 8 and takes half a second to reach walking pace -- honest, and
+            // it feels like wading. A player is somebody holding a key, and the delay between
+            // pressing it and moving is most of what the controls feel like.
+            profile.accelerationMetresPerSecondSquared = 30f;
             return profile;
         }
 

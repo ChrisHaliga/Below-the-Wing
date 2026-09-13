@@ -39,10 +39,13 @@ namespace BelowTheWing.Crew
         public float sprintSpeedMetresPerSecond = 7f;
 
         [Tooltip("The most the feet can push against whatever is underfoot, in metres per second " +
-                 "squared. How quickly they get up to speed, and also how hard a corner a cart deck " +
-                 "can take before it goes out from under them. This is the whole of their grip: the " +
-                 "body has no friction of its own.")]
-        public float accelerationMetresPerSecondSquared = 8f;
+                 "squared. How quickly they get up to speed, and also how hard a deck has to be " +
+                 "thrown about before it goes out from under them. This is the whole of their grip: " +
+                 "the body has no friction of its own. A feel figure rather than a physical one -- " +
+                 "real feet manage about 8, which is half a second to walking pace and feels like " +
+                 "wading -- and set high enough that nothing this apron can do throws a rider off a " +
+                 "cart, which is the price of controls that answer at once.")]
+        public float accelerationMetresPerSecondSquared = 30f;
 
         [Header("Jumping")]
         [Tooltip("How high a standing jump clears, in metres. Tuned to reach a cart deck with room " +

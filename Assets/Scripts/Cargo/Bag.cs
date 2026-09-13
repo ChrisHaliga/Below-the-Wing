@@ -58,6 +58,13 @@ namespace BelowTheWing.Cargo
             m_Body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             m_Body.interpolation = RigidbodyInterpolation.Interpolate;
 
+            // A bag is never put to sleep. Sleeping freezes a body in whatever pose it had at the
+            // moment it went quiet, and a bag on its way over the edge of a deck goes quiet for an
+            // instant at the top of its tip -- so it stays there, balanced on a corner with its
+            // weight hanging over nothing, until something sharp enough to wake it comes along.
+            // Being still is something a bag should have to keep doing, not a state it can enter.
+            m_Body.sleepThreshold = 0f;
+
             m_Collider = GetComponent<BoxCollider>();
             m_Collider.size = profile.sizeMetres;
             m_Collider.center = Vector3.zero;

@@ -110,26 +110,6 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator TheReadoutShowsFewerBodiesAwakeOnceATrainHasSettled()
-        {
-            var train = m_Apron.AddTrain(m_TractorProfile, m_CartProfile, cartCount: 4, new Vector3(0f, 1.5f, 0f));
-            var readout = m_Apron.Track(new GameObject("Readout").AddComponent<RampReadout>());
-            readout.Observe(new List<CartChain> { train }, new RecordingBroker(grant: true));
-
-            train.Leader.IntentSource = new FixedIntent(throttle: 1f);
-            yield return Steps.Seconds(2f);
-            var whileDriving = readout.AwakeBodyCount;
-
-            train.Leader.IntentSource = new FixedIntent();
-            yield return Steps.Seconds(12f);
-            var afterSettling = readout.AwakeBodyCount;
-
-            Assert.That(whileDriving, Is.GreaterThan(0), "a train being driven has bodies awake");
-            Assert.That(afterSettling, Is.LessThan(whileDriving),
-                "a train that never goes back to sleep costs solver time and bandwidth for ever");
-        }
-
-        [UnityTest]
         public IEnumerator TheReadoutSaysHowLongPhysicsIsTaking()
         {
             var train = m_Apron.AddTrain(m_TractorProfile, m_CartProfile, cartCount: 4, new Vector3(0f, 1.5f, 0f));

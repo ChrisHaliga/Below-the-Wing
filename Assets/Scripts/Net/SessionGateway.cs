@@ -82,6 +82,24 @@ namespace BelowTheWing.Net
             await SignInAsync();
         }
 
+        /// <summary>
+        /// Starts a session on this machine alone, with nothing off it involved.
+        ///
+        /// Not async, and that is the point of it: there is no sign-in, no relay and no lobby, so
+        /// there is nothing to wait for. It is the same distributed authority session the hosted
+        /// path produces, with this machine as its only client and its session owner.
+        /// </summary>
+        public void PlayAlone()
+        {
+            if (!LocalSession.Start(NetworkManager.Singleton))
+            {
+                Fail("Could not start a session on this machine.");
+                return;
+            }
+
+            Move(SessionPhase.InSession);
+        }
+
         /// <summary>Creates a new session and starts netcode in it.</summary>
         public async Task HostAsync()
         {

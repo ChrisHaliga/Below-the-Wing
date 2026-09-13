@@ -115,10 +115,11 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ATrainNobodyHereOwnsGoesToSleep()
+        public IEnumerator ATrainNobodyHereOwnsStandsStillWhileBeingToldWhereItIs()
         {
             var train = SomebodyElsesTrain();
             var said = VehicleState.Of(train.Leader.Body);
+            var stoodAt = train.Leader.transform.position;
 
             // Ten seconds of being told, twenty times a second, exactly what it already knows.
             var steps = Mathf.CeilToInt(10f / Time.fixedDeltaTime);
@@ -128,19 +129,12 @@ namespace BelowTheWing.Tests.PlayMode
                 yield return new WaitForFixedUpdate();
             }
 
-            var awake = 0;
-            foreach (var member in train.Members)
-            {
-                if (!member.Body.IsSleeping())
-                {
-                    awake++;
-                }
-            }
+            var wandered = Vector3.Distance(train.Leader.transform.position, stoodAt);
 
-            Assert.That(awake, Is.Zero,
-                $"{awake} of {train.Members.Count} still awake. Any force at all wakes a rigidbody, so " +
-                "a correction applied every step -- however small -- keeps every vehicle on the apron " +
-                "awake for the rest of the session on every machine that does not own it");
+            Assert.That(wandered, Is.LessThan(0.1f),
+                $"a train being told ten seconds running that it is exactly where it already is " +
+                $"drifted {wandered:F2} m. A correction is a force, and a force that never quite " +
+                "cancels leaves every copy of every train on the apron creeping for the session");
         }
 
         [UnityTest]

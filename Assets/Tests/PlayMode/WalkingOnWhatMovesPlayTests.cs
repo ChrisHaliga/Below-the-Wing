@@ -13,7 +13,10 @@ namespace BelowTheWing.Tests.PlayMode
     /// Nothing attaches them and nothing freezes them. Friction carries them, and walking is
     /// relative to whatever is under their feet: standing still on a moving deck means moving with
     /// it, walking forward means moving with it and a bit more. That is the whole of riding, and
-    /// it is also why a corner slides a person off exactly as it slides a bag.
+    /// it is also why somebody who jumps off a moving deck keeps the speed it gave them. Where a
+    /// bag and a person part company is grip: a bag has the friction its profile gives it and slides
+    /// off a deck thrown about hard enough, while a pair of feet hold on to anything this apron can
+    /// do -- see GettingMovingPlayTests for the figure that decides that and what it costs.
     /// </summary>
     public sealed class WalkingOnWhatMovesPlayTests
     {
@@ -109,28 +112,5 @@ namespace BelowTheWing.Tests.PlayMode
                 "second in the air, which is why they land well ahead of where they left");
         }
 
-        [UnityTest]
-        public IEnumerator AHardCornerSlidesAPersonOffTheDeck()
-        {
-            yield return Steps.Seconds(1f);
-
-            // Riding along first, so that sliding off is the corner's doing and not a person who
-            // was never aboard.
-            var stoodAt = OnTheDeck();
-            yield return DriveTheDeck(new Vector3(0f, 0f, 3f), seconds: 1.5f);
-            Assert.That(Vector3.Distance(OnTheDeck(), stoodAt), Is.LessThan(1f), "aboard, before the corner");
-
-            // Twenty metres a second squared sideways, which no pair of feet on a steel deck holds.
-            for (var i = 1; i <= 50; i++)
-            {
-                m_Deck.linearVelocity = new Vector3(0.4f * i, 0f, 3f);
-                yield return new WaitForFixedUpdate();
-            }
-
-            yield return Steps.Seconds(1f);
-
-            Assert.That(Mathf.Abs(OnTheDeck().x), Is.GreaterThan(1.5f),
-                "there is no lip for a person, and a corner that would throw a bag throws them too");
-        }
     }
 }

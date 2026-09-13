@@ -47,9 +47,21 @@ namespace BelowTheWing.Net
             GUILayout.Label(Status());
             GUILayout.Space(8f);
 
+            // Outside the check below on purpose. Everything else here waits on the multiplayer
+            // service, and the service is signed into in the background from the moment the game
+            // starts -- so on a slow connection every button is dead for as long as that takes.
+            // Playing alone is the one thing that needs none of it, and greying it out while
+            // waiting for a sign-in it does not use would be the very wait it exists to skip.
+            if (GUILayout.Button("Play alone", GUILayout.Height(32f)))
+            {
+                m_Gateway.PlayAlone();
+            }
+
+            GUILayout.Space(6f);
+
             GUI.enabled = !m_Gateway.Busy;
 
-            if (GUILayout.Button("Host a session", GUILayout.Height(32f)))
+            if (GUILayout.Button("Host a session for others", GUILayout.Height(32f)))
             {
                 _ = m_Gateway.HostAsync();
             }
@@ -69,6 +81,12 @@ namespace BelowTheWing.Net
 
         void DrawJoinCodeBanner()
         {
+            // A session on this machine alone has no code and nobody to give one to.
+            if (string.IsNullOrEmpty(m_Gateway.JoinCode))
+            {
+                return;
+            }
+
             GUI.Box(new Rect(Screen.width - 260f, 10f, 250f, 46f), "");
             GUILayout.BeginArea(new Rect(Screen.width - 250f, 18f, 230f, 40f));
             GUILayout.Label($"Join code: {m_Gateway.JoinCode}");

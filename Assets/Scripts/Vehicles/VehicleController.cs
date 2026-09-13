@@ -48,17 +48,6 @@ namespace BelowTheWing.Vehicles
         [SerializeField, Tooltip("Name shown on this vehicle's label and in the prompt to drive it.")]
         string m_DisplayName = "";
 
-        /// <summary>
-        /// Below this speed, and this rate of turn, a vehicle counts as having stopped moving.
-        /// </summary>
-        const float StillnessMetresPerSecond = 0.05f;
-
-        const float StillnessRadiansPerSecond = 0.05f;
-
-        /// <summary>
-        /// How long a vehicle must sit still, with nobody driving it, before it is put to sleep.
-        /// </summary>
-        const float SecondsOfStillnessBeforeSleeping = 1f;
 
         Rigidbody m_Body;
         VehicleShape m_Shape;
@@ -285,6 +274,16 @@ namespace BelowTheWing.Vehicles
             }
 
             m_Body.mass = profile.massKg;
+
+            // A vehicle is never put to sleep. Its suspension holds it up with a force applied every
+            // step, and a body that is asleep is not receiving that force -- so the first thing to
+            // touch a sleeping vehicle drives it into the ground before its springs come back.
+            //
+            // Said here rather than left to the fact that applying force keeps a body awake, because
+            // that fact stops being true exactly when it matters: a vehicle whose wheels have left
+            // the ground -- tipped onto its side, hung off a coupling, resting on something -- gets
+            // no force at all, and would doze off as an immovable body on one end of a live hinge.
+            m_Body.sleepThreshold = 0f;
             if (profile.centerOfMassOffset.y <= 0f)
             {
                 Debug.LogError(
@@ -445,38 +444,16 @@ namespace BelowTheWing.Vehicles
             // opening the same throttle would fight each other, and the one that does not own it
             // would lose anyway.
             var intent = OursToMove ? IntentSource?.Current ?? DriveIntent.Idle : DriveIntent.Idle;
-            var idle = NobodyIsAskingForAnything(intent);
-
-            // A body that has gone to sleep costs nothing until something wakes it, and a parked
-            // train that never sleeps burns solver time and bandwidth for the rest of the session.
-            //
-            // Getting there takes an explicit push. Applying any force wakes a rigidbody, so a
-            // vehicle holding itself up on its own suspension can never drop off on its own: it is
-            // woken every step by the very force keeping it standing. So a vehicle that has been
-            // still long enough with nobody driving it is put to sleep deliberately, and then left
-            // alone until something disturbs it.
-            if (Body.IsSleeping() && idle)
-            {
-                return;
-            }
-
-            // Sleep is a decision for a whole train, taken once, by the vehicle at the front of it.
-            // A vehicle on its own is a train of itself, so there is no separate case for one.
-            if (Chain != null && Chain.Leader == this
-                && Chain.SettleOnceEverythingHasStopped(
-                    idle, Time.fixedDeltaTime, SecondsOfStillnessBeforeSleeping,
-                    StillnessMetresPerSecond, StillnessRadiansPerSecond))
-            {
-                // Just put to sleep. Applying a single wheel force now would wake it again, and the
-                // train would spend the rest of the session settling and being roused by itself.
-                return;
-            }
 
             if (OursToMove)
             {
                 m_SteerAngleDegrees = Steering.Step(m_SteerAngleDegrees, intent.Steer, Time.fixedDeltaTime, m_Profile);
             }
 
+            // Every wheel, every step, parked or driven. Nothing here is skipped for a vehicle that
+            // is standing still: the springs are what hold it off the ground, so a step that skips
+            // them is a step with nothing underneath it, and whatever touches the vehicle during
+            // that step drives it into the tarmac.
             var massPerWheel = m_Profile.massKg / m_Wheels.Length;
             var up = transform.up;
             var steerRotation = Quaternion.AngleAxis(m_SteerAngleDegrees, up);
@@ -531,10 +508,5 @@ namespace BelowTheWing.Vehicles
                 Body.AddForceAtPosition(total, mount);
             }
         }
-
-        static bool NobodyIsAskingForAnything(in DriveIntent intent)
-            => Mathf.Approximately(intent.Throttle, 0f)
-               && Mathf.Approximately(intent.Brake, 0f)
-               && Mathf.Approximately(intent.Steer, 0f);
     }
 }

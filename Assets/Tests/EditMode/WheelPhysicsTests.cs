@@ -135,7 +135,74 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void TireRollingTrueIsPulledNowhereSideways()
         {
-            Assert.That(WheelPhysics.LateralForce(0f, 750f, m_Tractor), Is.EqualTo(0f).Within(1e-4f));
+            Assert.That(WheelPhysics.LateralForce(0f, 750f, Step, m_Tractor), Is.EqualTo(0f).Within(1e-4f));
+        }
+
+        /// <summary>One physics step at this project's fixed rate.</summary>
+        const float Step = 0.02f;
+
+        [Test]
+        public void ATireBarelySlidingHoldsUntilTheCrawlIsGone()
+        {
+            const float load = 100f;
+            var slip = WheelPhysics.HoldsBelowMetresPerSecond * 0.9f;
+
+            // The wheel, on its own, held against its own crawl for a third of a second.
+            var creepingAt = slip;
+            var steps = 0;
+            while (steps < 16)
+            {
+                var force = WheelPhysics.LateralForce(slip, load, Step, m_Tractor);
+
+                Assert.That(force, Is.LessThan(0f), "the force has to oppose the slide");
+                Assert.That(-force, Is.LessThanOrEqualTo((slip * load / Step) + 0.01f),
+                    $"a tyre pulling harder than {slip:F3} m/s of slip is worth does not stop the " +
+                    "crawl, it reverses it, and a parked cart answers a whisker of drift by " +
+                    "drifting back the other way for ever");
+
+                slip += force / load * Step;
+                steps++;
+            }
+
+            Assert.That(slip, Is.LessThan(creepingAt * 0.01f),
+                $"a third of a second of holding took a {creepingAt:F3} m/s crawl down to only " +
+                $"{slip:F4} m/s. Read off a curve through the origin there is almost nothing there " +
+                "to stop it, so a nudged cart drifts on until something else ends it");
+        }
+
+        [Test]
+        public void HoldingNeverPullsHarderThanTheTireCanGrip()
+        {
+            const float load = 100f;
+            var sliding = WheelPhysics.HoldsBelowMetresPerSecond * 0.95f;
+
+            // A tyre with almost no grip in it -- something on ice rather than on tarmac -- because
+            // a tyre that could grip its way out of any crawl would never show this bound at all.
+            m_Tractor.lateralGripCurve = AnimationCurve.Linear(0f, 0f, 12f, 2f);
+
+            var enoughToStopIt = sliding * load / Step;
+            var whatItCanGrip = WheelPhysics.MostGripPerKilogram(m_Tractor) * load;
+
+            Assert.That(whatItCanGrip, Is.LessThan(enoughToStopIt),
+                "this case is only worth anything while the tyre is the limit");
+            Assert.That(WheelPhysics.LateralForce(sliding, load, Step, m_Tractor),
+                Is.EqualTo(-whatItCanGrip).Within(0.01f),
+                "a tyre asked to stop a slide it has not the grip for must give way. Held to it, " +
+                "anything that could not be gripped would be stopped dead anyway, which is a hand " +
+                "reaching in and taking the speed off it");
+        }
+
+        [Test]
+        public void ATireSlidingProperlyStillFollowsTheGripCurve()
+        {
+            const float load = 750f;
+            const float sliding = 2f;
+            var fromCurve = m_Tractor.lateralGripCurve.Evaluate(sliding) * load;
+
+            Assert.That(WheelPhysics.LateralForce(sliding, load, Step, m_Tractor),
+                Is.EqualTo(-fromCurve).Within(0.01f),
+                "above a crawl the curve is the whole model, including the falling half that lets a " +
+                "vehicle break traction. Holding at speed would put the apron on rails");
         }
 
         [Test]
@@ -145,9 +212,9 @@ namespace BelowTheWing.Tests.EditMode
             const float slidingAt = 2f;
             var fromCurve = m_Tractor.lateralGripCurve.Evaluate(slidingAt) * load;
 
-            Assert.That(WheelPhysics.LateralForce(slidingAt, load, m_Tractor),
+            Assert.That(WheelPhysics.LateralForce(slidingAt, load, Step, m_Tractor),
                 Is.EqualTo(-fromCurve).Within(0.01f), "sliding right must push left");
-            Assert.That(WheelPhysics.LateralForce(-slidingAt, load, m_Tractor),
+            Assert.That(WheelPhysics.LateralForce(-slidingAt, load, Step, m_Tractor),
                 Is.EqualTo(fromCurve).Within(0.01f), "and sliding left must push right");
         }
 
@@ -156,8 +223,8 @@ namespace BelowTheWing.Tests.EditMode
         {
             const float load = 750f;
 
-            var nearThePeak = Mathf.Abs(WheelPhysics.LateralForce(3f, load, m_Tractor));
-            var wellPastIt = Mathf.Abs(WheelPhysics.LateralForce(10f, load, m_Tractor));
+            var nearThePeak = Mathf.Abs(WheelPhysics.LateralForce(3f, load, Step, m_Tractor));
+            var wellPastIt = Mathf.Abs(WheelPhysics.LateralForce(10f, load, Step, m_Tractor));
 
             Assert.That(wellPastIt, Is.LessThan(nearThePeak),
                 "a tire that grips harder the faster it slides can never let go, and nothing can ever slide");
@@ -166,8 +233,8 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void HeavierWheelsGripHarder()
         {
-            var lightlyLoaded = Mathf.Abs(WheelPhysics.LateralForce(2f, 300f, m_Tractor));
-            var heavilyLoaded = Mathf.Abs(WheelPhysics.LateralForce(2f, 900f, m_Tractor));
+            var lightlyLoaded = Mathf.Abs(WheelPhysics.LateralForce(2f, 300f, Step, m_Tractor));
+            var heavilyLoaded = Mathf.Abs(WheelPhysics.LateralForce(2f, 900f, Step, m_Tractor));
 
             Assert.That(heavilyLoaded, Is.GreaterThan(lightlyLoaded));
         }

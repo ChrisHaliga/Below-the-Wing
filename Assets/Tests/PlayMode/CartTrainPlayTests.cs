@@ -156,9 +156,11 @@ namespace BelowTheWing.Tests.PlayMode
                 var member = train.Members[i];
                 Assert.That(Vector3.Distance(restedAt[i], member.transform.position), Is.LessThan(0.15f),
                     $"'{member.DisplayName}' wandered while nothing was driving it");
-                Assert.That(member.Body.IsSleeping(), Is.True,
-                    $"'{member.DisplayName}' never went to sleep, so it goes on costing for the rest " +
-                    "of the session on every machine in the game");
+                Assert.That(member.Body.IsSleeping(), Is.False,
+                    $"'{member.DisplayName}' was put to sleep. Standing still has to come from the " +
+                    "tyres holding it, because a sleeping vehicle is one whose suspension has " +
+                    "stopped running, and the next thing to touch it goes straight through where " +
+                    "its springs should have been");
             }
         }
 

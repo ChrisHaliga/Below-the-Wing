@@ -322,6 +322,21 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void EverythingThatMovesSaysWhichMachineMovesIt()
+        {
+            foreach (var name in new[] { "BaggageTractor", "BaggageCart", "Bag", "RampWorker" })
+            {
+                var prefab = Prefab(name);
+
+                Assert.That(prefab.GetComponent<IMovedFromHere>(), Is.Not.Null,
+                    $"{name} carries nothing that can say whether this machine is the one moving it. " +
+                    "What a player sees asks exactly that before deciding whether to trail a shape " +
+                    "behind its body, and something that cannot answer is drawn where it was a tenth " +
+                    "of a second ago -- over two metres behind itself at the speed a tractor tows");
+            }
+        }
+
+        [Test]
         public void EveryVehicleIsDrawnAsItsModelRatherThanAsAStandInBox()
         {
             foreach (var name in new[] { "BaggageTractor", "BaggageCart" })

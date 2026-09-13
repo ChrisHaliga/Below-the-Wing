@@ -164,6 +164,8 @@ MonoBehaviour:
   m_AtRestBelow: 0.25
   m_UndersideReachMetres: 0.1
   m_StackReachMetres: 2
+  m_StillBelow: 0.05
+  m_StillSpinBelow: 0.05
 --- !u!114 &224881180372116424
 MonoBehaviour:
   m_ObjectHideFlags: 0

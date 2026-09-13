@@ -65,12 +65,19 @@ namespace BelowTheWing.Apron
         /// <summary>
         /// Whether the shape should trail at all.
         ///
-        /// Only for things this machine does not decide the position of. A vehicle you are driving
-        /// or the character you are walking never gets snapped -- there is nothing to hide -- and
-        /// putting a tenth of a second between the controls and what you see would be felt at once
-        /// as them going soft.
+        /// Only for a copy of something another machine is simulating. That is the only case with
+        /// anything to hide: a copy gets corrected, and a correction that has given up on easing
+        /// arrives as a jump. A vehicle you are driving or the character you are walking never gets
+        /// snapped, and putting a tenth of a second between the controls and what you see would be
+        /// felt at once as them going soft.
+        ///
+        /// Something that says nothing about who moves it is not smoothed either. Trailing has to be
+        /// asked for by a thing that knows it is a copy, because the cost of trailing something that
+        /// is not one is paid at speed: a tenth of a second is over two metres at the pace a tractor
+        /// tows, and a bag drawn two metres behind itself is drawn hanging out the back of the cart
+        /// it is sitting in, catching up whenever the cart stops.
         /// </summary>
-        public bool WorthSmoothing => m_Mover == null || !m_Mover.OursToMove;
+        public bool WorthSmoothing => m_Mover != null && !m_Mover.OursToMove;
 
         void Awake()
         {
