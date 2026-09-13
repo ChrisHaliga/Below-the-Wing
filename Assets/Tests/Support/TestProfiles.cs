@@ -31,9 +31,11 @@ namespace BelowTheWing.Tests.Support
             p.springStrengthNewtons = 60000f;
             p.damperNewtonsPerMetrePerSecond = 6000f;
             p.lateralGripCurve = PeakingGripCurve();
-            p.maxDriveForceNewtons = 14000f;
+            p.maxDriveForceNewtons = 25000f;
             p.sprintDriveMultiplier = 1.5f;
+            p.topSpeedMetresPerSecond = 20f;
             p.coastingDragPerSecond = 0.4f;
+            p.bounciness = 0.4f;
             p.maxBrakeForceNewtons = 20000f;
             p.maxSteerAngleDegrees = 45f;
             p.steerRateDegreesPerSecond = 120f;
@@ -59,7 +61,9 @@ namespace BelowTheWing.Tests.Support
             p.lateralGripCurve = PeakingGripCurve();
             p.maxDriveForceNewtons = 0f;
             p.sprintDriveMultiplier = 1f;
-            p.coastingDragPerSecond = 0.4f;
+            p.topSpeedMetresPerSecond = 0f;
+            p.coastingDragPerSecond = 0.1f;
+            p.bounciness = 0.4f;
             p.maxBrakeForceNewtons = 2000f;
             p.maxSteerAngleDegrees = 0f;
             p.steerRateDegreesPerSecond = 0f;
@@ -77,7 +81,6 @@ namespace BelowTheWing.Tests.Support
             p.walkSpeedMetresPerSecond = 4f;
             p.sprintSpeedMetresPerSecond = 7f;
             p.accelerationMetresPerSecondSquared = 8f;
-            p.turnRateDegreesPerSecond = 720f;
             return p;
         }
 

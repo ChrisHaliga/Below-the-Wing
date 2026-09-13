@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using BelowTheWing.Cargo;
 using BelowTheWing.Vehicles;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace BelowTheWing.Session
@@ -23,6 +24,11 @@ namespace BelowTheWing.Session
     ///
     /// A bag at rest says so once and then falls silent, so that forty parked bags cost nothing on
     /// the wire and are free to fall asleep on every machine.
+    ///
+    /// Two players reaching for one bag in the same instant is settled by whoever is granted it
+    /// first: the machine simulating a bag refuses to hand it over while its own hand holds it, and
+    /// a machine whose request is refused prises its own hand off. Without that, both keep asking
+    /// and the bag jitters between two screens for as long as neither lets go.
     /// </summary>
     [RequireComponent(typeof(Bag))]
     [DisallowMultipleComponent]
@@ -59,6 +65,55 @@ namespace BelowTheWing.Session
         }
 
         protected override Rigidbody Body => m_Bag.Body;
+
+        public override void OnNetworkSpawn()
+        {
+            NetworkObject.OnOwnershipRequested = SomebodyAskedForIt;
+            NetworkObject.OnOwnershipRequestResponse += Answered;
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            if (NetworkObject != null)
+            {
+                NetworkObject.OnOwnershipRequested = null;
+                NetworkObject.OnOwnershipRequestResponse -= Answered;
+            }
+        }
+
+        /// <summary>Asked only on the machine that owns the bag: a hand here keeps it.</summary>
+        bool SomebodyAskedForIt(ulong who) => !HeldHere();
+
+        /// <summary>
+        /// Only an outright refusal means somebody else has it. A request that arrives while
+        /// another is in flight, or while the bag is locked mid-transfer, is answered with a status
+        /// of its own and simply asked again later -- this machine may yet be the one granted it.
+        /// </summary>
+        void Answered(NetworkObject.OwnershipRequestResponseStatus status)
+        {
+            if (status == NetworkObject.OwnershipRequestResponseStatus.Denied)
+            {
+                PriseOff();
+            }
+        }
+
+        /// <summary>
+        /// Takes this machine's hands off the bag. Every joint reaching a body this machine moves
+        /// is destroyed, and the hands notice their joint has gone.
+        /// </summary>
+        void PriseOff()
+        {
+            GetComponents(m_Joints);
+
+            foreach (var joint in m_Joints)
+            {
+                var to = joint.connectedBody;
+                if (to != null && to.TryGetComponent<IMovedFromHere>(out var mover) && mover.OursToMove)
+                {
+                    Destroy(joint);
+                }
+            }
+        }
 
         void FixedUpdate()
         {

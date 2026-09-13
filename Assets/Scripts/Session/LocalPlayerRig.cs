@@ -87,6 +87,7 @@ namespace BelowTheWing.Session
             if (m_Camera != null && m_Character != null && m_Character.Seat != null)
             {
                 m_Camera.Subject = m_Character.Seat.Subject;
+                m_Camera.Frame(CameraFraming.For(m_Character.Seat.IsDriving, m_Character.EyeMetresAboveOrigin));
             }
         }
     }

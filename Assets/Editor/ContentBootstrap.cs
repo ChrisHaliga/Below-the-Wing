@@ -76,7 +76,9 @@ namespace BelowTheWing.EditorTools
             profile.damperNewtonsPerMetrePerSecond = 6000f;
             profile.coastingDragPerSecond = 0.4f;
             profile.lateralGripCurve = TireCurve();
-            profile.maxDriveForceNewtons = 14000f;
+            profile.maxDriveForceNewtons = 25000f;
+            profile.topSpeedMetresPerSecond = 20f;
+            profile.bounciness = 0.4f;
             profile.sprintDriveMultiplier = 1.5f;
             profile.maxBrakeForceNewtons = 20000f;
             profile.maxSteerAngleDegrees = 45f;
@@ -125,9 +127,11 @@ namespace BelowTheWing.EditorTools
             // cart feel welded to the ground.
             profile.springStrengthNewtons = 9000f;
             profile.damperNewtonsPerMetrePerSecond = 3500f;
-            profile.coastingDragPerSecond = 0.4f;
+            profile.coastingDragPerSecond = 0.1f;
             profile.lateralGripCurve = TireCurve();
             profile.maxDriveForceNewtons = 0f;
+            profile.topSpeedMetresPerSecond = 0f;
+            profile.bounciness = 0.4f;
 
             // A cart has no engine, so there is nothing for a sprint to multiply.
             profile.sprintDriveMultiplier = 1f;
@@ -161,7 +165,6 @@ namespace BelowTheWing.EditorTools
             profile.walkSpeedMetresPerSecond = 4f;
             profile.sprintSpeedMetresPerSecond = 7f;
             profile.accelerationMetresPerSecondSquared = 8f;
-            profile.turnRateDegreesPerSecond = 720f;
             return profile;
         }
 

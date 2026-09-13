@@ -157,5 +157,73 @@ namespace BelowTheWing.Tests.Multiplayer
                 "have to be one machine's physics, or a corner throws the bag on one screen and not " +
                 "the other");
         }
+
+        static bool HasAHandOnIt(NetworkManager machine, ulong id)
+            => CopyOn<Bag>(machine, id).GetComponent<Joint>() != null;
+
+        static void TakeHoldOn(NetworkManager machine, ulong id, GameObject holder)
+            => CopyOn<Bag>(machine, id).gameObject.AddComponent<SpringJoint>().connectedBody = holder.GetComponent<Rigidbody>();
+
+        GameObject AHolder(Vector3 at)
+        {
+            var holder = new GameObject("Holder", typeof(Rigidbody), typeof(MovedHere));
+            holder.GetComponent<Rigidbody>().isKinematic = true;
+            holder.transform.position = at;
+            return holder;
+        }
+
+        [UnityTest]
+        public IEnumerator TwoMachinesGrabbingOneBagAtOnceEndsWithExactlyOneHoldingIt()
+        {
+            var a = m_ClientNetworkManagers[0];
+            var b = m_ClientNetworkManagers[1];
+
+            ulong id = 0;
+            yield return ABagOwnedBy(m_ServerNetworkManager, new Vector3(0f, 5f, 0f), spawned => id = spawned);
+
+            var holderA = AHolder(new Vector3(0f, 5f, 0.5f));
+            var holderB = AHolder(new Vector3(0f, 5f, -0.5f));
+            TakeHoldOn(a, id, holderA);
+            TakeHoldOn(b, id, holderB);
+
+            yield return WaitForConditionOrTimeOut(() => HasAHandOnIt(a, id) != HasAHandOnIt(b, id));
+            var owner = CopyOn<NetworkObject>(a, id).OwnerClientId;
+            var holding = HasAHandOnIt(a, id) ? a : b;
+
+            Assert.That(HasAHandOnIt(a, id) ^ HasAHandOnIt(b, id), Is.True,
+                "two players reaching for one bag in the same instant have to end with one of them " +
+                "holding it and the other's hand empty; both holding it is a bag that jitters " +
+                "between two screens for as long as neither lets go");
+            Assert.That(owner, Is.EqualTo(holding.LocalClientId), "and the machine holding it is the one simulating it");
+
+            Object.Destroy(holderA);
+            Object.Destroy(holderB);
+        }
+
+        [UnityTest]
+        public IEnumerator ReachingForABagSomebodyElseHoldsLeavesYourHandEmptyAndTheirsUntouched()
+        {
+            var a = m_ClientNetworkManagers[0];
+            var b = m_ClientNetworkManagers[1];
+
+            ulong id = 0;
+            yield return ABagOwnedBy(a, new Vector3(0f, 5f, 0f), spawned => id = spawned);
+
+            var holderA = AHolder(new Vector3(0f, 5f, 0.5f));
+            TakeHoldOn(a, id, holderA);
+            yield return new WaitForFixedUpdate();
+
+            var holderB = AHolder(new Vector3(0f, 5f, -0.5f));
+            TakeHoldOn(b, id, holderB);
+
+            yield return WaitForConditionOrTimeOut(() => !HasAHandOnIt(b, id));
+            AssertOnTimeout("B is still holding a bag that A had first, and will keep asking for it every half second");
+
+            Assert.That(HasAHandOnIt(a, id), Is.True, "A never noticed");
+            Assert.That(CopyOn<NetworkObject>(a, id).OwnerClientId, Is.EqualTo(a.LocalClientId));
+
+            Object.Destroy(holderA);
+            Object.Destroy(holderB);
+        }
     }
 }

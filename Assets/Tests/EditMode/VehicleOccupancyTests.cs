@@ -171,7 +171,11 @@ namespace BelowTheWing.Tests.EditMode
             var seat = SeatWith(new RecordingBroker(grant: true));
             var tractor = m_Train.Leader;
 
-            var placed = seat.DismountPosition(tractor);
+            var placed = seat.DismountPosition(tractor, standingHeightMetres: 1.8f);
+
+            Assert.That(placed.y, Is.GreaterThanOrEqualTo(tractor.transform.position.y + 0.9f),
+                "the vehicle's origin is on the tarmac; a person set down at its height is half " +
+                "underground, and which way the solver spits them out is a coin toss");
 
             var sideways = Vector3.Distance(
                 new Vector3(placed.x, 0f, placed.z),

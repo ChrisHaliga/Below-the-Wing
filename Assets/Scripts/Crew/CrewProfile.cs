@@ -44,9 +44,6 @@ namespace BelowTheWing.Crew
                  "body has no friction of its own.")]
         public float accelerationMetresPerSecondSquared = 8f;
 
-        [Tooltip("How fast the body comes round to face where it is going, in degrees per second.")]
-        public float turnRateDegreesPerSecond = 720f;
-
         [Header("Jumping")]
         [Tooltip("How high a standing jump clears, in metres. Tuned to reach a cart deck with room " +
                  "to spare, because that is the one thing jumping is for -- and once set, every " +

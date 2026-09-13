@@ -28,8 +28,6 @@ namespace BelowTheWing.Crew
     [DisallowMultipleComponent]
     public sealed class CrewCharacter : MonoBehaviour, IDriveIntentSource, IMovedFromHere
     {
-        /// <summary>Below this speed a character is treated as standing still and stops turning.</summary>
-        const float WalkingPaceMetresPerSecond = 0.1f;
 
         [SerializeField, Tooltip("Mass, size and speeds for a person. Carried on the prefab.")]
         CrewProfile m_Profile;
@@ -107,6 +105,19 @@ namespace BelowTheWing.Crew
         public float HeightMetres => m_Collider != null ? m_Collider.height : 0f;
 
         /// <summary>
+        /// Where the eyes are right now, in metres above this character's origin. Read off the
+        /// capsule rather than the profile, so that crouching -- which shrinks the capsule from the
+        /// head down -- brings the eyes down with the head.
+        /// </summary>
+        public float EyeMetresAboveOrigin
+            => m_Collider != null && m_Profile != null
+                ? m_Collider.center.y + (m_Collider.height * 0.5f) - (m_Profile.heightMetres * EyesBelowTheTop)
+                : 0f;
+
+        /// <summary>How far below the top of the head the eyes sit, as a fraction of standing height.</summary>
+        const float EyesBelowTheTop = 0.08f;
+
+        /// <summary>
         /// What this character is asking a vehicle to do. Meaningful only while it is driving one:
         /// the same stick that walks a character forward opens a throttle once they are in a seat.
         /// </summary>
@@ -147,13 +158,18 @@ namespace BelowTheWing.Crew
             // The feet are the grip, and the legs are the only thing that pushes against the
             // ground. A capsule with friction of its own fights every step the legs take, and holds
             // a rider on a deck through a corner the legs could not.
+            //
+            // And a person does not bounce off a tractor, whatever the tractor's bodywork says: they
+            // are knocked flying by its momentum, not sprung back by a bump.
             if (m_Feet == null)
             {
                 m_Feet = new PhysicsMaterial("Feet")
                 {
                     dynamicFriction = 0f,
                     staticFriction = 0f,
-                    frictionCombine = PhysicsMaterialCombine.Minimum
+                    frictionCombine = PhysicsMaterialCombine.Minimum,
+                    bounciness = 0f,
+                    bounceCombine = PhysicsMaterialCombine.Minimum
                 };
             }
 
@@ -243,21 +259,35 @@ namespace BelowTheWing.Crew
             transform.localRotation = Quaternion.identity;
         }
 
-        /// <summary>Puts the body back on the apron, clear of the vehicle it came out of.</summary>
+        /// <summary>
+        /// Puts the body back on the apron, clear of the vehicle it came out of, moving as it was.
+        ///
+        /// The body, not the transform: a position written to the transform of a kinematic body
+        /// is not where the body is until the physics has caught up, and by then it has been made
+        /// dynamic where it sat -- inside the vehicle. And with the vehicle's speed, because a
+        /// person who steps out of a moving tractor is moving at its speed until their feet say
+        /// otherwise; stopping dead beside it is how they get run over by the cart behind.
+        /// </summary>
         void ClimbOut()
         {
             var left = m_Seated;
             m_Seated = null;
 
             transform.SetParent(null, worldPositionStays: true);
+            Body.isKinematic = false;
 
             if (left != null && Seat != null)
             {
-                transform.position = Seat.DismountPosition(left);
+                var spot = Seat.DismountPosition(left, HeightMetres);
+                transform.position = spot;
+                Body.position = spot;
+                Body.linearVelocity = left.Body.linearVelocity;
+            }
+            else
+            {
+                Body.linearVelocity = Vector3.zero;
             }
 
-            Body.isKinematic = false;
-            Body.linearVelocity = Vector3.zero;
             Body.angularVelocity = Vector3.zero;
 
             if (m_Collider != null)
@@ -384,6 +414,14 @@ namespace BelowTheWing.Crew
 
             var asked = IntentSource?.Current ?? CrewIntent.Idle;
 
+            // On foot the body faces where the camera looks, on the same step. The view is first
+            // person, so body and camera are one thing turned by one mouse; a body that lagged the
+            // view, or turned to face its travel instead, would have the view swim.
+            if (Camera != null)
+            {
+                transform.rotation = Quaternion.Euler(0f, Camera.YawDegrees, 0f);
+            }
+
             if (asked.Jump)
             {
                 Jump();
@@ -418,15 +456,6 @@ namespace BelowTheWing.Crew
             var change = Vector3.ClampMagnitude(wanted - acrossTheGround, canChangeThisStep);
             Body.AddForce(change, ForceMode.VelocityChange);
 
-            // Facing follows where they are trying to go, not where they are being taken. A
-            // passenger dragged along by a deck, or yanked by the bag they just picked up, is not
-            // walking anywhere -- and turning them to face the drag would, with the camera's yaw
-            // as their own, turn "forward" round with them.
-            if (walking.magnitude > WalkingPaceMetresPerSecond)
-            {
-                transform.rotation = CrewLocomotion.FaceTravel(
-                    transform.rotation, walking, Time.fixedDeltaTime, m_Profile);
-            }
         }
     }
 }

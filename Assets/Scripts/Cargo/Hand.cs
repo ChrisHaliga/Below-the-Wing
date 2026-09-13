@@ -47,8 +47,6 @@ namespace BelowTheWing.Cargo
         [Tooltip("Metres per second a thing leaves the hand at when fully charged.")]
         public float hardestSpeed;
 
-        [Tooltip("How much of a throw goes upward rather than forward, from 0 to 1.")]
-        public float lift;
 
         /// <summary>A hand that can put a bag down gently, throw it across the apron, or hang on.</summary>
         public static HandSettings Default => new HandSettings
@@ -63,8 +61,7 @@ namespace BelowTheWing.Cargo
             minimumChargeSeconds = 0.15f,
             fullChargeSeconds = 1.2f,
             gentleSpeed = 2f,
-            hardestSpeed = 12f,
-            lift = 0.35f
+            hardestSpeed = 12f
         };
     }
 
@@ -289,6 +286,14 @@ namespace BelowTheWing.Cargo
             m_CarriedPart = part;
             m_Carrying = true;
 
+            // Taken up the way the hand sits, whatever angle it was lying at. The joint below holds
+            // the relative rotation it is created with, and reads that off the transforms, so both
+            // the body and its transform are turned before it exists -- and a bag that came up
+            // spinning would otherwise spin in the hand for ever.
+            bag.transform.rotation = m_Body.transform.rotation;
+            bag.rotation = m_Body.transform.rotation;
+            bag.angularVelocity = Vector3.zero;
+
             // The joint lives on the bag and reaches for the character, so that the bag is the
             // thing being pulled and the character keeps their footing.
             //
@@ -311,6 +316,12 @@ namespace BelowTheWing.Cargo
             m_Carry.yDrive = pull;
             m_Carry.zDrive = pull;
             m_Carry.targetPosition = Vector3.zero;
+
+            // And held the way it was taken up: a carried thing turns with the player and never on
+            // its own. The pull to the hand stays a spring; the grip on its orientation is rigid.
+            m_Carry.angularXMotion = ConfigurableJointMotion.Locked;
+            m_Carry.angularYMotion = ConfigurableJointMotion.Locked;
+            m_Carry.angularZMotion = ConfigurableJointMotion.Locked;
 
             // A held thing that touches its holder is, to the solver, two bodies overlapping, and
             // the answer to that is to shove them apart every step for as long as it lasts -- which
@@ -339,9 +350,9 @@ namespace BelowTheWing.Cargo
         }
 
         /// <summary>
-        /// Sends a thing off where the player is looking, on top of whatever speed the player
-        /// already has. A throw from a moving cart lands further, and that is what makes it a throw
-        /// from a moving cart.
+        /// Sends a thing off where the player is looking, pitch included, on top of whatever speed
+        /// the player already has. Looking up is how a lob is aimed; a throw from a moving cart
+        /// lands further, and that is what makes it a throw from a moving cart.
         /// </summary>
         void Throw(Rigidbody bag, float charge, Vector3 facing)
         {
@@ -351,8 +362,7 @@ namespace BelowTheWing.Cargo
             }
 
             var speed = Mathf.Lerp(m_Settings.gentleSpeed, m_Settings.hardestSpeed, charge);
-            var ahead = new Vector3(facing.x, 0f, facing.z).normalized;
-            var direction = ((ahead * (1f - m_Settings.lift)) + (Vector3.up * m_Settings.lift)).normalized;
+            var direction = facing.sqrMagnitude > 1e-6f ? facing.normalized : m_Body.transform.forward;
 
             bag.linearVelocity = m_Body.linearVelocity + (direction * speed);
         }

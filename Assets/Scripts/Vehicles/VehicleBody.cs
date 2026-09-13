@@ -20,14 +20,15 @@ namespace BelowTheWing.Vehicles
         public const string PartsName = "Solid";
 
         /// <summary>
-        /// Gives a vehicle the colliders its shape describes, replacing any it already had.
+        /// Gives a vehicle the colliders its shape describes, replacing any it already had, and
+        /// returns the material they are made of, which the caller owns and destroys.
         ///
         /// Built when the vehicle is configured rather than baked into the prefab, so that there is
         /// exactly one description of what a cart is solid where. Baked in, the prefab's colliders
         /// and the shape they came from are two records of the same measurement, and this project
         /// has already spent a day on what happens when two such records disagree.
         /// </summary>
-        public static void Build(GameObject vehicle, VehicleShape shape)
+        public static PhysicsMaterial Build(GameObject vehicle, VehicleShape shape, float bounciness)
         {
             var existing = vehicle.transform.Find(PartsName);
             if (existing != null)
@@ -44,8 +45,17 @@ namespace BelowTheWing.Vehicles
 
             if (shape == null || shape.SolidParts.Count == 0)
             {
-                return;
+                return null;
             }
+
+            // Averaged with whatever it hits. Vehicle on vehicle gives the full figure; a bag or a
+            // person, which carry no bounce and say so with a mode that wins over averaging, gets
+            // none -- a soft bag must not spring off a cart's lip and out the far side.
+            var bodywork = new PhysicsMaterial($"{vehicle.name} bodywork")
+            {
+                bounciness = bounciness,
+                bounceCombine = PhysicsMaterialCombine.Average
+            };
 
             var parts = new GameObject(PartsName);
             parts.transform.SetParent(vehicle.transform, worldPositionStays: false);
@@ -61,8 +71,11 @@ namespace BelowTheWing.Vehicles
                 var box = piece.AddComponent<BoxCollider>();
                 box.size = part.SizeMetres;
                 box.center = Vector3.zero;
+                box.sharedMaterial = bodywork;
                 piece.transform.localPosition = part.CentreLocal;
             }
+
+            return bodywork;
         }
     }
 }

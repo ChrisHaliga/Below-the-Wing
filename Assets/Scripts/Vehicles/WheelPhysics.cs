@@ -162,7 +162,8 @@ namespace BelowTheWing.Vehicles
         /// Bounded by what it would take to stop the wheel this step, so a vehicle that has come to
         /// rest is not dragged backwards by its own tires.
         /// </summary>
-        public static float RollingResistance(float forwardVelocity, float supportedMassKg, float deltaTime, VehicleProfile profile)
+        public static float RollingResistance(
+            float forwardVelocity, float supportedMassKg, float deltaTime, bool drivingWithTheMotion, VehicleProfile profile)
         {
             if (Mathf.Approximately(forwardVelocity, 0f))
             {
@@ -170,9 +171,13 @@ namespace BelowTheWing.Vehicles
             }
 
             var speed = Mathf.Abs(forwardVelocity);
-
             var fromTheTire = profile.rollingResistanceCoefficient * supportedMassKg * Physics.gravity.magnitude;
-            var fromTheDriveline = profile.coastingDragPerSecond * supportedMassKg * speed;
+
+            // The driveline drags only when it is not driving the way the vehicle is going. Charged
+            // for both at once, a vehicle's top speed is wherever the engine and its own gearbox
+            // happen to meet, and it pulls away as if it were towing its own handbrake. Throttle
+            // against the motion is braking with the engine, and the driveline drags then too.
+            var fromTheDriveline = drivingWithTheMotion ? 0f : profile.coastingDragPerSecond * supportedMassKg * speed;
             var enoughToStopItThisStep = speed * supportedMassKg / Mathf.Max(deltaTime, 1e-5f);
 
             return -Mathf.Sign(forwardVelocity)
@@ -186,11 +191,37 @@ namespace BelowTheWing.Vehicles
         /// accelerates and the speed at which drive force and drag finally balance. It is not a
         /// throttle of its own: sprinting with the throttle shut still produces nothing.
         /// </summary>
-        public static float DriveForce(float throttle, bool sprinting, VehicleProfile profile)
+        public static float DriveForce(float throttle, bool sprinting, float forwardVelocity, VehicleProfile profile)
         {
             var asked = Mathf.Clamp(throttle, -1f, 1f) * profile.maxDriveForceNewtons;
-            return sprinting ? asked * profile.sprintDriveMultiplier : asked;
+            var top = profile.topSpeedMetresPerSecond;
+            if (sprinting)
+            {
+                asked *= profile.sprintDriveMultiplier;
+                top *= profile.sprintDriveMultiplier;
+            }
+
+            // Full pull through most of the range, then fading to nothing at the top speed, so the
+            // number on the profile is the speed you get rather than a number drag happens to allow.
+            // Only when pushing the way the vehicle is already going: reverse against forward
+            // motion is braking with the engine, and gets everything the engine has.
+            if (!PushingWithTheMotion(throttle, forwardVelocity))
+            {
+                return asked;
+            }
+
+            var headroom = top > 0f ? Mathf.Clamp01((top - Mathf.Abs(forwardVelocity)) / (top * TopSpeedFadeFraction)) : 0f;
+            return asked * headroom;
         }
+
+        /// <summary>Whether the throttle is pushing the way the vehicle is already moving.</summary>
+        public static bool PushingWithTheMotion(float throttle, float forwardVelocity)
+            => !Mathf.Approximately(throttle, 0f)
+               && !Mathf.Approximately(forwardVelocity, 0f)
+               && Mathf.Sign(throttle) == Mathf.Sign(forwardVelocity);
+
+        /// <summary>The last fraction of the top speed over which the drive fades away.</summary>
+        const float TopSpeedFadeFraction = 0.25f;
 
         /// <summary>
         /// Newtons of braking the whole vehicle produces, opposing its current motion.
@@ -238,9 +269,11 @@ namespace BelowTheWing.Vehicles
 
             var suspension = SuspensionForce(compression, velocity.AlongSuspension, profile);
             var lateral = LateralForce(velocity.Lateral, load.SupportedMassKg, profile);
-            var drive = DriveForce(intent.Throttle, intent.Sprint, profile) * load.DriveShare;
+            var drive = DriveForce(intent.Throttle, intent.Sprint, velocity.Forward, profile) * load.DriveShare;
             var braking = BrakeForce(intent.Brake, velocity.Forward, vehicleMassKg, deltaTime, profile) * load.BrakeShare;
-            var resistance = RollingResistance(velocity.Forward, load.SupportedMassKg, deltaTime, profile);
+            var resistance = RollingResistance(
+                velocity.Forward, load.SupportedMassKg, deltaTime,
+                PushingWithTheMotion(intent.Throttle, velocity.Forward), profile);
 
             return new WheelForce(true, suspension, lateral, drive + braking + resistance);
         }

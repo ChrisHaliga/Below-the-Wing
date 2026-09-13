@@ -290,5 +290,50 @@ namespace BelowTheWing.Tests.PlayMode
                 "a bag that is still being hauled toward the hand two seconds later is a spring " +
                 "with no damping, and it never stops");
         }
+
+        [UnityTest]
+        public IEnumerator ACarriedBagSettlesIntoOnePoseAndKeepsItWhenThePlayerTurns()
+        {
+            var bag = ABagAt(m_LeftAnchor.position + Vector3.forward * 0.4f);
+            bag.transform.rotation = Quaternion.Euler(30f, 40f, 50f);
+            yield return Steps.Seconds(0.5f);
+
+            m_Hands.Left.Press(Time.time);
+            yield return Steps.Seconds(1f);
+
+            Assert.That(bag.angularVelocity.magnitude, Is.LessThan(0.2f),
+                $"still turning at {bag.angularVelocity.magnitude:F2} rad/s a second after being picked " +
+                "up. A hand holds a bag still; one that only pulls on its middle leaves it spinning");
+            Assert.That(Quaternion.Angle(bag.rotation, m_Crew.transform.rotation), Is.LessThan(5f),
+                "and it sits the way the hand does, whatever angle it was lying at");
+
+            m_Crew.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+            yield return Steps.Seconds(1f);
+
+            Assert.That(Quaternion.Angle(bag.rotation, m_Crew.transform.rotation), Is.LessThan(5f),
+                "turning the player turns the bag with them");
+        }
+
+        [UnityTest]
+        public IEnumerator AThrowGoesWhereThePlayerIsLookingPitchIncluded()
+        {
+            var bag = ABagAt(m_LeftAnchor.position + Vector3.forward * 0.4f);
+            yield return Steps.Seconds(0.5f);
+
+            m_Hands.Left.Press(Time.time);
+            m_Hands.Left.Release(Time.time, Vector3.forward);
+            yield return Steps.Seconds(1f);
+
+            var lookingUp = Quaternion.Euler(-30f, 0f, 0f) * Vector3.forward;
+            var now = Time.time;
+            m_Hands.Left.Press(now);
+            m_Hands.Left.Release(now + HandSettings.Default.fullChargeSeconds + 0.1f, lookingUp);
+            yield return new WaitForFixedUpdate();
+
+            Assert.That(Vector3.Angle(bag.linearVelocity, lookingUp), Is.LessThan(5f),
+                $"looking 30 degrees up, the bag left at {Vector3.Angle(bag.linearVelocity, Vector3.forward):F0} " +
+                "degrees. In first person the lob is aimed by looking up; a fixed lift is a throw " +
+                "nobody can aim");
+        }
     }
 }

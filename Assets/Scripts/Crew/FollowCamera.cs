@@ -3,35 +3,33 @@ using UnityEngine;
 namespace BelowTheWing.Crew
 {
     /// <summary>
-    /// The third-person camera, orbiting whatever the local player is currently in charge of.
+    /// The camera, sitting on whatever the local player is currently in charge of: in their own
+    /// head while they are on foot, a little behind the vehicle once they climb into one.
     ///
-    /// That subject changes during play: it is the player's character while they are on foot and
-    /// the vehicle itself once they climb into one. The camera is told which, and does not work out
-    /// or care which kind of thing it is looking at.
+    /// The subject and the framing change during play. The camera is told both, and does not work
+    /// out or care which kind of thing it is looking at.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class FollowCamera : MonoBehaviour
     {
-        [SerializeField, Tooltip("Metres back from the subject.")]
-        float m_DistanceMetres = 8f;
-
-        [SerializeField, Tooltip("Metres above the subject's origin that the camera aims at.")]
-        float m_HeightMetres = 2f;
+        [SerializeField, Tooltip("How the camera sits on its subject until something frames it otherwise.")]
+        CameraFraming m_Framing = CameraFraming.Driving;
 
         [SerializeField, Tooltip("Degrees of rotation per unit of mouse movement.")]
         float m_LookSensitivity = 0.15f;
-
-        [SerializeField, Tooltip("How far the camera may look down, in degrees below level.")]
-        float m_MinPitchDegrees = -30f;
-
-        [SerializeField, Tooltip("How far the camera may look up, in degrees above level.")]
-        float m_MaxPitchDegrees = 70f;
 
         float m_YawDegrees;
         float m_PitchDegrees = 15f;
 
         /// <summary>What the camera is orbiting, or null if the player is in charge of nothing.</summary>
         public Transform Subject { get; set; }
+
+        /// <summary>Puts the camera into a framing: on foot or driving.</summary>
+        public void Frame(CameraFraming framing)
+        {
+            m_Framing = framing;
+            m_PitchDegrees = Mathf.Clamp(m_PitchDegrees, framing.MinPitchDegrees, framing.MaxPitchDegrees);
+        }
 
         /// <summary>
         /// Which way round the subject the camera is sitting, in degrees. Deliberately unlimited:
@@ -51,11 +49,14 @@ namespace BelowTheWing.Crew
             m_YawDegrees += delta.x * m_LookSensitivity;
             m_PitchDegrees = Mathf.Clamp(
                 m_PitchDegrees - (delta.y * m_LookSensitivity),
-                m_MinPitchDegrees,
-                m_MaxPitchDegrees);
+                m_Framing.MinPitchDegrees,
+                m_Framing.MaxPitchDegrees);
         }
 
-        void LateUpdate()
+        void LateUpdate() => Place();
+
+        /// <summary>Puts the camera where the framing says, around the subject.</summary>
+        public void Place()
         {
             if (Subject == null)
             {
@@ -63,10 +64,10 @@ namespace BelowTheWing.Crew
             }
 
             var orbit = Quaternion.Euler(m_PitchDegrees, m_YawDegrees, 0f);
-            var lookingAt = Subject.position + (Vector3.up * m_HeightMetres);
+            var lookingAt = Subject.position + (Vector3.up * m_Framing.HeightMetres);
 
             transform.SetPositionAndRotation(
-                lookingAt - (orbit * Vector3.forward * m_DistanceMetres),
+                lookingAt - (orbit * Vector3.forward * m_Framing.DistanceMetres),
                 orbit);
         }
     }

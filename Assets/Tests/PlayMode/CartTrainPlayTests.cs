@@ -78,7 +78,9 @@ namespace BelowTheWing.Tests.PlayMode
         {
             yield return Steps.Seconds(2f);
 
-            m_Train.Leader.IntentSource = new FixedIntent(steer: 1f, throttle: 1f);
+            // At a towing throttle, where the tyres hold and the corner is tight enough to show the
+            // articulation this test is about. Flat out is covered separately.
+            m_Train.Leader.IntentSource = new FixedIntent(steer: 1f, throttle: 0.4f);
             yield return Steps.Seconds(6f);
 
             var tractorHeading = m_Train.Leader.transform.eulerAngles.y;
@@ -173,6 +175,27 @@ namespace BelowTheWing.Tests.PlayMode
             Assert.That(Vector3.Distance(front.Leader.transform.position, Vector3.zero), Is.GreaterThan(3f));
             Assert.That(Vector3.Distance(back.Leader.transform.position, abandonedAt), Is.LessThan(1f),
                 "carts that were unhitched must stay where they were left");
+        }
+
+        [UnityTest]
+        public IEnumerator FlatOutOnFullLockTheTrainStillTurnsAndHoldsTogether()
+        {
+            yield return Steps.Seconds(2f);
+            var headingBefore = m_Train.Leader.transform.eulerAngles.y;
+
+            // More power than the tyres can turn into cornering: the tractor scrubs wide and the
+            // train runs straighter behind it than at a towing pace, but it has to keep turning and
+            // the couplings have to hold.
+            m_Train.Leader.IntentSource = new FixedIntent(steer: 1f, throttle: 1f);
+            yield return Steps.Seconds(6f);
+
+            var turned = Mathf.Abs(Mathf.DeltaAngle(headingBefore, m_Train.Leader.transform.eulerAngles.y));
+            Assert.That(turned, Is.GreaterThan(45f), $"turned {turned:F0} degrees in six seconds flat out on full lock");
+
+            for (var i = 0; i < m_Train.Members.Count - 1; i++)
+            {
+                Assert.That(m_Train.CouplingBehind(i), Is.Not.Null, $"coupling {i} broke flat out");
+            }
         }
     }
 }

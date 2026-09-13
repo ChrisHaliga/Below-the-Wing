@@ -91,6 +91,9 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(grip.staticFriction, Is.EqualTo(0.12f).Within(1e-4f));
             Assert.That(grip.frictionCombine, Is.EqualTo(PhysicsMaterialCombine.Minimum),
                 "averaged with a steel deck, every bag is half as slippery as its profile says");
+            Assert.That(grip.bounciness, Is.EqualTo(0f).Within(1e-4f), "a soft bag does not bounce");
+            Assert.That(grip.bounceCombine, Is.EqualTo(PhysicsMaterialCombine.Minimum),
+                "and says so in the mode that beats a bouncy cart's averaging, or it springs off the lip");
         }
 
         [Test]

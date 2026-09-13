@@ -163,6 +163,7 @@ MonoBehaviour:
   m_AskAgainAfterSeconds: 0.5
   m_AtRestBelow: 0.25
   m_UndersideReachMetres: 0.1
+  m_StackReachMetres: 2
 --- !u!114 &224881180372116424
 MonoBehaviour:
   m_ObjectHideFlags: 0
