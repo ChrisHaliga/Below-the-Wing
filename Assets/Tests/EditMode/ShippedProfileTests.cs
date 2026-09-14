@@ -167,6 +167,46 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void ARampWorkerFitsInsideABaggageCartCrouched()
+        {
+            var crew = Load<CrewProfile>(CrewPath);
+            var clearInside = Shape(CartPrefabPath).InteriorLocal.size.y;
+
+            Assert.That(crew.crouchedHeightMetres, Is.LessThan(clearInside),
+                $"crouched they are {crew.crouchedHeightMetres} m and a cart has {clearInside:F2} m " +
+                "clear above its deck. Taller than that and nobody can get into a cart at all: the " +
+                "crouch is checked against what is overhead, so they simply refuse to stand up and " +
+                "then refuse to fit. This is a relationship between a person and a cart, and the two " +
+                "figures live in different assets with nothing but this holding them together");
+        }
+
+        [Test]
+        public void ARampWorkerCanJumpOntoABaggageCartsDeck()
+        {
+            var crew = Load<CrewProfile>(CrewPath);
+            var deckTop = Shape(CartPrefabPath).InteriorLocal.min.y;
+
+            Assert.That(crew.jumpHeightMetres, Is.GreaterThan(deckTop),
+                $"a jump clears {crew.jumpHeightMetres} m and a cart's deck is {deckTop:F2} m up. " +
+                "Reaching a deck is the one thing jumping is for on an apron, and a jump that cannot " +
+                "is a control that does nothing anybody wants");
+        }
+
+        [Test]
+        public void AGripTearsOffBeforeARampWorkersOwnLegsCanTearIt()
+        {
+            var crew = Load<CrewProfile>(CrewPath);
+
+            var whatTheirLegsPush = crew.massKg * crew.gaitResponseMetresPerSecondSquared;
+
+            Assert.That(crew.hands.gripBreakForceNewtons, Is.GreaterThan(whatTheirLegsPush * 2f),
+                $"their legs push {whatTheirLegsPush:F0} N and a grip lets go at " +
+                $"{crew.hands.gripBreakForceNewtons:F0} N. Set below what they can push with, a player " +
+                "holding a rail and walking forward tears their own hand off it, and the harder the " +
+                "controls are made to answer the more certain that becomes");
+        }
+
+        [Test]
         public void ASpringHoldsUpTheMassItIsGiven()
         {
             var tractor = Load<VehicleProfile>(TractorPath);

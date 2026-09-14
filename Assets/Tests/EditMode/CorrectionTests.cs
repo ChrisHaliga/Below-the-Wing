@@ -104,30 +104,43 @@ namespace BelowTheWing.Tests.EditMode
                 "back, which is what rubber-banding looks like from the outside");
         }
 
+        static float ClosingSpeedFor(float metresOut)
+        {
+            var said = Said(new Vector3(0f, 0f, metresOut));
+            var nudge = Correction.Nudge(Vector3.zero, Vector3.zero, said, secondsSince: 0f, Settings);
+
+            return nudge.magnitude / Mathf.Clamp01(Settings.authority);
+        }
+
         [Test]
         public void AVehicleSomewhereElseEntirelyClosesTheGapNoFasterThanTheCeiling()
         {
-            var said = Said(new Vector3(0f, 0f, 40f));
+            var asked = ClosingSpeedFor(metresOut: 40f);
 
-            var nudge = Correction.Nudge(Vector3.zero, Vector3.zero, said, secondsSince: 0f, Settings);
-
-            Assert.That(nudge.magnitude, Is.LessThanOrEqualTo(Settings.closingCeilingMetresPerSecond + 0.01f),
-                $"forty metres out, the correction asked for {nudge.magnitude:F1} m/s. Proportional to " +
+            Assert.That(asked, Is.LessThanOrEqualTo(Settings.closingCeilingMetresPerSecond + 0.01f),
+                $"forty metres out, the correction asked to close at {asked:F1} m/s. Proportional to " +
                 "the error and uncapped it asks for hundreds, which is a vehicle fired across the " +
-                "apron and out the other side -- and that is what a teleport was there to avoid");
+                "apron and out the other side");
+
+            Assert.That(asked, Is.EqualTo(Settings.closingCeilingMetresPerSecond).Within(0.01f),
+                "and an error this large is exactly the case the ceiling is for, so it has to be " +
+                "sitting on the ceiling rather than merely under it. Measured after the share " +
+                "applied per step, any ceiling up to three times this one looks the same");
         }
 
         [Test]
         public void AnOrdinaryErrorIsClosedGentlyRatherThanAtTheCeiling()
         {
-            var said = Said(new Vector3(0f, 0f, 0.4f));
+            const float metresOut = 0.4f;
+            var asked = ClosingSpeedFor(metresOut);
 
-            var nudge = Correction.Nudge(Vector3.zero, Vector3.zero, said, secondsSince: 0f, Settings);
+            Assert.That(asked, Is.EqualTo(metresOut * Settings.closingRatePerSecond).Within(0.01f),
+                $"a small error has to be closed in proportion to itself, which is {metresOut} m at " +
+                $"{Settings.closingRatePerSecond} per second. Closed at the ceiling instead it arrives " +
+                "as a kick, and the ceiling is there to bound the closing speed rather than impose it");
 
-            Assert.That(nudge.magnitude, Is.LessThan(Settings.closingCeilingMetresPerSecond),
-                "a small error has to be closed in proportion to itself. Closed at the ceiling it " +
-                "arrives as a kick, which is what the ceiling is there to bound rather than impose");
-            Assert.That(nudge.magnitude, Is.GreaterThan(0f), "and it does have to be closed");
+            Assert.That(asked, Is.LessThan(Settings.closingCeilingMetresPerSecond),
+                "which is well under the ceiling");
         }
 
         [Test]

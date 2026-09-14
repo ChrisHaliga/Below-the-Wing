@@ -63,5 +63,48 @@ namespace BelowTheWing.Vehicles
         [Header("Control")]
         [Tooltip("Whether a player may drive it")]
         public bool driveable = true;
+
+        const int SamplesAcrossTheCurve = 256;
+
+        AnimationCurve m_Measured;
+        float m_MostLateralGrip;
+
+        public float MostLateralGripPerKilogram
+        {
+            get
+            {
+                if (ReferenceEquals(m_Measured, lateralGripCurve))
+                {
+                    return m_MostLateralGrip;
+                }
+
+                m_Measured = lateralGripCurve;
+                m_MostLateralGrip = PeakOf(lateralGripCurve);
+
+                return m_MostLateralGrip;
+            }
+        }
+
+        static float PeakOf(AnimationCurve curve)
+        {
+            if (curve == null || curve.length == 0)
+            {
+                return 0f;
+            }
+
+            var from = curve[0].time;
+            var to = curve[curve.length - 1].time;
+            var most = 0f;
+
+            for (var i = 0; i <= SamplesAcrossTheCurve; i++)
+            {
+                most = Mathf.Max(
+                    most, curve.Evaluate(Mathf.Lerp(from, to, i / (float)SamplesAcrossTheCurve)));
+            }
+
+            return most;
+        }
+
+        void OnValidate() => m_Measured = null;
     }
 }

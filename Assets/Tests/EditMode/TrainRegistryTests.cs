@@ -194,83 +194,17 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void ATrainThisMachineOwnsOutrightIsHeldTogether()
+        public void ATrainIsHookedTogetherWhoeverOwnsIt()
         {
             m_Registry.Rebuild(OneTrain());
-            var broker = new RecordingBroker(grant: true, localClientId: 7);
-            foreach (var member in m_Registry.Trains[0].Members)
-            {
-                broker.SetOwner(member, 7);
-            }
-
-            Assert.That(m_Registry.Trains[0].CouplingsEngaged, Is.True);
-        }
-
-        [Test]
-        public void ATrainThisMachineOwnsNoneOfIsStillHookedTogether()
-        {
-            m_Registry.Rebuild(OneTrain());
-            var broker = new RecordingBroker(grant: true, localClientId: 7);
-            foreach (var member in m_Registry.Trains[0].Members)
-            {
-                broker.SetOwner(member, 3);
-            }
 
             Assert.That(m_Registry.Trains[0].CouplingsEngaged, Is.True,
-                "couplings used to belong only to the machine owning the train, and this replaces that: " +
-                "every member. That rule protected a hinge from being pulled against by a correction " +
-                "applied to the body on its other end -- and carts are no longer corrected at all, so " +
-                "there is nothing left for the hinge to fight. Uncoupled, a train nobody here owns is " +
-                "five loose boxes that drift apart and shuffle about for the rest of the session");
+                "what is built out of a lineup is decided by that lineup and nothing else. Gate it " +
+                "on who owns the vehicles and a train nobody here owns is five loose boxes that " +
+                "drift apart and shuffle about for the rest of the session, while a train changing " +
+                "hands comes apart halfway through and is across the apron before the last answer " +
+                "lands");
         }
 
-        [Test]
-        public void ATrainPartWayThroughChangingHandsIsLeftExactlyAsItWas()
-        {
-            m_Registry.Rebuild(OneTrain());
-            var broker = new RecordingBroker(grant: true, localClientId: 7);
-            var train = m_Registry.Trains[0];
-            foreach (var member in train.Members)
-            {
-                broker.SetOwner(member, 7);
-            }
-
-            Assert.That(train.CouplingsEngaged, Is.True, "precondition: it is hooked together");
-
-            broker.SetOwner(train.Members[3], 3);
-            broker.SetOwner(train.Members[4], 3);
-
-            Assert.That(train.CouplingsEngaged, Is.True,
-                "ownership of five vehicles does not move in one instant, and the train stays hooked " +
-                "together throughout. A train that came apart while changing hands would be halfway " +
-                "across the apron by the time the last answer landed");
-        }
-
-        [Test]
-        public void ATrainStaysHookedTogetherHoweverItsOwnershipMoves()
-        {
-            m_Registry.Rebuild(OneTrain());
-            var broker = new RecordingBroker(grant: true, localClientId: 7);
-            var train = m_Registry.Trains[0];
-            foreach (var member in train.Members)
-            {
-                broker.SetOwner(member, 3);
-            }
-
-            Assert.That(train.CouplingsEngaged, Is.True, "owned entirely by somebody else");
-
-            for (var i = 0; i < 4; i++)
-            {
-                broker.SetOwner(train.Members[i], 7);
-            }
-
-            Assert.That(train.CouplingsEngaged, Is.True, "four of five ours, mid-handover");
-
-            broker.SetOwner(train.Members[4], 7);
-
-            Assert.That(train.CouplingsEngaged, Is.True,
-                "and ours outright. Who owns a train no longer decides whether it is a train: it is " +
-                "towed locally on every machine, and only the vehicle at the front is corrected");
-        }
     }
 }

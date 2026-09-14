@@ -16,7 +16,7 @@ namespace BelowTheWing.Crew
         [Tooltip("Capsule radius, m")]
         public float radiusMetres = 0.3f;
 
-        [Tooltip("Height above the subject, m")]
+        [Tooltip("Crouched height, m")]
         public float crouchedHeightMetres = 1.2f;
 
         [Tooltip("Walk speed kept while crouched, 0 to 1")]
@@ -36,7 +36,7 @@ namespace BelowTheWing.Crew
         public float gaitResponseMetresPerSecondSquared = 30f;
 
         [Header("Jumping")]
-        [Tooltip("Height above the subject, m")]
+        [Tooltip("Standing jump height, m")]
         public float jumpHeightMetres = 1.4f;
 
         [Header("Hands")]

@@ -80,9 +80,16 @@ namespace BelowTheWing.Tests.Support
                     cart, $"{name} cart {i + 1}", plan.Carts[i].Position, plan.Carts[i].Rotation, cartMeasurements));
             }
 
-            var train = CartChain.Couple(members, ChainJointSettings.Default);
-            train.EngageCouplings();
-            return train;
+            var lineup = new List<TrainMembership>(members.Count);
+            for (var place = 0; place < members.Count; place++)
+            {
+                lineup.Add(new TrainMembership(members[place], trainIndex: 0, placeInTrain: place));
+            }
+
+            var registry = new TrainRegistry(ChainJointSettings.Default);
+            registry.Rebuild(lineup);
+
+            return registry.Trains[0];
         }
 
         public CrewCharacter AddCrew(CrewProfile profile, Vector3 position, IOwnershipBroker broker = null)

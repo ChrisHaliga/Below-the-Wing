@@ -115,17 +115,7 @@ namespace BelowTheWing.Vehicles
         const float StepsToTakeUpASlip = 3f;
 
         public static float MostGripPerKilogram(VehicleProfile profile)
-        {
-            var curve = profile.lateralGripCurve;
-            var most = 0f;
-
-            for (var i = 0; i < curve.length; i++)
-            {
-                most = Mathf.Max(most, curve[i].value);
-            }
-
-            return most;
-        }
+            => profile.MostLateralGripPerKilogram;
 
         public static float RollingResistance(
             float forwardVelocity, float supportedMassKg, float deltaTime, bool drivingWithTheMotion, VehicleProfile profile)

@@ -18,7 +18,7 @@ namespace BelowTheWing.Apron
         [Tooltip("Diameter, m")]
         public float fuselageDiameterMetres = 3.76f;
 
-        [Tooltip("Height above the subject, m")]
+        [Tooltip("Height above the apron, m")]
         public float centrelineHeightMetres = 3.4f;
     }
 }

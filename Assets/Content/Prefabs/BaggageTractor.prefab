@@ -181,7 +181,7 @@ MonoBehaviour:
   m_Correction:
     closingRatePerSecond: 6
     authority: 0.35
-    snapMetres: 2
+    closingCeilingMetresPerSecond: 12
     extrapolationCeilingSeconds: 0.5
     leaveAloneBelow: 0.05
   m_ReportsPerSecond: 20

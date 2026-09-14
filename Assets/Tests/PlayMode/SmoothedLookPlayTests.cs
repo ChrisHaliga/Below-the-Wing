@@ -90,18 +90,26 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator AVehicleMovedOutrightDoesNotTakeItsShapeWithItInOneFrame()
+        public IEnumerator AShapeTrailsByTheSameFractionHoweverFarTheBodyHasGone()
         {
             var vehicle = SomebodyElsesTractor();
             var shape = ShapeOf(vehicle);
-            shape.CatchUpNow();
 
+            shape.CatchUpNow();
             vehicle.transform.position += new Vector3(0f, 0f, 4f);
             shape.Follow(1f / 60f);
+            var afterFour = shape.TrailingByMetres / 4f;
 
-            Assert.That(shape.TrailingByMetres, Is.GreaterThan(1f),
-                "the shape arrived with the body, so the jump is drawn exactly as it happened and the " +
-                "vehicle is seen to cease being in one place and start being in another");
+            shape.CatchUpNow();
+            vehicle.transform.position += new Vector3(0f, 0f, 60f);
+            shape.Follow(1f / 60f);
+            var afterSixty = shape.TrailingByMetres / 60f;
+
+            Assert.That(afterSixty, Is.EqualTo(afterFour).Within(0.01f),
+                "smoothing is one rate and it applies whatever the body did. A cutoff above which " +
+                $"the shape gives up and arrives with the body -- {afterFour:P0} of the way behind " +
+                $"over four metres, {afterSixty:P0} over sixty -- is a snap being hidden, and there " +
+                "are no snaps left to hide");
 
             yield return null;
         }
@@ -160,23 +168,6 @@ namespace BelowTheWing.Tests.PlayMode
                 "the body you walk is the one body that must never trail. Smoothing only knew how to " +
                 "ask a vehicle whether it was yours, so every player's own capsule was drawn a tenth " +
                 "of a second behind their feet");
-
-            yield return null;
-        }
-
-        [UnityTest]
-        public IEnumerator AShapeLeftFarBehindStopsPretendingAndCatchesUpAtOnce()
-        {
-            var vehicle = SomebodyElsesTractor();
-            var shape = ShapeOf(vehicle);
-            shape.CatchUpNow();
-
-            vehicle.transform.position += new Vector3(0f, 0f, 60f);
-            shape.Follow(1f / 60f);
-
-            Assert.That(shape.TrailingByMetres, Is.LessThan(0.01f),
-                "drawn sliding sixty metres under its own power, which is a worse lie than the jump " +
-                "smoothing exists to hide");
 
             yield return null;
         }

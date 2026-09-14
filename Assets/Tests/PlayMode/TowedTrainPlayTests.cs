@@ -190,24 +190,71 @@ namespace BelowTheWing.Tests.PlayMode
             {
                 Assert.That(now[i], Is.EqualTo(spacedAt[i]).Within(0.5f),
                     $"under a steady correction the gap behind vehicle {i} went from {spacedAt[i]:F2} m " +
-                    "to {now[i]:F2} m. Pushing only the front means the couplings have to drag the carts " +
-                    "along, and the solver spends every step undoing what the correction just did");
+                    $"to {now[i]:F2} m. The front of the train is the only part being pushed, so the " +
+                    "couplings are what carry the rest of it along; a train that stretches while it is " +
+                    "steered is one whose carts arrive somewhere their couplings say they cannot be");
             }
         }
 
         [UnityTest]
-        public IEnumerator OnlyTheFrontOfATrainIsWorthCorrecting()
+        public IEnumerator PushingEveryMemberTowardTheFrontsReportConcertinasTheTrain()
+        {
+            var train = SomebodyElsesTrain();
+            yield return Steps.Seconds(1f);
+            var spacedAt = GapsBetweenMembers(train);
+
+            var said = VehicleState.Of(train.Leader.Body);
+            var steps = Mathf.CeilToInt(4f / Time.fixedDeltaTime);
+
+            for (var i = 0; i < steps; i++)
+            {
+                foreach (var body in Bodies(train))
+                {
+                    Correction.Apply(body, said, secondsSince: 0f, Settings);
+                }
+
+                yield return new WaitForFixedUpdate();
+            }
+
+            var now = GapsBetweenMembers(train);
+            var squeezed = 0;
+            for (var i = 0; i < now.Length; i++)
+            {
+                if (now[i] < spacedAt[i] - 0.2f)
+                {
+                    squeezed++;
+                }
+            }
+
+            Assert.That(squeezed, Is.GreaterThan(0),
+                "a machine that does not own a train is told where the front of it is and nothing " +
+                "about the carts. Pushing every member toward that one report drives each cart at " +
+                "the tractor while its coupling holds it back, and the gaps have to close. If they " +
+                "do not, there is nothing to stop somebody steering every body in a train toward a " +
+                $"report meant for one of them. Gaps went from {string.Join(", ", spacedAt)} to " +
+                $"{string.Join(", ", now)}");
+        }
+
+        [UnityTest]
+        public IEnumerator TheFrontOfATrainIsTheOnlyMemberAnybodyHasAReportFor()
         {
             var train = SomebodyElsesTrain();
             yield return Steps.Seconds(1f);
 
-            Assert.That(train.Leader, Is.SameAs(train.Members[0]));
-            foreach (var cart in train.Members)
+            var reported = 0;
+            foreach (var member in train.Members)
             {
-                Assert.That(cart.Chain, Is.SameAs(train),
-                    "a cart that does not know which train it is in cannot be recognised as a follower, " +
-                    "so it gets corrected on its own and pulls against the hinge holding it");
+                if (ReferenceEquals(member.Chain.Leader, member))
+                {
+                    reported++;
+                }
             }
+
+            Assert.That(reported, Is.EqualTo(1),
+                "exactly one member of a train is the one steered toward what its owner said, and " +
+                "every other member follows through its coupling. Two of them and the couplings " +
+                "become an argument between the solver and the network; none of them and the whole " +
+                "train drifts off on its own physics");
         }
     }
 }

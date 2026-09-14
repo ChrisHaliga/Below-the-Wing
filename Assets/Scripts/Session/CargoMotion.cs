@@ -10,7 +10,7 @@ namespace BelowTheWing.Session
     [DisallowMultipleComponent]
     public sealed class CargoMotion : MotionReplication, IMovedFromHere
     {
-        [SerializeField, Tooltip("What hands may do with this")]
+        [SerializeField, Tooltip("Wait before asking again, s")]
         float m_AskAgainAfterSeconds = 0.5f;
 
         [SerializeField, Tooltip("At rest below this speed relative to what it lies on, m/s")]

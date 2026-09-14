@@ -167,9 +167,31 @@ transform component has anything to say about that.
 
 The multiplayer tests run all their machines in a single process, so there is one scene and one
 physics world between them. Anything a component finds by searching the scene finds one instance
-shared by every machine, which is why those fixtures leave scene singletons out and stand in for
-them per machine instead. It also means these tests can check what is sent, received and agreed,
-and cannot measure two machines' physics diverging.
+shared by every machine, so a fixture cannot stand up one session per machine: a single session
+object would collect all three machines' vehicles into one impossible train.
+
+What follows from that is a real limit, not a detail. These tests can check what is sent, what
+arrives and whether the machines agree on it. They cannot measure two machines' physics diverging,
+and a fixture that leaves the session out is not exercising the session -- whatever the session
+does with what arrives has to be covered somewhere else.
+
+## 2026-09-14 — A multiplayer fixture takes a port the operating system says is free
+
+The fixtures used to take the transport's default port. The editor takes the same port the moment
+somebody hosts a session in it, so the entire multiplayer suite failed at connect, intermittently,
+for a reason nothing in the output pointed at -- and the natural reading of an intermittent
+connection failure is a flaky test rather than a busy socket.
+
+Every machine in a fixture now shares one port asked for and released just before the run, clients
+that join part way through included. It is "was free a moment ago" rather than "is free", which is
+the best a fixture can do without holding the socket it means to hand over.
+
+## 2026-09-14 — A request for a vehicle gives up after a deadline
+
+A request is routed to whichever machine owns the thing, and a machine that has left never answers.
+Without a deadline the asking machine waits for that answer forever, holding the caller's response
+handler and, with it, the seat the player was trying to take. The deadline turns a silence into a
+refusal, which the player can act on.
 
 ## 2026-09-14 — The cart's deck and envelope are the one set of figures still typed in
 

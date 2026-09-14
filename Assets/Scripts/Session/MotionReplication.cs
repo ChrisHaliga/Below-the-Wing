@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using BelowTheWing.Vehicles;
 using Unity.Netcode;
 using UnityEngine;

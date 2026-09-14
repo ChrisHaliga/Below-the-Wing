@@ -27,7 +27,7 @@ namespace BelowTheWing.Apron
         [SerializeField, Tooltip("Colour of the stand-in shape")]
         Color m_Colour = Color.grey;
 
-        [SerializeField, Tooltip("Height above the subject, m")]
+        [SerializeField, Tooltip("Label height above the origin, m")]
         float m_LabelHeightMetres = 1.4f;
 
         [SerializeField, Tooltip("Where the shape sits on the body, m, local")]

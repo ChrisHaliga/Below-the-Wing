@@ -8,8 +8,6 @@ namespace BelowTheWing.Apron
     {
         public const float CatchUpSeconds = 0.1f;
 
-        public const float TooFarToFollowMetres = 8f;
-
         Transform m_Body;
         IMovedFromHere m_Mover;
 
@@ -40,7 +38,7 @@ namespace BelowTheWing.Apron
                 return;
             }
 
-            if (!WorthSmoothing || TrailingByMetres > TooFarToFollowMetres)
+            if (!WorthSmoothing)
             {
                 CatchUpNow();
                 return;

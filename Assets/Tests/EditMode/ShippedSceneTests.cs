@@ -119,6 +119,43 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void EveryCopyOnAnotherMachineIsSteeredWithFiguresThatCanActuallyCloseAGap()
+        {
+            foreach (var name in new[] { "BaggageTractor", "BaggageCart", "Bag", "RampWorker" })
+            {
+                var mover = Prefab(name).GetComponent<MotionReplication>();
+                Assert.That(mover, Is.Not.Null,
+                    $"{name}: nothing reports where this is or steers other machines' copies toward it");
+
+                var saved = new SerializedObject(mover).FindProperty("m_Correction");
+
+                float Dial(string called)
+                {
+                    var found = saved.FindPropertyRelative(called);
+                    Assert.That(found, Is.Not.Null, $"{name} has no '{called}' to steer a copy with");
+                    return found.floatValue;
+                }
+
+                Assert.That(Dial("closingRatePerSecond"), Is.GreaterThan(0f),
+                    $"{name} turns a position error into no closing speed at all, so a copy matches " +
+                    "its owner's velocity and keeps whatever gap it drifted into for the session");
+
+                Assert.That(Dial("closingCeilingMetresPerSecond"), Is.GreaterThan(0f),
+                    $"{name} may close a gap at zero metres a second, which is the same thing said " +
+                    "twice: the copy tracks the speed and never the place");
+
+                Assert.That(Dial("authority"), Is.GreaterThan(0f).And.LessThanOrEqualTo(1f),
+                    $"{name} applies {Dial("authority")} of each wanted change per step. At zero " +
+                    "nothing is applied; above one a correction overshoots and comes back, which is " +
+                    "a copy oscillating around where its owner says it is");
+
+                Assert.That(Dial("leaveAloneBelow"), Is.LessThan(Dial("closingCeilingMetresPerSecond")),
+                    $"{name} skips every correction smaller than its own ceiling, so no correction " +
+                    "is ever applied at all");
+            }
+        }
+
+        [Test]
         public void EveryPrefabCarriesWhatTheCodeReachesForOnIt()
         {
             foreach (var name in new[] { "BaggageTractor", "BaggageCart" })
@@ -154,10 +191,10 @@ namespace BelowTheWing.Tests.EditMode
             foreach (var wheel in cartShape.Wheels)
             {
                 Assert.That(wheel.RadiusMetres, Is.EqualTo(0.157f).Within(0.005f),
-                    "BaggageCart: a wheel is measured off its own mesh. This figure used to be " +
-                    "typed into the profile, where nothing kept it agreeing with the model, and " +
-                    "the invisible wheels holding the cart up were then a different size from the " +
-                    "visible ones turning on it");
+                    "BaggageCart: a wheel is measured off its own mesh, so that the invisible " +
+                    "wheels holding the cart up are the size of the visible ones turning on it. A " +
+                    "radius written down anywhere else is a second copy of this figure that " +
+                    "nothing keeps in agreement with the model");
             }
             Assert.That(cartShape.FrontReachMetres, Is.EqualTo(3.1617f).Within(0.02f),
                 "BaggageCart: the front coupling is the HITCH_Male empty. Hitch, Hitch Pin and " +
