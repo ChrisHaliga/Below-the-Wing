@@ -235,6 +235,31 @@ jump is mostly vertical and nobody missed the part that was being cancelled.
 What counts now is whether they pushed off deliberately, which lasts until they land. Deciding it
 from how fast they are rising instead would take walking up a ramp for a leap.
 
+## 2026-09-14 — The apron scene is saved twice, and its object identities move each time
+
+A networked object is known to other machines by an identity worked out from where it lives in a
+file. Building the scene in memory and saving it once cannot produce that: at the moment of the
+save the object has no file to live in, so the identity comes out as zero and zero is what is
+stored. Netcode refuses to spawn an object whose identity is zero, so the session never starts, the
+apron is never built, and a player is left on bare ground.
+
+None of that was ever seen in play, because opening the scene in the editor works the identity out
+and holds it in memory. Only a built player reads what is actually on the disk. The scene is
+therefore saved, reopened so the identities can be worked out, and saved again -- and the check
+that guards it reads the file as text, because a check that opens the scene repairs the fault
+before it looks at it.
+
+Accepted, not solved: the identities are different every time the scene is rebuilt, because the
+file positions they are derived from are not the same twice. Within one build that is harmless --
+every machine reads the same file -- but two builds of the scene do not agree with each other, and
+the whole scene file churns in the repository each time it is regenerated.
+
+That churn is the reason the scene already in the repository was repaired by opening and saving it
+rather than by rebuilding it. Rebuilding is a regeneration of everything, and the one attempt at it
+came back with the aircraft and crew profiles unassigned while every prefab reference survived --
+which the shipped-scene checks caught, and which is the whole argument against regenerating an
+asset to change one field in it.
+
 ## 2026-09-14 — Sources carry no comments
 
 Decided by the repo owner. Facts that must hold are assertions or tests; decisions worth keeping are

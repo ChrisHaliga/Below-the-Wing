@@ -495,7 +495,16 @@ namespace BelowTheWing.EditorTools
             Set(session, "m_Readout", readout);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
+            GiveTheSceneObjectsTheirIdentities();
             AddToBuildSettings();
+        }
+
+        static void GiveTheSceneObjectsTheirIdentities()
+        {
+            var saved = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+
+            EditorSceneManager.MarkSceneDirty(saved);
+            EditorSceneManager.SaveScene(saved, ScenePath);
         }
 
         static void BuildApronFloor()
