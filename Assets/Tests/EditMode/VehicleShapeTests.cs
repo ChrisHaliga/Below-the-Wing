@@ -7,16 +7,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Where a vehicle's parts are, and what depends on knowing.
-    ///
-    /// The measurements here are the real ones off the two models. They matter as measurements
-    /// rather than as arbitrary numbers because neither vehicle is the box anything assumed. The
-    /// cart is not symmetric: its drawbar sticks 3.16 m out in front, its socket is recessed 1.82 m
-    /// behind, and the two halves of a coupling meet at different heights on purpose so that they
-    /// do not try to occupy the same space. The tractor's axles carry different wheels, and it has
-    /// no coupling at its front at all. Every one of those facts breaks something.
-    /// </summary>
     public sealed class VehicleShapeTests
     {
         GameObject m_CartObject;
@@ -202,12 +192,6 @@ namespace BelowTheWing.Tests.EditMode
         }
     }
 
-    /// <summary>
-    /// Laying out an apron from what the equipment actually measures.
-    ///
-    /// The layout is where hitch spacing is decided, before any vehicle exists, so it is the first
-    /// place an asymmetric cart breaks something. Its old arithmetic doubled a single reach.
-    /// </summary>
     public sealed class ApronLayoutFromShapesTests
     {
         GameObject m_CartObject;

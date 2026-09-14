@@ -6,19 +6,8 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.Support
 {
-    /// <summary>
-    /// Profiles for tests to run against, built in memory rather than loaded from project assets.
-    ///
-    /// Tests use these instead of the assets the game ships with so that retuning a vehicle for
-    /// feel cannot turn a test red. The numbers here are the same real-world figures the shipped
-    /// profiles use, because several tests are about those figures being real.
-    /// </summary>
     public static class TestProfiles
     {
-        /// <summary>
-        /// A baggage tractor: the small diesel or electric unit that tows carts around an apron.
-        /// Two and a half tonnes empty, on 0.22 m front and 0.26 m rear wheels.
-        /// </summary>
         public static VehicleProfile Tractor()
         {
             var p = ScriptableObject.CreateInstance<VehicleProfile>();
@@ -41,10 +30,6 @@ namespace BelowTheWing.Tests.Support
             return p;
         }
 
-        /// <summary>
-        /// A baggage cart: the four-wheeled box towed behind a tractor. Around half a tonne empty,
-        /// and never driven by anybody -- it goes where it is pulled.
-        /// </summary>
         public static VehicleProfile Cart()
         {
             var p = ScriptableObject.CreateInstance<VehicleProfile>();
@@ -67,7 +52,6 @@ namespace BelowTheWing.Tests.Support
             return p;
         }
 
-        /// <summary>A ramp worker: eighty kilograms of person.</summary>
         public static CrewProfile CrewMember()
         {
             var p = ScriptableObject.CreateInstance<CrewProfile>();
@@ -81,7 +65,6 @@ namespace BelowTheWing.Tests.Support
             return p;
         }
 
-        /// <summary>A checked bag: twenty kilograms of soft-sided suitcase.</summary>
         public static BagProfile CheckedBag()
         {
             var p = ScriptableObject.CreateInstance<BagProfile>();
@@ -91,7 +74,6 @@ namespace BelowTheWing.Tests.Support
             return p;
         }
 
-        /// <summary>A narrowbody airliner, at its operating empty weight.</summary>
         public static AircraftProfile Aircraft()
         {
             var p = ScriptableObject.CreateInstance<AircraftProfile>();
@@ -103,13 +85,6 @@ namespace BelowTheWing.Tests.Support
             return p;
         }
 
-        /// <summary>
-        /// A tire curve that rises to a peak and then falls away: sideways force in newtons per
-        /// kilogram carried, against how fast the contact patch is sliding sideways.
-        ///
-        /// The falling half is the part that matters. A curve that only ever rises puts the vehicle
-        /// on rails, and nothing can slide, spin or jackknife however hard it is thrown into a corner.
-        /// </summary>
         public static AnimationCurve PeakingGripCurve()
             => new AnimationCurve(
                 new Keyframe(0f, 0f),

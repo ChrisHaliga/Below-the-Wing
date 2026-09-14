@@ -8,14 +8,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// Holding onto something that moves.
-    ///
-    /// A tether: a joint with a limit of arm's reach and a break force of grip strength. The player
-    /// walks freely on the end of it, is dragged along by whatever they are holding, and is thrown
-    /// if something hits it hard enough to break their grip. It exists while a button is down and
-    /// on the holder's machine only.
-    /// </summary>
     public sealed class HoldingOnPlayTests
     {
         TestApron m_Apron;
@@ -52,7 +44,6 @@ namespace BelowTheWing.Tests.PlayMode
             return anchor;
         }
 
-        /// <summary>A cart's worth of body that says it can be held onto, standing on the apron.</summary>
         Rigidbody ACartAt(Vector3 where)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -109,7 +100,6 @@ namespace BelowTheWing.Tests.PlayMode
             m_Hands.Right.Press(Time.time);
             var grabbedAt = m_RightAnchor.position;
 
-            // Walking straight away from it, hard, for a long time.
             m_Crew.IntentSource = new HeldKeys(new Vector2(0f, -1f), sprint: true);
             yield return Steps.Seconds(2f);
 
@@ -153,7 +143,6 @@ namespace BelowTheWing.Tests.PlayMode
 
             m_Hands.Right.Press(Time.time);
 
-            // Fifteen metres a second squared sideways: well past what keeps a bag on a deck.
             for (var i = 0; i < 25; i++)
             {
                 cart.linearVelocity += new Vector3(0.3f, 0f, 0f);
@@ -176,8 +165,6 @@ namespace BelowTheWing.Tests.PlayMode
             yield return Steps.Seconds(0.2f);
             Assert.That(m_Hands.Right.HoldingOnto, Is.SameAs(cart), "holding, before the hit");
 
-            // A head-on hit from a tractor: the cart's speed changes by twenty metres a second in
-            // one step, and the tether has to haul eighty kilograms after it just as fast.
             cart.linearVelocity = new Vector3(0f, 0f, 20f);
             yield return Steps.Seconds(0.3f);
             m_Hands.Tick();

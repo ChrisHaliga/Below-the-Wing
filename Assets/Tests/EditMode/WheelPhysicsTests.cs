@@ -5,15 +5,8 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// The force one wheel produces, checked a quantity at a time.
-    ///
-    /// These are the numbers every vehicle in the game is built out of, so they are checked
-    /// directly rather than inferred from watching something drive.
-    /// </summary>
     public sealed class WheelPhysicsTests
     {
-        /// <summary>The tractor's two wheel sizes, as measured off its model.</summary>
         const float FrontWheelRadius = 0.2203f;
 
         const float RearWheelRadius = 0.2647f;
@@ -52,8 +45,6 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void DamperTakesForceOutOfSuspensionThatIsExtending()
         {
-            // Slow enough that the spring is still carrying something afterwards. Faster than the
-            // spring can answer and the wheel simply comes unloaded, which is the case below.
             const float risingAt = 0.5f;
 
             var still = WheelPhysics.SuspensionForce(0.5f, 0f, m_Tractor);
@@ -138,7 +129,6 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(WheelPhysics.LateralForce(0f, 750f, Step, m_Tractor), Is.EqualTo(0f).Within(1e-4f));
         }
 
-        /// <summary>One physics step at this project's fixed rate.</summary>
         const float Step = 0.02f;
 
         [Test]
@@ -147,7 +137,6 @@ namespace BelowTheWing.Tests.EditMode
             const float load = 100f;
             var slip = WheelPhysics.HoldsBelowMetresPerSecond * 0.9f;
 
-            // The wheel, on its own, held against its own crawl for a third of a second.
             var creepingAt = slip;
             var steps = 0;
             while (steps < 16)
@@ -176,8 +165,6 @@ namespace BelowTheWing.Tests.EditMode
             const float load = 100f;
             var sliding = WheelPhysics.HoldsBelowMetresPerSecond * 0.95f;
 
-            // A tyre with almost no grip in it -- something on ice rather than on tarmac -- because
-            // a tyre that could grip its way out of any crawl would never show this bound at all.
             m_Tractor.lateralGripCurve = AnimationCurve.Linear(0f, 0f, 12f, 2f);
 
             var enoughToStopIt = sliding * load / Step;
@@ -271,9 +258,6 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void ATractorCanOutrunItsOwnDrag()
         {
-            // Top speed is where drive force and resistance meet. It is worth pinning, because the
-            // figure that sets it is a real one and the honest real answer -- about 23 km/h -- is
-            // slower than this game wants to be.
             const int corners = 4;
             var atSpeed = 10f;
 

@@ -3,14 +3,6 @@ using NUnit.Framework;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Letting a crash finish before correcting it.
-    ///
-    /// Correction running through a collision fights the impulse: the vehicle bounces off the way
-    /// physics says it should, and then correction -- holding a report taken before the crash and
-    /// knowing nothing about it -- drags it back through the impact it just had. That reads as the
-    /// game refusing what the player just did.
-    /// </summary>
     public sealed class ContactBlackoutTests
     {
         static readonly BlackoutSettings Settings = BlackoutSettings.Default;

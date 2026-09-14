@@ -5,9 +5,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Turning what a player pressed into where their character is trying to go.
-    /// </summary>
     public sealed class CrewLocomotionTests
     {
         static readonly Vector2 Forward = new Vector2(0f, 1f);
@@ -85,7 +82,5 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(diagonal.magnitude, Is.EqualTo(straight.magnitude).Within(1e-3f),
                 "walking north-east must not be faster than walking north");
         }
-
-
     }
 }

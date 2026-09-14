@@ -7,16 +7,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// A person standing on something that moves.
-    ///
-    /// Nothing attaches them and nothing freezes them. Friction carries them, and walking is
-    /// relative to whatever is under their feet: standing still on a moving deck means moving with
-    /// it, walking forward means moving with it and a bit more. That is the whole of riding, and
-    /// it is also why somebody who jumps off a moving deck keeps the speed it gave them, and why a
-    /// corner hard enough slides them off it exactly as it slides a bag. What their legs can do and
-    /// what their feet can hold are two different figures -- see FootingTests for the second one.
-    /// </summary>
     public sealed class WalkingOnWhatMovesPlayTests
     {
         TestApron m_Apron;
@@ -30,8 +20,6 @@ namespace BelowTheWing.Tests.PlayMode
             m_Apron = new TestApron();
             m_Profile = TestProfiles.CrewMember();
 
-            // A deck: a slab lying on the tarmac that can be driven about. Long, so that somebody
-            // walking forward on it for a while is still on it.
             var deck = GameObject.CreatePrimitive(PrimitiveType.Cube);
             deck.name = "Deck";
             deck.transform.localScale = new Vector3(3f, 0.2f, 30f);
@@ -111,11 +99,6 @@ namespace BelowTheWing.Tests.PlayMode
                 "second in the air, which is why they land well ahead of where they left");
         }
 
-
-        /// <summary>
-        /// A corner taken far harder than a pair of feet can hold: the deck changes velocity
-        /// sideways at twenty metres per second squared, twice what a person grips with.
-        /// </summary>
         IEnumerator AHardCorner()
         {
             for (var i = 1; i <= 50; i++)
@@ -130,8 +113,6 @@ namespace BelowTheWing.Tests.PlayMode
         {
             yield return Steps.Seconds(1f);
 
-            // Riding along first, so that sliding off is the corner's doing and not a person who
-            // was never aboard.
             var stoodAt = OnTheDeck();
             yield return DriveTheDeck(new Vector3(0f, 0f, 3f), seconds: 1.5f);
             Assert.That(Vector3.Distance(OnTheDeck(), stoodAt), Is.LessThan(1f), $"aboard, before the corner. {Where()}");
@@ -150,7 +131,6 @@ namespace BelowTheWing.Tests.PlayMode
             yield return Steps.Seconds(1f);
             yield return DriveTheDeck(new Vector3(0f, 0f, 3f), seconds: 1f);
 
-            // Walking as hard as they can toward the middle of the deck, the whole way through.
             m_Crew.IntentSource = new HeldKeys(new Vector2(1f, 0f));
 
             yield return AHardCorner();

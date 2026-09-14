@@ -4,17 +4,8 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.Support
 {
-    /// <summary>
-    /// The physical shape of each vehicle, for tests to run against.
-    ///
-    /// The companion to <see cref="TestProfiles"/>: a profile says how a vehicle drives, a shape
-    /// says where its parts are. Built in memory rather than read off the shipped prefabs so that
-    /// remodelling a vehicle cannot turn a test red -- but the numbers are the real measured ones,
-    /// because several tests are about those measurements being real.
-    /// </summary>
     public static class TestShapes
     {
-        /// <summary>Puts a shape on an object and fills it in. Returns the component.</summary>
         public static VehicleShape On(GameObject vehicle, VehicleShape.Measurements measurements)
         {
             var shape = vehicle.GetComponent<VehicleShape>();
@@ -28,23 +19,10 @@ namespace BelowTheWing.Tests.Support
             return shape;
         }
 
-        /// <summary>
-        /// A plain box on four wheels, for tests that are about driving rather than about geometry.
-        ///
-        /// A stand-in, and named as one. Most tests in this project want a vehicle that has weight,
-        /// wheels and a coupling at each end and do not care what it looks like; giving them the
-        /// real cart would make them fail whenever somebody remodels it. Anything actually testing
-        /// where a part of a vehicle is asks for the measured shape instead.
-        /// </summary>
         public static VehicleShape.Measurements BoxVehicle() => BoxVehicle(StandInSizeMetres);
 
-        /// <summary>How big a stand-in vehicle is when a test does not care how big it is.</summary>
         public static readonly Vector3 StandInSizeMetres = new Vector3(1.5f, 1.7f, 3f);
 
-        /// <summary>
-        /// A plain box on four wheels of a given size, for tests that are about driving rather than
-        /// about geometry.
-        /// </summary>
         public static VehicleShape.Measurements BoxVehicle(Vector3 sizeMetres)
         {
             const float wheelRadius = 0.3f;
@@ -54,9 +32,6 @@ namespace BelowTheWing.Tests.Support
             var reach = (sizeMetres.z * 0.5f) + 0.3f;
             const float couplingHeight = 0.5f;
 
-            // Clear of the tarmac. The origin is on the ground, so a body box centred on it has its
-            // underside level with the apron, carries the vehicle's weight itself, and leaves the
-            // suspension doing nothing at all.
             var middle = new Vector3(0f, wheelRadius + (sizeMetres.y * 0.5f), 0f);
 
             return new VehicleShape.Measurements
@@ -80,14 +55,6 @@ namespace BelowTheWing.Tests.Support
             };
         }
 
-        /// <summary>
-        /// The baggage cart, as measured off the model.
-        ///
-        /// The two ends do not match, and that is the point of having real measurements here. The
-        /// drawbar sticks 3.16 m out in front; the socket is recessed and reaches 1.82 m back. They
-        /// also meet at different heights, because a real drawbar is offset vertically so that the
-        /// male and female halves do not try to occupy the same space.
-        /// </summary>
         public static VehicleShape.Measurements Cart()
         {
             const float deckTop = 0.4727f;
@@ -114,13 +81,6 @@ namespace BelowTheWing.Tests.Support
             };
         }
 
-        /// <summary>
-        /// What a cart is solid where.
-        ///
-        /// Not one box. A cart is a container, and a box the size of the vehicle fills the space
-        /// bags are supposed to go in -- so this is a floor, the lips that keep a load aboard while
-        /// the cart is parked, the fixed ends, and the roof.
-        /// </summary>
         static List<VehicleShape.SolidPart> CartSolidParts(float deckTop)
         {
             const float deckLength = 3.1538f;
@@ -164,21 +124,11 @@ namespace BelowTheWing.Tests.Support
             };
         }
 
-        /// <summary>
-        /// The baggage tractor, as measured off the model.
-        ///
-        /// Two facts about it break anything that assumes vehicles are alike. Its axles carry
-        /// different wheels -- 0.2203 m at the front and 0.2647 m at the back -- and it has no
-        /// coupling at the front at all, because nothing tows a tractor.
-        /// </summary>
         public static VehicleShape.Measurements Tractor()
         {
             const float frontRadius = 0.2203f;
             const float rearRadius = 0.2647f;
 
-            // The box the bodywork fills. It stops 0.15 m above the tarmac: the wheels hang below
-            // it on their own suspension, and a solid part that reached the ground would carry the
-            // tractor's weight itself and leave the springs doing nothing.
             var bodywork = new Vector3(1.618f, 1.7023f, 2.8002f);
             var middle = new Vector3(0f, 0.9989f, -0.0858f);
 
@@ -196,7 +146,6 @@ namespace BelowTheWing.Tests.Support
                 EnvelopeSizeMetres = bodywork,
                 EnvelopeCentreLocal = middle,
 
-                // Solid through and through. Nothing rides inside a tractor.
                 InteriorLocal = new Bounds(Vector3.zero, Vector3.zero),
                 SolidParts = new List<VehicleShape.SolidPart>
                 {

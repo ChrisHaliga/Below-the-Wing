@@ -4,14 +4,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// What a thing says hands may do with it.
-    ///
-    /// The object answers, not the hand. A hand that decided "bags are for carrying, everything
-    /// else is for holding" would be a rule written as an exception, and the first thing added that
-    /// was neither -- a crate, a rail, a hat -- would fall into whichever branch the exception left
-    /// open.
-    /// </summary>
     public sealed class HandUseTests
     {
         GameObject m_Thing;
@@ -22,7 +14,6 @@ namespace BelowTheWing.Tests.EditMode
         {
             m_Thing = new GameObject("Thing");
 
-            // What a hand actually reaches is a part of the thing, not the thing itself.
             var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
             part.transform.SetParent(m_Thing.transform, worldPositionStays: false);
             m_Part = part.GetComponent<Collider>();

@@ -6,16 +6,8 @@ using UnityEngine;
 
 namespace BelowTheWing.Session
 {
-    /// <summary>
-    /// Puts the aircraft, the tractors and the carts on the apron, once, at the start of a session.
-    ///
-    /// Exactly one machine does this -- the session owner -- so that everybody is looking at the
-    /// same apron rather than each building their own. Crew are not its business: a player brings
-    /// their own character, because the person controlling it should be the one simulating it.
-    /// </summary>
     public static class ApronBuilder
     {
-        /// <summary>Places everything the plan describes.</summary>
         public static void Build(
             ApronLayoutSettings layout,
             AircraftProfile aircraftProfile,
@@ -29,9 +21,6 @@ namespace BelowTheWing.Session
             var crewSize = new Vector3(
                 crewProfile.radiusMetres * 2f, crewProfile.heightMetres, crewProfile.radiusMetres * 2f);
 
-            // Measured off the prefabs rather than described again here. A vehicle's shape is a
-            // property of the thing itself, and a layout working from a second copy of it is how
-            // trains end up spaced at a distance their couplings cannot reach.
             var plan = ApronLayout.Build(
                 layout,
                 tractorPrefab.GetComponent<VehicleShape>().Footprint,
@@ -56,13 +45,6 @@ namespace BelowTheWing.Session
             }
         }
 
-        /// <summary>
-        /// Drops a few bags on the ground beside a train.
-        ///
-        /// On the ground rather than on the decks. Loading a cart is the players' job: a bag is
-        /// carried or thrown aboard and lies there by friction, and putting bags straight onto the
-        /// decks here would be a second way for cargo to arrive that nothing else in the game uses.
-        /// </summary>
         static void Scatter(NetworkObject bagPrefab, TrainPlan train, int howMany)
         {
             if (bagPrefab == null || howMany <= 0 || train.Carts.Count == 0)
@@ -74,7 +56,6 @@ namespace BelowTheWing.Session
 
             for (var i = 0; i < howMany; i++)
             {
-                // In a line along the side of the train, clear of its wheels.
                 var where = beside.Position
                             + (Vector3.right * 2.5f)
                             + (Vector3.back * (i * 0.9f))
@@ -88,15 +69,6 @@ namespace BelowTheWing.Session
             }
         }
 
-        /// <summary>
-        /// Makes a spawned object one that changes hands only when somebody asks for it and is
-        /// granted it.
-        ///
-        /// Clearing first matters: the prefabs are saved as distributable, and merely adding a flag
-        /// would leave the netcode layer free to keep handing vehicles out one at a time whenever
-        /// anybody joins or leaves -- splitting trains across machines behind the back of every rule
-        /// written to stop exactly that.
-        /// </summary>
         public static void OnlyByAsking(NetworkObject placed)
             => placed.SetOwnershipStatus(NetworkObject.OwnershipStatus.RequestRequired, clearAndSet: true);
 
@@ -108,10 +80,6 @@ namespace BelowTheWing.Session
         {
             var placed = Object.Instantiate(prefab, plan.Position, plan.Rotation);
 
-            // Everything about this object is settled before it is spawned. Netcode raises
-            // OnNetworkSpawn synchronously from inside Spawn(), so anything described afterwards is
-            // described too late: every machine present, including this one, would have already
-            // looked at the object and made up its mind about what it was.
             placed.GetComponent<ApronIdentity>().Called(plan.Name);
 
             var member = placed.GetComponent<TrainMember>();

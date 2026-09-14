@@ -7,15 +7,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// A cart that has been pushed stops, and stays stopped.
-    ///
-    /// Every force a tyre makes here is read off a grip curve at the speed the contact patch is
-    /// sliding, and a curve through the origin has nothing to say about a slide that is nearly
-    /// over: the slower a cart drifts, the less there is to stop it, so it never quite arrives.
-    /// A real tyre does the opposite -- below some small slip it simply holds, which is why a
-    /// parked trolley stays where it was left instead of creeping across the floor all afternoon.
-    /// </summary>
     public sealed class CartsComeToRestPlayTests
     {
         TestApron m_Apron;
@@ -38,7 +29,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
-        /// <summary>Waits until the cart has stopped, or gives up. Returns the seconds it took.</summary>
         IEnumerator StopsWithin(float seconds, System.Action<float, float> report)
         {
             var from = m_Cart.transform.position;
@@ -58,9 +48,6 @@ namespace BelowTheWing.Tests.PlayMode
         {
             yield return Steps.Seconds(2f);
 
-            // Across the cart rather than along it: a bag landing against its side, or somebody
-            // walking into it. Sideways is the direction its wheels cannot roll, so this is a
-            // slide, and a slide is a thing tyres stop.
             m_Cart.Body.linearVelocity = new Vector3(0.85f, 0f, 0f);
 
             var took = 0f;
@@ -91,7 +78,6 @@ namespace BelowTheWing.Tests.PlayMode
         {
             yield return Steps.Seconds(2f);
 
-            // Along the cart this time, which is the way its wheels turn: this one is meant to roll.
             m_Cart.Body.linearVelocity = new Vector3(0f, 0f, -3f);
 
             var took = 0f;

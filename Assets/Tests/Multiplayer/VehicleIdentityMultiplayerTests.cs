@@ -10,19 +10,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.Multiplayer
 {
-    /// <summary>
-    /// A cart is a cart on every machine.
-    ///
-    /// It was not. The machine that built the apron configured every cart as a three-tonne tractor,
-    /// while a client joining later configured the same cart correctly at 550 kg. The same vehicle
-    /// had two different masses and two different answers to "can I drive this", depending on who
-    /// was looking, and its physics changed the moment it was taken over.
-    ///
-    /// The cause was that what a vehicle *is* was replicated data it learned about itself shortly
-    /// after coming into existence, and its default value happened to name a real kind of vehicle.
-    /// A cart is now a cart because it came from the cart prefab, so there is no window in which it
-    /// is anything else and nothing to get in the wrong order.
-    /// </summary>
     public sealed class VehicleIdentityMultiplayerTests : RampMultiplayerTest
     {
         GameObject m_CartPrefab;
@@ -36,8 +23,6 @@ namespace BelowTheWing.Tests.Multiplayer
             TestShapes.On(m_CartPrefab, TestShapes.Cart());
             m_CartPrefab.AddComponent<VehicleController>().Configure(m_CartProfile, "");
 
-            // Named the way the game names things -- over the network, on arrival -- rather than by
-            // the test writing a name in and then asserting the name it wrote.
             m_CartPrefab.AddComponent<ApronAppearance>().DescribeAs(
                 ApronAppearance.Shape.Box, TestShapes.StandInSizeMetres, Color.grey, 1.2f);
             m_CartPrefab.AddComponent<ApronIdentity>();

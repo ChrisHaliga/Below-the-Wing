@@ -8,16 +8,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// A vehicle whose axles carry wheels of different sizes.
-    ///
-    /// The baggage tractor is one: 0.2203 m wheels at the front and 0.2647 m at the back. Three
-    /// separate things are worked out from a wheel's radius -- how far its suspension ray reaches,
-    /// how high the body hangs above it, and how far below its mount the wheel has dropped -- so a
-    /// vehicle described by one shared figure has one axle drawn floating and the other buried by
-    /// the difference. Here that difference is 4.4 cm, which is 44% of this tractor's suspension
-    /// travel.
-    /// </summary>
     public sealed class WheelsOfTwoSizesPlayTests
     {
         TestApron m_Apron;
@@ -38,8 +28,6 @@ namespace BelowTheWing.Tests.PlayMode
 
             m_Shape = m_Tractor.GetComponent<VehicleShape>();
 
-            // Stand-ins for the visible wheels: what a player sees is a transform moved to agree
-            // with where the suspension found the ground, so a transform is all this needs.
             var wheels = new List<Transform>();
             for (var i = 0; i < m_Shape.Wheels.Count; i++)
             {

@@ -8,14 +8,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// Two hands, two buttons, and what each does with a bag.
-    ///
-    /// A held bag is a body pulled to the hand by a spring, not a thing frozen at the hand. That is
-    /// what lets it swing, be knocked out by a passing cart, and never shove its holder: a thing
-    /// frozen at the hand that overlaps the holder is pushed apart from them by the solver every
-    /// step, and the holder skids off across the apron.
-    /// </summary>
     public sealed class HandsPlayTests
     {
         TestApron m_Apron;
@@ -52,10 +44,6 @@ namespace BelowTheWing.Tests.PlayMode
             return anchor;
         }
 
-        /// <summary>
-        /// A bag: twenty kilograms of box that says it can be carried, lying on the tarmac at the
-        /// given spot.
-        /// </summary>
         Rigidbody ABagAt(Vector3 where)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -69,7 +57,6 @@ namespace BelowTheWing.Tests.PlayMode
             return body;
         }
 
-        /// <summary>Something to hold onto: a heavy box that says so.</summary>
         Rigidbody ARailAt(Vector3 where)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -130,7 +117,6 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator EachHandReachesFromItsOwnAnchor()
         {
-            // Within the left hand's reach and outside the right's.
             var bag = ABagAt(m_LeftAnchor.position + Vector3.left * 0.6f);
             yield return Steps.Seconds(0.5f);
 
@@ -144,8 +130,6 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator AHandTakesTheNearestThingWhateverItIs()
         {
-            // Both in reach. The bag lies on the tarmac, so its nearest point is most of a metre
-            // below the hand; the rail is further out but still within reach.
             var bag = ABagAt(m_RightAnchor.position + Vector3.forward * 0.3f);
             ARailAt(m_RightAnchor.position + Vector3.right * 1.6f);
             yield return Steps.Seconds(0.5f);
@@ -243,7 +227,6 @@ namespace BelowTheWing.Tests.PlayMode
             var bag = m_Hands.Left.Carrying;
             yield return Steps.Seconds(0.5f);
 
-            // A passing cart's worth of impulse, sideways.
             bag.AddForce(new Vector3(600f, 0f, 0f), ForceMode.Impulse);
             yield return Steps.Seconds(0.2f);
             m_Hands.Tick();
@@ -257,8 +240,6 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator TheHolderIsNotPushedByWhatTheyCarry()
         {
-            // Grabbed with its long side toward the player, so that a bag frozen at the hand
-            // would overlap the holder's own body.
             var bag = ABagAt(m_LeftAnchor.position + Vector3.forward * 0.35f);
             bag.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
             yield return Steps.Seconds(0.5f);

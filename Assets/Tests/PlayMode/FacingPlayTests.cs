@@ -7,13 +7,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// Which way a person on foot faces: the way the camera looks, always.
-    ///
-    /// On foot the view is first person, so the body and the camera are the same thing turned by
-    /// the same mouse. A body that turned toward its travel instead would have you walk sideways
-    /// while looking ahead, and a body that turned at a rate would lag the view it is supposed to be.
-    /// </summary>
     public sealed class FacingPlayTests
     {
         TestApron m_Apron;
@@ -40,7 +33,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_Profile);
         }
 
-        /// <summary>Turns the camera until its yaw is close to the given heading.</summary>
         void LookTowards(float yawDegrees)
         {
             for (var i = 0; i < 100 && Mathf.Abs(Mathf.DeltaAngle(m_Camera.YawDegrees, yawDegrees)) > 0.5f; i++)

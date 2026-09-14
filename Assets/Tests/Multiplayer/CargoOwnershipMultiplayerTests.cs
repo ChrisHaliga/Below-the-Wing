@@ -10,18 +10,8 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.Multiplayer
 {
-    /// <summary>
-    /// Whether a bag actually changes hands between machines when the rules say it should.
-    ///
-    /// The rules themselves are arithmetic and are checked without a network. What is checked here
-    /// is the part nothing else can see: that a hand closing on a bag on one machine ends with that
-    /// machine simulating it, and that a bag coming to rest on somebody else's cart ends up theirs.
-    /// The three instances share one physics world, so everything here is placed by hand and held
-    /// still rather than left to physics.
-    /// </summary>
     public sealed class CargoOwnershipMultiplayerTests : RampMultiplayerTest
     {
-        /// <summary>A body this machine moves, standing in for a player's.</summary>
         sealed class MovedHere : MonoBehaviour, IMovedFromHere
         {
             public bool OursToMove => true;
@@ -43,8 +33,6 @@ namespace BelowTheWing.Tests.Multiplayer
             m_BagPrefab.AddComponent<Bag>().Configure(m_BagProfile);
             m_BagPrefab.AddComponent<CargoMotion>();
 
-            // Held still and out of the way. Three instances share one physics world, and a
-            // dynamic cart in it -- the template included -- is shoved about by its own copies.
             m_CartPrefab = CreateNetworkObjectPrefab("Cart");
             TestShapes.On(m_CartPrefab, TestShapes.BoxVehicle());
             m_CartPrefab.AddComponent<VehicleController>().Configure(m_CartProfile, "Cart 1");
@@ -92,7 +80,6 @@ namespace BelowTheWing.Tests.Multiplayer
             ulong id = 0;
             yield return ABagOwnedBy(thrower, new Vector3(0f, 5f, 0f), spawned => id = spawned);
 
-            // A hand closing on the bag is a joint from it to a body this machine moves.
             var holder = new GameObject("Holder", typeof(Rigidbody), typeof(MovedHere));
             holder.GetComponent<Rigidbody>().isKinematic = true;
             holder.transform.position = new Vector3(0f, 5f, 0.5f);
@@ -125,8 +112,6 @@ namespace BelowTheWing.Tests.Multiplayer
                 () => CopyOn<NetworkObject>(driver, cart.NetworkObjectId).OwnerClientId == driver.LocalClientId);
             AssertOnTimeout("the machine that spawned the cart never ended up owning it");
 
-            // Every copy of the cart in a place of its own, still. What matters is that whichever
-            // copy the bag lies on says the same owner, and every copy does.
             var machines = new[] { m_ServerNetworkManager, thrower, driver };
             for (var i = 0; i < machines.Length; i++)
             {
@@ -141,8 +126,6 @@ namespace BelowTheWing.Tests.Multiplayer
             var shape = m_CartPrefab.GetComponent<VehicleShape>();
             var deckTop = shape.EnvelopeCentreLocal.y + (shape.EnvelopeSizeMetres.y * 0.5f);
 
-            // Thrown from elsewhere and landing on the cart: the thrower's for as long as it is in
-            // the air, and then set down on the deck, still.
             ulong id = 0;
             yield return ABagOwnedBy(thrower, deck + new Vector3(0f, 10f, 0f), spawned => id = spawned);
 

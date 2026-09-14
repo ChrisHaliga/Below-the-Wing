@@ -5,10 +5,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// What a person is made of, as far as the solver is concerned: nothing. The feet are the grip,
-    /// and a body that is hit is carried off by momentum rather than sprung back by a bump.
-    /// </summary>
     public sealed class CrewBodyTests
     {
         GameObject m_Object;

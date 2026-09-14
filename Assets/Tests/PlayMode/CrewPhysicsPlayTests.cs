@@ -8,12 +8,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// A ramp worker as a physical object.
-    ///
-    /// The last test here is the reason crew are rigidbodies at all. Everything else about the
-    /// choice is an argument; being run over is the observable consequence.
-    /// </summary>
     public sealed class CrewPhysicsPlayTests
     {
         TestApron m_Apron;
@@ -77,10 +71,6 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator ACharacterThisMachineIsNotSimulatingIsLeftToTheNetwork()
         {
-            // Built the way a copy of somebody else's character is built: configured from its
-            // profile, never given a seat. Setting Simulated false by hand would test a transition
-            // that only ever happens in a test -- production goes straight from construction to
-            // un-simulated and never passes through the setter at all.
             var crew = m_Apron.AddRemoteCrew(m_CrewProfile, new Vector3(0f, 1.5f, 0f));
             crew.IntentSource = new HeldKeys(new Vector2(0f, 1f));
 
@@ -91,9 +81,7 @@ namespace BelowTheWing.Tests.PlayMode
             Assert.That(crew.Body.useGravity, Is.True,
                 "a copy of somebody else keeps its weight, because players run each other over on " +
                 "purpose and a weightless body has nothing for an impact to modify");
-            // Sideways only. Falling is not walking: a copy of somebody else keeps its weight, so
-            // it settles onto the apron like anything else, and that is the behaviour being asked
-            // for rather than a failure to stay put.
+
             var wentSideways = Vector3.Distance(
                 new Vector3(leftAt.x, 0f, leftAt.z),
                 new Vector3(crew.transform.position.x, 0f, crew.transform.position.z));

@@ -5,14 +5,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Arithmetic that has to agree with the simulation it is describing.
-    ///
-    /// Resting height is what decides where a vehicle's coupling point sits, and two vehicles whose
-    /// coupling points do not meet lean into the difference until a parked train wanders off across
-    /// the apron. That calculation reading a different gravity from the one physics is using is
-    /// exactly the sort of quiet disagreement that produced it in the first place.
-    /// </summary>
     public sealed class SharedConstantsTests
     {
         VehicleProfile m_Tractor;

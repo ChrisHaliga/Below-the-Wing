@@ -9,25 +9,13 @@ using UnityEngine;
 
 namespace BelowTheWing.Session
 {
-    /// <summary>
-    /// The one place that knows how the pieces of this game fit together.
-    ///
-    /// Everything else is deliberately ignorant of everything else: vehicles know nothing about
-    /// networking, the apron layout knows nothing about crew, the readout knows nothing about which
-    /// networking library is underneath. Something has to hold those facts, and holding them in one
-    /// named place is what lets the rest stay separate.
-    ///
-    /// Its jobs are to build the apron once per session, keep the register of which vehicles form
-    /// which trains up to date as objects arrive, and take back whole any train a departing player
-    /// left behind.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class RampSession : NetworkBehaviour
     {
-        [SerializeField, Tooltip("How much of what goes where.")]
+        [SerializeField, Tooltip("Where everything stands")]
         ApronLayoutSettings m_Layout = ApronLayoutSettings.Default;
 
-        [SerializeField, Tooltip("How couplings between vehicles are set up.")]
+        [SerializeField, Tooltip("How couplings are set up")]
         ChainJointSettings m_Coupling = ChainJointSettings.Default;
 
         [Header("Equipment")]
@@ -35,22 +23,22 @@ namespace BelowTheWing.Session
         [SerializeField] CrewProfile m_CrewProfile;
 
         [Header("Prefabs")]
-        [SerializeField, Tooltip("A baggage tractor, carrying its own profile.")]
+        [SerializeField, Tooltip("Tractor prefab")]
         NetworkObject m_TractorPrefab;
 
-        [SerializeField, Tooltip("A baggage cart, carrying its own profile.")]
+        [SerializeField, Tooltip("Cart prefab")]
         NetworkObject m_CartPrefab;
 
-        [SerializeField, Tooltip("The aircraft.")]
+        [SerializeField, Tooltip("Aircraft prefab")]
         NetworkObject m_AircraftPrefab;
 
-        [SerializeField, Tooltip("A ramp worker.")]
+        [SerializeField, Tooltip("Crew prefab")]
         NetworkObject m_CrewPrefab;
 
-        [SerializeField, Tooltip("A piece of baggage.")]
+        [SerializeField, Tooltip("Bag prefab")]
         NetworkObject m_BagPrefab;
 
-        [SerializeField, Tooltip("How many bags to leave beside each train.")]
+        [SerializeField, Tooltip("Bags spawned per train")]
         int m_BagsPerTrain = 4;
 
         [Header("Wiring")]
@@ -61,24 +49,14 @@ namespace BelowTheWing.Session
         readonly List<TrainMember> m_Vehicles = new List<TrainMember>();
         readonly List<TrainMembership> m_Described = new List<TrainMembership>();
 
-        /// <summary>
-        /// Reused rather than rebuilt, because it is handed to the local player's seat on every
-        /// fixed step and allocating a fresh list fifty times a second is a waste.
-        /// </summary>
         readonly List<VehicleController> m_OnTheApron = new List<VehicleController>();
 
         TrainRegistry m_Trains;
         readonly Reclaiming m_Reclaiming = new Reclaiming();
         LocalPlayerRig m_LocalPlayer;
 
-        /// <summary>Every train on the apron, as this machine understands it.</summary>
         public IReadOnlyList<CartChain> Trains => m_Trains.Trains;
 
-        /// <summary>
-        /// Every vehicle on the apron: what a player might be offered to drive, and what is close
-        /// enough to hitch onto the back of a train. One list, because keeping two of the same
-        /// vehicles in step by hand is a bug waiting for the day they disagree.
-        /// </summary>
         public IReadOnlyList<VehicleController> Vehicles => m_OnTheApron;
 
         void Awake() => m_Trains = new TrainRegistry(m_Coupling);
@@ -101,9 +79,6 @@ namespace BelowTheWing.Session
                     m_TractorPrefab, m_CartPrefab, m_AircraftPrefab, m_BagPrefab, m_BagsPerTrain);
             }
 
-            // Nothing redistributes vehicles automatically any more, which is deliberate: doing it
-            // one object at a time is what split trains across machines. The cost is that a train
-            // belonging to somebody who leaves is nobody's until this picks it up.
             NetworkManager.OnConnectionEvent += OnSomebodyCameOrWent;
 
             SpawnOwnCrew();
@@ -117,18 +92,8 @@ namespace BelowTheWing.Session
             }
         }
 
-        /// <summary>
-        /// Takes back any train the departing player was holding, whole.
-        ///
-        /// Whole is the point. Reclaiming the members one at a time would leave the train exactly as
-        /// split as letting the netcode layer redistribute it, which is the thing this game goes to
-        /// some trouble to prevent.
-        /// </summary>
         void OnSomebodyCameOrWent(NetworkManager manager, ConnectionEventData what)
         {
-            // Under distributed authority nobody is a server, so the disconnect callback only ever
-            // fires for this machine's own disconnection. Another player leaving arrives as a peer
-            // event, which is the one that matters here.
             if (what.EventType == ConnectionEvent.PeerDisconnected || what.EventType == ConnectionEvent.ClientDisconnected)
             {
                 ReclaimWhatTheyLeftBehind(what.ClientId);
@@ -148,15 +113,6 @@ namespace BelowTheWing.Session
             }
         }
 
-        /// <summary>
-        /// Writes down a train's new shape so that every machine works out the same one.
-        ///
-        /// Which train a vehicle belongs to is replicated rather than inferred from where things are
-        /// parked, so hitching a cart on is not finished until that has been said out loud. Until it
-        /// is, only the machine that did it knows -- and every other machine still believes the cart
-        /// is standing on its own, so a player there is offered it and can drive it out of the train
-        /// it is physically coupled to.
-        /// </summary>
         public void Reshaped(IReadOnlyList<VehicleController> train, int trainIndex)
         {
             for (var place = 0; place < train.Count; place++)
@@ -171,17 +127,12 @@ namespace BelowTheWing.Session
             MembershipChanged();
         }
 
-        /// <summary>Which train a vehicle currently says it belongs to.</summary>
         public int TrainIndexOf(IReadOnlyList<VehicleController> train)
         {
             var member = train[0].GetComponent<TrainMember>();
             return member != null ? member.Membership.TrainIndex : TrainMembership.NoTrain;
         }
 
-        /// <summary>
-        /// A train number nothing on the apron is using, for carts that have just been dropped off
-        /// and are now a train of their own.
-        /// </summary>
         public int ATrainNumberNobodyIsUsing()
         {
             var highest = TrainMembership.NoTrain;
@@ -197,7 +148,6 @@ namespace BelowTheWing.Session
             return highest + 1;
         }
 
-        /// <summary>A vehicle has appeared, from wherever. Work the trains out again.</summary>
         public void Arrived(TrainMember member)
         {
             if (!m_Vehicles.Contains(member))
@@ -208,7 +158,6 @@ namespace BelowTheWing.Session
             MembershipChanged();
         }
 
-        /// <summary>A vehicle has gone away.</summary>
         public void Left(TrainMember member)
         {
             if (m_Vehicles.Remove(member))
@@ -217,7 +166,6 @@ namespace BelowTheWing.Session
             }
         }
 
-        /// <summary>Something about which vehicle belongs to which train has changed.</summary>
         public void MembershipChanged()
         {
             m_Described.Clear();
@@ -251,11 +199,6 @@ namespace BelowTheWing.Session
                 m_AircraftProfile,
                 CrewSize());
 
-            // The first arrival point with nobody standing on it.
-            //
-            // Neither a client id nor a position in the roster works: ids climb forever, and roster
-            // positions shift when somebody leaves, so both eventually put two people in the same
-            // place. Two capsules starting inside one another do not settle, they fire apart.
             var mine = FirstFreeArrival(plan.CrewSpawnPoints);
 
             var crew = Instantiate(m_CrewPrefab, mine.Position, mine.Rotation);
@@ -266,10 +209,6 @@ namespace BelowTheWing.Session
                 crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, () => Vehicles, this);
         }
 
-        /// <summary>
-        /// An arrival point with nobody already standing on it, or the first one if the apron is
-        /// somehow full.
-        /// </summary>
         static Placement FirstFreeArrival(IReadOnlyList<Placement> arrivals)
         {
             foreach (var arrival in arrivals)

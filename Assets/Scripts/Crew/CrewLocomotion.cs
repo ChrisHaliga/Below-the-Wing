@@ -2,27 +2,10 @@ using UnityEngine;
 
 namespace BelowTheWing.Crew
 {
-    /// <summary>
-    /// Turning what a player pressed into where their character is trying to go.
-    ///
-    /// Movement is relative to the camera rather than the world: pressing forward means "away from
-    /// me", so swinging the camera round changes where forward is. Keeping that translation here,
-    /// apart from the component that reads the keyboard and pushes the rigidbody, means it can be
-    /// checked one direction at a time.
-    /// </summary>
     public static class CrewLocomotion
     {
-        /// <summary>
-        /// The velocity a character is asking for, in world space, given what is being pressed and
-        /// which way the camera is facing.
-        ///
-        /// The result is flat: characters walk across the apron, they do not walk up into the air,
-        /// so the camera's pitch has no bearing on it.
-        /// </summary>
         public static Vector3 DesiredVelocity(Vector2 moveInput, float cameraYawDegrees, bool sprinting, CrewProfile profile)
         {
-            // Clamping rather than normalising, so that a stick pushed halfway asks for half speed
-            // while two keys held at once still ask for one speed rather than the square root of two.
             var asked = Vector2.ClampMagnitude(moveInput, 1f);
             if (asked.sqrMagnitude < 1e-6f)
             {

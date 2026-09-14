@@ -7,15 +7,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Taking back a train whose owner has left the session.
-    ///
-    /// The failure this guards against is silent. Ownership of five vehicles does not move in one
-    /// instant, so a request made while one of them is still mid-transfer is refused -- and nothing
-    /// about the apron looks wrong at that moment. The train simply belongs to a machine that has
-    /// gone. Nobody simulates it, and it either stands there for the rest of the session or keeps
-    /// whatever speed it had when its owner vanished and rolls away with nobody able to stop it.
-    /// </summary>
     public sealed class ReclaimingTests
     {
         TestApron m_Apron;
@@ -40,7 +31,6 @@ namespace BelowTheWing.Tests.EditMode
             UnityEngine.Object.DestroyImmediate(m_CartProfile);
         }
 
-        /// <summary>A broker that refuses everything until it is told to start saying yes.</summary>
         sealed class StubbornBroker : IOwnershipBroker
         {
             public bool Granting { get; set; }

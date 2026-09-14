@@ -5,16 +5,13 @@ using UnityEngine;
 
 namespace BelowTheWing.Apron
 {
-    /// <summary>Where one object stands on the apron, and how much room it takes up.</summary>
     public readonly struct Placement
     {
-        /// <summary>What this object is called, both on its label and in the prompt to drive it.</summary>
         public readonly string Name;
 
         public readonly Vector3 Position;
         public readonly Quaternion Rotation;
 
-        /// <summary>Width, height and length in metres.</summary>
         public readonly Vector3 SizeMetres;
 
         public Placement(string name, Vector3 position, Quaternion rotation, Vector3 sizeMetres)
@@ -25,16 +22,13 @@ namespace BelowTheWing.Apron
             SizeMetres = sizeMetres;
         }
 
-        /// <summary>The room this object needs, for checking that nothing is placed inside anything else.</summary>
         public Bounds Bounds => new Bounds(Position, SizeMetres);
     }
 
-    /// <summary>One tractor and the carts lined up behind it, before any of it exists.</summary>
     public sealed class TrainPlan
     {
         public Placement Tractor { get; }
 
-        /// <summary>The carts, nearest the tractor first.</summary>
         public IReadOnlyList<Placement> Carts { get; }
 
         public TrainPlan(Placement tractor, IReadOnlyList<Placement> carts)
@@ -44,19 +38,13 @@ namespace BelowTheWing.Apron
         }
     }
 
-    /// <summary>Everything that should be standing on the apron when a session starts.</summary>
     public sealed class ApronPlan
     {
         public Placement Aircraft { get; }
         public IReadOnlyList<TrainPlan> Trains { get; }
 
-        /// <summary>Every placement in the plan, aircraft included, in no particular order.</summary>
         public IReadOnlyList<Placement> Everything { get; }
 
-        /// <summary>
-        /// Where each player arrives, one spot per player, clear of the equipment and of each other.
-        /// Two capsules starting in the same place do not settle: they fire apart.
-        /// </summary>
         public IReadOnlyList<Placement> CrewSpawnPoints { get; }
 
         public ApronPlan(
@@ -72,29 +60,27 @@ namespace BelowTheWing.Apron
         }
     }
 
-    /// <summary>How much of what goes where.</summary>
     [Serializable]
     public struct ApronLayoutSettings
     {
-        [Tooltip("How many tractors, each with its own row of carts behind it.")]
+        [Tooltip("Trains on the apron")]
         public int trainCount;
 
-        [Tooltip("How many carts are hooked up behind each tractor.")]
+        [Tooltip("Carts behind each tractor")]
         public int cartsPerTrain;
 
-        [Tooltip("Clear space left between one train and the next, side to side, in metres.")]
+        [Tooltip("Clear space between trains, m")]
         public float trainSpacingMetres;
 
-        [Tooltip("Where the first train's tractor stands, relative to the aircraft.")]
+        [Tooltip("Where the first tractor stands, m")]
         public Vector3 firstTractorPosition;
 
-        [Tooltip("How many players the apron makes room for.")]
+        [Tooltip("Arrival points for players")]
         public int crewSpawnPoints;
 
-        [Tooltip("Clear space left between one arriving player and the next, in metres.")]
+        [Tooltip("Clear space between arrivals, m")]
         public float crewSpacingMetres;
 
-        /// <summary>Two tractors with four carts each, parked clear of the aircraft.</summary>
         public static ApronLayoutSettings Default => new ApronLayoutSettings
         {
             trainCount = 2,
@@ -106,30 +92,15 @@ namespace BelowTheWing.Apron
         };
     }
 
-    /// <summary>
-    /// Deciding where everything stands, before any of it is built.
-    ///
-    /// Working the layout out as plain values rather than by placing objects in a scene means the
-    /// arrangement can be checked before anything is spawned -- in particular, that no two things
-    /// have been put in the same place. Rigidbodies that begin a session inside one another do not
-    /// settle; they fire apart.
-    /// </summary>
     public static class ApronLayout
     {
-        /// <summary>
-        /// Where players arrive: a row alongside the trains, spaced so nobody lands inside anybody
-        /// else, and clear of everything already placed.
-        /// </summary>
         static IReadOnlyList<Placement> ArrivalPoints(
             ApronLayoutSettings settings,
             Vector3 crewSizeMetres,
             IReadOnlyList<Placement> equipment)
         {
-            // Taken as a size rather than a crew profile, so that working out where things stand
-            // stays arithmetic about the apron and does not drag in what a ramp worker is.
             var standingHeight = crewSizeMetres.y * 0.5f;
 
-            // Ahead of where the trains are parked, so nobody arrives among the carts.
             var alongZ = settings.firstTractorPosition.z + 6f;
             var points = new List<Placement>(settings.crewSpawnPoints);
 
@@ -159,22 +130,6 @@ namespace BelowTheWing.Apron
             return points;
         }
 
-        /// <summary>
-        /// Works out where the aircraft and every train should stand.
-        ///
-        /// Vehicles are placed nose to tail along each train at exactly coupling distance, worked
-        /// out from how far each one's own hitch reaches, so a plan built from bigger equipment
-        /// spreads out rather than overlapping.
-        ///
-        /// The two ends of a vehicle do not reach equally far. A baggage cart's drawbar sticks over
-        /// three metres out in front and its socket is recessed under two metres behind, so the gap
-        /// between two coupled vehicles is the rear reach of the one in front plus the front reach
-        /// of the one behind. Doubling either leaves every coupling in the train holding a gap open,
-        /// and a joint under permanent strain drags its train around the apron.
-        ///
-        /// Everything is placed standing on the ground. A vehicle's origin is where it touches down
-        /// rather than the middle of its bodywork, so there is no height to work out here at all.
-        /// </summary>
         public static ApronPlan Build(
             ApronLayoutSettings settings,
             VehicleFootprint tractor,
@@ -191,8 +146,6 @@ namespace BelowTheWing.Apron
                 new Vector3(aircraft.fuselageDiameterMetres, aircraft.fuselageDiameterMetres, aircraft.lengthMetres));
             everything.Add(aircraftPlacement);
 
-            // Trains are laid out side by side, far enough apart that the widest thing in one has
-            // clear air beside the widest thing in the next.
             var widest = Mathf.Max(tractor.EnvelopeSizeMetres.x, cart.EnvelopeSizeMetres.x);
             var lanePitch = widest + settings.trainSpacingMetres;
 
@@ -209,9 +162,6 @@ namespace BelowTheWing.Apron
                     Quaternion.identity,
                     tractor.EnvelopeSizeMetres);
 
-                // Vehicles are spaced hitch to hitch: the distance between two coupled vehicles is
-                // the sum of how far each one's coupling reaches. Anything else leaves the joint
-                // holding a gap open, and a coupling under permanent strain drags its train about.
                 var carts = new List<Placement>(settings.cartsPerTrain);
                 var behind = settings.firstTractorPosition.z
                              - tractor.RearReachMetres

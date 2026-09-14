@@ -3,35 +3,10 @@ using UnityEngine;
 
 namespace BelowTheWing.Vehicles
 {
-    /// <summary>
-    /// Hooking a cart onto the back of a train, and unhooking one, while somebody is standing there.
-    ///
-    /// The rules only. Who owns what, and what a player pressed, live elsewhere -- this says where a
-    /// cart has to be put before it can be hitched, and which cart is close enough to be worth
-    /// offering.
-    /// </summary>
     public static class Coupling
     {
-        /// <summary>
-        /// How far from the back of a train a cart may be and still be hitched, in metres.
-        ///
-        /// Generous on purpose. Reversing a three tonne tractor to within a few centimetres of a
-        /// cart is not a test of skill, it is a test of patience, and the cart is moved into place
-        /// on hitching anyway.
-        /// </summary>
         public const float ReachMetres = 6f;
 
-        /// <summary>
-        /// Where a cart has to stand to be hitched behind this vehicle so that the two hitch points
-        /// line up, or null if one of them has no coupling at that end to line up.
-        ///
-        /// This matters more than it looks. The joint between two vehicles is anchored where their
-        /// hitches meet, and at this distance it begins life already satisfied with nothing to pull
-        /// against. Created while the cart is somewhere else, the joint starts out violated and never
-        /// stops trying to close -- which drags the whole train sideways across the apron for the
-        /// rest of the session. Parked trains are placed at this distance by the layout; hitching at
-        /// runtime is the other way a train gets made.
-        /// </summary>
         public static (Vector3 Position, Quaternion Rotation)? WhereToStand(
             VehicleController behind, VehicleController cart)
         {
@@ -45,25 +20,11 @@ namespace BelowTheWing.Vehicles
 
             var facing = behind.transform.rotation;
 
-            // Worked back from where the two hitches have to meet rather than by measuring along the
-            // ground. The two halves of a coupling sit at different heights on purpose, so the cart is
-            // placed by its front coupling rather than by its origin; the height difference is then
-            // the joint's to accept, not a gap for it to close.
             var meetHere = behind.transform.TransformPoint(theirEnd.Value);
 
             return (meetHere - (facing * ourEnd.Value), facing);
         }
 
-        /// <summary>
-        /// The nearest vehicle that could be hitched to the back of this train, or null.
-        ///
-        /// A candidate has to be something that can be towed at all, nobody driving it, not already
-        /// part of a train of more than itself, not this train, and within reach of the back of it.
-        ///
-        /// Being towable is a fact about the vehicle's shape rather than about this situation: a
-        /// baggage tractor has no coupling at its front, so there is nothing to hitch it by and
-        /// nowhere for the joint to pull from.
-        /// </summary>
         public static VehicleController WorthHitching(
             CartChain train, IReadOnlyList<VehicleController> nearby)
         {
@@ -96,7 +57,6 @@ namespace BelowTheWing.Vehicles
             return nearest;
         }
 
-        /// <summary>Whether this vehicle is free to be hooked onto the back of that train.</summary>
         public static bool CanBeHitched(VehicleController candidate, CartChain train)
         {
             if (candidate == null || train == null || train.Contains(candidate))
@@ -106,29 +66,17 @@ namespace BelowTheWing.Vehicles
 
             if (!candidate.CanBeTowed)
             {
-                // Nothing tows a baggage tractor. Its model has no coupling at the front, so a
-                // joint made here would be anchored at its origin -- a point on the tarmac between
-                // its front wheels -- and the train would drag it along by its own axle.
                 return false;
             }
 
             if (candidate.Occupied)
             {
-                // Hitching a tractor somebody is sitting in would leave two drivers on one train
-                // pulling against each other.
                 return false;
             }
 
-            // A cart in the middle of another train cannot be taken without breaking that one.
             return candidate.Chain == null || candidate.Chain.Members.Count == 1;
         }
 
-        /// <summary>
-        /// Whether this train can be unhooked behind the given member.
-        ///
-        /// Not behind the last one, because there is nothing there, and not in front of the first,
-        /// because a train with no tractor at the head of it is not a train anybody can move.
-        /// </summary>
         public static bool CanBeSplitAfter(CartChain train, int memberIndex)
             => train != null && memberIndex >= 0 && memberIndex < train.Members.Count - 1;
     }

@@ -6,14 +6,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Hooking a cart onto the back of a train, and unhooking one, while a player is standing there.
-    ///
-    /// Trains have only ever existed in the shape the apron layout built them. Once a player can
-    /// change that shape mid-session, two things that were previously guaranteed by construction
-    /// have to be enforced: that a cart is standing in exactly the right place when its coupling is
-    /// created, and that a cart belonging to another train cannot be stolen out of the middle of it.
-    /// </summary>
     public sealed class CouplingTests
     {
         TestApron m_Apron;

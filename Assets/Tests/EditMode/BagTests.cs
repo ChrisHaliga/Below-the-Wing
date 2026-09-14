@@ -4,15 +4,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// A piece of baggage as a physical object.
-    ///
-    /// The simplest thing in the game and the one there will be most of. Forty of them exist on
-    /// every machine at once, so what matters about a bag is that it costs almost nothing and that
-    /// it weighs the same everywhere -- a bag that arrives at the wrong weight on one machine is
-    /// thrown a different distance there, and nothing looks wrong until two players disagree about
-    /// where it landed.
-    /// </summary>
     public sealed class BagTests
     {
         GameObject m_Object;
@@ -79,7 +70,6 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void ABagGripsADeckAsMuchAsItsProfileSays()
         {
-            // Nothing like the default, so that a bag left on it cannot pass by coincidence.
             m_Profile.frictionCoefficient = 0.12f;
 
             Configured();

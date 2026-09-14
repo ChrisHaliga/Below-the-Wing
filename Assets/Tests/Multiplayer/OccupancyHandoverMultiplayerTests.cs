@@ -9,15 +9,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.Multiplayer
 {
-    /// <summary>
-    /// What happens to "somebody is driving this" when the vehicle changes hands anyway.
-    ///
-    /// Only a vehicle's owner may say who is sitting in it. That means a driver who loses the
-    /// vehicle -- a session owner reclaiming an orphaned train, or the driver's machine leaving
-    /// altogether -- can never record that they got out. Left alone, the tractor stays occupied on
-    /// every machine for the rest of the session: never offered to anybody, and refusing every
-    /// request made for it. Five vehicles quietly become unusable and nothing can unstick them.
-    /// </summary>
     public sealed class OccupancyHandoverMultiplayerTests : RampMultiplayerTest
     {
         GameObject m_TractorPrefab;
@@ -58,7 +49,6 @@ namespace BelowTheWing.Tests.Multiplayer
             yield return WaitForConditionOrTimeOut(() => Everywhere(id));
             AssertOnTimeout("the tractor never reached every machine");
 
-            // One player takes it and gets in.
             tractor.ChangeOwnership(driver.LocalClientId);
             yield return WaitForConditionOrTimeOut(() => Owner(driver, id) == driver.LocalClientId);
             AssertOnTimeout("the first client never got the tractor");
@@ -67,11 +57,6 @@ namespace BelowTheWing.Tests.Multiplayer
             yield return WaitForConditionOrTimeOut(() => Vehicle(nextOwner, id).Occupied);
             AssertOnTimeout("the second client never learned it was occupied");
 
-            // Handed on by whoever currently holds it. Only the owner or the session owner may move
-            // ownership of a request-only vehicle, and the session owner gave this one up a moment
-            // ago. What matters is the state the receiving machine ends up in: owning a vehicle
-            // whose seat is recorded as taken by somebody else, which is exactly what a reclaim
-            // after a disconnect looks like from where it is standing.
             driver.SpawnManager.SpawnedObjects[id].ChangeOwnership(nextOwner.LocalClientId);
             yield return WaitForConditionOrTimeOut(() => Owner(nextOwner, id) == nextOwner.LocalClientId);
             AssertOnTimeout("the second client never got the tractor");
@@ -109,7 +94,6 @@ namespace BelowTheWing.Tests.Multiplayer
             yield return WaitForConditionOrTimeOut(() => Vehicle(m_ServerNetworkManager, id).Occupied);
             AssertOnTimeout("nobody else learned it was occupied");
 
-            // Ownership churn that ends up back with the same driver must not throw them out.
             driver.SpawnManager.SpawnedObjects[id].ChangeOwnership(driver.LocalClientId);
             yield return s_ShortWait;
 

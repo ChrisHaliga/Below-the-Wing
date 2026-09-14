@@ -8,14 +8,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// A bag on a cart is a body on a body.
-    ///
-    /// Nothing attaches it, nothing decides when it comes off, nothing moves it by pose. Friction
-    /// carries it in a straight line, a hard corner overcomes friction and slides it over the lip,
-    /// and a parked cart lets it go to sleep. The dials are the friction of the deck and the height
-    /// of the lip, and they are real dials because they are real physics.
-    /// </summary>
     public sealed class BagsAreBodiesPlayTests
     {
         TestApron m_Apron;
@@ -44,7 +36,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_BagProfile);
         }
 
-        /// <summary>A bag as the game makes one, configured from its profile.</summary>
         Bag ABagAt(Vector3 inTheCart)
         {
             var go = new GameObject("Bag");
@@ -59,7 +50,6 @@ namespace BelowTheWing.Tests.PlayMode
 
         Vector3 InTheCart(Bag bag) => m_Cart.transform.InverseTransformPoint(bag.transform.position);
 
-        /// <summary>Drives the cart up to a speed over time, the way a tractor would.</summary>
         IEnumerator DriveTo(Vector3 velocity, float seconds)
         {
             var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
@@ -86,11 +76,6 @@ namespace BelowTheWing.Tests.PlayMode
                 "line, or every load is lost before the first corner");
         }
 
-        /// <summary>
-        /// Sideways, as hard as the cart's own tyres allow: what a corner taken far too fast does
-        /// to a deck, and more than a bag's grip can hold. The speed is asked for rather than the
-        /// acceleration, because the tyres take a large bite out of whatever is asked.
-        /// </summary>
         IEnumerator AHardCorner()
         {
             for (var i = 1; i <= 50; i++)
@@ -120,7 +105,6 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator AHardCornerTipsABagStandingOnEndOverTheLip()
         {
-            // On end: taller than the lip is, with its weight well above it.
             var bag = ABagAt(new Vector3(0f, m_Shape.InteriorLocal.min.y + 0.4f, 0f));
             bag.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             yield return Steps.Seconds(1.5f);
@@ -132,13 +116,6 @@ namespace BelowTheWing.Tests.PlayMode
                 "a bag nothing can throw off is the game not having the mechanic it is built around");
         }
 
-        /// <summary>
-        /// How far a body is from lying on one of its own faces, in degrees.
-        ///
-        /// A box at rest is flat on a face. Anything else -- balanced on an edge, propped on a
-        /// corner -- is a pose it was passing through on its way to falling over, and a body found
-        /// holding one was stopped rather than settled.
-        /// </summary>
         static float OffItsFace(Transform box)
         {
             var worst = 180f;
@@ -183,7 +160,6 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator ABagWithMostOfItselfPastTheEndOfADeckFallsOff()
         {
-            // Two thirds of it out over the end: there is nothing under its middle.
             var bag = ABagAt(new Vector3(
                 0f, m_Shape.InteriorLocal.min.y + 0.2f, m_Shape.InteriorLocal.extents.z + 0.2f));
 
@@ -213,7 +189,6 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator ABagThrownInThroughTheSideLandsOnTheDeck()
         {
-            // High enough to clear the lip on the way in, low enough to pass under the roof.
             var bag = ABagAt(new Vector3(2.4f, m_Shape.InteriorLocal.min.y + 1.2f, 0f));
             bag.Body.linearVelocity = new Vector3(-4f, 0f, 0f);
 

@@ -7,15 +7,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// What correction does to a real vehicle over time.
-    ///
-    /// No network here, deliberately. The three instances the multiplayer harness runs share one
-    /// physics world, so every copy of a vehicle is a solid body standing in the same space as every
-    /// other copy of it -- they collide with themselves and blow apart, and nothing about convergence
-    /// can be measured. What crosses the wire is checked there; what the forces do is checked here,
-    /// by handing a vehicle a report directly and watching where it ends up.
-    /// </summary>
     public sealed class CorrectionPlayTests
     {
         static readonly CorrectionSettings Settings = CorrectionSettings.Default;
@@ -44,13 +35,12 @@ namespace BelowTheWing.Tests.PlayMode
             return vehicle;
         }
 
-        /// <summary>Runs the simulation with the owner saying the same thing throughout.</summary>
         static IEnumerator KeptInStepFor(float seconds, VehicleController vehicle, VehicleState said)
         {
             var steps = Mathf.CeilToInt(seconds / Time.fixedDeltaTime);
             for (var i = 0; i < steps; i++)
             {
-                Correction.Apply(new[] { vehicle.Body }, vehicle.Body, said, secondsSince: 0f, Settings);
+                Correction.Apply(vehicle.Body, said, secondsSince: 0f, Settings);
                 yield return new WaitForFixedUpdate();
             }
         }
@@ -89,7 +79,6 @@ namespace BelowTheWing.Tests.PlayMode
             var vehicle = Copy(new Vector3(0f, 1f, 0f));
             yield return null;
 
-            // Let it settle, then tell it exactly where it already is.
             var settleSteps = Mathf.CeilToInt(2f / Time.fixedDeltaTime);
             for (var i = 0; i < settleSteps; i++)
             {
@@ -107,20 +96,34 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ACopySomewhereElseEntirelyIsPutBackAtOnce()
+        public IEnumerator ACopySomewhereElseEntirelyTravelsBackWithoutEverTeleporting()
         {
             var vehicle = Copy(new Vector3(0f, 1f, 0f));
             yield return null;
 
             var said = Standing(new Vector3(0f, 0f, 60f));
+            var ceiling = Settings.closingCeilingMetresPerSecond * Time.fixedDeltaTime;
+            var was = vehicle.transform.position;
+            var furthestInAStep = 0f;
 
-            // A single step is all a snap should need.
-            Correction.Apply(new[] { vehicle.Body }, vehicle.Body, said, secondsSince: 0f, Settings);
-            yield return new WaitForFixedUpdate();
+            var steps = Mathf.CeilToInt(10f / Time.fixedDeltaTime);
+            for (var i = 0; i < steps; i++)
+            {
+                Correction.Apply(vehicle.Body, said, secondsSince: 0f, Settings);
+                yield return new WaitForFixedUpdate();
 
-            Assert.That(Vector3.Distance(vehicle.transform.position, said.Position), Is.LessThan(1f),
-                "sixty metres is not a disagreement, it is a different place. Easing across it takes " +
-                "long enough to be watched, and what gets watched is a tractor gliding over the apron");
+                furthestInAStep = Mathf.Max(furthestInAStep, Vector3.Distance(vehicle.transform.position, was));
+                was = vehicle.transform.position;
+            }
+
+            Assert.That(furthestInAStep, Is.LessThan(ceiling * 2f),
+                $"it covered {furthestInAStep:F2} m in one step against a ceiling of {ceiling:F2} m. " +
+                "A body that arrives somewhere without having travelled there arrives inside whatever " +
+                "was standing in the way, and never took part in the collision it should have had");
+
+            Assert.That(Vector3.Distance(vehicle.transform.position, said.Position), Is.LessThan(5f),
+                "and it does have to get there: sixty metres out and still sixty metres out is a copy " +
+                "nobody will ever see in the right place");
         }
 
         [UnityTest]
@@ -129,7 +132,6 @@ namespace BelowTheWing.Tests.PlayMode
             var vehicle = Copy(new Vector3(0f, 1f, 0f));
             yield return null;
 
-            // Its owner says it is parked. It is not: something has just hit it hard.
             var said = VehicleState.Of(vehicle.Body);
             vehicle.Body.linearVelocity = new Vector3(0f, 0f, 8f);
             var whenItWasHit = vehicle.transform.position;
@@ -137,7 +139,7 @@ namespace BelowTheWing.Tests.PlayMode
             var steps = Mathf.CeilToInt(0.5f / Time.fixedDeltaTime);
             for (var i = 0; i < steps; i++)
             {
-                Correction.Apply(new[] { vehicle.Body }, vehicle.Body, said, secondsSince: 0f, Settings, say: 0f);
+                Correction.Apply(vehicle.Body, said, secondsSince: 0f, Settings, say: 0f);
                 yield return new WaitForFixedUpdate();
             }
 
@@ -171,8 +173,6 @@ namespace BelowTheWing.Tests.PlayMode
             var vehicle = Copy(new Vector3(0f, 1f, 0f));
             yield return null;
 
-            // What a body the solver no longer moves looks like: a driver's character, parked
-            // inside the vehicle they are driving and carried about by it.
             vehicle.Body.isKinematic = true;
             var restingAt = vehicle.transform.position;
 

@@ -2,18 +2,10 @@ using UnityEngine;
 
 namespace BelowTheWing.Net
 {
-    /// <summary>
-    /// The screen a player sees before they are on the apron: host a session, or join one by code.
-    ///
-    /// Drawn with immediate-mode GUI rather than built out of interface assets. Everything on the
-    /// apron is a grey box at this stage and this screen is in the same spirit -- it exists so the
-    /// game can be got into and tested, and it will be replaced wholesale rather than grown into
-    /// the real thing, so there is nothing here worth keeping in a prefab.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class SessionEntryScreen : MonoBehaviour
     {
-        [SerializeField, Tooltip("The gateway this screen drives and reports on.")]
+        [SerializeField, Tooltip("Session this screen drives")]
         SessionGateway m_Gateway;
 
         string m_TypedJoinCode = "";
@@ -25,8 +17,6 @@ namespace BelowTheWing.Net
                 return;
             }
 
-            // Once a player is on the apron the only thing worth keeping on screen is the code
-            // their friends need.
             if (m_Gateway.Phase == SessionPhase.InSession)
             {
                 DrawJoinCodeBanner();
@@ -47,11 +37,6 @@ namespace BelowTheWing.Net
             GUILayout.Label(Status());
             GUILayout.Space(8f);
 
-            // Outside the check below on purpose. Everything else here waits on the multiplayer
-            // service, and the service is signed into in the background from the moment the game
-            // starts -- so on a slow connection every button is dead for as long as that takes.
-            // Playing alone is the one thing that needs none of it, and greying it out while
-            // waiting for a sign-in it does not use would be the very wait it exists to skip.
             if (GUILayout.Button("Play alone", GUILayout.Height(32f)))
             {
                 m_Gateway.PlayAlone();
@@ -81,7 +66,6 @@ namespace BelowTheWing.Net
 
         void DrawJoinCodeBanner()
         {
-            // A session on this machine alone has no code and nobody to give one to.
             if (string.IsNullOrEmpty(m_Gateway.JoinCode))
             {
                 return;
