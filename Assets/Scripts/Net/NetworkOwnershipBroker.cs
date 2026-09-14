@@ -7,35 +7,11 @@ using UnityEngine;
 
 namespace BelowTheWing.Net
 {
-    /// <summary>
-    /// Ownership of vehicles, expressed in terms of the netcode layer.
-    ///
-    /// This is the only place that connects the driving code's idea of "who is simulating this" to
-    /// the networking library's. Everything above it -- vehicles, trains, players getting in and
-    /// out -- is written against <see cref="IOwnershipBroker"/> and would work just as well against
-    /// a different networking library, or none.
-    ///
-    /// Asking for a train is asking for all of it. Whether that succeeded is decided by
-    /// <see cref="AllOrNothingRequest{T}"/>; this class only sends the requests, reports the
-    /// answers, and hands things back when told to.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class NetworkOwnershipBroker : MonoBehaviour, IOwnershipBroker
     {
-        /// <summary>
-        /// Stands for "no machine at all". Client ids start at zero and zero is a real client, so
-        /// answering an unanswerable question with zero would have a machine conclude it owned
-        /// everything on the apron.
-        /// </summary>
         public const ulong Nobody = ulong.MaxValue;
 
-        /// <summary>
-        /// How long to wait for an answer before treating a request as refused.
-        ///
-        /// A request goes to whichever machine the object records as its owner. If that machine has
-        /// left the session, nothing ever answers, and without a limit the caller waits for the rest
-        /// of the session and the response handler is never taken off.
-        /// </summary>
         const float AnswerDeadlineSeconds = 5f;
 
         NetworkManager Manager => NetworkManager.Singleton;
@@ -86,10 +62,6 @@ namespace BelowTheWing.Net
                         return;
                     }
 
-                    // Handing something back to a machine that has left is a no-op with a warning,
-                    // and the caller has already been told the whole request failed. The vehicle
-                    // would stay here, part of a train whose other members are elsewhere, with
-                    // nothing scheduled to put it right. The session owner is always somebody.
                     member.ChangeOwnership(StillHere(previous) ? previous : SessionOwner);
                 },
                 onResult);
@@ -100,7 +72,6 @@ namespace BelowTheWing.Net
             }
         }
 
-        /// <summary>The machine looking after anything that belongs to nobody in particular.</summary>
         ulong SessionOwner => Manager != null ? Manager.CurrentSessionOwner : Nobody;
 
         bool StillHere(ulong client)
@@ -149,9 +120,6 @@ namespace BelowTheWing.Net
                 return;
             }
 
-            // The handler takes itself off the moment it fires. Left subscribed, every attempt to
-            // get into a vehicle would leave another closure behind on it, each one holding the
-            // whole request and the seat that made it.
             NetworkObject.OnOwnershipRequestResponseDelegateHandler handler = null;
             handler = response =>
             {
@@ -168,8 +136,6 @@ namespace BelowTheWing.Net
                 return;
             }
 
-            // Turned down before it left this machine -- locked, or not a kind of object whose
-            // ownership moves at all. No response is coming, so the handler has to go now.
             member.OnOwnershipRequestResponse -= handler;
             request.Answer(member, granted: false);
         }
@@ -191,8 +157,6 @@ namespace BelowTheWing.Net
                 member.OnOwnershipRequestResponse -= handler;
             }
 
-            // Reported as a refusal rather than left hanging. The caller is told no, anything else
-            // that was granted is handed back, and the player can try again.
             request.Answer(member, granted: false);
         }
     }

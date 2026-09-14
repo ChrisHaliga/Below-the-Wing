@@ -6,14 +6,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// A tractor and its carts, treated as one thing.
-    ///
-    /// The couplings themselves are checked here as configuration rather than by watching a train
-    /// drive: what kind of joint, swinging about which axis, limited how far, and with what solver
-    /// budget. How a coupled train actually behaves under load is a separate question and needs
-    /// physics running to answer.
-    /// </summary>
     public sealed class CartChainTests
     {
         TestApron m_Apron;
@@ -236,10 +228,6 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(behindTheBreak.Chain, Is.SameAs(back));
             Assert.That(back.Leader, Is.SameAs(behindTheBreak));
 
-            // A coupling lives on the vehicle being towed, so the one to check is the cart that was
-            // behind the break: it is now leading its own train and should have nothing hooked to
-            // its front. The cart in front of the break keeps its own coupling to the vehicle
-            // ahead of it, which is still there and still correct.
             Assert.That(behindTheBreak.GetComponents<Joint>(), Is.Empty,
                 "a coupling that is merely disabled is a coupling waiting to be found again by the solver");
         }

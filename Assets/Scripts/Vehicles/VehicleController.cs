@@ -2,25 +2,10 @@ using UnityEngine;
 
 namespace BelowTheWing.Vehicles
 {
-    /// <summary>
-    /// Every vehicle in the game.
-    ///
-    /// A baggage tractor and a baggage cart are the same component with different
-    /// <see cref="VehicleProfile"/> assets; nothing here knows which one it is running as. Each
-    /// fixed step it probes the ground under all four wheels, asks <see cref="WheelPhysics"/> what
-    /// force each one produces, and applies the results to the rigidbody. Wheels are raycasts and
-    /// springs rather than Unity's WheelCollider, so that one model covers everything on the apron
-    /// and every vehicle behaves like a sibling of the others.
-    ///
-    /// The vehicle never reads input. It asks <see cref="IntentSource"/> what is being requested,
-    /// which is null on any vehicle nobody is driving -- including one being simulated on another
-    /// player's machine.
-    /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     [DisallowMultipleComponent]
     public sealed class VehicleController : MonoBehaviour, IMovedFromHere
     {
-        /// <summary>One corner of the vehicle: where its suspension hangs and what it does.</summary>
         readonly struct Wheel
         {
             public readonly Vector3 MountLocal;
@@ -39,32 +24,25 @@ namespace BelowTheWing.Vehicles
             }
         }
 
-        [SerializeField, Tooltip("The tuning and real-world mass this vehicle runs on.")]
+        [SerializeField, Tooltip("Profile this runs on")]
         VehicleProfile m_Profile;
 
-        [SerializeField, Tooltip("Layers the suspension rays are allowed to find ground on.")]
+        [SerializeField, Tooltip("Layers the suspension may find ground on")]
         LayerMask m_GroundMask = ~0;
 
-        [SerializeField, Tooltip("Name shown on this vehicle's label and in the prompt to drive it.")]
+        [SerializeField, Tooltip("Name shown above it")]
         string m_DisplayName = "";
-
 
         Rigidbody m_Body;
         VehicleShape m_Shape;
         Wheel[] m_Wheels;
 
-        /// <summary>How far each wheel currently hangs below its mount, in metres.</summary>
         float[] m_HangingBy;
         float m_SteerAngleDegrees;
         bool m_Occupied;
 
-        /// <summary>The tuning and real-world mass this vehicle runs on.</summary>
         public VehicleProfile Profile => m_Profile;
 
-        /// <summary>
-        /// Where this vehicle's parts physically are: its wheels, its couplings, the room it takes
-        /// up and which parts of it are solid.
-        /// </summary>
         public VehicleShape Shape
         {
             get
@@ -78,7 +56,6 @@ namespace BelowTheWing.Vehicles
             }
         }
 
-        /// <summary>The rigidbody the wheel forces are applied to.</summary>
         public Rigidbody Body
         {
             get
@@ -92,37 +69,16 @@ namespace BelowTheWing.Vehicles
             }
         }
 
-        /// <summary>
-        /// Where this vehicle's steering, throttle and braking come from, or null when nobody is
-        /// driving it. Setting it is how a player takes the wheel; clearing it is how they get out.
-        /// </summary>
         public IDriveIntentSource IntentSource { get; set; }
 
-        /// <summary>How far the steered wheels are currently turned from centre, in degrees.</summary>
         public float SteerAngleDegrees => m_SteerAngleDegrees;
 
-        /// <summary>Whether the wheel in that corner turns with the steering.</summary>
         public bool WheelSteers(int corner)
             => m_Wheels != null && corner >= 0 && corner < m_Wheels.Length && m_Wheels[corner].Steers;
 
-        /// <summary>
-        /// How big the wheel in that corner is, in metres.
-        ///
-        /// Asked of the vehicle rather than read off the profile because a vehicle's axles need not
-        /// carry the same wheels: this tractor runs 0.22 m at the front and 0.26 m at the back, and
-        /// a wheel turned at the wrong radius for its size reads as the vehicle skidding.
-        /// </summary>
         public float WheelRadiusMetres(int corner)
             => m_Wheels != null && corner >= 0 && corner < m_Wheels.Length ? m_Wheels[corner].RadiusMetres : 0f;
 
-        /// <summary>
-        /// How high the centre of the wheel in that corner is sitting right now, in this vehicle's
-        /// own space.
-        ///
-        /// Where it is standing rather than where it was drawn. The body moves up and down on its
-        /// springs relative to an origin that is on the tarmac, so a wheel that keeps the height it
-        /// was modelled at is buried by however far the suspension compressed.
-        /// </summary>
         public float WheelCentreLocal(int corner, float drawnAt)
         {
             if (m_Wheels == null || m_HangingBy == null || corner < 0 || corner >= m_Wheels.Length)
@@ -133,47 +89,14 @@ namespace BelowTheWing.Vehicles
             return m_Wheels[corner].MountLocal.y - m_HangingBy[corner];
         }
 
-        /// <summary>
-        /// The train this vehicle belongs to. Every vehicle is in one; an uncoupled vehicle is in a
-        /// train of itself alone. Having no empty case means that taking over a vehicle is the same
-        /// operation whether or not it happens to be towing anything.
-        /// </summary>
         public CartChain Chain { get; internal set; }
 
-        /// <summary>
-        /// Whether this machine is the one that says where this vehicle goes.
-        ///
-        /// Authority, and nothing else. Physics runs on every vehicle on every machine either way:
-        /// a copy of one somebody else owns holds itself up on its own suspension, grips the ground
-        /// with its own tires, keeps its weight and keeps its speed. The single difference is that
-        /// nobody here is driving it, so no throttle and no brake are applied.
-        ///
-        /// It has to be that way for contact between two players to mean anything. A crash is an
-        /// exchange of momentum, and a body held still, or held up by nothing, has no momentum to
-        /// exchange -- there is nothing for an impulse to write into and nothing that survives to
-        /// the next update. What the owner says is blended in on top of the physics rather than
-        /// replacing it, which is why the physics has to be running underneath.
-        ///
-        /// Deliberately a plain flag rather than a question about networking, so that the vehicle
-        /// still knows nothing about how -- or whether -- the game is networked.
-        /// </summary>
         public bool OursToMove { get; set; } = true;
 
         public string DisplayName => m_DisplayName;
 
-        /// <summary>
-        /// Gives this vehicle the name a player sees when offered it. Separate from configuring it,
-        /// because a vehicle is built from its prefab before anybody has said which tractor it is.
-        /// </summary>
         public void Rename(string displayName) => m_DisplayName = displayName;
 
-        /// <summary>
-        /// Whether somebody is in this vehicle's seat, on whichever machine they are playing from.
-        ///
-        /// Deliberately not "does this instance have an intent source", which is only ever true on
-        /// the driver's own machine. Every other machine would look at an occupied tractor, see no
-        /// local driver, and offer it to somebody else.
-        /// </summary>
         public bool Occupied
         {
             get => m_Occupied;
@@ -189,52 +112,22 @@ namespace BelowTheWing.Vehicles
             }
         }
 
-        /// <summary>Raised when somebody gets in or out, so the change can be told to other machines.</summary>
         public event System.Action<bool> OccupiedChanged;
 
         public bool AcceptsDriver => m_Profile != null && m_Profile.driveable && !m_Occupied;
 
-        /// <summary>
-        /// Where a vehicle in front of this one attaches, in this vehicle's local space, or null if
-        /// nothing can tow this.
-        ///
-        /// Read off the shape, which for a modelled vehicle read it off the model. A real drawbar
-        /// is nothing like symmetric -- a baggage cart reaches 3.16 m forward and 1.82 m back, and
-        /// the two halves sit at different heights so that they do not try to occupy the same
-        /// space -- so neither end can be worked out from the other.
-        ///
-        /// Null rather than the origin for a vehicle with no coupling there. A baggage tractor has
-        /// none: the origin is a point on the tarmac between its front wheels, and a joint anchored
-        /// there drags the tractor along the ground by its axle. Callers have to answer for that
-        /// case rather than being handed a number that looks like a hitch.
-        /// </summary>
         public Vector3? FrontHitchLocal => Shape?.FrontCouplingLocal;
 
-        /// <summary>
-        /// Where a vehicle behind this one attaches, in this vehicle's local space, or null if
-        /// nothing can follow it.
-        /// </summary>
         public Vector3? RearHitchLocal => Shape?.RearCouplingLocal;
 
-        /// <summary>Whether anything can be hitched in front of this vehicle, and so whether it can be towed.</summary>
         public bool CanBeTowed => FrontHitchLocal.HasValue;
 
-        /// <summary>Whether anything can be hitched behind this vehicle.</summary>
         public bool CanTow => RearHitchLocal.HasValue;
 
-        /// <summary>How far this vehicle's front coupling reaches past its origin, in metres.</summary>
         public float FrontReach => Shape != null ? Shape.FrontReachMetres : 0f;
 
-        /// <summary>How far this vehicle's rear coupling reaches past its origin, in metres.</summary>
         public float RearReach => Shape != null ? Shape.RearReachMetres : 0f;
 
-        /// <summary>
-        /// How far each corner's spring is squashed by the weight standing on it, from 0 to 1.
-        ///
-        /// Read from the numbers rather than written down again. A vehicle resting at full
-        /// extension has nothing left to absorb a bump with; one resting bottomed out has nothing
-        /// left to give. Somewhere in between is the whole reason to have springs.
-        /// </summary>
         public static float SuspensionCompressionAtRest(VehicleProfile profile)
         {
             const int corners = 4;
@@ -244,24 +137,10 @@ namespace BelowTheWing.Vehicles
             return Mathf.Clamp01(weightOnEachCorner / profile.springStrengthNewtons);
         }
 
-        /// <summary>
-        /// How high above the ground the top of the suspension sits once it has settled, in metres.
-        ///
-        /// This is where a vehicle's body hangs from. With the origin on the ground between the
-        /// wheels, it is also how far above that origin the mounts have to be for the vehicle to
-        /// stand at the right height with nothing floating and nothing buried.
-        /// </summary>
         public static float SuspensionMountHeightMetres(VehicleProfile profile, float wheelRadiusMetres)
             => wheelRadiusMetres
                + (profile.suspensionRestLengthMetres * (1f - SuspensionCompressionAtRest(profile)));
 
-        /// <summary>
-        /// Applies a profile to this vehicle: its mass and its centre of mass, the solid parts its
-        /// shape describes, and the wheels its suspension probes from.
-        ///
-        /// Called when a vehicle is built rather than left to the inspector, so that the profile is
-        /// the single description of what this vehicle physically is.
-        /// </summary>
         public void Configure(VehicleProfile profile, string displayName)
         {
             m_Profile = profile;
@@ -275,14 +154,6 @@ namespace BelowTheWing.Vehicles
 
             m_Body.mass = profile.massKg;
 
-            // A vehicle is never put to sleep. Its suspension holds it up with a force applied every
-            // step, and a body that is asleep is not receiving that force -- so the first thing to
-            // touch a sleeping vehicle drives it into the ground before its springs come back.
-            //
-            // Said here rather than left to the fact that applying force keeps a body awake, because
-            // that fact stops being true exactly when it matters: a vehicle whose wheels have left
-            // the ground -- tipped onto its side, hung off a coupling, resting on something -- gets
-            // no force at all, and would doze off as an immovable body on one end of a live hinge.
             m_Body.sleepThreshold = 0f;
             if (profile.centerOfMassOffset.y <= 0f)
             {
@@ -295,22 +166,13 @@ namespace BelowTheWing.Vehicles
             m_Body.centerOfMass = profile.centerOfMassOffset;
             m_Body.interpolation = RigidbodyInterpolation.Interpolate;
 
-            // Vehicles are fast, heavy, and the thing most often driven hard at something else --
-            // an apron edge, a jetway leg, or another train. Sweeping against moving bodies as well
-            // as static ones costs more than sweeping against static alone, and a tractor passing
-            // clean through a cart is the failure nobody would accept.
             m_Body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
 
-            // Not one box the size of the vehicle. A cart is a container, and a box that size fills
-            // the space bags are supposed to go in -- so what a vehicle is solid where comes from
-            // its shape, which for a modelled vehicle is a floor, some walls and a roof.
             DiscardBodywork();
             m_Bodywork = VehicleBody.Build(gameObject, Shape, profile.bounciness);
 
             BuildWheels(profile);
 
-            // Counting what is touching this vehicle. Physics reports contacts as they begin and
-            // end and keeps no running total, so the only way to have the number is to keep it.
             if (GetComponent<ContactTally>() == null)
             {
                 gameObject.AddComponent<ContactTally>();
@@ -319,23 +181,6 @@ namespace BelowTheWing.Vehicles
             Chain ??= CartChain.Couple(new[] { this }, ChainJointSettings.Default);
         }
 
-        /// <summary>
-        /// Hangs the suspension from where the wheels actually are.
-        ///
-        /// The positions come from the shape, which for a modelled vehicle read them off the model
-        /// itself. They used to be worked out from a wheelbase and a track written into the profile,
-        /// and that second copy of a measurement is what put the invisible probes fourteen
-        /// centimetres from the visible wheels, with one side of a cart sitting permanently
-        /// compressed and nobody able to see why.
-        ///
-        /// Only the height is decided here, because it is a suspension figure rather than a
-        /// geometric one: the mount sits at whatever height leaves the vehicle standing correctly
-        /// once its springs have taken its weight.
-        ///
-        /// Front wheels steer, rear wheels drive. A baggage tractor is a small rear-drive unit, and
-        /// pulling a loaded train from the front axle would spin the wheels up rather than move it.
-        /// Braking is shared evenly because every wheel has a brake on it.
-        /// </summary>
         void BuildWheels(VehicleProfile profile)
         {
             var wheels = Shape != null ? Shape.Wheels : null;
@@ -365,9 +210,6 @@ namespace BelowTheWing.Vehicles
                 var wheel = wheels[i];
                 var atTheFront = wheel.CentreLocal.z > middleOfTheWheelbase;
 
-                // Each corner hangs at the height its own wheel settles at. A vehicle with a bigger
-                // wheel on one axle carries that end of its body higher, and a single mount height
-                // for all four would bury the big wheels or leave the small ones in the air.
                 m_Wheels[i] = new Wheel(
                     new Vector3(
                         wheel.CentreLocal.x,
@@ -396,8 +238,6 @@ namespace BelowTheWing.Vehicles
 
         void Start()
         {
-            // Checked here rather than in Awake because a vehicle built in code is configured
-            // immediately after the component is added, which is still before the first frame.
             if (m_Profile == null)
             {
                 Debug.LogError(
@@ -408,7 +248,6 @@ namespace BelowTheWing.Vehicles
             }
         }
 
-        /// <summary>What the solid parts are made of. Created with them, and destroyed with this.</summary>
         PhysicsMaterial m_Bodywork;
 
         void OnDestroy() => DiscardBodywork();
@@ -439,10 +278,6 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
-            // Controls are read only where they count. On a copy of a vehicle somebody else owns
-            // the wheels still hold it up and still grip, but nobody here is driving: two machines
-            // opening the same throttle would fight each other, and the one that does not own it
-            // would lose anyway.
             var intent = OursToMove ? IntentSource?.Current ?? DriveIntent.Idle : DriveIntent.Idle;
 
             if (OursToMove)
@@ -450,10 +285,6 @@ namespace BelowTheWing.Vehicles
                 m_SteerAngleDegrees = Steering.Step(m_SteerAngleDegrees, intent.Steer, Time.fixedDeltaTime, m_Profile);
             }
 
-            // Every wheel, every step, parked or driven. Nothing here is skipped for a vehicle that
-            // is standing still: the springs are what hold it off the ground, so a step that skips
-            // them is a step with nothing underneath it, and whatever touches the vehicle during
-            // that step drives it into the tarmac.
             var massPerWheel = m_Profile.massKg / m_Wheels.Length;
             var up = transform.up;
             var steerRotation = Quaternion.AngleAxis(m_SteerAngleDegrees, up);
@@ -465,17 +296,12 @@ namespace BelowTheWing.Vehicles
                 var forward = wheel.Steers ? steerRotation * transform.forward : transform.forward;
                 var right = wheel.Steers ? steerRotation * transform.right : transform.right;
 
-                // As far as this wheel could reach if the body were at full extension over it.
                 var rayLength = wheel.RadiusMetres + m_Profile.suspensionRestLengthMetres;
 
                 var probe = Physics.Raycast(mount, -up, out var hit, rayLength, m_GroundMask, QueryTriggerInteraction.Ignore)
                     ? new GroundProbe(true, hit.distance)
                     : GroundProbe.Airborne;
 
-                // Kept so the visible wheels can be hung where the ground actually is. Measured
-                // once, here, rather than probed a second time by whatever draws them: two rays a
-                // frame apart find different ground on a moving vehicle, and the wheel you see
-                // would sit somewhere the wheel holding the cart up is not.
                 m_HangingBy[i] = probe.HitGround
                     ? probe.DistanceToGround - wheel.RadiusMetres
                     : m_Profile.suspensionRestLengthMetres;

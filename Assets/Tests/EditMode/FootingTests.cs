@@ -4,14 +4,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Whether somebody still has their feet under them.
-    ///
-    /// A rider is held on a deck by friction, and friction has a limit. What decides whether they
-    /// keep their footing is how hard the deck itself changed velocity -- not how far they are from
-    /// the speed they are asking for, because a player who has just pressed a key is a long way from
-    /// that too and is in no danger of falling over.
-    /// </summary>
     public sealed class FootingTests
     {
         const float Grip = 10f;
@@ -46,8 +38,6 @@ namespace BelowTheWing.Tests.EditMode
         {
             var footing = Standing(Vector3.zero);
 
-            // Twelve metres per second squared sideways, which is what a cart taken hard round a
-            // corner at speed does.
             footing.Settle(m_Deck, new Vector3(12f * Step, 0f, 0f), Vector3.zero, Grip, Step);
 
             Assert.That(footing.Lost, Is.True,
@@ -60,7 +50,6 @@ namespace BelowTheWing.Tests.EditMode
         {
             var footing = Standing(Vector3.zero);
 
-            // Eight, which is a tractor pulling away flat out.
             footing.Settle(m_Deck, new Vector3(0f, 0f, 8f * Step), Vector3.zero, Grip, Step);
 
             Assert.That(footing.Lost, Is.False,
@@ -73,8 +62,6 @@ namespace BelowTheWing.Tests.EditMode
         {
             var footing = Standing(Vector3.zero);
 
-            // Standing still on a still deck and asking to walk at four metres a second: an enormous
-            // difference between what they are doing and what they want, and no danger at all.
             for (var step = 0; step < 10; step++)
             {
                 footing.Settle(m_Deck, Vector3.zero, new Vector3(0f, 0f, 4f), Grip, Step);
@@ -94,7 +81,6 @@ namespace BelowTheWing.Tests.EditMode
             footing.Settle(m_Deck, deck, Vector3.zero, Grip, Step);
             Assert.That(footing.Lost, Is.True, "thrown first");
 
-            // The deck holds its new speed and friction drags them up to it.
             footing.Settle(m_Deck, deck, deck, Grip, Step);
 
             Assert.That(footing.Lost, Is.False,
@@ -119,7 +105,6 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void SteppingOntoSomethingElseIsNotAYank()
         {
-            // Riding a deck that is doing six metres a second, then stepping off onto the apron.
             var moving = new Vector3(0f, 0f, 6f);
             var footing = Standing(moving);
             footing.Settle(m_Deck, moving, moving, Grip, Step);

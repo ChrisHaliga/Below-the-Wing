@@ -5,9 +5,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// How far round and how far up the third-person camera will go.
-    /// </summary>
     public sealed class FollowCameraTests
     {
         GameObject m_Object;

@@ -7,16 +7,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// A train on a machine that does not own it.
-    ///
-    /// It is hooked together here exactly as it is on the machine that does own it, and towed by
-    /// the local copy of the tractor. Only that tractor is corrected; the carts follow it through
-    /// the hinges. Correcting each cart on its own is what tears these trains apart -- a chain is a
-    /// set of constraints and a correction is a force on one body, so told that cart three is
-    /// behind and cart four is left, correction pushes each toward a place the hinge between them
-    /// forbids, and the solver and the network take turns losing.
-    /// </summary>
     public sealed class TowedTrainPlayTests
     {
         static readonly CorrectionSettings Settings = CorrectionSettings.Default;
@@ -41,7 +31,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
-        /// <summary>A train nobody here owns: coupled up, and not driven by anything local.</summary>
         CartChain SomebodyElsesTrain(int carts = 4)
         {
             var train = m_Apron.AddTrain(m_TractorProfile, m_CartProfile, carts, new Vector3(0f, 1f, 0f));
@@ -95,12 +84,11 @@ namespace BelowTheWing.Tests.PlayMode
             yield return Steps.Seconds(1f);
             var spacedAt = GapsBetweenMembers(train);
 
-            // The owner says the tractor is exactly where it already is, throughout.
             var said = VehicleState.Of(train.Leader.Body);
             var steps = Mathf.CeilToInt(8f / Time.fixedDeltaTime);
             for (var i = 0; i < steps; i++)
             {
-                Correction.Apply(Bodies(train), train.Leader.Body, said, secondsSince: 0f, Settings);
+                Correction.Apply(train.Leader.Body, said, secondsSince: 0f, Settings);
                 yield return new WaitForFixedUpdate();
             }
 
@@ -121,11 +109,10 @@ namespace BelowTheWing.Tests.PlayMode
             var said = VehicleState.Of(train.Leader.Body);
             var stoodAt = train.Leader.transform.position;
 
-            // Ten seconds of being told, twenty times a second, exactly what it already knows.
             var steps = Mathf.CeilToInt(10f / Time.fixedDeltaTime);
             for (var i = 0; i < steps; i++)
             {
-                Correction.Apply(Bodies(train), train.Leader.Body, said, secondsSince: 0f, Settings);
+                Correction.Apply(train.Leader.Body, said, secondsSince: 0f, Settings);
                 yield return new WaitForFixedUpdate();
             }
 
@@ -138,30 +125,45 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ATrainPutBackArrivesStillHitchedUpInOrder()
+        public IEnumerator ATrainALongWayOutIsDrivenBackRatherThanMoved()
         {
             var train = SomebodyElsesTrain();
             yield return Steps.Seconds(1f);
             var spacedAt = GapsBetweenMembers(train);
+            var startedAt = train.Leader.transform.position;
 
-            // Far enough away that blending is given up on and the train is moved outright.
             var said = VehicleState.Of(train.Leader.Body);
             said.Position += new Vector3(0f, 0f, 30f);
 
-            Correction.Apply(Bodies(train), train.Leader.Body, said, secondsSince: 0f, Settings);
-            yield return Steps.Seconds(1.5f);
+            var steps = Mathf.CeilToInt(6f / Time.fixedDeltaTime);
+            var furthestInAStep = 0f;
+            var was = train.Leader.transform.position;
 
-            Assert.That(Vector3.Distance(train.Leader.transform.position, said.Position), Is.LessThan(2f),
-                "it has to have actually arrived");
+            for (var i = 0; i < steps; i++)
+            {
+                Correction.Apply(train.Leader.Body, said, secondsSince: 0f, Settings);
+                yield return new WaitForFixedUpdate();
+
+                furthestInAStep = Mathf.Max(
+                    furthestInAStep, Vector3.Distance(train.Leader.transform.position, was));
+                was = train.Leader.transform.position;
+            }
+
+            Assert.That(Vector3.Distance(train.Leader.transform.position, startedAt), Is.GreaterThan(20f),
+                "thirty metres out, it has to have made most of the way back");
+
+            var ceiling = Settings.closingCeilingMetresPerSecond * Time.fixedDeltaTime;
+            Assert.That(furthestInAStep, Is.LessThan(ceiling * 2f),
+                $"it moved {furthestInAStep:F2} m in a single step, where the fastest it may close is " +
+                $"{ceiling:F2} m. A body that arrives without having travelled arrives inside " +
+                "whatever is standing there, and takes no part in the collision it should have had");
 
             var now = GapsBetweenMembers(train);
             for (var i = 0; i < now.Length; i++)
             {
                 Assert.That(now[i], Is.EqualTo(spacedAt[i]).Within(0.4f),
-                    $"the gap behind vehicle {i} is {now[i]:F2} m, was {spacedAt[i]:F2} m. Moving only the " +
-                    "front of a train leaves every coupling violated by the distance travelled, and the " +
-                    "solver answers that by throwing the carts apart -- the train twists itself inside " +
-                    "out instead of arriving");
+                    $"the gap behind vehicle {i} is {now[i]:F2} m, was {spacedAt[i]:F2} m. Driven back " +
+                    "from the front, the couplings have to carry the rest of the train with it");
             }
         }
 
@@ -172,7 +174,6 @@ namespace BelowTheWing.Tests.PlayMode
             yield return Steps.Seconds(1f);
             var spacedAt = GapsBetweenMembers(train);
 
-            // Its owner is driving away steadily: always a little ahead of where this copy is.
             var steps = Mathf.CeilToInt(6f / Time.fixedDeltaTime);
             for (var i = 0; i < steps; i++)
             {
@@ -180,7 +181,7 @@ namespace BelowTheWing.Tests.PlayMode
                 said.Position += new Vector3(0f, 0f, 0.8f);
                 said.Velocity = new Vector3(0f, 0f, 4f);
 
-                Correction.Apply(Bodies(train), train.Leader.Body, said, secondsSince: 0f, Settings);
+                Correction.Apply(train.Leader.Body, said, secondsSince: 0f, Settings);
                 yield return new WaitForFixedUpdate();
             }
 

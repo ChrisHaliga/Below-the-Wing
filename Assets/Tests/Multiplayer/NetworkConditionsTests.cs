@@ -8,22 +8,12 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.Multiplayer
 {
-    /// <summary>Something whose one replicated number can be changed and watched for.</summary>
     public sealed class PingBeacon : NetworkBehaviour
     {
         public readonly NetworkVariable<int> Count =
             new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     }
 
-    /// <summary>
-    /// What a test's network actually does, rather than what it is labelled.
-    ///
-    /// Every multiplayer test in this project is a claim about behaviour under network conditions,
-    /// and each of those claims is worth exactly as much as the conditions being real. A suite that
-    /// believes it runs at 150 milliseconds while actually running at zero proves nothing and says
-    /// nothing is wrong, which is the worst of both. So the conditions are measured here, by timing
-    /// how long a change takes to cross, before anything is built on them.
-    /// </summary>
     public sealed class NetworkConditionsTests : RampMultiplayerTest
     {
         GameObject m_Prefab;
@@ -57,10 +47,6 @@ namespace BelowTheWing.Tests.Multiplayer
                 ? found.GetComponent<PingBeacon>()
                 : null;
 
-        /// <summary>
-        /// How long, in milliseconds, a change made on one instance takes to show up on another,
-        /// averaged over several crossings so that one unlucky tick does not decide the answer.
-        /// </summary>
         IEnumerator MeasureCrossing(int crossings, List<double> into)
         {
             var owner = m_ClientNetworkManagers[0];
@@ -98,16 +84,6 @@ namespace BelowTheWing.Tests.Multiplayer
             return total / values.Count;
         }
 
-        /// <summary>
-        /// The same crossing measured on two networks, and compared against each other rather than
-        /// against a number.
-        ///
-        /// An absolute threshold cannot do this job. A change does not cross faster than the tick
-        /// it waits for, which puts a floor of roughly two ticks under every measurement whatever
-        /// the network is doing -- so a threshold low enough for a bad network to clear is one a
-        /// perfect network clears as well, and the test passes with the simulator switched off.
-        /// Measuring both and taking the difference has no such floor to be fooled by.
-        /// </summary>
         [UnityTest]
         public IEnumerator ABadNetworkTakesMeasurablyLongerThanACleanOne()
         {
@@ -140,7 +116,6 @@ namespace BelowTheWing.Tests.Multiplayer
         }
     }
 
-    /// <summary>What a test gets when it does not ask.</summary>
     public sealed class DefaultConditionsTests : RampMultiplayerTest
     {
         [UnityTest]

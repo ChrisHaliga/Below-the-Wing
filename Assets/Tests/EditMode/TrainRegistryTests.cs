@@ -6,14 +6,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Working out which vehicles form which trains, and which of them this machine is holding.
-    ///
-    /// This used to live inside the networked spawner where nothing could reach it, and every one
-    /// of these cases was wrong: a machine that had not built the apron believed every tractor was
-    /// standing alone, a train being driven had its couplings destroyed whenever anybody joined,
-    /// and a train partway through changing hands was simulated by nobody at all.
-    /// </summary>
     public sealed class TrainRegistryTests
     {
         TestApron m_Apron;
@@ -38,7 +30,6 @@ namespace BelowTheWing.Tests.EditMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
-        /// <summary>A broker that says this machine owns every member of the train, so it holds it.</summary>
         static RecordingBroker OwningEverything(CartChain train)
         {
             var broker = new RecordingBroker(grant: true, localClientId: 7);
@@ -50,7 +41,6 @@ namespace BelowTheWing.Tests.EditMode
             return broker;
         }
 
-        /// <summary>A tractor and four carts, described the way every machine is told about them.</summary>
         List<TrainMembership> OneTrain(int trainIndex = 0, float lane = 0f)
         {
             var described = new List<TrainMembership>
@@ -184,9 +174,6 @@ namespace BelowTheWing.Tests.EditMode
                 }
             }
 
-            // Equipment belonging to somebody who leaves is handed on one object at a time, taking
-            // no notice of which train anything belongs to. One stray cart is enough to mean the
-            // whole train needs taking back.
             broker.SetOwner(m_Registry.Trains[1].Members[3], 4);
 
             var toReclaim = m_Registry.TrainsHeldBy(4, broker);
@@ -215,7 +202,6 @@ namespace BelowTheWing.Tests.EditMode
             {
                 broker.SetOwner(member, 7);
             }
-
 
             Assert.That(m_Registry.Trains[0].CouplingsEngaged, Is.True);
         }
@@ -251,7 +237,6 @@ namespace BelowTheWing.Tests.EditMode
 
             Assert.That(train.CouplingsEngaged, Is.True, "precondition: it is hooked together");
 
-            // Two of the five have gone across. The rest are still ours.
             broker.SetOwner(train.Members[3], 3);
             broker.SetOwner(train.Members[4], 3);
 
@@ -287,6 +272,5 @@ namespace BelowTheWing.Tests.EditMode
                 "and ours outright. Who owns a train no longer decides whether it is a train: it is " +
                 "towed locally on every machine, and only the vehicle at the front is corrected");
         }
-
     }
 }

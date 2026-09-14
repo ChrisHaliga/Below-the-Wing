@@ -5,36 +5,19 @@ using UnityEngine;
 
 namespace BelowTheWing.Crew
 {
-    /// <summary>What a player standing on the apron is currently being told.</summary>
     public enum OccupancyPrompt
     {
-        /// <summary>Nothing worth saying: no vehicle within reach, or already driving one.</summary>
         None,
 
-        /// <summary>A vehicle is within reach and would take a driver.</summary>
         OfferToDrive,
 
-        /// <summary>A vehicle was asked for and somebody else has it.</summary>
         VehicleTaken
     }
 
-    /// <summary>
-    /// Getting in and out of vehicles.
-    ///
-    /// Walking near something driveable offers it; accepting the offer asks to take over
-    /// simulating that vehicle -- and its whole train, if it has one -- and only once that is
-    /// granted does the player actually get the wheel. Asking and being told no is a normal
-    /// outcome, not an error: somebody else may be driving it.
-    ///
-    /// This is a plain object rather than a component so that the sequence can be exercised
-    /// directly, including the refusal, which is otherwise difficult to arrange on purpose.
-    /// </summary>
     public sealed class VehicleOccupancy
     {
-        /// <summary>Metres of clear ground left between a player and the vehicle they step out of.</summary>
         const float DismountClearanceMetres = 1f;
 
-        /// <summary>A little air under the feet, so the capsule is not created touching the tarmac.</summary>
         const float StandingClearanceMetres = 0.05f;
 
         readonly Transform m_Crew;
@@ -44,20 +27,10 @@ namespace BelowTheWing.Crew
 
         VehicleController m_Driving;
 
-        /// <summary>
-        /// The vehicle this player last asked for and was refused.
-        ///
-        /// Kept so the refusal stays on screen while they are still standing at it. Clearing it on
-        /// the next refresh would put the message up for a single physics step -- twenty
-        /// milliseconds -- and then quietly offer them the vehicle again as though nothing had
-        /// happened.
-        /// </summary>
         VehicleController m_Refused;
 
-        /// <summary>Set while a request is in flight, so one press asks once.</summary>
         bool m_Asking;
 
-        /// <summary>What that request was for, so it can be given up on.</summary>
         VehicleController m_AskedFor;
 
         public VehicleOccupancy(Transform crew, IOwnershipBroker broker, Func<IReadOnlyList<VehicleController>> nearbyVehicles, float reachMetres)
@@ -68,36 +41,22 @@ namespace BelowTheWing.Crew
             m_ReachMetres = reachMetres;
         }
 
-        /// <summary>The vehicle currently being offered, or null if none is.</summary>
         public VehicleController Offer { get; private set; }
 
-        /// <summary>The vehicle being driven, or null while the player is on foot.</summary>
         public VehicleController Driving => m_Driving;
 
-        /// <summary>
-        /// What the player is attached to right now: their own body while on foot, and the vehicle
-        /// itself once they are in one. This is what the camera follows, and it is the reason the
-        /// camera does not need to know which of the two it is looking at.
-        /// </summary>
         public Transform Subject => m_Driving != null ? m_Driving.transform : m_Crew;
 
-        /// <summary>Which of the things a player can be told is currently being said.</summary>
         public OccupancyPrompt Prompt { get; private set; } = OccupancyPrompt.None;
 
-        /// <summary>The words on screen, or empty if there is nothing to say.</summary>
         public string Message { get; private set; } = "";
 
-        /// <summary>Whether the player is currently in a vehicle rather than on foot.</summary>
         public bool IsDriving => m_Driving != null;
 
-        /// <summary>Works out what, if anything, to offer the player where they are standing.</summary>
         public void Refresh()
         {
             if (IsDriving)
             {
-                // A vehicle can be taken from underneath somebody: a session owner reclaiming an
-                // orphaned train, or ownership moving for any other reason. Sitting in a body this
-                // machine no longer simulates means pressing controls that reach nothing.
                 if (!m_Broker.OwnedByUs(m_Driving))
                 {
                     StepOut();
@@ -109,8 +68,6 @@ namespace BelowTheWing.Crew
                 return;
             }
 
-            // A request whose owner has left the session is never answered, and waiting on it for
-            // ever would leave this player unable to ask for anything again. Walking away gives up.
             if (m_Asking && m_AskedFor != null && !WithinReachOf(m_AskedFor))
             {
                 m_Asking = false;
@@ -128,9 +85,6 @@ namespace BelowTheWing.Crew
 
             if (ReferenceEquals(Offer, m_Refused))
             {
-                // A refusal has two causes and they need different words. Somebody is in it, or
-                // nobody answered -- and telling a player that an empty tractor is being driven is
-                // false about the only thing the message says.
                 Say(OccupancyPrompt.VehicleTaken, Offer.AcceptsDriver
                     ? $"{Offer.DisplayName} did not answer. Try again."
                     : $"{Offer.DisplayName} is being driven");
@@ -140,12 +94,6 @@ namespace BelowTheWing.Crew
             Say(OccupancyPrompt.OfferToDrive, $"Press E to drive {Offer.DisplayName}");
         }
 
-        /// <summary>
-        /// The player asked to get in or out.
-        ///
-        /// On foot with an offer standing, this asks for the vehicle and takes it only if the ask
-        /// is granted. Already driving, this gets out. On foot with nothing offered, nothing happens.
-        /// </summary>
         public void Toggle(IDriveIntentSource intentSource)
         {
             if (IsDriving)
@@ -154,8 +102,6 @@ namespace BelowTheWing.Crew
                 return;
             }
 
-            // A second press while the first is still in flight would send a second request for the
-            // same train, and the answers would race each other.
             var wanted = Offer;
             if (m_Asking || wanted == null)
             {
@@ -180,8 +126,6 @@ namespace BelowTheWing.Crew
                     return;
                 }
 
-                // An answer can arrive after the player has walked off. Seating them then would
-                // teleport them back into a vehicle they had given up on.
                 if (!WithinReachOf(wanted))
                 {
                     m_Broker.HandBack(train.Members);
@@ -197,15 +141,8 @@ namespace BelowTheWing.Crew
             });
         }
 
-        /// <summary>
-        /// Where a player who has just got out should be put: clear of the vehicle they were in,
-        /// rather than inside it.
-        /// </summary>
         public Vector3 DismountPosition(VehicleController vehicle, float standingHeightMetres)
         {
-            // Beside the bodywork, and up on their feet. The vehicle's origin is on the tarmac
-            // between its wheels, so its height is the ground's, and a person whose middle is put
-            // there is half underground.
             var clearOfTheBodywork = (vehicle.Shape.EnvelopeSizeMetres.x * 0.5f) + DismountClearanceMetres;
             var standing = (standingHeightMetres * 0.5f) + StandingClearanceMetres;
 
@@ -219,8 +156,6 @@ namespace BelowTheWing.Crew
 
         void StepOut()
         {
-            // Where the body physically goes is the character's business, not the seat's. This
-            // records only that nobody is driving any more; the character notices and climbs out.
             m_Driving.IntentSource = null;
             m_Driving.Occupied = false;
             m_Driving = null;

@@ -7,18 +7,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// A cart standing on the tarmac, with the real model's numbers under it.
-    ///
-    /// The origin of a vehicle used to be the middle of its bodywork, so placing one meant working
-    /// out how high to float it. It is now on the ground between the wheels, which is both the
-    /// ordinary convention and the thing that makes a layout position mean "where this touches
-    /// down". Everything that used to add half a body height has to stop.
-    ///
-    /// The suspension numbers changed with it. The greybox cart had 0.35 m of travel on 0.30 m
-    /// wheels; the real one has 0.08 m on 0.157 m wheels, which is more than four times stiffer per
-    /// metre and bottoms out far more readily.
-    /// </summary>
     public sealed class CartOnTheGroundPlayTests
     {
         TestApron m_Apron;
@@ -129,8 +117,6 @@ namespace BelowTheWing.Tests.PlayMode
                 var theirEnd = inFront.transform.TransformPoint(inFront.RearHitchLocal.Value);
                 var ourEnd = behind.transform.TransformPoint(behind.FrontHitchLocal.Value);
 
-                // Sideways and along only. The two halves of a real coupling meet at different
-                // heights on purpose, so a vertical difference here is geometry rather than strain.
                 var apart = Vector3.ProjectOnPlane(theirEnd - ourEnd, Vector3.up).magnitude;
 
                 Assert.That(apart, Is.LessThan(0.1f),
@@ -140,13 +126,6 @@ namespace BelowTheWing.Tests.PlayMode
         }
     }
 
-    /// <summary>
-    /// Wheels that look like they are doing what the cart is doing.
-    ///
-    /// Wheels have never been drawn before -- a greybox cart was one box and had none. With a real
-    /// model and a ground-level origin they cannot simply be rigid to the body either: compressing
-    /// the suspension lowers the body, and a rigid wheel goes into the tarmac with it.
-    /// </summary>
     public sealed class WheelLookPlayTests
     {
         TestApron m_Apron;
@@ -166,16 +145,6 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
-        /// <summary>
-        /// A cart with something standing in for each of its four visible wheels, hung the way an
-        /// imported model hangs them.
-        ///
-        /// Not as children of the cart. A model arrives from the modelling tool scaled by a hundred
-        /// and rotated to swap its up axis, and is then turned to face the way the game drives; its
-        /// wheels live inside that frame, where a metre is a hundredth of a unit and up is not up.
-        /// Wheels hung straight off the cart passed a test that the shipped cart failed by fifteen
-        /// metres.
-        /// </summary>
         (VehicleController cart, WheelLook look, Transform[] wheels) ACartWithWheels()
         {
             var cart = m_Apron.AddVehicle(
@@ -227,7 +196,6 @@ namespace BelowTheWing.Tests.PlayMode
 
             yield return Steps.Seconds(1f);
 
-            // One second at 4 m/s on a 0.157 m wheel: 4 / 0.157 radians, in degrees.
             var expected = 4f / cart.GetComponent<VehicleShape>().Wheels[0].RadiusMetres * Mathf.Rad2Deg;
 
             Assert.That(look.TurnedDegrees(0) - before, Is.EqualTo(expected).Within(expected * 0.25f),
@@ -252,7 +220,6 @@ namespace BelowTheWing.Tests.PlayMode
                     "body it sinks by however far the suspension compressed, which on this cart is " +
                     "most of the wheel");
 
-                // Under its own axle, not off somewhere along an axis that was never the cart's.
                 var where = cart.transform.InverseTransformPoint(wheels[i].position);
                 var axle = shape.Wheels[i].CentreLocal;
                 Assert.That(new Vector2(where.x - axle.x, where.z - axle.z).magnitude, Is.LessThan(0.02f),
@@ -279,8 +246,6 @@ namespace BelowTheWing.Tests.PlayMode
             cart.Body.linearVelocity = new Vector3(0f, 0f, 2f);
             yield return Steps.Seconds(0.5f);
 
-            // The turn since standing, expressed in the cart's frame: rolling forward is a turn
-            // about the cart's sideways axis, whichever way the wheel itself was modelled.
             var rolling = Quaternion.Inverse(cart.transform.rotation) * wheels[0].rotation;
             var turnedBy = rolling * Quaternion.Inverse(authored);
             turnedBy.ToAngleAxis(out var degrees, out var axis);

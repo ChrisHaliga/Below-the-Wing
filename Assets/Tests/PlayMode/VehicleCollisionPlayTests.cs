@@ -7,13 +7,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// What happens when vehicles hit each other.
-    ///
-    /// Conserving momentum is not enough on its own: a bump between two perfectly inelastic bodies
-    /// whose drivelines then drag them to a halt reads as "it slid a bit". A bump has to rebound,
-    /// and a shoved cart has to roll away.
-    /// </summary>
     public sealed class VehicleCollisionPlayTests
     {
         TestApron m_Apron;
@@ -43,8 +36,6 @@ namespace BelowTheWing.Tests.PlayMode
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity, TestShapes.Tractor());
             yield return Steps.Seconds(2f);
 
-            // Driven into the cart at five metres a second: the speed is held until the cart starts
-            // to move, so that what is measured is the hit and not the run-up.
             var hit = false;
             for (var i = 0; i < 200 && !hit; i++)
             {

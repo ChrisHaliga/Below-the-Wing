@@ -4,14 +4,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Getting off the ground.
-    ///
-    /// Jump height is tuned to one thing -- reaching a cart deck -- and then quietly governs every
-    /// vertical decision in the game afterwards: how high a pit lip can be, whether a belt loader
-    /// can be climbed, whether a wing is something you can get under. Worth being a number somebody
-    /// chose rather than an impulse that happened to feel right.
-    /// </summary>
     public sealed class JumpingTests
     {
         const float Gravity = 9.81f;
@@ -29,7 +21,6 @@ namespace BelowTheWing.Tests.EditMode
 
             var speed = Jumping.TakeOffSpeed(wanted, Gravity);
 
-            // Where the upward speed runs out, which is the top of the arc.
             var reached = speed * speed / (2f * Gravity);
 
             Assert.That(reached, Is.EqualTo(wanted).Within(0.01f),
@@ -55,7 +46,6 @@ namespace BelowTheWing.Tests.EditMode
         {
             var crew = ScriptableObject.CreateInstance<CrewProfile>();
 
-            // The deck sits on top of a cart, which is what jumping exists to get onto.
             const float deckHeight = 0.94f;
 
             Assert.That(crew.jumpHeightMetres, Is.GreaterThan(deckHeight),

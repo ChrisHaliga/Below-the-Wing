@@ -8,19 +8,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// Starting a game on this machine and nobody else's.
-    ///
-    /// Playing with other people means a session created through Unity's multiplayer service: an
-    /// anonymous sign-in, a relay allocation and a lobby, which is several round trips to the
-    /// internet before there is an apron to stand on. Playing alone needs none of that, and paying
-    /// for it anyway is most of a minute every time somebody wants to try something out.
-    ///
-    /// What must not change is what kind of session it is. Every ownership rule in this game assumes
-    /// distributed authority -- that no machine is a server, that objects change hands, that the
-    /// session owner is simply one of the clients. A solo session that quietly ran as client-server
-    /// would be a different game wearing the same scene.
-    /// </summary>
     public sealed class PlayingAlonePlayTests
     {
         GameObject m_Host;
@@ -35,9 +22,6 @@ namespace BelowTheWing.Tests.PlayMode
             m_Netcode = m_Host.AddComponent<NetworkManager>();
             var transport = m_Host.AddComponent<UnityTransport>();
 
-            // The same configuration the apron scene ships: topology, scene management and player
-            // spawning included. A session started with those switched off would prove that some
-            // other session starts, not this one.
             m_Netcode.NetworkConfig = new NetworkConfig
             {
                 NetworkTransport = transport,

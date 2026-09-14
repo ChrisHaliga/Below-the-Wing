@@ -7,17 +7,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// The equipment the game actually ships with weighs and measures what the real thing does.
-    ///
-    /// Every other test builds its own profiles so that retuning a vehicle for feel cannot turn a
-    /// test red. These are the exception, and they are here because the figures being real is
-    /// itself a requirement: a spring rate is only possible to reason about if the mass it is
-    /// holding up is a mass something actually has.
-    ///
-    /// The ranges are wide on purpose. They are there to catch a profile drifting into fantasy,
-    /// not to pin a number nobody should be free to adjust.
-    /// </summary>
     public sealed class ShippedProfileTests
     {
         const string TractorPath = "Assets/Content/Vehicles/BaggageTractor.asset";
@@ -27,17 +16,9 @@ namespace BelowTheWing.Tests.EditMode
         const string TractorPrefabPath = "Assets/Content/Prefabs/BaggageTractor.prefab";
         const string CartPrefabPath = "Assets/Content/Prefabs/BaggageCart.prefab";
 
-        /// <summary>
-        /// The shape of a shipped vehicle: where its parts are and how big they are.
-        ///
-        /// Read off the prefab rather than the profile, because that is where geometry lives. A
-        /// profile says how a vehicle drives; its wheels and its bodywork are measured off its
-        /// model when the prefab is built.
-        /// </summary>
         static VehicleShape Shape(string prefabPath)
             => Load<GameObject>(prefabPath).GetComponent<VehicleShape>();
 
-        /// <summary>The smallest wheel a vehicle runs on, in metres.</summary>
         static float SmallestWheelMetres(VehicleShape shape)
         {
             var smallest = float.MaxValue;

@@ -3,18 +3,6 @@ using NUnit.Framework;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// When the game holds the mouse pointer, and when it hands it back to the desktop.
-    ///
-    /// Holding it means the pointer is pinned to the middle of the window and invisible, so that
-    /// swinging the camera cannot walk the pointer onto a second monitor and leave the player
-    /// clicking on something else. The cost of holding it is that the player cannot reach anything
-    /// outside the game, so the ways out matter at least as much as the way in, and most of what
-    /// is below is about those.
-    ///
-    /// These are the rules by themselves. What acts on them is a component with a lifecycle, and
-    /// an editor test run never starts one, so that half lives in the play mode tests.
-    /// </summary>
     public sealed class MouseCaptureTests
     {
         static bool Next(bool held, bool focus, bool escape, bool click)

@@ -3,14 +3,6 @@ using NUnit.Framework;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Which machine simulates a bag.
-    ///
-    /// The one rule this game is built on: things that touch each other are simulated together. A
-    /// bag on a cart has to be one machine's physics -- real contact between two bodies that
-    /// machine owns -- rather than a replicated copy of a bag resting on a replicated copy of a
-    /// cart, which is two machines' guesses stacked on top of each other.
-    /// </summary>
     public sealed class CargoOwnershipTests
     {
         const ulong Server = 0;

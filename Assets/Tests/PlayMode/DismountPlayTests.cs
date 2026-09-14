@@ -9,13 +9,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// Getting out of a vehicle, as a body.
-    ///
-    /// A vehicle's origin is on the tarmac between its wheels, so "beside the vehicle" is not a
-    /// place a person can stand: it is half a person underground. Stepping out has to put the body
-    /// -- not just the transform -- on its feet beside the bodywork, moving as the vehicle was.
-    /// </summary>
     public sealed class DismountPlayTests
     {
         TestApron m_Apron;

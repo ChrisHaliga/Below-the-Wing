@@ -6,20 +6,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.Multiplayer
 {
-    /// <summary>
-    /// How a machine finds out that somebody else has left.
-    ///
-    /// This matters because nothing hands out a departed player's train automatically. Vehicles
-    /// change hands only when somebody asks for them, deliberately -- handing them out one at a time
-    /// is what split trains across machines. The cost of that is that a train belonging to somebody
-    /// who quits is nobody's until the session owner reclaims it, and the session owner can only do
-    /// that if it is told.
-    ///
-    /// The obvious callback is the wrong one. Netcode raises <c>OnClientDisconnectCallback</c> on a
-    /// server and on the machine that itself disconnected. Under distributed authority nobody is a
-    /// server, so somebody else leaving never reaches it, and a reclaim hung on it never runs: the
-    /// train freezes mid-apron, simulated by no-one, for the rest of the session.
-    /// </summary>
     public sealed class DepartureMultiplayerTests : RampMultiplayerTest
     {
         [UnityTest]
@@ -46,10 +32,6 @@ namespace BelowTheWing.Tests.Multiplayer
                 "on the apron simulated by nobody for the rest of the session");
         }
 
-        /// <summary>
-        /// Records a departure the way the game listens for one: any event meaning "somebody who
-        /// was here is not here now", not only the one that fires on a server.
-        /// </summary>
         static void Record(ConnectionEventData what, ICollection<ulong> into)
         {
             if (what.EventType == ConnectionEvent.PeerDisconnected

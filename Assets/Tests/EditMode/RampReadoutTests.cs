@@ -7,13 +7,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Reporting who is simulating what.
-    ///
-    /// Ownership of a train has no appearance. Taking one over looks exactly like not taking one
-    /// over until a second player turns up and the couplings start behaving strangely, so the only
-    /// way to see it go wrong early is to have it written on the screen.
-    /// </summary>
     public sealed class RampReadoutTests
     {
         TestApron m_Apron;
@@ -40,7 +33,6 @@ namespace BelowTheWing.Tests.EditMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
-        /// <summary>A vehicle that reports whatever drift it is told to report.</summary>
         sealed class DriftingCopy : MonoBehaviour, IKeepsInStep
         {
             public float MetresOutOfPlace { get; set; }

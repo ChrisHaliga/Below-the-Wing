@@ -4,14 +4,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Bringing a vehicle back to where its owner says it is, without stopping it being a vehicle.
-    ///
-    /// The tension underneath all of these: the owner decides where a vehicle is, and the vehicle is
-    /// also a physical body here with momentum that other things are pushing against. Satisfying the
-    /// first by assignment destroys the second, so the owner's word arrives as a change in what the
-    /// vehicle is doing rather than in where it is.
-    /// </summary>
     public sealed class CorrectionTests
     {
         static readonly CorrectionSettings Settings = CorrectionSettings.Default;
@@ -103,7 +95,6 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void CorrectionCarriesTheOwnersSpeedRatherThanOnlyClosingTheGap()
         {
-            // Exactly where it should be, but standing still while its owner is driving away.
             var said = Said(Vector3.zero, velocity: new Vector3(0f, 0f, 10f));
 
             var nudge = Correction.Nudge(Vector3.zero, Vector3.zero, said, secondsSince: 0f, Settings);
@@ -114,22 +105,29 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void AVehicleSomewhereElseEntirelyIsNotBlendedAcrossTheApron()
+        public void AVehicleSomewhereElseEntirelyClosesTheGapNoFasterThanTheCeiling()
         {
             var said = Said(new Vector3(0f, 0f, 40f));
 
-            Assert.That(Correction.TooFarToBlend(Vector3.zero, said.Position, Settings), Is.True,
-                "easing forty metres takes long enough to be watched, and what gets watched is a " +
-                "tractor sliding across the apron under its own power");
+            var nudge = Correction.Nudge(Vector3.zero, Vector3.zero, said, secondsSince: 0f, Settings);
+
+            Assert.That(nudge.magnitude, Is.LessThanOrEqualTo(Settings.closingCeilingMetresPerSecond + 0.01f),
+                $"forty metres out, the correction asked for {nudge.magnitude:F1} m/s. Proportional to " +
+                "the error and uncapped it asks for hundreds, which is a vehicle fired across the " +
+                "apron and out the other side -- and that is what a teleport was there to avoid");
         }
 
         [Test]
-        public void AnOrdinaryErrorIsNotSnapped()
+        public void AnOrdinaryErrorIsClosedGentlyRatherThanAtTheCeiling()
         {
-            var said = Said(new Vector3(0f, 0f, 1f));
+            var said = Said(new Vector3(0f, 0f, 0.4f));
 
-            Assert.That(Correction.TooFarToBlend(Vector3.zero, said.Position, Settings), Is.False,
-                "snapping what could have been blended is the artefact blending exists to avoid");
+            var nudge = Correction.Nudge(Vector3.zero, Vector3.zero, said, secondsSince: 0f, Settings);
+
+            Assert.That(nudge.magnitude, Is.LessThan(Settings.closingCeilingMetresPerSecond),
+                "a small error has to be closed in proportion to itself. Closed at the ceiling it " +
+                "arrives as a kick, which is what the ceiling is there to bound rather than impose");
+            Assert.That(nudge.magnitude, Is.GreaterThan(0f), "and it does have to be closed");
         }
 
         [Test]
@@ -158,8 +156,6 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void AVehicleSlightlyPastTheRightWayTurnsBackTheShortWayRound()
         {
-            // Ten degrees beyond where it should be: the short way back is a small negative turn,
-            // and the long way round is three hundred and fifty degrees of spin nobody performed.
             var facing = Quaternion.Euler(0f, 10f, 0f);
             var said = Said(Vector3.zero, facing: Quaternion.identity);
 

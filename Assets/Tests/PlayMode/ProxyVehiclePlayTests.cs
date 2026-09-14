@@ -7,19 +7,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// A vehicle somebody else decides the position of, as a physical object on this machine.
-    ///
-    /// This is the claim the whole game rests on. Two players have to be able to drive into each
-    /// other and both see a crash, and a crash is an exchange of momentum -- so a vehicle you do
-    /// not own has to have momentum to exchange. If it is held still, held up by nothing, or made
-    /// infinitely heavy, there is nothing for an impulse to do to it and contact between players
-    /// cannot mean anything.
-    ///
-    /// So a vehicle somebody else owns runs its own suspension and its own grip on every machine,
-    /// keeps its weight and its speed, and differs from one you own in exactly one way: nobody
-    /// here is driving it.
-    /// </summary>
     public sealed class ProxyVehiclePlayTests
     {
         TestApron m_Apron;
@@ -48,7 +35,6 @@ namespace BelowTheWing.Tests.PlayMode
             var theirs = Tractor("Tug 1", new Vector3(0f, 1f, 0f));
             theirs.OursToMove = false;
 
-            // Ten seconds without a single update from whoever owns it.
             yield return Steps.Seconds(10f);
 
             const float resting = 0f;
@@ -130,9 +116,6 @@ namespace BelowTheWing.Tests.PlayMode
                 "if a vehicle somebody else owns cannot be moved by driving into it, two players can " +
                 "never have a crash worth watching");
 
-            // Being moved is not on its own worth much: a dead weight lying on the ground slides
-            // when something hits it too. What says the thing that got hit was a vehicle is that it
-            // is still standing on its own springs afterwards, with travel left to take the next one.
             const float resting = 0f;
             Assert.That(theirs.transform.position.y, Is.EqualTo(resting).Within(0.15f),
                 "shoved off its suspension and left sitting on its bodywork, it can absorb nothing " +

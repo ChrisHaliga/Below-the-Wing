@@ -7,13 +7,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// What a vehicle does once physics is actually running.
-    ///
-    /// The forces are checked one at a time elsewhere. These are the claims that only become true
-    /// after several hundred steps of a solver: that a vehicle stands up, stays up, and behaves
-    /// according to the profile it was given rather than to anything written into the controller.
-    /// </summary>
     public sealed class VehiclePhysicsPlayTests
     {
         TestApron m_Apron;
@@ -124,7 +117,6 @@ namespace BelowTheWing.Tests.PlayMode
             tractor.OursToMove = false;
             yield return Steps.Seconds(1f);
 
-            // Walk into it and see whether anything is there.
             crew.IntentSource = new HeldKeys(new Vector2(0f, 1f));
             yield return Steps.Seconds(4f);
 
@@ -177,8 +169,6 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator ATractorNeverExceedsItsTopSpeedAndGetsCloseToIt()
         {
-            // Room to run: at top speed a tractor covers the ordinary test apron in ten seconds and
-            // then falls off the edge of the world.
             m_Apron.TearDown();
             m_Apron = new TestApron(sizeMetres: 1000f);
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);

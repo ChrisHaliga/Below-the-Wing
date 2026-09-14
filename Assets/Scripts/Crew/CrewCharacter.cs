@@ -6,43 +6,21 @@ using UnityEngine;
 
 namespace BelowTheWing.Crew
 {
-    /// <summary>
-    /// One ramp worker on the apron: the capsule you walk around, and the thing that gets run over.
-    ///
-    /// A rigidbody rather than a character controller, because being shoved is part of the game.
-    /// A three-tonne tractor running into somebody is supposed to send them flying, and an object
-    /// with infinite mass cannot be sent anywhere. Movement is applied as changes to velocity that
-    /// are capped per step, so a shove survives for a moment rather than being overwritten on the
-    /// frame it lands.
-    ///
-    /// Every character configures its own body from the profile on its prefab, on every machine.
-    /// A copy of somebody else's character left unconfigured has whatever the prefab defaults to --
-    /// a kilogram, the wrong shape, free to topple -- and the first thing that touches it sends it
-    /// across the apron.
-    ///
-    /// Only the character belonging to the person at this machine is given a seat, a camera and a
-    /// keyboard. See <c>LocalPlayerRig</c>.
-    /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(CapsuleCollider))]
     [DisallowMultipleComponent]
     public sealed class CrewCharacter : MonoBehaviour, IDriveIntentSource, IMovedFromHere
     {
-
-        [SerializeField, Tooltip("Mass, size and speeds for a person. Carried on the prefab.")]
+        [SerializeField, Tooltip("Profile this runs on")]
         CrewProfile m_Profile;
 
-        [SerializeField, Tooltip("How close this character must be to a vehicle to be offered it.")]
+        [SerializeField, Tooltip("Reach for vehicles and couplings, m")]
         float m_ReachMetres = 3f;
 
-        [SerializeField, Tooltip("What counts as something to stand on. Everything, by default: a " +
-                                 "cart deck is as good a floor as the apron.")]
+        [SerializeField, Tooltip("Layers that count as something to stand on")]
         LayerMask m_StandsOn = ~0;
 
-        [SerializeField, Tooltip("What counts as being over somebody's head, so they cannot stand " +
-                                 "up into it. Separate from what they can stand on: narrowing one " +
-                                 "so players cannot climb onto cart roofs must not quietly let a " +
-                                 "crouched player stand up through one.")]
+        [SerializeField, Tooltip("Layers that count as something overhead")]
         LayerMask m_FitsUnder = ~0;
 
         Rigidbody m_Body;
@@ -51,10 +29,8 @@ namespace BelowTheWing.Crew
         VehicleController m_Seated;
         float m_LastJumpedAt = -1f;
 
-        /// <summary>The profile this character's mass, size and speeds come from.</summary>
         public CrewProfile Profile => m_Profile;
 
-        /// <summary>The rigidbody this character is pushed around as.</summary>
         public Rigidbody Body
         {
             get
@@ -68,59 +44,27 @@ namespace BelowTheWing.Crew
             }
         }
 
-        /// <summary>Where this character's movement comes from. Null means it does not move itself.</summary>
         public ICrewIntentSource IntentSource { get; set; }
 
-        /// <summary>The camera this character moves relative to. Only the local player has one.</summary>
         public FollowCamera Camera { get; set; }
 
-        /// <summary>
-        /// Getting in and out of vehicles. Null on every character except the one belonging to the
-        /// person at this machine, because nobody else's character is driven from here.
-        /// </summary>
         public VehicleOccupancy Seat { get; private set; }
 
-        /// <summary>
-        /// Hooking a cart on and dropping one off. Null for the same reason as the seat: only the
-        /// player at this machine reshapes trains from here.
-        /// </summary>
         public CouplingHand Hitching { get; set; }
 
-        /// <summary>
-        /// This player's hands. Only the character belonging to the person at this machine has
-        /// them, for the same reason only they have a seat: nobody else's is operated from here.
-        /// </summary>
         public Hands Handling { get; set; }
 
-        /// <summary>
-        /// Whether this character is crouched, and getting them up and down.
-        ///
-        /// Present on every character rather than only the local one, because how tall somebody is
-        /// has to be right on every machine that can see them -- a person drawn standing while they
-        /// are crouched inside a cart has their head through its roof.
-        /// </summary>
         public Crouching Stance { get; private set; }
 
-        /// <summary>How tall this character is right now, in metres.</summary>
         public float HeightMetres => m_Collider != null ? m_Collider.height : 0f;
 
-        /// <summary>
-        /// Where the eyes are right now, in metres above this character's origin. Read off the
-        /// capsule rather than the profile, so that crouching -- which shrinks the capsule from the
-        /// head down -- brings the eyes down with the head.
-        /// </summary>
         public float EyeMetresAboveOrigin
             => m_Collider != null && m_Profile != null
                 ? m_Collider.center.y + (m_Collider.height * 0.5f) - (m_Profile.heightMetres * EyesBelowTheTop)
                 : 0f;
 
-        /// <summary>How far below the top of the head the eyes sit, as a fraction of standing height.</summary>
         const float EyesBelowTheTop = 0.08f;
 
-        /// <summary>
-        /// What this character is asking a vehicle to do. Meaningful only while it is driving one:
-        /// the same stick that walks a character forward opens a throttle once they are in a seat.
-        /// </summary>
         public DriveIntent Current
         {
             get
@@ -130,10 +74,6 @@ namespace BelowTheWing.Crew
             }
         }
 
-        /// <summary>
-        /// Gives this character the body its profile describes: mass, size, and how it behaves when
-        /// something hits it. Runs on every machine, for every character.
-        /// </summary>
         public void ConfigureBody(CrewProfile profile)
         {
             m_Profile = profile ?? throw new ArgumentNullException(nameof(profile));
@@ -142,12 +82,8 @@ namespace BelowTheWing.Crew
             m_Body.mass = profile.massKg;
             m_Body.interpolation = RigidbodyInterpolation.Interpolate;
 
-            // People do not topple over when nudged, and a capsule left free to rotate spends its
-            // life lying down. Facing is set directly instead.
             m_Body.freezeRotation = true;
 
-            // Crew are light, get launched hard, and are the thing it is least acceptable to see
-            // pass through a wall, so they sweep rather than step.
             m_Body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
             m_Collider = GetComponent<CapsuleCollider>();
@@ -155,12 +91,6 @@ namespace BelowTheWing.Crew
             m_Collider.radius = profile.radiusMetres;
             m_Collider.center = Vector3.zero;
 
-            // The feet are the grip, and the legs are the only thing that pushes against the
-            // ground. A capsule with friction of its own fights every step the legs take, and holds
-            // a rider on a deck through a corner the legs could not.
-            //
-            // And a person does not bounce off a tractor, whatever the tractor's bodywork says: they
-            // are knocked flying by its momentum, not sprung back by a bump.
             if (m_Feet == null)
             {
                 m_Feet = new PhysicsMaterial("Feet")
@@ -186,28 +116,11 @@ namespace BelowTheWing.Crew
             }
         }
 
-        /// <summary>
-        /// Gives this character a seat, so its owner can get into vehicles. Only the local player's
-        /// character gets one.
-        /// </summary>
         public void TakeTheSeat(IOwnershipBroker broker, Func<IReadOnlyList<VehicleController>> nearbyVehicles)
         {
             Seat = new VehicleOccupancy(transform, broker, nearbyVehicles, m_ReachMetres);
         }
 
-        /// <summary>
-        /// Whether this machine is the one that says where this character goes.
-        ///
-        /// Authority, and nothing else. A copy of somebody else's character still has their weight,
-        /// still falls, still keeps whatever speed it was given, and can still be run over -- it
-        /// simply is not walked from here. Two machines walking one character fight each other, and
-        /// the one that does not own them loses.
-        ///
-        /// It has to keep its weight and its momentum because players run each other over on
-        /// purpose. A body with gravity switched off and its velocity zeroed has nothing for an
-        /// impact to modify, so a tractor driven into somebody passes through them on the driver's
-        /// screen while their own screen shows them standing untouched.
-        /// </summary>
         public bool OursToMove { get; set; } = true;
 
         void Awake()
@@ -230,19 +143,10 @@ namespace BelowTheWing.Crew
             }
         }
 
-        /// <summary>
-        /// Puts the body away while its owner drives.
-        ///
-        /// A character left standing where they got in is an obstacle: another player runs into an
-        /// invisible person, and the driver reverses into their own body. Riding along inside the
-        /// vehicle rather than beside it is what makes getting in look like getting in.
-        /// </summary>
         void ClimbIn(VehicleController vehicle)
         {
             m_Seated = vehicle;
 
-            // A driver's hands are on the wheel. A tether left running from a body parked inside
-            // the tractor would haul whatever it held after the tractor.
             Handling?.LetGoOfEverything();
 
             Body.linearVelocity = Vector3.zero;
@@ -259,15 +163,6 @@ namespace BelowTheWing.Crew
             transform.localRotation = Quaternion.identity;
         }
 
-        /// <summary>
-        /// Puts the body back on the apron, clear of the vehicle it came out of, moving as it was.
-        ///
-        /// The body, not the transform: a position written to the transform of a kinematic body
-        /// is not where the body is until the physics has caught up, and by then it has been made
-        /// dynamic where it sat -- inside the vehicle. And with the vehicle's speed, because a
-        /// person who steps out of a moving tractor is moving at its speed until their feet say
-        /// otherwise; stopping dead beside it is how they get run over by the cart behind.
-        /// </summary>
         void ClimbOut()
         {
             var left = m_Seated;
@@ -296,33 +191,18 @@ namespace BelowTheWing.Crew
             }
         }
 
-        /// <summary>Whether there is something underneath close enough to push off.</summary>
         public bool Grounded => StandingOn(out _);
 
-        /// <summary>Where the feet are, just above the bottom of the capsule.</summary>
         Vector3 Feet => transform.position - (Vector3.up * ((m_Profile.heightMetres * 0.5f) - 0.05f));
 
-        /// <summary>What is underfoot, if anything is close enough to push against.</summary>
         bool StandingOn(out Collider what) => Jumping.StandingOnSomething(Feet, 0.2f, m_StandsOn, out what);
 
-        /// <summary>
-        /// How fast the thing underfoot is moving where the feet touch it. The tarmac is not going
-        /// anywhere; a cart deck is.
-        /// </summary>
         static Vector3 MovingAt(Collider underfoot, Vector3 feet)
         {
             var body = underfoot.attachedRigidbody;
             return body != null ? body.GetPointVelocity(feet) : Vector3.zero;
         }
 
-        /// <summary>
-        /// Pushes off whatever is underneath.
-        ///
-        /// The body already carries whatever speed the thing under it gave it, because standing on
-        /// a moving deck is friction and nothing else. Somebody springing off a cart doing six
-        /// metres a second therefore lands well ahead of where they left, which is both correct and
-        /// the funnier outcome.
-        /// </summary>
         public void Jump()
         {
             const float NoDoubleJumpsWithin = 0.2f;
@@ -343,13 +223,6 @@ namespace BelowTheWing.Crew
 
         void LateUpdate()
         {
-            // Parenting a character into a vehicle is replicated; switching its collider off is not,
-            // and a copy of somebody else's character never runs ClimbIn because it is not simulated
-            // here. Left alone, every other machine has a live 80 kg capsule buried inside a
-            // tractor's bodywork, which the solver reads as deep interpenetration and shoves apart
-            // every step against a transform replication keeps snapping back.
-            //
-            // Riding in a vehicle is visible from the parenting, so every machine can act on it.
             var ridingSomewhere = transform.parent != null;
             if (m_Collider != null && m_Collider.enabled == ridingSomewhere)
             {
@@ -368,19 +241,12 @@ namespace BelowTheWing.Crew
 
             Seat?.Refresh();
 
-            // Before anything else moves this step, so that a bag torn out of a hand or a grip
-            // broken by a crash is known about before the next press is read.
             Handling?.Tick();
 
-            // Every step, and on every machine. How tall somebody is has to be right everywhere
-            // that can see them -- drawn standing while they are crouched inside a cart puts their
-            // head through its roof -- and standing up is something the world has to be able to
-            // refuse, which it can only do while they are still under whatever is over them.
             Stance.Settle();
 
             if (Hitching != null)
             {
-                // Only meaningful while driving, and the train being driven is what it acts on.
                 Hitching.Driving = Seat?.Driving != null ? Seat.Driving.Chain : null;
                 Hitching.Refresh();
             }
@@ -398,17 +264,11 @@ namespace BelowTheWing.Crew
                 }
             }
 
-            // Somebody in a seat is cargo. Their controls are going to the vehicle, and walking at
-            // the same time would drag the capsule out through the bodywork.
             if (m_Seated != null)
             {
                 return;
             }
 
-            // Walked only where this machine is in charge. The body keeps its weight and its
-            // momentum either way, so a copy of somebody else's character is still something that
-            // can be run over -- it is simply not being walked from here as well. Two machines
-            // walking one character fight, and the one that does not own them loses.
             if (!OursToMove)
             {
                 return;
@@ -416,9 +276,6 @@ namespace BelowTheWing.Crew
 
             var asked = IntentSource?.Current ?? CrewIntent.Idle;
 
-            // On foot the body faces where the camera looks, on the same step. The view is first
-            // person, so body and camera are one thing turned by one mouse; a body that lagged the
-            // view, or turned to face its travel instead, would have the view swim.
             if (Camera != null)
             {
                 transform.rotation = Quaternion.Euler(0f, Camera.YawDegrees, 0f);
@@ -431,9 +288,6 @@ namespace BelowTheWing.Crew
 
             Stance.Want(asked.Crouch);
 
-            // Walking is pushing against whatever is underfoot. Nothing there, nothing to push
-            // against: somebody in the air keeps the speed they left the ground with, and lands on
-            // whatever they land on with their feet under them.
             if (!StandingOn(out var underfoot))
             {
                 m_Footing.Reset();
@@ -457,9 +311,6 @@ namespace BelowTheWing.Crew
 
             if (m_Footing.Lost)
             {
-                // Skidding. There is nothing to push off, so nothing they ask for happens: friction
-                // alone drags them toward whatever they are sliding across, and they get their legs
-                // back when they are moving with it again.
                 Body.AddForce(
                     Vector3.ClampMagnitude(deckAcrossTheGround - acrossTheGround, grip),
                     ForceMode.VelocityChange);
@@ -470,9 +321,6 @@ namespace BelowTheWing.Crew
             var walking = CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile)
                           * Stance.SpeedMultiplier;
 
-            // Relative to what is underfoot. Standing still on a moving deck is moving with it, and
-            // walking forward on one is that and a bit more -- which is the whole of riding a cart,
-            // and needs nothing to attach the rider to it.
             var wanted = deckAcrossTheGround + walking;
             var gait = m_Profile.gaitResponseMetresPerSecondSquared * Time.fixedDeltaTime;
 

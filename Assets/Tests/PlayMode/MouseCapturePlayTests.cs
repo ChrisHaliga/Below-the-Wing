@@ -7,23 +7,8 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// The mouse pointer being taken from the desktop while somebody plays, and given back.
-    ///
-    /// Here rather than in the editor tests because all of it turns on a component's lifecycle --
-    /// coming into existence when a player arrives on the apron, and going away with them when a
-    /// session drops. An editor test run never starts either.
-    /// </summary>
     public sealed class MouseCapturePlayTests
     {
-        /// <summary>
-        /// A pointer that remembers what was done to it instead of doing it.
-        ///
-        /// The real pointer belongs to the operating system, and a test run with no window cannot
-        /// read back whether the cursor was hidden -- every assertion against it comes out as
-        /// "free and visible" whatever the code did, which is the same answer a component that did
-        /// nothing at all would give.
-        /// </summary>
         sealed class RecordingPointer : IMousePointer
         {
             public bool Held { get; private set; }
@@ -61,17 +46,10 @@ namespace BelowTheWing.Tests.PlayMode
             m_Apron.TearDown();
             Object.DestroyImmediate(m_CrewProfile);
 
-            // A test that ended with the pointer taken would take the next test's pointer with it.
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
 
-        /// <summary>
-        /// The local player turning up on the apron, which is the moment this component exists at all.
-        ///
-        /// Built inactive so the recording pointer is in place before the component wakes up and
-        /// takes one. Switching the object on afterwards is what starts it.
-        /// </summary>
         MouseCapture ArriveOnTheApron()
         {
             var go = new GameObject("Local player");
@@ -161,8 +139,6 @@ namespace BelowTheWing.Tests.PlayMode
             Assert.That(m_Pointer.TimesGivenBack, Is.Zero);
         }
 
-        // --- what the game does with the pointer's movement ---
-
         [Test]
         public void MovementReachesTheGameWhileThePointerIsHeld()
         {
@@ -197,21 +173,9 @@ namespace BelowTheWing.Tests.PlayMode
                 "the view carries on from where it was left rather than lurching by everything ignored");
         }
 
-        // --- what handing the pointer back does not do ---
-
         static float AcrossTheGround(Vector3 from, Vector3 to)
             => Vector3.Distance(new Vector3(from.x, 0f, from.z), new Vector3(to.x, 0f, to.z));
 
-        /// <summary>
-        /// Escape frees the pointer and does nothing else. It is not a pause, and a player who
-        /// pressed it to answer a message has to be able to drive away straight afterwards.
-        ///
-        /// Walking is asked for directly rather than by pressing a key, because a headless test run
-        /// has no player loop feeding devices through to a component's update. What that leaves
-        /// covered is the part this change could break -- a character freezing because the pointer
-        /// went away. That the keyboard itself still reaches the character is unchanged code, and
-        /// is not covered here by anything.
-        /// </summary>
         [UnityTest]
         public IEnumerator HandingThePointerBackDoesNotStopTheCharacterWalking()
         {
@@ -225,7 +189,6 @@ namespace BelowTheWing.Tests.PlayMode
             capture.React(escapePressed: true, clickPressed: false);
             Assert.That(capture.Held, Is.False, "the pointer has to actually be gone for this to mean anything");
 
-            // Let them land first, or the drop onto the apron counts as having gone somewhere.
             yield return Steps.Seconds(1f);
             var from = crew.transform.position;
 

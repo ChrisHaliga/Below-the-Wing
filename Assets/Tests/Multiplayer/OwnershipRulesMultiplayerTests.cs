@@ -10,30 +10,8 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.Multiplayer
 {
-    /// <summary>
-    /// Who may take a train, and when.
-    ///
-    /// Two rules, both of which were broken and neither of which could be seen with one client.
-    ///
-    /// A train changes hands only when somebody asks for all of it and is granted all of it. It was
-    /// marked distributable, which told the netcode layer it could hand vehicles out one at a time
-    /// whenever anybody joined or left -- splitting trains across machines behind the back of every
-    /// rule written to prevent exactly that.
-    ///
-    /// And a tractor somebody is driving is not available. Nothing refused anything: an ownership
-    /// request is approved unless something objects, so a second player could take a tractor out
-    /// from under the person driving it.
-    /// </summary>
     public sealed class OwnershipRulesMultiplayerTests : RampMultiplayerTest
     {
-        /// <summary>
-        /// The worst network this game is expected to work on.
-        ///
-        /// Both of the things below are races. A third player joining while ownership is being
-        /// worked out, and two players reaching for the same tractor at the same moment, are both
-        /// decided by which message arrives first -- so proving them where messages cannot arrive
-        /// late, out of order, or not at all proves nothing about either.
-        /// </summary>
         protected override NetworkCondition Conditions => NetworkConditions.Bad;
 
         GameObject m_TractorPrefab;
@@ -69,8 +47,6 @@ namespace BelowTheWing.Tests.Multiplayer
             {
                 var vehicle = SpawnObject(m_TractorPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
 
-                // Through the production call, not by repeating what it does. Written out here, this
-                // test would pass even with that line deleted from the builder.
                 ApronBuilder.OnlyByAsking(vehicle);
                 placed.Add(vehicle);
             }
@@ -108,7 +84,6 @@ namespace BelowTheWing.Tests.Multiplayer
             yield return WaitForConditionOrTimeOut(() => EveryMachineHasAll(new List<NetworkObject> { tractor }));
             AssertOnTimeout("the tractor never reached every machine");
 
-            // The first client takes it and gets in.
             tractor.ChangeOwnership(driver.LocalClientId);
             yield return WaitForConditionOrTimeOut(
                 () => driver.SpawnManager.SpawnedObjects[id].OwnerClientId == driver.LocalClientId);

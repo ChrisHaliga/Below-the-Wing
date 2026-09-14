@@ -8,14 +8,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Getting in and out of a vehicle, including being told no.
-    ///
-    /// The refusal is the case worth having tests for. Two players reaching for the same tractor
-    /// at the same instant is rare enough to be impossible to arrange on purpose and common enough
-    /// to happen to real players, and half-taking a vehicle you were refused would put a player in
-    /// a seat on their own screen and nowhere on anybody else's.
-    /// </summary>
     public sealed class VehicleOccupancyTests
     {
         const float Reach = 3f;
@@ -210,8 +202,6 @@ namespace BelowTheWing.Tests.EditMode
             seat.Toggle(new FixedIntent());
             Assert.That(broker.Requests.Count, Is.EqualTo(1), "precondition: one request is in flight");
 
-            // A request goes to whichever machine is recorded as owning the vehicle. If that machine
-            // has left the session, no answer is ever coming.
             m_Crew.position = new Vector3(0f, 0f, -60f);
             seat.Refresh();
 

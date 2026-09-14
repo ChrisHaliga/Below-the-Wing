@@ -8,13 +8,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// A train of carts being pulled about.
-    ///
-    /// This is the part of the game most likely to come apart, and none of it can be checked
-    /// without a solver running: whether the couplings hold, and whether the carts follow the
-    /// tractor the way things on wheels do rather than sliding along behind it in formation.
-    /// </summary>
     public sealed class CartTrainPlayTests
     {
         TestApron m_Apron;
@@ -78,8 +71,6 @@ namespace BelowTheWing.Tests.PlayMode
         {
             yield return Steps.Seconds(2f);
 
-            // At a towing throttle, where the tyres hold and the corner is tight enough to show the
-            // articulation this test is about. Flat out is covered separately.
             m_Train.Leader.IntentSource = new FixedIntent(steer: 1f, throttle: 0.4f);
             yield return Steps.Seconds(6f);
 
@@ -113,14 +104,6 @@ namespace BelowTheWing.Tests.PlayMode
             }
         }
 
-        /// <summary>
-        /// A train that has been driven and then let go of has to stop, and stay stopped.
-        ///
-        /// This is the thing a parked apron rests on. Everything that costs anything in this game
-        /// is per awake rigidbody, and a train that keeps creeping after its driver has let go
-        /// never sleeps -- so it goes on costing on every machine, for the rest of the session,
-        /// and the carts are never quite where anybody left them.
-        /// </summary>
         [UnityTest]
         public IEnumerator ATrainLetGoOfComesToRestAndStaysThere()
         {
@@ -131,7 +114,6 @@ namespace BelowTheWing.Tests.PlayMode
             Assert.That(train.Leader.Body.linearVelocity.magnitude, Is.GreaterThan(2f),
                 "it has to have been moving for letting go to mean anything");
 
-            // Let go. Nothing is driving it and nothing is correcting it.
             train.Leader.IntentSource = null;
             yield return Steps.Seconds(12f);
 
@@ -185,9 +167,6 @@ namespace BelowTheWing.Tests.PlayMode
             yield return Steps.Seconds(2f);
             var headingBefore = m_Train.Leader.transform.eulerAngles.y;
 
-            // More power than the tyres can turn into cornering: the tractor scrubs wide and the
-            // train runs straighter behind it than at a towing pace, but it has to keep turning and
-            // the couplings have to hold.
             m_Train.Leader.IntentSource = new FixedIntent(steer: 1f, throttle: 1f);
             yield return Steps.Seconds(6f);
 

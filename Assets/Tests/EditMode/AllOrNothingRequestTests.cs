@@ -4,13 +4,6 @@ using NUnit.Framework;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Asking for several things at once and keeping none of them unless all of them arrive.
-    ///
-    /// This is the rule that stops a cart train ending up simulated by two machines. It used to
-    /// live inside the networking layer, where it could only be exercised by two real clients
-    /// racing each other for the same tractor -- which is to say, never on purpose.
-    /// </summary>
     public sealed class AllOrNothingRequestTests
     {
         static IReadOnlyList<string> Wanted(params string[] items) => items;

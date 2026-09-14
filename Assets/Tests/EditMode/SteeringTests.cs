@@ -5,12 +5,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// How the steered wheels come round.
-    ///
-    /// A three-tonne tractor whose wheels snapped from centre to full lock in a single step would
-    /// turn in ways nothing on wheels can, so the rate limit is the behaviour under test here.
-    /// </summary>
     public sealed class SteeringTests
     {
         VehicleProfile m_Tractor;

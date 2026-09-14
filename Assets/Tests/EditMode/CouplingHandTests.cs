@@ -7,14 +7,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// A player hooking a cart on and dropping one off while driving.
-    ///
-    /// Both are ownership events before they are physical ones, and that is the part worth testing.
-    /// A train with a cart on the back that another machine is still simulating has a coupling with
-    /// one end on each side of an authority boundary -- half its solver working against a body it
-    /// cannot move -- which is precisely the failure this game was built to avoid.
-    /// </summary>
     public sealed class CouplingHandTests
     {
         TestApron m_Apron;
@@ -43,7 +35,6 @@ namespace BelowTheWing.Tests.EditMode
             UnityEngine.Object.DestroyImmediate(m_CartProfile);
         }
 
-        /// <summary>A broker that records what it was asked for and answers as told.</summary>
         sealed class Answering : IOwnershipBroker
         {
             public bool Granting { get; set; } = true;

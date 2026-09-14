@@ -8,17 +8,8 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// What you see, against where the physics actually is.
-    ///
-    /// Hard corrections are going to happen: a vehicle too far from where its owner says it is gets
-    /// moved outright, because easing it twenty metres across the apron is worse than arriving. The
-    /// jump is right and watching it is horrible, so the shape trails the body by about a tenth of a
-    /// second and turns the teleport into a fast slide.
-    /// </summary>
     public sealed class SmoothedLookPlayTests
     {
-        /// <summary>Something that says out loud which machine moves it.</summary>
         sealed class Mover : MonoBehaviour, IMovedFromHere
         {
             public bool OursToMove { get; set; } = true;
@@ -56,7 +47,6 @@ namespace BelowTheWing.Tests.PlayMode
             return vehicle;
         }
 
-        /// <summary>A body with a shape drawn on it, and whatever it says about who moves it.</summary>
         (Transform Body, SmoothedLook Shape) SomethingDrawn(bool sayItIsOurs, bool sayAnythingAtAll)
         {
             var body = m_Apron.Track(new GameObject("Body").transform);
@@ -106,8 +96,6 @@ namespace BelowTheWing.Tests.PlayMode
             var shape = ShapeOf(vehicle);
             shape.CatchUpNow();
 
-            // Snapped four metres, which is the kind of jump correction makes when it gives up
-            // blending.
             vehicle.transform.position += new Vector3(0f, 0f, 4f);
             shape.Follow(1f / 60f);
 
@@ -127,7 +115,6 @@ namespace BelowTheWing.Tests.PlayMode
 
             vehicle.transform.position += new Vector3(0f, 0f, 4f);
 
-            // A third of a second, at sixty frames a second.
             for (var i = 0; i < 20; i++)
             {
                 shape.Follow(1f / 60f);
@@ -184,7 +171,6 @@ namespace BelowTheWing.Tests.PlayMode
             var shape = ShapeOf(vehicle);
             shape.CatchUpNow();
 
-            // Right across the apron, not a correction: a respawn, or a reclaim after a stall.
             vehicle.transform.position += new Vector3(0f, 0f, 60f);
             shape.Follow(1f / 60f);
 
@@ -210,7 +196,6 @@ namespace BelowTheWing.Tests.PlayMode
             fastShape.CatchUpNow();
             fast.transform.position += new Vector3(0f, 0f, 4f);
 
-            // A tenth of a second of catching up, spent in three chunks or in twelve.
             for (var i = 0; i < 3; i++)
             {
                 slowShape.Follow(1f / 30f);
@@ -234,8 +219,6 @@ namespace BelowTheWing.Tests.PlayMode
             var vehicle = SomebodyElsesTractor();
             var shape = ShapeOf(vehicle);
 
-            // What an aircraft is: a capsule primitive, whose own axis runs up, turned a quarter
-            // turn so that it lies along the length of the fuselage.
             shape.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
             shape.RememberHowItWasPlaced();
             shape.CatchUpNow();
@@ -257,8 +240,6 @@ namespace BelowTheWing.Tests.PlayMode
             var vehicle = SomebodyElsesTractor();
             var shape = ShapeOf(vehicle);
 
-            // A vehicle's origin is on the ground between its wheels, so anything drawn for it sits
-            // above that origin rather than on it.
             var placedAt = new Vector3(0f, 0.8f, 0f);
             shape.transform.localPosition = placedAt;
             shape.RememberHowItWasPlaced();
@@ -281,8 +262,6 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var vehicle = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);
 
-            // A model, placed by whoever built the prefab, exactly where its measurements were
-            // taken from.
             var model = new GameObject(ApronAppearance.LookName);
             model.transform.SetParent(vehicle.transform, worldPositionStays: false);
 

@@ -8,19 +8,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// A train nobody is driving.
-    ///
-    /// It stands still because friction holds it, and for no other reason. Nothing freezes it, and
-    /// its suspension goes on carrying it every step whether anything is happening or not.
-    ///
-    /// That matters because of what a frozen vehicle does when something hits it. A body held up by
-    /// a force applied every step cannot be put to sleep and left to look after itself: the moment
-    /// it is asleep, whatever was holding it up stops, and the first thing to touch it drives it
-    /// into the ground before the springs come back. It reads as something heavy having landed on
-    /// the train, it only ever happens to a train that has been standing a while, and it is what
-    /// this fixture exists to keep out.
-    /// </summary>
     public sealed class ParkedTrainPlayTests
     {
         TestApron m_Apron;
@@ -50,7 +37,6 @@ namespace BelowTheWing.Tests.PlayMode
             m_TractorProfile, m_CartProfile, cartCount: 3, where, called,
             tractorShape: TestShapes.Tractor(), cartShape: TestShapes.Cart());
 
-        /// <summary>Drops a bag into a cart from above, hard, and reports how far the cart is driven under.</summary>
         IEnumerator StrikeAndMeasure(VehicleController cart, System.Action<float> report)
         {
             var shape = cart.GetComponent<VehicleShape>();
@@ -131,10 +117,6 @@ namespace BelowTheWing.Tests.PlayMode
             var deep = 0f;
             yield return StrikeAndMeasure(standingAges.Members[2], dip => deep = dip);
 
-            // The other one is driven and brought to a halt immediately before its knock, so that
-            // the only difference between the two is how long each has been standing. Struck while
-            // both had been parked for ages, this compares a train with itself and passes whatever
-            // the suspension is doing.
             justStopped.Leader.IntentSource = new FixedIntent(throttle: 1f);
             yield return Steps.Seconds(2f);
             justStopped.Leader.IntentSource = new FixedIntent(brake: 1f);

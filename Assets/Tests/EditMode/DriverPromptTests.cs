@@ -6,9 +6,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Which vehicle, if any, a player standing on the apron gets offered.
-    /// </summary>
     public sealed class DriverPromptTests
     {
         const float Reach = 3f;

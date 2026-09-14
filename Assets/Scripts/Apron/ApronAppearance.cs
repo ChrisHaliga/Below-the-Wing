@@ -2,89 +2,48 @@ using UnityEngine;
 
 namespace BelowTheWing.Apron
 {
-    /// <summary>
-    /// What a thing on the apron looks like while everything is still grey primitives.
-    ///
-    /// Carried as data on the prefab rather than worked out at runtime from whatever components an
-    /// object happens to have. Asking "what kind of thing is this?" and switching on the answer is
-    /// what produced a cart wearing a tractor's profile, and it needed the same question answered in
-    /// four separate places that all had to agree.
-    ///
-    /// The figures come from the same profile the physics uses, filled in when the prefab is built,
-    /// so a cart is drawn at the size of the cart it collides as.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class ApronAppearance : MonoBehaviour
     {
-        /// <summary>What this is drawn as.</summary>
         public enum Shape
         {
-            /// <summary>Anything on wheels.</summary>
             Box,
 
-            /// <summary>Anything with legs.</summary>
             UprightCapsule,
 
-            /// <summary>Anything longer than it is tall, such as a fuselage.</summary>
             LyingCapsule,
 
-            /// <summary>
-            /// Nothing: there is already a model on this object to look at.
-            ///
-            /// Everything else this component does still applies to a modelled thing. It is named,
-            /// it carries a floating label, and what you see of it trails its body so that a
-            /// correction reads as a fast slide rather than a teleport.
-            /// </summary>
             AlreadyModelled
         }
 
-        /// <summary>
-        /// What the thing you look at is called, whether it is a grey box or a real model.
-        ///
-        /// One name for both, so that everything hung off appearance -- the smoothing, the tests --
-        /// finds it without asking which kind of thing this is.
-        /// </summary>
         public const string LookName = "Look";
 
-        [SerializeField, Tooltip("Which stand-in shape to draw.")]
+        [SerializeField, Tooltip("Stand-in shape to draw")]
         Shape m_Shape = Shape.Box;
 
-        [SerializeField, Tooltip("Size in metres. For a capsule: x is the diameter, y the length.")]
+        [SerializeField, Tooltip("Size, m. Capsule: x diameter, y length")]
         Vector3 m_SizeMetres = Vector3.one;
 
-        [SerializeField, Tooltip("Colour of the stand-in shape.")]
+        [SerializeField, Tooltip("Colour of the stand-in shape")]
         Color m_Colour = Color.grey;
 
-        [SerializeField, Tooltip("How far above this object's origin its name floats, in metres.")]
+        [SerializeField, Tooltip("Height above the subject, m")]
         float m_LabelHeightMetres = 1.4f;
 
-        [SerializeField, Tooltip("Where on this object the thing you look at sits. A vehicle's " +
-                                 "origin is on the ground between its wheels, so its bodywork is " +
-                                 "entirely above that origin rather than centred on it.")]
+        [SerializeField, Tooltip("Where the shape sits on the body, m, local")]
         Vector3 m_DrawnAtLocal;
 
-        [SerializeField, Tooltip("The name written above it. Set when the object is placed.")]
+        [SerializeField, Tooltip("Name shown above it")]
         string m_DisplayName = "";
 
-        /// <summary>
-        /// Size of the stand-in shape in metres. Meaningless for something already modelled, which
-        /// draws no stand-in and answers for the room it takes up through its own shape.
-        /// </summary>
         public Vector3 SizeMetres => m_SizeMetres;
 
-        /// <summary>Which stand-in shape this is drawn as.</summary>
         public Shape DrawnAs => m_Shape;
 
-        /// <summary>Where on this object the thing you look at sits.</summary>
         public Vector3 DrawnAtLocal => m_DrawnAtLocal;
 
-        /// <summary>The name written above it.</summary>
         public string DisplayName => m_DisplayName;
 
-        /// <summary>
-        /// Names this object and dresses it. Called once, when the object is placed, on every
-        /// machine that receives it.
-        /// </summary>
         public void Show(string displayName)
         {
             m_DisplayName = displayName;
@@ -96,20 +55,12 @@ namespace BelowTheWing.Apron
                 Draw();
                 look = transform.Find(LookName);
 
-                // Only what was just drawn. A grey primitive is built at this object's origin and
-                // has to be lifted to where the bodywork is; a model was placed by whoever built the
-                // prefab and is already right, and every measurement taken off it was taken there.
-                // Moving one would put the cart you see a metre above the cart you drive into.
                 if (look != null)
                 {
                     look.localPosition += m_DrawnAtLocal;
                 }
             }
 
-            // What you see trails the body slightly, so that a vehicle moved outright rather than
-            // eased into place reads as a fast slide instead of ceasing to exist in one spot and
-            // starting in another. Colliders stay on the body, so nothing is ever hit where it is
-            // not drawn.
             if (look != null && look.GetComponent<SmoothedLook>() == null)
             {
                 look.gameObject.AddComponent<SmoothedLook>();
@@ -142,14 +93,6 @@ namespace BelowTheWing.Apron
             }
         }
 
-        /// <summary>
-        /// Fills this in for something that has a model of its own.
-        ///
-        /// Neither a colour nor a size, because nothing is drawn here for either to apply to: the
-        /// model is what a player sees, and how much room the thing takes up is its shape's to
-        /// answer. A size recorded here as well would be a second copy of a measurement, kept in
-        /// agreement with the first by nothing.
-        /// </summary>
         public void DescribeAsModelled(float labelHeightMetres)
         {
             m_Shape = Shape.AlreadyModelled;
@@ -157,10 +100,6 @@ namespace BelowTheWing.Apron
             m_DrawnAtLocal = Vector3.zero;
         }
 
-        /// <summary>
-        /// Fills this in from a profile's real dimensions. Used when a prefab is built, so that what
-        /// a thing looks like and what it collides as come from one source and cannot drift apart.
-        /// </summary>
         public void DescribeAs(
             Shape shape,
             Vector3 sizeMetres,

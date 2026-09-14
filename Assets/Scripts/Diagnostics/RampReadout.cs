@@ -8,19 +8,10 @@ using UnityEngine.InputSystem;
 
 namespace BelowTheWing.Diagnostics
 {
-    /// <summary>
-    /// An on-screen readout of what the simulation is doing, for a developer rather than a player.
-    ///
-    /// Two things it shows cannot be seen any other way. How long a physics step is taking says
-    /// whether the apron is quietly costing more than it should, which looks identical from outside
-    /// until it does not. And who owns each vehicle says whether taking over a train actually moved
-    /// all of it, which has no visible effect at all until a second player is there to be broken
-    /// by it.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class RampReadout : MonoBehaviour
     {
-        [SerializeField, Tooltip("Key that shows and hides the readout.")]
+        [SerializeField, Tooltip("Key that shows and hides the readout")]
         Key m_ToggleKey = Key.F3;
 
         readonly Stopwatch m_SinceStepBegan = new Stopwatch();
@@ -29,30 +20,12 @@ namespace BelowTheWing.Diagnostics
 
         IOwnershipBroker m_Broker;
 
-        /// <summary>Whether the readout is currently drawn.</summary>
         public bool Visible { get; set; } = true;
 
-        /// <summary>How long the last physics step took, in milliseconds.</summary>
         public float PhysicsStepMilliseconds { get; private set; }
 
-        /// <summary>
-        /// How many pairs of things are touching right now.
-        ///
-        /// The number that explains a physics step time nothing else accounts for. Contacts are
-        /// what the solver actually spends its time on, and a train folded against an aircraft, or
-        /// a pile-up nobody is looking at, costs the same on every machine whether or not anybody
-        /// can see it.
-        /// </summary>
         public int ContactCount { get; private set; }
 
-        /// <summary>
-        /// One line per train saying which machine is simulating it, and whether every member of
-        /// that train agrees.
-        ///
-        /// Built fresh on every read rather than cached, because the interesting moment is the one
-        /// where ownership changes, and a snapshot taken when the readout was wired up would show
-        /// the state it was in before the thing worth seeing happened.
-        /// </summary>
         public IReadOnlyList<string> OwnershipLines
         {
             get
@@ -68,7 +41,6 @@ namespace BelowTheWing.Diagnostics
             }
         }
 
-        /// <summary>Tells the readout what to watch.</summary>
         public void Observe(IReadOnlyList<CartChain> trains, IOwnershipBroker broker)
         {
             m_Broker = broker;
@@ -82,7 +54,6 @@ namespace BelowTheWing.Diagnostics
             {
                 foreach (var member in train.Members)
                 {
-
                     var tally = member.GetComponent<ContactTally>();
                     if (tally != null)
                     {
@@ -92,13 +63,6 @@ namespace BelowTheWing.Diagnostics
             }
         }
 
-        /// <summary>
-        /// How far the worst-placed member of a train is from where its owner says it should be, in
-        /// metres. Zero for a train this machine owns.
-        ///
-        /// The worst rather than the average, because a train comes apart one vehicle at a time and
-        /// an average over five hides the one that has gone.
-        /// </summary>
         public static float WorstDrift(CartChain train)
         {
             var worst = 0f;
@@ -120,10 +84,6 @@ namespace BelowTheWing.Diagnostics
             var owners = train.Members.Select(member => m_Broker.OwnerOf(member)).Distinct().ToList();
             var mine = train.Leader.OursToMove ? "ours" : "theirs";
 
-            // Whether this machine is in charge, and how far its copy has drifted, are the two facts
-            // that say whether a disagreement between two screens is a tuning problem or an
-            // architectural one. Neither can be seen by looking at the apron: both screens look
-            // perfectly reasonable on their own.
             var drift = train.Leader.OursToMove ? "" : $"  off by {WorstDrift(train):F2} m";
 
             if (owners.Count == 1)
@@ -131,9 +91,6 @@ namespace BelowTheWing.Diagnostics
                 return $"{train.Leader.DisplayName} (+{train.Members.Count - 1}): {mine}, owner {owners[0]}{drift}";
             }
 
-            // The failure this readout exists to catch. A train whose members are being simulated by
-            // different machines has couplings with one end on each, and the solver on both sides is
-            // working against a body it cannot move.
             return $"{train.Leader.DisplayName} (+{train.Members.Count - 1}): SPLIT across owners "
                    + string.Join(", ", owners) + drift;
         }
@@ -158,15 +115,11 @@ namespace BelowTheWing.Diagnostics
                 }
             }
 
-            // Every contact is counted at both ends, so halving it gives pairs of things touching,
-            // which is what the solver actually has work to do about.
             return touching / 2;
         }
 
         IEnumerator TimePhysicsSteps()
         {
-            // A coroutine yielding on WaitForFixedUpdate resumes after the physics step has run,
-            // which makes the gap since FixedUpdate began the time that step actually took.
             var afterPhysics = new WaitForFixedUpdate();
 
             while (true)

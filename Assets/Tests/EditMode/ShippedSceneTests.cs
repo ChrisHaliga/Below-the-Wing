@@ -13,19 +13,6 @@ using UnityEngine.SceneManagement;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// The scene and prefabs the game actually ships with.
-    ///
-    /// Every serious defect found in this project so far has been here rather than in any of the
-    /// logic: a value read before the network had delivered it, an appearance built from a name that
-    /// had stopped being replicated, and a prefab list assigned to a field that is not serialized and
-    /// so was silently empty in the saved scene. Each one broke the game completely for anybody who
-    /// joined, and none of them could be seen by a test, because every other test in this project
-    /// builds its objects in code and never opens the scene or loads a shipped prefab.
-    ///
-    /// These do the opposite. They assert nothing about behaviour and everything about whether the
-    /// assets say what the code assumes they say.
-    /// </summary>
     public sealed class ShippedSceneTests
     {
         const string ScenePath = "Assets/Scenes/Apron.unity";

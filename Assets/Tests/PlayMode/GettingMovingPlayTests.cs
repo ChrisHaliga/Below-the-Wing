@@ -8,18 +8,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// How quickly somebody gets going, and how quickly they stop.
-    ///
-    /// A person's legs really can only push about as hard as their feet grip, which is around
-    /// 8 m/s^2 and half a second of shuffling before they are up to walking pace. That is honest and
-    /// it feels like wading, because a player is not a person: they are somebody holding a key, and
-    /// the delay between pressing it and moving is the whole of what the controls feel like.
-    ///
-    /// So how fast a player's own walking answers is a feel dial, kept apart from how hard their
-    /// feet can hold what they are standing on, which is a real figure and is what decides whether
-    /// a corner throws them.
-    /// </summary>
     public sealed class GettingMovingPlayTests
     {
         TestApron m_Apron;
@@ -85,7 +73,6 @@ namespace BelowTheWing.Tests.PlayMode
             var cart = train.Members[1];
             var shape = cart.GetComponent<VehicleShape>();
 
-            // Standing on the deck, inside the cart.
             var deck = cart.transform.TransformPoint(new Vector3(0f, shape.InteriorLocal.min.y + 0.95f, 0f));
             m_Crew.transform.position = deck;
             m_Crew.Body.position = deck;

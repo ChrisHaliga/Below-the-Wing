@@ -10,13 +10,6 @@ using UnityEngine.TestTools;
 
 namespace BelowTheWing.Tests.PlayMode
 {
-    /// <summary>
-    /// Being able to tell what you are looking at, and what physics is doing.
-    ///
-    /// Everything on the apron is a grey primitive, so the labels are the only thing separating a
-    /// cart from a tractor. The readout covers the opposite problem: things that are true but have
-    /// no appearance at all, like whether a train has actually settled or is quietly jittering.
-    /// </summary>
     public sealed class ApronLegibilityPlayTests
     {
         TestApron m_Apron;
@@ -32,8 +25,6 @@ namespace BelowTheWing.Tests.PlayMode
             m_CartProfile = TestProfiles.Cart();
             m_Camera = m_Apron.Track(new GameObject("Camera").AddComponent<Camera>());
 
-            // Labels turn to face the main camera, which is how the game identifies the one a
-            // player is looking through.
             m_Camera.tag = "MainCamera";
         }
 

@@ -9,14 +9,6 @@ using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
-    /// <summary>
-    /// Where everything stands before any of it is built.
-    ///
-    /// Two things are being checked: that the apron holds what it is supposed to hold, and that no
-    /// two things have been put in the same place. The second matters more than it sounds. Two
-    /// rigidbodies that begin a session overlapping do not settle into position, they fire apart,
-    /// and the resulting mess looks like a physics bug rather than an arithmetic one.
-    /// </summary>
     public sealed class ApronLayoutTests
     {
         VehicleFootprint m_Tractor;
