@@ -197,12 +197,84 @@ namespace BelowTheWing.Crew
 
         Vector3 Feet => transform.position - (Vector3.up * ((m_Profile.heightMetres * 0.5f) - 0.05f));
 
-        bool StandingOn(out Collider what) => Jumping.StandingOnSomething(Feet, 0.2f, m_StandsOn, out what);
+        bool m_PushedOff;
+
+        bool StandingOn(out Collider what)
+        {
+            if (m_PushedOff)
+            {
+                what = null;
+                return false;
+            }
+
+            return Jumping.StandingOnSomething(Feet, 0.2f, m_StandsOn, out what);
+        }
+
+        void NoticeTheyHaveLanded()
+        {
+            if (!m_PushedOff || Body.linearVelocity.y > 0f)
+            {
+                return;
+            }
+
+            m_PushedOff = !Jumping.StandingOnSomething(Feet, 0.2f, m_StandsOn, out _);
+        }
 
         static Vector3 MovingAt(Collider underfoot, Vector3 feet)
         {
             var body = underfoot.attachedRigidbody;
             return body != null ? body.GetPointVelocity(feet) : Vector3.zero;
+        }
+
+        readonly Collider[] m_ZonesInReach = new Collider[8];
+
+        void LookForSomethingToClimb()
+        {
+            if (m_Seated != null || m_Collider == null)
+            {
+                Climb.NothingInReach();
+                return;
+            }
+
+            var found = Physics.OverlapCapsuleNonAlloc(
+                transform.position + (Vector3.up * (m_Collider.height * 0.5f)),
+                transform.position - (Vector3.up * (m_Collider.height * 0.5f)),
+                m_Profile.radiusMetres,
+                m_ZonesInReach,
+                ~0,
+                QueryTriggerInteraction.Collide);
+
+            Climb.NothingInReach();
+
+            for (var i = 0; i < found; i++)
+            {
+                if (m_ZonesInReach[i].TryGetComponent<ClimbZone>(out var zone))
+                {
+                    Climb.Consider(
+                        zone, Feet, m_Profile.climbReachMetres, m_Profile.crouchedHeightMetres);
+                }
+            }
+        }
+
+        void HaulThemselvesIn()
+        {
+            m_LastJumpedAt = Time.time;
+            m_PushedOff = true;
+            Body.linearVelocity = Climb.TakeHold(
+                Feet, m_Profile.crouchedHeightMetres, Mathf.Abs(Physics.gravity.y));
+            m_Footing.Reset();
+        }
+
+        void KeepHauling()
+        {
+            var pull = Climb.Haul(
+                Feet, Body.linearVelocity, m_Profile.radiusMetres, Time.fixedDeltaTime,
+                Mathf.Abs(Physics.gravity.y));
+
+            if (pull != Vector3.zero)
+            {
+                Body.AddForce(pull, ForceMode.VelocityChange);
+            }
         }
 
         public void Jump()
@@ -215,6 +287,7 @@ namespace BelowTheWing.Crew
             }
 
             m_LastJumpedAt = Time.time;
+            m_PushedOff = true;
 
             var up = Jumping.TakeOffSpeed(m_Profile.jumpHeightMetres, Mathf.Abs(Physics.gravity.y));
             var velocity = Body.linearVelocity;
@@ -283,12 +356,25 @@ namespace BelowTheWing.Crew
                 transform.rotation = Quaternion.Euler(0f, Camera.YawDegrees, 0f);
             }
 
+            NoticeTheyHaveLanded();
+
+            KeepHauling();
+
+            LookForSomethingToClimb();
+
             if (asked.Jump)
             {
-                Jump();
+                if (Climb.Offered != null)
+                {
+                    HaulThemselvesIn();
+                }
+                else
+                {
+                    Jump();
+                }
             }
 
-            Stance.Want(asked.Crouch);
+            Stance.Want(asked.Crouch || Climb.Hauling != null);
 
             if (!StandingOn(out var underfoot))
             {

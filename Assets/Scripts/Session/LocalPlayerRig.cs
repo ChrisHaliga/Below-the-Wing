@@ -51,7 +51,8 @@ namespace BelowTheWing.Session
 
             m_Character.gameObject.AddComponent<MouseCapture>();
             m_Character.gameObject.AddComponent<LocalCrewInput>();
-            m_Character.gameObject.AddComponent<OccupancyPromptView>().Watch(m_Character.Seat);
+            m_Character.gameObject.AddComponent<CrewPromptView>()
+                .Watch(m_Character.Climb, m_Character.Seat);
 
             if (camera != null)
             {

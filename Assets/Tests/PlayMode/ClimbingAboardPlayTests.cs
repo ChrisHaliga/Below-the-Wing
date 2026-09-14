@@ -110,6 +110,11 @@ namespace BelowTheWing.Tests.PlayMode
             StandThePersonAt(BesideTheLeftLip());
             yield return Steps.Seconds(0.5f);
 
+            Assert.That(m_Crew.Climb.Offered, Is.Not.Null,
+                $"nothing was on offer to climb when the press came. {Where()}");
+            Assert.That(m_Crew.Grounded, Is.True,
+                $"and they have to be standing on something to push off it. {Where()}");
+
             m_Keys.Jump = true;
             yield return new WaitForFixedUpdate();
             m_Keys.Jump = false;
@@ -118,6 +123,32 @@ namespace BelowTheWing.Tests.PlayMode
 
             Assert.That(StandingOnTheDeck(), Is.True,
                 $"pressing beside the cart has to end with them standing in it. {Where()}");
+        }
+
+        [UnityTest]
+        public IEnumerator APushOffIsNotWalkedBackOffThemWhileTheGroundIsStillInReach()
+        {
+            StandThePersonAt(BesideTheLeftLip());
+            yield return Steps.Seconds(0.5f);
+
+            m_Keys.Jump = true;
+            yield return new WaitForFixedUpdate();
+            m_Keys.Jump = false;
+
+            var leftTheGroundAt = m_Crew.Body.linearVelocity;
+
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate();
+
+            var stillGoing = m_Crew.Body.linearVelocity;
+
+            Assert.That(leftTheGroundAt.y, Is.GreaterThan(1f),
+                $"they pushed off at {leftTheGroundAt} and have to be going up");
+            Assert.That(stillGoing.y, Is.GreaterThan(leftTheGroundAt.y * 0.75f),
+                $"two steps later they are going up at {stillGoing.y:F2} m/s, from {leftTheGroundAt.y:F2}. " +
+                "The ground is still within reach of their feet for the first few steps of any leap, " +
+                "so a person on their way up who still counts as standing has their legs walk the " +
+                "push-off straight back off them. What a player sees is a climb that goes nowhere");
         }
 
         [UnityTest]

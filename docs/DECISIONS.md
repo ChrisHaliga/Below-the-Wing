@@ -203,6 +203,38 @@ off the model by hand instead.
 That makes them the one thing a re-export can silently invalidate. Re-modelling the cart means
 re-measuring them, and nothing in the build will say so.
 
+## 2026-09-14 — Getting into a cart is a climb, and the roof is what makes it one
+
+A baggage cart is a box with a roof on it. The way in is the gap between the lip a person steps over
+and that roof, and on this cart that gap is shorter than a person is tall. Standing up, there is no
+trajectory into a cart at all: every attempt drives their head into the underside of the roof, which
+throws them back out and shoves the cart sideways. That is what made carts feel impossible to get
+into, and it is not something a taller step or a shorter person would have fixed.
+
+A climb is therefore two movements and a duck. They push off straight up -- hard enough to clear the
+lip, or low enough that a ducked head stays under the roof, whichever is lower -- and then, at the
+top of the lift when they are no longer rising, they are pulled inward fast enough to be past the
+lip before they fall back level with it. Both are changes to their own velocity, so the whole thing
+can fail: a cart can be driven out from under them, something can knock them off the arc, and the
+pull gives up if it has not come by the time it would be pointless.
+
+Rejected: raising how high a person can step, which is a climb wearing a disguise -- a capsule has
+no step height, so it would mean lifting the body over obstacles, which is teleporting, and a step
+tall enough for a cart lip would let people stroll up onto couplings and bodywork everywhere else.
+Rejected: making the person shorter, which changes every vertical relationship already settled
+against them -- reach, eye height, what they fit under -- to fix something their height was not
+causing.
+
+## 2026-09-14 — A person on their way up is not standing on anything
+
+The ground stays within reach of a person's feet for the first few steps of any leap, and while
+they counted as standing, their legs kept working: a jump aimed in some direction had that direction
+walked back off it before they had risen a hand's breadth. Jumping looked like it worked because a
+jump is mostly vertical and nobody missed the part that was being cancelled.
+
+What counts now is whether they pushed off deliberately, which lasts until they land. Deciding it
+from how fast they are rising instead would take walking up a ramp for a leap.
+
 ## 2026-09-14 — Sources carry no comments
 
 Decided by the repo owner. Facts that must hold are assertions or tests; decisions worth keeping are

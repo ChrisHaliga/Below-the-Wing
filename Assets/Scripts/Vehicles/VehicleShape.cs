@@ -112,7 +112,83 @@ namespace BelowTheWing.Vehicles
 
         public IReadOnlyList<SolidPart> SolidParts => m_SolidParts;
 
-        public IReadOnlyList<LoadSpaceEdge> LoadSpaceEdges => Array.Empty<LoadSpaceEdge>();
+        const float LookingEitherSideOfTheFaceMetres = 0.25f;
+
+        const float ShortOfTheCorners = 0.9f;
+
+        const float StandsOnTheFloorWithin = 0.05f;
+
+        LoadSpaceEdge[] m_LoadSpaceEdges;
+        Bounds m_EdgesMeasuredFrom;
+
+        public IReadOnlyList<LoadSpaceEdge> LoadSpaceEdges
+        {
+            get
+            {
+                if (m_LoadSpaceEdges != null && m_EdgesMeasuredFrom == m_InteriorLocal)
+                {
+                    return m_LoadSpaceEdges;
+                }
+
+                m_EdgesMeasuredFrom = m_InteriorLocal;
+                m_LoadSpaceEdges = EdgesOf(m_InteriorLocal);
+
+                return m_LoadSpaceEdges;
+            }
+        }
+
+        LoadSpaceEdge[] EdgesOf(Bounds loadSpace)
+        {
+            if (loadSpace.size.x <= 0f || loadSpace.size.y <= 0f || loadSpace.size.z <= 0f)
+            {
+                return Array.Empty<LoadSpaceEdge>();
+            }
+
+            var floor = loadSpace.min.y;
+
+            return new[]
+            {
+                EdgeFacing(loadSpace, Vector3.left, loadSpace.min.x, loadSpace.size.z, floor),
+                EdgeFacing(loadSpace, Vector3.right, loadSpace.max.x, loadSpace.size.z, floor),
+                EdgeFacing(loadSpace, Vector3.back, loadSpace.min.z, loadSpace.size.x, floor),
+                EdgeFacing(loadSpace, Vector3.forward, loadSpace.max.z, loadSpace.size.x, floor)
+            };
+        }
+
+        LoadSpaceEdge EdgeFacing(Bounds loadSpace, Vector3 outward, float face, float length, float floor)
+        {
+            var acrossX = Mathf.Abs(outward.x) > 0.5f;
+
+            var middle = new Vector3(
+                acrossX ? face : loadSpace.center.x,
+                floor,
+                acrossX ? loadSpace.center.z : face);
+
+            var clearOfTheCorners = length * ShortOfTheCorners;
+
+            var straddling = new Bounds(
+                new Vector3(middle.x, loadSpace.center.y, middle.z),
+                new Vector3(
+                    acrossX ? LookingEitherSideOfTheFaceMetres * 2f : clearOfTheCorners,
+                    loadSpace.size.y,
+                    acrossX ? clearOfTheCorners : LookingEitherSideOfTheFaceMetres * 2f));
+
+            var top = floor;
+
+            foreach (var part in m_SolidParts)
+            {
+                var box = new Bounds(part.CentreLocal, part.SizeMetres);
+
+                if (box.min.y > floor + StandsOnTheFloorWithin || !box.Intersects(straddling))
+                {
+                    continue;
+                }
+
+                top = Mathf.Max(top, box.max.y);
+            }
+
+            return new LoadSpaceEdge(middle, outward, top, floor, length, loadSpace.max.y);
+        }
 
         public float WheelbaseMetres => SpanAlong(axis => axis.z);
 
