@@ -56,6 +56,8 @@ namespace BelowTheWing.Crew
 
         public Crouching Stance { get; private set; }
 
+        public Climbing Climb { get; } = new Climbing();
+
         public float HeightMetres => m_Collider != null ? m_Collider.height : 0f;
 
         public float EyeMetresAboveOrigin

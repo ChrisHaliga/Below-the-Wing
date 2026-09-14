@@ -112,6 +112,8 @@ namespace BelowTheWing.Vehicles
 
         public IReadOnlyList<SolidPart> SolidParts => m_SolidParts;
 
+        public IReadOnlyList<LoadSpaceEdge> LoadSpaceEdges => Array.Empty<LoadSpaceEdge>();
+
         public float WheelbaseMetres => SpanAlong(axis => axis.z);
 
         public float TrackMetres => SpanAlong(axis => axis.x);
