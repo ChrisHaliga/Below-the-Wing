@@ -113,12 +113,31 @@ namespace BelowTheWing.EditorTools
                     EnvelopeSizeMetres = bodywork.size,
                     EnvelopeCentreLocal = bodywork.center,
                     InteriorLocal = new Bounds(Vector3.zero, Vector3.zero),
-                    SolidParts = new List<VehicleShape.SolidPart>
+                    SolidParts = SolidPieces(tractor, model, new[]
                     {
-                        new VehicleShape.SolidPart("Body", bodywork.size, bodywork.center)
-                    }
+                        "Body",
+                        "Frame",
+                        "Frame_Supports",
+                        "Tire_Cover",
+                        "Cushion_Seat",
+                        "Cushion_Backrest",
+                        "Dashboard"
+                    })
                 },
                 measured.Visible);
+        }
+
+        static List<VehicleShape.SolidPart> SolidPieces(
+            GameObject vehicle, Transform model, IReadOnlyList<string> paths)
+        {
+            var parts = new List<VehicleShape.SolidPart>(paths.Count);
+
+            foreach (var path in paths)
+            {
+                parts.Add(SolidAsModelled(vehicle, model, path));
+            }
+
+            return parts;
         }
 
         static MeasuredVehicle MeasureTheCart(GameObject cart, Transform model)
@@ -256,6 +275,26 @@ namespace BelowTheWing.EditorTools
 
         static Bounds MeshBoxLocal(GameObject vehicle, Transform model, string path)
             => MeshBoxLocal(vehicle, PartOfTheModel(vehicle, model, path));
+
+        static VehicleShape.SolidPart SolidAsModelled(GameObject vehicle, Transform model, string path)
+        {
+            var part = PartOfTheModel(vehicle, model, path);
+            var mesh = part.GetComponent<MeshFilter>().sharedMesh;
+
+            if (mesh == null)
+            {
+                throw Unmeasurable(vehicle, $"'{path}' in its model has no mesh to be solid in");
+            }
+
+            var onTheVehicle = vehicle.transform.worldToLocalMatrix * part.localToWorldMatrix;
+
+            return new VehicleShape.SolidPart(
+                part.name,
+                mesh,
+                onTheVehicle.GetPosition(),
+                onTheVehicle.rotation,
+                onTheVehicle.lossyScale);
+        }
 
         static Bounds MeshBoxLocal(GameObject vehicle, Transform part)
         {

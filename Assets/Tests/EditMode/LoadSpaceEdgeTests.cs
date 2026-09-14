@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BelowTheWing.Tests.Support;
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
@@ -99,6 +100,46 @@ namespace BelowTheWing.Tests.EditMode
                     "still has to fall, and a climb aimed at the wrong height either drops them " +
                     "through the deck or leaves them standing on air");
             }
+        }
+
+        [Test]
+        public void AnEdgeWalledInByAPieceOfAModelIsAsHighAsThatPiece()
+        {
+            var measurements = TestShapes.Cart();
+
+            var wall = new Mesh
+            {
+                vertices = new[]
+                {
+                    new Vector3(-0.5f, 0f, -1f), new Vector3(0.5f, 0f, -1f),
+                    new Vector3(-0.5f, 1f, -1f), new Vector3(0.5f, 1f, -1f),
+                    new Vector3(-0.5f, 0f, 1f), new Vector3(0.5f, 0f, 1f),
+                    new Vector3(-0.5f, 1f, 1f), new Vector3(0.5f, 1f, 1f)
+                }
+            };
+            wall.RecalculateBounds();
+
+            var parts = new List<VehicleShape.SolidPart>(measurements.SolidParts)
+            {
+                new VehicleShape.SolidPart(
+                    "Side as modelled",
+                    wall,
+                    new Vector3(-0.86f, DeckTopMetres, 0f),
+                    Quaternion.identity,
+                    Vector3.one)
+            };
+
+            measurements.SolidParts = parts;
+            var shape = Shaped(measurements);
+
+            var edge = Facing(shape, Vector3.left);
+
+            Assert.That(edge.TopMetres, Is.EqualTo(DeckTopMetres + 1f).Within(0.01f),
+                "a side walled in by a piece of a model stands as high as that piece. Measured as " +
+                "though a modelled part had no size, the edge reports the lip beside it instead and " +
+                $"a person is invited to climb a wall they cannot clear. It came back {edge.TopMetres:F2}");
+
+            Object.DestroyImmediate(wall);
         }
 
         [Test]

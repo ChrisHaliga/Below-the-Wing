@@ -260,6 +260,24 @@ came back with the aircraft and crew profiles unassigned while every prefab refe
 which the shipped-scene checks caught, and which is the whole argument against regenerating an
 asset to change one field in it.
 
+## 2026-09-14 — A machine is solid in the pieces it was modelled from
+
+A tractor used to collide as one box drawn round its whole bodywork: solid from just above the
+tarmac to above head height, the full length of the machine. There was nothing on it to stand on,
+no gap between the axles to walk through, and the open sides of it were a wall. The box was not a
+simplification of the shape, it was the absence of one.
+
+What a vehicle is solid in is now a list of parts where a part is either a box or a named piece of
+its model taken at its own shape, and a tractor names the pieces that make it solid -- its shell,
+frame, supports, the platform over its back wheels, the seat and its back, the dashboard. The
+platform is how somebody gets on, and it is a surface now rather than the lid of a block. Re-model
+any of it and the collision follows without anybody editing code.
+
+A cart stays boxes. Its deck, lips, ends and roof are slabs, and more to the point they are the
+description of a load space rather than a drawing of one: the space a cart keeps clear for cargo is
+the one thing about it that has to be stated rather than inferred from whatever the bodywork mesh
+happens to be.
+
 ## 2026-09-14 — Sources carry no comments
 
 Decided by the repo owner. Facts that must hold are assertions or tests; decisions worth keeping are

@@ -120,21 +120,39 @@ MonoBehaviour:
   - Name: Deck
     SizeMetres: {x: 1.7211, y: 0.15, z: 3.1538}
     CentreLocal: {x: 0, y: 0.3977, z: 0}
+    Piece: {fileID: 0}
+    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
+    PieceScale: {x: 1, y: 1, z: 1}
   - Name: Lip left
     SizeMetres: {x: 0.05, y: 0.18, z: 3.1538}
     CentreLocal: {x: -0.83555, y: 0.56270003, z: 0}
+    Piece: {fileID: 0}
+    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
+    PieceScale: {x: 1, y: 1, z: 1}
   - Name: Lip right
     SizeMetres: {x: 0.05, y: 0.18, z: 3.1538}
     CentreLocal: {x: 0.83555, y: 0.56270003, z: 0}
+    Piece: {fileID: 0}
+    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
+    PieceScale: {x: 1, y: 1, z: 1}
   - Name: End front
     SizeMetres: {x: 1.7211, y: 1.626, z: 0.15}
     CentreLocal: {x: 0, y: 1.2857001, z: 1.6519}
+    Piece: {fileID: 0}
+    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
+    PieceScale: {x: 1, y: 1, z: 1}
   - Name: End rear
     SizeMetres: {x: 1.7211, y: 1.626, z: 0.15}
     CentreLocal: {x: 0, y: 1.2857001, z: -1.6519}
+    Piece: {fileID: 0}
+    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
+    PieceScale: {x: 1, y: 1, z: 1}
   - Name: Roof
     SizeMetres: {x: 1.7211, y: 0.15, z: 3.1538}
     CentreLocal: {x: 0, y: 2.1737, z: 0}
+    Piece: {fileID: 0}
+    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
+    PieceScale: {x: 1, y: 1, z: 1}
 --- !u!114 &5418079734087993141
 MonoBehaviour:
   m_ObjectHideFlags: 0

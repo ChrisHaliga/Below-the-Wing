@@ -19,12 +19,37 @@ namespace BelowTheWing.Vehicles
             [Tooltip("Centre in the vehicle's own space, m")]
             public Vector3 CentreLocal;
 
+            [Tooltip("Piece of the model this is solid in. Empty for a box")]
+            public Mesh Piece;
+
+            [Tooltip("How that piece is turned on the vehicle")]
+            public Quaternion PieceTurn;
+
+            [Tooltip("How that piece is scaled on the vehicle")]
+            public Vector3 PieceScale;
+
             public SolidPart(string name, Vector3 sizeMetres, Vector3 centreLocal)
             {
                 Name = name;
                 SizeMetres = sizeMetres;
                 CentreLocal = centreLocal;
+                Piece = null;
+                PieceTurn = Quaternion.identity;
+                PieceScale = Vector3.one;
             }
+
+            public SolidPart(
+                string name, Mesh piece, Vector3 centreLocal, Quaternion pieceTurn, Vector3 pieceScale)
+            {
+                Name = name;
+                SizeMetres = Vector3.zero;
+                CentreLocal = centreLocal;
+                Piece = piece;
+                PieceTurn = pieceTurn;
+                PieceScale = pieceScale;
+            }
+
+            public bool IsAPieceOfTheModel => Piece != null;
         }
 
         [Serializable]
@@ -177,7 +202,7 @@ namespace BelowTheWing.Vehicles
 
             foreach (var part in m_SolidParts)
             {
-                var box = new Bounds(part.CentreLocal, part.SizeMetres);
+                var box = TheRoomAPartTakesUp(part);
 
                 if (box.min.y > floor + StandsOnTheFloorWithin || !box.Intersects(straddling))
                 {
@@ -213,6 +238,32 @@ namespace BelowTheWing.Vehicles
             m_SolidParts = measurements.SolidParts != null
                 ? new List<SolidPart>(measurements.SolidParts).ToArray()
                 : Array.Empty<SolidPart>();
+        }
+
+        public static Bounds TheRoomAPartTakesUp(SolidPart part)
+        {
+            if (!part.IsAPieceOfTheModel)
+            {
+                return new Bounds(part.CentreLocal, part.SizeMetres);
+            }
+
+            var piece = part.Piece.bounds;
+            var room = new Bounds(part.CentreLocal, Vector3.zero);
+
+            for (var corner = 0; corner < 8; corner++)
+            {
+                var at = piece.center + Vector3.Scale(
+                    piece.extents,
+                    new Vector3(
+                        (corner & 1) == 0 ? -1f : 1f,
+                        (corner & 2) == 0 ? -1f : 1f,
+                        (corner & 4) == 0 ? -1f : 1f));
+
+                room.Encapsulate(
+                    part.CentreLocal + (part.PieceTurn * Vector3.Scale(at, part.PieceScale)));
+            }
+
+            return room;
         }
 
         float SpanAlong(Func<Vector3, float> pick)
