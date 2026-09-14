@@ -278,6 +278,29 @@ description of a load space rather than a drawing of one: the space a cart keeps
 the one thing about it that has to be stated rather than inferred from whatever the bodywork mesh
 happens to be.
 
+## 2026-09-14 — The front wheels go as far as the tyres still bite, and no further
+
+A tyre makes its sideways force out of sliding a little. Slide it much further and the force falls
+away again, which is the falling half of the grip curve that lets a vehicle break traction at all.
+At full lock and speed the front tyres were being dragged sideways four times harder than the slip
+they grip hardest at, so they were pushing with less than half of what they had -- and every extra
+degree of lock bought less turn than the one before it. Wound fully over, a tractor at speed took a
+hundred and thirteen metres to come round, with its wheels pointing somewhere it was not going.
+
+The wheels now go as far as they are asked or as far as they can go while the tyres still bite,
+whichever is less. That limit is worked out from where the vehicle's own grip curve peaks, so a
+retyred vehicle gets a different one without anybody choosing a number. Measured on the same tractor
+at the same speed with the same input, the lock settles at nine degrees instead of forty-five and it
+comes round three times faster; the straight-line speed is unchanged.
+
+Nothing about this adds grip. It stops the steering from throwing away the grip already there, and
+at a crawl -- where a tyre barely slides at all and a tractor is being lined up on a hitch -- the
+wheels still go all the way over.
+
+Not solved, and a separate question: grip alone holds a tractor at this speed to a sixty-seven metre
+circle however well it steers. Only the speed itself moves that, and a test records that the top
+speed is a deliberate choice.
+
 ## 2026-09-14 — Sources carry no comments
 
 Decided by the repo owner. Facts that must hold are assertions or tests; decisions worth keeping are

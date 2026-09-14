@@ -69,40 +69,59 @@ namespace BelowTheWing.Vehicles
         AnimationCurve m_Measured;
         float m_MostLateralGrip;
 
+        float m_SlipItGripsHardestAt;
+
         public float MostLateralGripPerKilogram
         {
             get
             {
-                if (ReferenceEquals(m_Measured, lateralGripCurve))
-                {
-                    return m_MostLateralGrip;
-                }
-
-                m_Measured = lateralGripCurve;
-                m_MostLateralGrip = PeakOf(lateralGripCurve);
-
+                Measure();
                 return m_MostLateralGrip;
             }
         }
 
-        static float PeakOf(AnimationCurve curve)
+        public float SlipItGripsHardestAt
         {
+            get
+            {
+                Measure();
+                return m_SlipItGripsHardestAt;
+            }
+        }
+
+        void Measure()
+        {
+            if (ReferenceEquals(m_Measured, lateralGripCurve))
+            {
+                return;
+            }
+
+            m_Measured = lateralGripCurve;
+            m_MostLateralGrip = 0f;
+            m_SlipItGripsHardestAt = 0f;
+
+            var curve = lateralGripCurve;
             if (curve == null || curve.length == 0)
             {
-                return 0f;
+                return;
             }
 
             var from = curve[0].time;
             var to = curve[curve.length - 1].time;
-            var most = 0f;
 
             for (var i = 0; i <= SamplesAcrossTheCurve; i++)
             {
-                most = Mathf.Max(
-                    most, curve.Evaluate(Mathf.Lerp(from, to, i / (float)SamplesAcrossTheCurve)));
-            }
+                var slip = Mathf.Lerp(from, to, i / (float)SamplesAcrossTheCurve);
+                var grip = curve.Evaluate(slip);
 
-            return most;
+                if (grip <= m_MostLateralGrip)
+                {
+                    continue;
+                }
+
+                m_MostLateralGrip = grip;
+                m_SlipItGripsHardestAt = slip;
+            }
         }
 
         void OnValidate() => m_Measured = null;
