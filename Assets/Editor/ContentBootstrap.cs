@@ -174,11 +174,13 @@ namespace BelowTheWing.EditorTools
             profile.radiusMetres = 0.3f;
             profile.walkSpeedMetresPerSecond = 4f;
             profile.sprintSpeedMetresPerSecond = 7f;
-            // A feel figure rather than a physical one. Feet really can only push about as hard as they
-            // grip, which is nearer 8 and takes half a second to reach walking pace -- honest, and
-            // it feels like wading. A player is somebody holding a key, and the delay between
-            // pressing it and moving is most of what the controls feel like.
-            profile.accelerationMetresPerSecondSquared = 30f;
+            // Two figures, because they answer two questions. Grip is real: 10 m/s^2 is above the 8
+            // a tractor pulls away at and below the 12 to 15 a cart makes cornering hard, so a
+            // launch keeps its riders and a corner takes them. Gait is feel: legs that really only
+            // managed the grip figure would take half a second to reach walking pace, which is felt
+            // as the controls going soft, and it only applies while the feet still have the deck.
+            profile.footGripMetresPerSecondSquared = 10f;
+            profile.gaitResponseMetresPerSecondSquared = 30f;
             return profile;
         }
 

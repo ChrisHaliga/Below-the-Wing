@@ -16,9 +16,9 @@ namespace BelowTheWing.Tests.PlayMode
     /// it feels like wading, because a player is not a person: they are somebody holding a key, and
     /// the delay between pressing it and moving is the whole of what the controls feel like.
     ///
-    /// So the figure is a feel dial rather than a physical one, and the thing it costs is written
-    /// down here as well: feet that push this hard also hold a rider onto a deck through anything
-    /// this apron can do.
+    /// So how fast a player's own walking answers is a feel dial, kept apart from how hard their
+    /// feet can hold what they are standing on, which is a real figure and is what decides whether
+    /// a corner throws them.
     /// </summary>
     public sealed class GettingMovingPlayTests
     {

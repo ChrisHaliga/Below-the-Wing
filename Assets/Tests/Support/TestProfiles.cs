@@ -76,7 +76,8 @@ namespace BelowTheWing.Tests.Support
             p.radiusMetres = 0.3f;
             p.walkSpeedMetresPerSecond = 4f;
             p.sprintSpeedMetresPerSecond = 7f;
-            p.accelerationMetresPerSecondSquared = 30f;
+            p.footGripMetresPerSecondSquared = 10f;
+            p.gaitResponseMetresPerSecondSquared = 30f;
             return p;
         }
 
