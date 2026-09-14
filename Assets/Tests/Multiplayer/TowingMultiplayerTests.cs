@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using BelowTheWing.Session;
 using BelowTheWing.Tests.Support;
 using BelowTheWing.Vehicles;
@@ -12,6 +13,13 @@ namespace BelowTheWing.Tests.Multiplayer
 {
     public sealed class TowingMultiplayerTests : RampMultiplayerTest
     {
+        const int TheOnlyTrain = 0;
+        const int UpFront = 0;
+        const int BehindTheTractor = 1;
+
+        static readonly Regex SpawnedWithNoSession =
+            new Regex($"no {nameof(RampSession)} in the scene");
+
         GameObject m_TractorPrefab;
         GameObject m_CartPrefab;
         VehicleProfile m_TractorProfile;
@@ -54,7 +62,7 @@ namespace BelowTheWing.Tests.Multiplayer
             base.OnOneTimeTearDown();
         }
 
-        IEnumerable<NetworkManager> AllManagers()
+        IEnumerable<NetworkManager> AllMachines()
         {
             yield return m_ServerNetworkManager;
 
@@ -64,11 +72,25 @@ namespace BelowTheWing.Tests.Multiplayer
             }
         }
 
+        void ExpectEveryMemberToComplainThatThisFixtureHasNoSession(int vehicles)
+        {
+            foreach (var unused in AllMachines())
+            {
+                for (var i = 0; i < vehicles; i++)
+                {
+                    LogAssert.Expect(LogType.Error, SpawnedWithNoSession);
+                }
+            }
+        }
+
+        static TrainMember MemberOn(NetworkManager machine, ulong id)
+            => machine.SpawnManager.SpawnedObjects[id].GetComponent<TrainMember>();
+
         bool EveryMachineHas(ulong id)
         {
-            foreach (var manager in AllManagers())
+            foreach (var machine in AllMachines())
             {
-                if (!manager.SpawnManager.SpawnedObjects.ContainsKey(id))
+                if (!machine.SpawnManager.SpawnedObjects.ContainsKey(id))
                 {
                     return false;
                 }
@@ -77,66 +99,109 @@ namespace BelowTheWing.Tests.Multiplayer
             return true;
         }
 
-        CartChain TrainOn(NetworkManager manager, ulong tractor, ulong cart)
+        bool EveryMachineHasHeardTheyAreInATrain(params ulong[] ids)
         {
-            var members = new List<VehicleController>
+            foreach (var machine in AllMachines())
             {
-                manager.SpawnManager.SpawnedObjects[tractor].GetComponent<VehicleController>(),
-                manager.SpawnManager.SpawnedObjects[cart].GetComponent<VehicleController>()
-            };
+                foreach (var id in ids)
+                {
+                    if (MemberOn(machine, id).Membership.TrainIndex != TheOnlyTrain)
+                    {
+                        return false;
+                    }
+                }
+            }
 
-            var train = CartChain.Couple(members, ChainJointSettings.Default);
-            train.EngageCouplings();
-            return train;
+            return true;
+        }
+
+        static TrainRegistry TheTrainsBuiltFromWhatReached(NetworkManager machine, params ulong[] ids)
+        {
+            var membership = new List<TrainMembership>(ids.Length);
+
+            foreach (var id in ids)
+            {
+                membership.Add(MemberOn(machine, id).Membership);
+            }
+
+            var registry = new TrainRegistry(ChainJointSettings.Default);
+            registry.Rebuild(membership);
+            return registry;
+        }
+
+        IEnumerator ATrainEveryMachineHasHeardAbout(ulong tractor, ulong cart)
+        {
+            yield return WaitForConditionOrTimeOut(
+                () => EveryMachineHas(tractor) && EveryMachineHas(cart));
+            AssertOnTimeout("not every machine was given the two vehicles to begin with");
+
+            MemberOn(m_ServerNetworkManager, tractor).Joins(TheOnlyTrain, UpFront);
+            MemberOn(m_ServerNetworkManager, cart).Joins(TheOnlyTrain, BehindTheTractor);
+
+            yield return WaitForConditionOrTimeOut(() => EveryMachineHasHeardTheyAreInATrain(tractor, cart));
+            AssertOnTimeout("a machine never heard that these two vehicles are one train");
         }
 
         [UnityTest]
-        public IEnumerator ATrainIsHookedTogetherOnEveryMachineNotOnlyItsOwners()
+        public IEnumerator EveryMachineHooksUpTheTrainItsOwnerDescribed()
         {
+            ExpectEveryMemberToComplainThatThisFixtureHasNoSession(vehicles: 2);
+
             var tractor = SpawnObject(m_TractorPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
             var cart = SpawnObject(m_CartPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
 
-            yield return WaitForConditionOrTimeOut(
-                () => EveryMachineHas(tractor.NetworkObjectId) && EveryMachineHas(cart.NetworkObjectId));
-            AssertOnTimeout("not every machine received the train");
+            yield return ATrainEveryMachineHasHeardAbout(tractor.NetworkObjectId, cart.NetworkObjectId);
 
-            foreach (var manager in AllManagers())
+            foreach (var machine in AllMachines())
             {
-                var train = TrainOn(manager, tractor.NetworkObjectId, cart.NetworkObjectId);
+                var seen = TheTrainsBuiltFromWhatReached(machine, tractor.NetworkObjectId, cart.NetworkObjectId);
+
+                Assert.That(seen.Trains.Count, Is.EqualTo(1),
+                    $"machine {machine.LocalClientId} sees {seen.Trains.Count} trains where its owner " +
+                    "described one. Vehicles it has not grouped are vehicles nothing holds together, " +
+                    "so the cart is dragged along by corrections rather than towed");
+
+                var train = seen.Trains[0];
+
+                Assert.That(train.Leader.GetComponent<NetworkObject>().NetworkObjectId,
+                    Is.EqualTo(tractor.NetworkObjectId),
+                    $"machine {machine.LocalClientId} put the cart at the front. The place in the train " +
+                    "decides which end tows, so a train assembled backwards is pushed by its cart");
 
                 Assert.That(train.CouplingsEngaged, Is.True,
-                    $"client {manager.LocalClientId} is holding this train together with nothing. A " +
-                    "cart nobody here has hitched up is a cart being dragged into place by a " +
-                    "correction rather than towed, and what a player watches is a train stretching");
+                    $"machine {machine.LocalClientId} is holding this train together with nothing. What " +
+                    "a player watches is a train that stretches as it is driven");
 
                 train.ReleaseCouplings();
             }
         }
 
         [UnityTest]
-        public IEnumerator OnlyTheFrontOfATrainIsSteeredTowardsWhatItsOwnerSays()
+        public IEnumerator ACopyOfATowedCartIsLeftToItsCouplingRatherThanSteered()
         {
+            ExpectEveryMemberToComplainThatThisFixtureHasNoSession(vehicles: 2);
+
             var tractor = SpawnObject(m_TractorPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
             var cart = SpawnObject(m_CartPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>();
 
-            yield return WaitForConditionOrTimeOut(
-                () => EveryMachineHas(tractor.NetworkObjectId) && EveryMachineHas(cart.NetworkObjectId));
-            AssertOnTimeout("not every machine received the train");
+            yield return ATrainEveryMachineHasHeardAbout(tractor.NetworkObjectId, cart.NetworkObjectId);
 
-            foreach (var manager in m_ClientNetworkManagers)
+            foreach (var machine in m_ClientNetworkManagers)
             {
-                var train = TrainOn(manager, tractor.NetworkObjectId, cart.NetworkObjectId);
+                var seen = TheTrainsBuiltFromWhatReached(machine, tractor.NetworkObjectId, cart.NetworkObjectId);
+                var train = seen.Trains[0];
 
                 var leader = train.Leader.GetComponent<VehicleMotion>();
-                var follower = train.Members[1].GetComponent<VehicleMotion>();
+                var towed = MemberOn(machine, cart.NetworkObjectId).GetComponent<VehicleMotion>();
 
                 Assert.That(leader.TheOneWorthCorrecting, Is.True,
-                    $"client {manager.LocalClientId} corrects nothing in this train, so it is towed " +
-                    "by a copy of a tractor that nobody is steering toward where the real one is");
-                Assert.That(follower.TheOneWorthCorrecting, Is.False,
-                    $"client {manager.LocalClientId} is correcting a towed cart directly. A chain is " +
-                    "a set of constraints and a correction is a force on one body: pushed toward a " +
-                    "place its coupling forbids, the solver and the network take turns losing");
+                    $"machine {machine.LocalClientId} corrects nothing in this train, so it is towed by " +
+                    "a copy of a tractor that nobody is steering toward where the real one is");
+
+                Assert.That(towed.TheOneWorthCorrecting, Is.False,
+                    $"machine {machine.LocalClientId} is correcting a towed cart directly. A chain is a " +
+                    "set of constraints and a correction is a force on one body: pushed toward a place " +
+                    "its coupling forbids, the solver and the network take turns losing");
 
                 train.ReleaseCouplings();
             }

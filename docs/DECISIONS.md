@@ -114,6 +114,73 @@ model when its prefab is built. A wheelbase written down twice is how the invisi
 probes ended up fourteen centimetres from the visible wheels, and a wheel radius written down twice
 is the same fault waiting for a vehicle whose axles carry different wheels -- which the tractor has.
 
+## 2026-09-14 — Equipment is described with real figures, and top speed is the exception
+
+Masses, dimensions and spring rates are the real ones for the equipment being modelled, because a
+spring rate only means anything next to the weight it holds up and a three tonne tractor towing half
+tonne carts behaves unlike any pair of numbers that happen to feel right.
+
+Driveline drag is set by feel instead. A real baggage tractor tops out at about 23 km/h, which is
+accurate and dull to drive across an apron; the game asks for plausible rather than precise. It is
+the only figure knowingly chosen against the real one, and it is written down here so that the next
+person to find it does not treat the rest of the profile as equally negotiable.
+
+## 2026-09-14 — A vehicle carries its weight low, and its suspension travel is shorter than its wheels
+
+Both figures are relationships rather than preferences. The centre of mass is placed well below the
+middle of the bodywork, measured from an origin on the tarmac: carried at the bodywork's own middle,
+a tug rolls over the first time it corners with a loaded train behind it, and a cart that leans into
+a corner throws its load out of itself.
+
+Suspension travel is kept under the radius of the smallest wheel on the vehicle. Longer than that
+and the vehicle is visibly floating above its own axles, because the body is held further off the
+ground than the wheels holding it up are tall.
+
+## 2026-09-14 — A tyre's grip curve has to fall away after its peak
+
+Grip climbs as a tyre begins to slip, peaks, and then drops. The falling half is not detail: it is
+the only thing that lets a vehicle break traction at all. A curve that only ever rises puts
+everything on rails, and no amount of speed into a corner will make a train slide or jackknife.
+
+## 2026-09-14 — A vehicle's solid parts stop above its wheels
+
+The box a vehicle collides as is its bodywork, and the bodywork's underside is some way off the
+tarmac. A solid part reaching the ground carries the vehicle's weight itself, and then the
+suspension never compresses: what should be a machine on wheels is a crate sliding about on the
+floor.
+
+## 2026-09-14 — Nothing replicates its position through a transform component
+
+Neither of the two components netcode offers is used on anything that can be crashed into. Both
+write a position onto the copy, and a body whose position is written arrives somewhere without
+having travelled, so the impulse a collision should have exchanged never happens and the crash comes
+out differently on each screen. One of them goes further and makes every non-owning copy kinematic,
+which is infinite mass: you drive into somebody else's tractor and bounce off a wall while the
+mirror image happens on theirs.
+
+Everything crashable reports what it is doing and is steered toward that with force instead --
+people included, because players run each other over on purpose. Bags have the same problem and one
+more: which machine simulates a bag changes with who picks it up and whose cart it lands in, and no
+transform component has anything to say about that.
+
+## 2026-09-14 — Every machine in a multiplayer test shares one scene
+
+The multiplayer tests run all their machines in a single process, so there is one scene and one
+physics world between them. Anything a component finds by searching the scene finds one instance
+shared by every machine, which is why those fixtures leave scene singletons out and stand in for
+them per machine instead. It also means these tests can check what is sent, received and agreed,
+and cannot measure two machines' physics diverging.
+
+## 2026-09-14 — The cart's deck and envelope are the one set of figures still typed in
+
+Everything else about a vehicle is read off its model when its prefab is built. The baggage cart's
+deck height, the clear space above it and the box it takes up are not: the cart's mesh merges the
+deck into the rest of the bodywork, so there is no node to measure them from, and they were taken
+off the model by hand instead.
+
+That makes them the one thing a re-export can silently invalidate. Re-modelling the cart means
+re-measuring them, and nothing in the build will say so.
+
 ## 2026-09-14 — Sources carry no comments
 
 Decided by the repo owner. Facts that must hold are assertions or tests; decisions worth keeping are
