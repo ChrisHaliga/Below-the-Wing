@@ -36,6 +36,15 @@ namespace BelowTheWing.Tests.Support
         /// real cart would make them fail whenever somebody remodels it. Anything actually testing
         /// where a part of a vehicle is asks for the measured shape instead.
         /// </summary>
+        public static VehicleShape.Measurements BoxVehicle() => BoxVehicle(StandInSizeMetres);
+
+        /// <summary>How big a stand-in vehicle is when a test does not care how big it is.</summary>
+        public static readonly Vector3 StandInSizeMetres = new Vector3(1.5f, 1.7f, 3f);
+
+        /// <summary>
+        /// A plain box on four wheels of a given size, for tests that are about driving rather than
+        /// about geometry.
+        /// </summary>
         public static VehicleShape.Measurements BoxVehicle(Vector3 sizeMetres)
         {
             const float wheelRadius = 0.3f;
@@ -52,12 +61,12 @@ namespace BelowTheWing.Tests.Support
 
             return new VehicleShape.Measurements
             {
-                WheelCentresLocal = new List<Vector3>
+                Wheels = new List<VehicleShape.WheelPlacement>
                 {
-                    new Vector3(-halfTrack, wheelRadius, halfWheelbase),
-                    new Vector3(halfTrack, wheelRadius, halfWheelbase),
-                    new Vector3(-halfTrack, wheelRadius, -halfWheelbase),
-                    new Vector3(halfTrack, wheelRadius, -halfWheelbase)
+                    new VehicleShape.WheelPlacement(new Vector3(-halfTrack, wheelRadius, halfWheelbase), wheelRadius),
+                    new VehicleShape.WheelPlacement(new Vector3(halfTrack, wheelRadius, halfWheelbase), wheelRadius),
+                    new VehicleShape.WheelPlacement(new Vector3(-halfTrack, wheelRadius, -halfWheelbase), wheelRadius),
+                    new VehicleShape.WheelPlacement(new Vector3(halfTrack, wheelRadius, -halfWheelbase), wheelRadius)
                 },
                 FrontCouplingLocal = new Vector3(0f, couplingHeight, reach),
                 RearCouplingLocal = new Vector3(0f, couplingHeight, -reach),
@@ -83,15 +92,16 @@ namespace BelowTheWing.Tests.Support
         {
             const float deckTop = 0.4727f;
             const float clearInside = 1.626f;
+            const float wheelRadius = 0.157f;
 
             return new VehicleShape.Measurements
             {
-                WheelCentresLocal = new List<Vector3>
+                Wheels = new List<VehicleShape.WheelPlacement>
                 {
-                    new Vector3(-0.7930f, 0.1557f, 1.5805f),
-                    new Vector3(0.7930f, 0.1557f, 1.5805f),
-                    new Vector3(-0.7930f, 0.1557f, -1.5805f),
-                    new Vector3(0.7930f, 0.1557f, -1.5805f)
+                    new VehicleShape.WheelPlacement(new Vector3(-0.7930f, 0.1557f, 1.5805f), wheelRadius),
+                    new VehicleShape.WheelPlacement(new Vector3(0.7930f, 0.1557f, 1.5805f), wheelRadius),
+                    new VehicleShape.WheelPlacement(new Vector3(-0.7930f, 0.1557f, -1.5805f), wheelRadius),
+                    new VehicleShape.WheelPlacement(new Vector3(0.7930f, 0.1557f, -1.5805f), wheelRadius)
                 },
                 FrontCouplingLocal = new Vector3(0f, 0.2075f, 3.1617f),
                 RearCouplingLocal = new Vector3(0f, 0.1310f, -1.8159f),
@@ -155,38 +165,42 @@ namespace BelowTheWing.Tests.Support
         }
 
         /// <summary>
-        /// The baggage tractor, which has no model yet.
+        /// The baggage tractor, as measured off the model.
         ///
-        /// Described exactly as the cart is, from numbers rather than from geometry. Nothing
-        /// downstream can tell the difference, which is the whole reason a shape exists as a thing
-        /// in its own right rather than as a way of reading a mesh.
+        /// Two facts about it break anything that assumes vehicles are alike. Its axles carry
+        /// different wheels -- 0.2203 m at the front and 0.2647 m at the back -- and it has no
+        /// coupling at the front at all, because nothing tows a tractor.
         /// </summary>
         public static VehicleShape.Measurements Tractor()
         {
-            var size = new Vector3(1.3f, 1.6f, 3.0f);
-            var reach = (size.z * 0.5f) + 0.3f;
-            const float couplingHeight = 0.2075f;
-            var middle = new Vector3(0f, 0.3f + (size.y * 0.5f), 0f);
+            const float frontRadius = 0.2203f;
+            const float rearRadius = 0.2647f;
+
+            // The box the bodywork fills. It stops 0.15 m above the tarmac: the wheels hang below
+            // it on their own suspension, and a solid part that reached the ground would carry the
+            // tractor's weight itself and leave the springs doing nothing.
+            var bodywork = new Vector3(1.618f, 1.7023f, 2.8002f);
+            var middle = new Vector3(0f, 0.9989f, -0.0858f);
 
             return new VehicleShape.Measurements
             {
-                WheelCentresLocal = new List<Vector3>
+                Wheels = new List<VehicleShape.WheelPlacement>
                 {
-                    new Vector3(-0.55f, 0.3f, 0.9f),
-                    new Vector3(0.55f, 0.3f, 0.9f),
-                    new Vector3(-0.55f, 0.3f, -0.9f),
-                    new Vector3(0.55f, 0.3f, -0.9f)
+                    new VehicleShape.WheelPlacement(new Vector3(-0.5998f, frontRadius, 0.7576f), frontRadius),
+                    new VehicleShape.WheelPlacement(new Vector3(0.5977f, frontRadius, 0.7576f), frontRadius),
+                    new VehicleShape.WheelPlacement(new Vector3(-0.5998f, rearRadius, -0.7576f), rearRadius),
+                    new VehicleShape.WheelPlacement(new Vector3(0.5977f, rearRadius, -0.7576f), rearRadius)
                 },
-                FrontCouplingLocal = new Vector3(0f, couplingHeight, reach),
-                RearCouplingLocal = new Vector3(0f, couplingHeight, -reach),
-                EnvelopeSizeMetres = size,
+                FrontCouplingLocal = null,
+                RearCouplingLocal = new Vector3(0f, 0.2075f, -1.3692f),
+                EnvelopeSizeMetres = bodywork,
                 EnvelopeCentreLocal = middle,
 
                 // Solid through and through. Nothing rides inside a tractor.
                 InteriorLocal = new Bounds(Vector3.zero, Vector3.zero),
                 SolidParts = new List<VehicleShape.SolidPart>
                 {
-                    new VehicleShape.SolidPart("Body", size, middle)
+                    new VehicleShape.SolidPart("Body", bodywork, middle)
                 }
             };
         }

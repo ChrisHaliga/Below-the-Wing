@@ -3,6 +3,7 @@ using BelowTheWing.Crew;
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
@@ -23,6 +24,30 @@ namespace BelowTheWing.Tests.EditMode
         const string CartPath = "Assets/Content/Vehicles/BaggageCart.asset";
         const string AircraftPath = "Assets/Content/Aircraft/NarrowbodyAirliner.asset";
         const string CrewPath = "Assets/Content/Crew/RampWorker.asset";
+        const string TractorPrefabPath = "Assets/Content/Prefabs/BaggageTractor.prefab";
+        const string CartPrefabPath = "Assets/Content/Prefabs/BaggageCart.prefab";
+
+        /// <summary>
+        /// The shape of a shipped vehicle: where its parts are and how big they are.
+        ///
+        /// Read off the prefab rather than the profile, because that is where geometry lives. A
+        /// profile says how a vehicle drives; its wheels and its bodywork are measured off its
+        /// model when the prefab is built.
+        /// </summary>
+        static VehicleShape Shape(string prefabPath)
+            => Load<GameObject>(prefabPath).GetComponent<VehicleShape>();
+
+        /// <summary>The smallest wheel a vehicle runs on, in metres.</summary>
+        static float SmallestWheelMetres(VehicleShape shape)
+        {
+            var smallest = float.MaxValue;
+            foreach (var wheel in shape.Wheels)
+            {
+                smallest = Mathf.Min(smallest, wheel.RadiusMetres);
+            }
+
+            return smallest;
+        }
 
         static T Load<T>(string path) where T : UnityEngine.Object
         {
@@ -37,7 +62,8 @@ namespace BelowTheWing.Tests.EditMode
             var tractor = Load<VehicleProfile>(TractorPath);
 
             Assert.That(tractor.massKg, Is.InRange(2000f, 4500f), "a baggage tug is a few tonnes");
-            Assert.That(tractor.bodySizeMetres.z, Is.InRange(2f, 4f), "and about the length of a car");
+            Assert.That(Shape(TractorPrefabPath).EnvelopeSizeMetres.z, Is.InRange(2f, 4f),
+                "and about the length of a car");
             Assert.That(tractor.equipmentNote, Is.Not.Empty,
                 "a mass with no note saying what it stands for is a number somebody will change on a whim");
         }
@@ -48,29 +74,58 @@ namespace BelowTheWing.Tests.EditMode
             var cart = Load<VehicleProfile>(CartPath);
 
             Assert.That(cart.massKg, Is.InRange(350f, 800f), "tare weight, before a single bag goes on");
-            Assert.That(cart.bodySizeMetres.z, Is.InRange(2f, 4f));
+            Assert.That(Shape(CartPrefabPath).EnvelopeSizeMetres.z, Is.InRange(2f, 4f));
             Assert.That(cart.equipmentNote, Is.Not.Empty);
         }
 
         [Test]
-        public void TheShippedCartRunsOnTheNumbersItsModelWasMeasuredAt()
+        public void EveryVehicleHasLessSuspensionTravelThanItsSmallestWheel()
         {
-            var cart = Load<VehicleProfile>(CartPath);
+            foreach (var (profilePath, prefabPath) in new[]
+                     {
+                         (TractorPath, TractorPrefabPath),
+                         (CartPath, CartPrefabPath)
+                     })
+            {
+                var profile = Load<VehicleProfile>(profilePath);
+                var smallest = SmallestWheelMetres(Shape(prefabPath));
 
-            // Off the model. The cart prefab hangs its suspension from wheel positions read out of
-            // the mesh, and this is the one wheel figure that stays in the profile because it is a
-            // physics quantity rather than a position. If the two disagree, the invisible wheels
-            // holding the cart up are a different size from the visible ones turning on it.
-            Assert.That(cart.wheelRadiusMetres, Is.EqualTo(0.157f).Within(0.005f),
-                "the modelled cart runs on 0.157 m wheels. This asset is written once, when it does " +
-                "not exist, and never again -- so retuning the cart in the bootstrap and assuming " +
-                "the game picked it up is exactly how the shipped cart ends up running on numbers " +
-                "nothing else in the project uses");
+                Assert.That(profile.suspensionRestLengthMetres, Is.LessThan(smallest),
+                    $"{profilePath} has {profile.suspensionRestLengthMetres:F2} m of travel on a " +
+                    $"{smallest:F3} m wheel. More travel than the wheel has radius and the vehicle " +
+                    "visibly floats above its own axles. These assets are written once, when they " +
+                    "do not exist, and never again -- so retuning a vehicle in the bootstrap and " +
+                    "assuming the game picked it up is how a shipped vehicle ends up running on " +
+                    "numbers nothing else in the project uses");
+            }
+        }
 
-            Assert.That(cart.suspensionRestLengthMetres, Is.LessThan(cart.wheelRadiusMetres),
-                $"{cart.suspensionRestLengthMetres:F2} m of travel on a {cart.wheelRadiusMetres:F3} m " +
-                "wheel. More travel than the wheel has radius and the cart visibly floats above its " +
-                "own axles");
+        [Test]
+        public void TheShippedTractorCarriesTheFiguresItWasTunedTo()
+        {
+            var tractor = Load<VehicleProfile>(TractorPath);
+
+            Assert.That(tractor.massKg, Is.EqualTo(2500f).Within(1f),
+                "a 2.8 m tug, which is the class this model is");
+            Assert.That(tractor.suspensionRestLengthMetres, Is.EqualTo(0.10f).Within(0.005f),
+                "under half the smaller of its two wheels");
+            Assert.That(tractor.centerOfMassOffset.y, Is.EqualTo(0.55f).Within(0.05f),
+                "low in bodywork whose own middle is a metre up, or it rolls over in the first corner");
+            Assert.That(tractor.maxDriveForceNewtons, Is.EqualTo(20000f).Within(1f));
+            Assert.That(tractor.maxSteerAngleDegrees, Is.GreaterThanOrEqualTo(40f),
+                "a tug turns tightly; it spends its life reversing carts into stands");
+        }
+
+        [Test]
+        public void TheTractorSettlesWithRoomToSquashAndRoomToExtend()
+        {
+            var tractor = Load<VehicleProfile>(TractorPath);
+            var atRest = VehicleController.SuspensionCompressionAtRest(tractor);
+
+            Assert.That(atRest, Is.InRange(0.05f, 0.30f),
+                $"the tractor's springs sit {atRest:P0} compressed carrying nothing but itself. " +
+                "Resting fully extended it has nothing to absorb a bump with; resting bottomed out " +
+                "it has nothing left to give under a load");
         }
 
         [Test]
@@ -86,8 +141,10 @@ namespace BelowTheWing.Tests.EditMode
                     "contact patch: braking pitches the nose up, accelerating dives it, and nothing " +
                     "can tip the vehicle over");
 
+                var bodywork = Shape(path == TractorPath ? TractorPrefabPath : CartPrefabPath);
+
                 Assert.That(profile.centerOfMassOffset.y,
-                    Is.LessThan(profile.bodySizeMetres.y),
+                    Is.LessThan(bodywork.EnvelopeCentreLocal.y + (bodywork.EnvelopeSizeMetres.y * 0.5f)),
                     $"{path} carries its weight above its own roof");
             }
         }

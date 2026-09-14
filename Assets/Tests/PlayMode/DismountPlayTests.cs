@@ -113,15 +113,18 @@ namespace BelowTheWing.Tests.PlayMode
 
             m_Crew.Seat.Toggle(m_Wheel);
             yield return new WaitForFixedUpdate();
-            yield return new WaitForFixedUpdate();
 
             Assert.That(m_Crew.Body.linearVelocity.z, Is.EqualTo(5f).Within(1f),
-                $"they left a tractor doing 5 m/s at {m_Crew.Body.linearVelocity.z:F1} m/s. Stopping " +
-                "dead beside a moving vehicle is how you get run over by the cart it is towing");
+                $"they left a tractor doing 5 m/s at {m_Crew.Body.linearVelocity.z:F1} m/s. A body " +
+                "put down beside a moving vehicle without its speed has a five metre a second " +
+                "tractor sliding past a person who was never moving, and whatever they were carrying " +
+                "is torn out of their hands by the difference. Read on the step they step out: their " +
+                "own feet take it off them over the next fifth of a second, which is them planting " +
+                "their feet rather than the dismount having lost it");
 
-            yield return Steps.Seconds(3f);
+            yield return Steps.Seconds(0.5f);
             Assert.That(m_Crew.Body.linearVelocity.magnitude, Is.LessThan(0.5f),
-                "and their feet brought them to a stop");
+                "and half a second later their feet have brought them to a stop");
         }
     }
 }

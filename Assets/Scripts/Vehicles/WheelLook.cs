@@ -31,8 +31,14 @@ namespace BelowTheWing.Vehicles
         /// <summary>Which way each wheel was modelled, relative to the vehicle.</summary>
         Quaternion[] m_AuthoredFacing;
 
-        /// <summary>How far the wheels have turned since the vehicle was built, in degrees.</summary>
-        public float TurnedDegrees { get; private set; }
+        /// <summary>How far each wheel has turned since the vehicle was built, in degrees.</summary>
+        float[] m_TurnedDegrees;
+
+        /// <summary>How far the wheel in that corner has turned since the vehicle was built.</summary>
+        public float TurnedDegrees(int corner)
+            => m_TurnedDegrees != null && corner >= 0 && corner < m_TurnedDegrees.Length
+                ? m_TurnedDegrees[corner]
+                : 0f;
 
         /// <summary>Names the wheels this drives. Used when a prefab is built, and by tests.</summary>
         public void Watch(IReadOnlyList<Transform> wheels)
@@ -78,6 +84,7 @@ namespace BelowTheWing.Vehicles
 
             m_RestingAt = new Vector3[m_Wheels.Length];
             m_AuthoredFacing = new Quaternion[m_Wheels.Length];
+            m_TurnedDegrees = new float[m_Wheels.Length];
 
             var toVehicle = Quaternion.Inverse(transform.rotation);
             for (var i = 0; i < m_Wheels.Length; i++)
@@ -89,7 +96,11 @@ namespace BelowTheWing.Vehicles
         }
 
         /// <summary>
-        /// Turns them at road speed.
+        /// Turns each of them at road speed for its own size.
+        ///
+        /// Each wheel separately, because a vehicle's axles need not carry the same wheels: over
+        /// the same ground a 0.22 m wheel goes round a fifth further than a 0.26 m one, and one
+        /// rate for all four draws half of them slipping.
         ///
         /// The angle is accumulated and assigned rather than added to the transform each frame.
         /// Adding a rotation repeatedly drifts -- every step carries a little floating-point error
@@ -99,9 +110,20 @@ namespace BelowTheWing.Vehicles
         void TurnThem()
         {
             var alongTheRoad = Vector3.Dot(m_Vehicle.Body.linearVelocity, transform.forward);
-            var radius = Mathf.Max(m_Vehicle.Profile.wheelRadiusMetres, 1e-4f);
 
-            TurnedDegrees += alongTheRoad / radius * Mathf.Rad2Deg * Time.fixedDeltaTime;
+            for (var i = 0; i < m_TurnedDegrees.Length; i++)
+            {
+                var radius = m_Vehicle.WheelRadiusMetres(i);
+                if (radius <= 0f)
+                {
+                    // No wheel in that corner for this to be the drawing of, so there is nothing to
+                    // turn. A vehicle with no shape has no wheels at all, and a rate invented for
+                    // one of those spins what a player sees at thousands of revolutions a second.
+                    continue;
+                }
+
+                m_TurnedDegrees[i] += alongTheRoad / radius * Mathf.Rad2Deg * Time.fixedDeltaTime;
+            }
         }
 
         /// <summary>
@@ -113,7 +135,6 @@ namespace BelowTheWing.Vehicles
         void HangThem()
         {
             var steer = Quaternion.Euler(0f, m_Vehicle.SteerAngleDegrees, 0f);
-            var spin = Quaternion.Euler(TurnedDegrees, 0f, 0f);
 
             for (var i = 0; i < m_Wheels.Length; i++)
             {
@@ -122,6 +143,8 @@ namespace BelowTheWing.Vehicles
                 {
                     continue;
                 }
+
+                var spin = Quaternion.Euler(m_TurnedDegrees[i], 0f, 0f);
 
                 var resting = m_RestingAt[i];
                 var standing = m_Vehicle.WheelCentreLocal(i, resting.y);

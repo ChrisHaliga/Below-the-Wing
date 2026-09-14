@@ -55,7 +55,7 @@ namespace BelowTheWing.Tests.Support
 
             // Before the controller is configured: it reads the shape while it is being set up, and
             // a vehicle with no shape has nowhere to hang its suspension from.
-            TestShapes.On(go, shape ?? TestShapes.BoxVehicle(profile.bodySizeMetres));
+            TestShapes.On(go, shape ?? TestShapes.BoxVehicle());
 
             var vehicle = go.AddComponent<VehicleController>();
             vehicle.Configure(profile, displayName);
@@ -87,8 +87,8 @@ namespace BelowTheWing.Tests.Support
             VehicleShape.Measurements? tractorShape = null,
             VehicleShape.Measurements? cartShape = null)
         {
-            var tractorMeasurements = tractorShape ?? TestShapes.BoxVehicle(tractor.bodySizeMetres);
-            var cartMeasurements = cartShape ?? TestShapes.BoxVehicle(cart.bodySizeMetres);
+            var tractorMeasurements = tractorShape ?? TestShapes.BoxVehicle();
+            var cartMeasurements = cartShape ?? TestShapes.BoxVehicle();
 
             // Built from the real apron layout rather than by working the spacing out again here.
             // A test train parked differently from a shipped one exercises different geometry, and

@@ -87,7 +87,7 @@ namespace BelowTheWing.Tests.PlayMode
             var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", new Vector3(0f, 1f, 0f), Quaternion.identity);
             var before = tractor.GetComponentsInChildren<Collider>().Length;
 
-            GreyboxShape.AttachBox(tractor.transform, m_TractorProfile.bodySizeMetres, Color.grey);
+            GreyboxShape.AttachBox(tractor.transform, TestShapes.StandInSizeMetres, Color.grey);
             yield return null;
 
             Assert.That(tractor.GetComponentsInChildren<Collider>().Length, Is.EqualTo(before),
@@ -107,26 +107,6 @@ namespace BelowTheWing.Tests.PlayMode
             Assert.That(label.GetComponentsInChildren<Collider>(), Is.Empty);
             Assert.That(tractor.GetComponentsInChildren<Collider>().Length, Is.EqualTo(before),
                 "hanging a label on a vehicle must not change its shape");
-        }
-
-        [UnityTest]
-        public IEnumerator TheReadoutShowsFewerBodiesAwakeOnceATrainHasSettled()
-        {
-            var train = m_Apron.AddTrain(m_TractorProfile, m_CartProfile, cartCount: 4, new Vector3(0f, 1.5f, 0f));
-            var readout = m_Apron.Track(new GameObject("Readout").AddComponent<RampReadout>());
-            readout.Observe(new List<CartChain> { train }, new RecordingBroker(grant: true));
-
-            train.Leader.IntentSource = new FixedIntent(throttle: 1f);
-            yield return Steps.Seconds(2f);
-            var whileDriving = readout.AwakeBodyCount;
-
-            train.Leader.IntentSource = new FixedIntent();
-            yield return Steps.Seconds(12f);
-            var afterSettling = readout.AwakeBodyCount;
-
-            Assert.That(whileDriving, Is.GreaterThan(0), "a train being driven has bodies awake");
-            Assert.That(afterSettling, Is.LessThan(whileDriving),
-                "a train that never goes back to sleep costs solver time and bandwidth for ever");
         }
 
         [UnityTest]

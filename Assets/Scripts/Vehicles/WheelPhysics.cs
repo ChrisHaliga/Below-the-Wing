@@ -116,9 +116,9 @@ namespace BelowTheWing.Vehicles
         /// How far the suspension is squashed, from 0 (fully extended, carrying nothing) to
         /// 1 (fully compressed). Values outside that range mean the wheel is beyond its travel.
         /// </summary>
-        public static float Compression(float distanceToGround, VehicleProfile profile)
+        public static float Compression(float distanceToGround, float wheelRadiusMetres, VehicleProfile profile)
         {
-            var fullyExtended = profile.wheelRadiusMetres + profile.suspensionRestLengthMetres;
+            var fullyExtended = wheelRadiusMetres + profile.suspensionRestLengthMetres;
             return (fullyExtended - distanceToGround) / profile.suspensionRestLengthMetres;
         }
 
@@ -137,18 +137,87 @@ namespace BelowTheWing.Vehicles
         }
 
         /// <summary>
+        /// The slip below which a tire holds rather than being read off the grip curve, in metres
+        /// per second.
+        ///
+        /// Small on purpose, and smaller than it looks like it could be. Below this is a crawl --
+        /// something drifting rather than sliding -- and everything above it is the curve's
+        /// business. Set high enough to catch a wheel mid-corner and the hold starts resisting the
+        /// turn itself: at 0.3 m/s a train flat out on full lock came round six degrees less in six
+        /// seconds, because the wheels that were barely slipping held the vehicle straight.
+        /// </summary>
+        public const float HoldsBelowMetresPerSecond = 0.15f;
+
+        /// <summary>
         /// Newtons across the tire, opposing a sideways slide. Magnitude comes from the profile's
         /// grip curve read at this sliding speed, scaled by the weight the wheel carries.
+        ///
+        /// Except at a crawl, where the curve has nothing useful to say. A curve that passes through
+        /// the origin gives almost no force to a slide that is almost over, so the slower something
+        /// drifts the less there is to stop it and it never quite arrives: a nudged cart wanders a
+        /// metre across the apron over six seconds. A real tire does the opposite -- below some
+        /// small slip it simply holds, which is why a trolley left standing stays where it was put.
+        ///
+        /// So below that slip the tire holds with everything it has, bounded by what would take the
+        /// crawl out of it -- the same shape as the rolling resistance below: a real force, with the
+        /// bound there only so that stopping something can never turn into pushing it the other way.
+        ///
+        /// The crawl is taken out over a few steps rather than one. Each wheel only knows its own
+        /// contact patch, and four of them cancelling their own slip in the same step overshoot a
+        /// slow turn between them -- the four forces meet at lever arms the wheels know nothing
+        /// about, and a parked cart would answer a whisker of yaw by rotating back slightly harder
+        /// than it was rotating. Spreading it over a few steps is also what a tire really does: the
+        /// carcass gives a little before the rubber holds.
         /// </summary>
-        public static float LateralForce(float lateralVelocity, float supportedMassKg, VehicleProfile profile)
+        public static float LateralForce(
+            float lateralVelocity, float supportedMassKg, float deltaTime, VehicleProfile profile)
         {
             if (Mathf.Approximately(lateralVelocity, 0f))
             {
                 return 0f;
             }
 
-            var gripPerKilogram = profile.lateralGripCurve.Evaluate(Mathf.Abs(lateralVelocity));
-            return -Mathf.Sign(lateralVelocity) * gripPerKilogram * supportedMassKg;
+            var slip = Mathf.Abs(lateralVelocity);
+            var against = -Mathf.Sign(lateralVelocity);
+
+            if (slip >= HoldsBelowMetresPerSecond)
+            {
+                return against * profile.lateralGripCurve.Evaluate(slip) * supportedMassKg;
+            }
+
+            var whatItCanHoldWith = MostGripPerKilogram(profile) * supportedMassKg;
+            var takingTheCrawlOutOfIt =
+                slip * supportedMassKg / (Mathf.Max(deltaTime, 1e-5f) * StepsToTakeUpASlip);
+
+            return against * Mathf.Min(whatItCanHoldWith, takingTheCrawlOutOfIt);
+        }
+
+        /// <summary>
+        /// How many steps a tire takes to absorb a crawl it is holding against.
+        ///
+        /// More than one, so that four wheels holding at once cannot answer a slow turn with more
+        /// than it had in it. Few enough that a nudged cart stops in a fraction of a second.
+        /// </summary>
+        const float StepsToTakeUpASlip = 3f;
+
+        /// <summary>
+        /// The most sideways force this tire can ever make, in newtons per kilogram it carries.
+        ///
+        /// The peak of its own grip curve, which is what a tire holding rather than sliding is good
+        /// for. Read off the curve's corners rather than sampled: they are where a curve of this
+        /// shape peaks, and reading them costs nothing on a step that does this once per wheel.
+        /// </summary>
+        public static float MostGripPerKilogram(VehicleProfile profile)
+        {
+            var curve = profile.lateralGripCurve;
+            var most = 0f;
+
+            for (var i = 0; i < curve.length; i++)
+            {
+                most = Mathf.Max(most, curve[i].value);
+            }
+
+            return most;
         }
 
         /// <summary>
@@ -253,6 +322,7 @@ namespace BelowTheWing.Vehicles
             in WheelLoad load,
             in DriveIntent intent,
             float vehicleMassKg,
+            float wheelRadiusMetres,
             float deltaTime,
             VehicleProfile profile)
         {
@@ -261,14 +331,21 @@ namespace BelowTheWing.Vehicles
                 return WheelForce.None;
             }
 
-            var compression = Compression(probe.DistanceToGround, profile);
+            var compression = Compression(probe.DistanceToGround, wheelRadiusMetres, profile);
             if (compression < 0f)
             {
                 return WheelForce.None;
             }
 
             var suspension = SuspensionForce(compression, velocity.AlongSuspension, profile);
-            var lateral = LateralForce(velocity.Lateral, load.SupportedMassKg, profile);
+
+            // Against the weight this wheel is actually carrying, not the share of the vehicle it
+            // would carry standing level. A wheel barely touching the ground -- the two on the light
+            // side of a vehicle up on the edge of tipping -- grips in proportion to that, which is
+            // to say hardly at all. Given the vehicle's quarter regardless, those two would hold it
+            // from sliding out while carrying nothing.
+            var carrying = suspension / Mathf.Max(Physics.gravity.magnitude, 1e-5f);
+            var lateral = LateralForce(velocity.Lateral, carrying, deltaTime, profile);
             var drive = DriveForce(intent.Throttle, intent.Sprint, velocity.Forward, profile) * load.DriveShare;
             var braking = BrakeForce(intent.Brake, velocity.Forward, vehicleMassKg, deltaTime, profile) * load.BrakeShare;
             var resistance = RollingResistance(

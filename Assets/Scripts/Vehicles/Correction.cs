@@ -59,7 +59,10 @@ namespace BelowTheWing.Vehicles
         public float extrapolationCeilingSeconds;
 
         [Tooltip("How small a correction is not worth making, in metres per second. Below this the " +
-                 "vehicle is left alone entirely so that it can fall asleep.")]
+                 "vehicle is left alone entirely. A correction is a force, and a force that never " +
+                 "quite cancels is one that creeps: told for ten seconds running that it is exactly " +
+                 "where it already is, a train nudged by every one of those reports walks off across " +
+                 "the apron.")]
         public float leaveAloneBelow;
 
         /// <summary>Settings that close an ordinary error without visible pull.</summary>

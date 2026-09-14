@@ -29,6 +29,15 @@ namespace BelowTheWing.Crew
         MouseCapture m_Pointer;
         bool m_PointerWasHeld;
 
+        /// <summary>
+        /// The jump, held until the physics has had a step to act on it.
+        ///
+        /// Every other control here is read and acted on inside the same frame, or is a key being
+        /// held rather than a moment it went down. A jump is neither: it is an instant, and what
+        /// acts on it runs on the physics clock.
+        /// </summary>
+        PressLatch m_Jump;
+
         public CrewIntent Current { get; private set; } = CrewIntent.Idle;
 
         void Awake()
@@ -51,6 +60,16 @@ namespace BelowTheWing.Crew
                 Held(keyboard, Key.D) - Held(keyboard, Key.A),
                 Held(keyboard, Key.W) - Held(keyboard, Key.S));
 
+            // Asked for on the frame the key went down, and kept until a physics step has run.
+            // Physics steps fifty times a second while frames are drawn as fast as the machine can
+            // manage, so most frames carry no step at all: a jump read straight off the key is
+            // thrown away before anything could act on it, four times out of five.
+            m_Jump.ForgetOnceAStepHasSeenIt(Time.fixedTimeAsDouble);
+            if (keyboard.spaceKey.wasPressedThisFrame)
+            {
+                m_Jump.Ask(Time.fixedTimeAsDouble);
+            }
+
             Current = new CrewIntent(
                 move,
                 sprint: keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed,
@@ -59,7 +78,7 @@ namespace BelowTheWing.Crew
                 // Space is the brake while driving and the jump while on foot. The same key for
                 // "get off the ground" either way, and never both at once, because a player in a
                 // seat is not standing on anything.
-                jump: keyboard.spaceKey.wasPressedThisFrame,
+                jump: m_Jump.Asked,
 
                 // Held rather than toggled. A cart interior is low enough that a player wants to be
                 // sure they are still crouched without watching their own knees.

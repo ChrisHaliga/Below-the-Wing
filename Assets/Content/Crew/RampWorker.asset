@@ -17,4 +17,5 @@ MonoBehaviour:
   radiusMetres: 0.3
   walkSpeedMetresPerSecond: 4
   sprintSpeedMetresPerSecond: 7
-  accelerationMetresPerSecondSquared: 8
+  footGripMetresPerSecondSquared: 10
+  gaitResponseMetresPerSecondSquared: 30

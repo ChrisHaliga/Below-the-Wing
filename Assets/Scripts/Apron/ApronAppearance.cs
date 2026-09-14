@@ -66,7 +66,10 @@ namespace BelowTheWing.Apron
         [SerializeField, Tooltip("The name written above it. Set when the object is placed.")]
         string m_DisplayName = "";
 
-        /// <summary>Size in metres, as the profile this was built from describes it.</summary>
+        /// <summary>
+        /// Size of the stand-in shape in metres. Meaningless for something already modelled, which
+        /// draws no stand-in and answers for the room it takes up through its own shape.
+        /// </summary>
         public Vector3 SizeMetres => m_SizeMetres;
 
         /// <summary>Which stand-in shape this is drawn as.</summary>
@@ -137,6 +140,21 @@ namespace BelowTheWing.Apron
                     GreyboxShape.AttachBox(transform, m_SizeMetres, m_Colour);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Fills this in for something that has a model of its own.
+        ///
+        /// Neither a colour nor a size, because nothing is drawn here for either to apply to: the
+        /// model is what a player sees, and how much room the thing takes up is its shape's to
+        /// answer. A size recorded here as well would be a second copy of a measurement, kept in
+        /// agreement with the first by nothing.
+        /// </summary>
+        public void DescribeAsModelled(float labelHeightMetres)
+        {
+            m_Shape = Shape.AlreadyModelled;
+            m_LabelHeightMetres = labelHeightMetres;
+            m_DrawnAtLocal = Vector3.zero;
         }
 
         /// <summary>

@@ -60,7 +60,6 @@ namespace BelowTheWing.Vehicles
 
         readonly List<Rigidbody> m_Bodies;
         readonly ContactBlackout m_Crashing = new ContactBlackout(BlackoutSettings.Default);
-        float m_SecondsStill;
         readonly ChainJointSettings m_Settings;
 
         CartChain(List<VehicleController> members, List<HingeJoint> couplings, ChainJointSettings settings)
@@ -181,128 +180,6 @@ namespace BelowTheWing.Vehicles
         }
 
         /// <summary>
-        /// Puts a whole train to sleep once all of it has stood still for long enough.
-        ///
-        /// A whole train, because sleep decided one vehicle at a time does not work on things that
-        /// are coupled together. A cart that goes quiet is put to sleep on its own, and a step later
-        /// the hinge to its neighbour -- still awake -- wakes it up again. The two trade being
-        /// asleep back and forth and neither ever comes to rest, so a train that has been let go of
-        /// keeps creeping across the apron and goes on costing for the rest of the session.
-        ///
-        /// Getting there needs an explicit push in the first place. Any force wakes a rigidbody, so
-        /// a vehicle holding itself up on its own suspension is woken every step by the very force
-        /// keeping it standing, and could never drop off on its own. For the same reason this
-        /// reports whether it has just sent the train to sleep: the caller has to stop there and
-        /// apply nothing further this step, or it wakes the train it has only now settled.
-        /// </summary>
-        public bool SettleOnceEverythingHasStopped(
-            bool nobodyIsDriving, float deltaTime, float secondsNeeded,
-            float stillMetresPerSecond, float stillRadiansPerSecond)
-        {
-            // Waking is a decision for the whole train too, and for the same reason. A train slept
-            // as one thing and then woken one vehicle at a time is a tractor that drives off leaving
-            // four sleeping carts standing on the apron, stretching the couplings between them until
-            // the solver gives up.
-            if (!nobodyIsDriving || HalfAsleep())
-            {
-                m_SecondsStill = 0f;
-                WakeEverything();
-                return false;
-            }
-
-            if (!EverythingHasStopped(stillMetresPerSecond, stillRadiansPerSecond))
-            {
-                m_SecondsStill = 0f;
-                return false;
-            }
-
-            m_SecondsStill += deltaTime;
-            if (m_SecondsStill < secondsNeeded)
-            {
-                return false;
-            }
-
-            foreach (var member in m_Members)
-            {
-                member.Body.Sleep();
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Whether this train has stopped going anywhere.
-        ///
-        /// Judged on where the train as a whole is heading rather than on each vehicle separately.
-        /// Five bodies held together by hinges never all read as still at the same instant: the
-        /// solver leaves them trading small pushes, and those cancel out across the train while
-        /// being individually larger than any threshold worth using. Asked one vehicle at a time,
-        /// a parked train reports itself as moving for ever and never sleeps.
-        ///
-        /// A single vehicle thrown out of an otherwise still train is caught separately, because
-        /// there the answer really is that something is happening.
-        /// </summary>
-        public bool EverythingHasStopped(float stillMetresPerSecond, float stillRadiansPerSecond)
-        {
-            const float RunawayMultiple = 6f;
-
-            var travel = Vector3.zero;
-            var turn = Vector3.zero;
-
-            foreach (var member in m_Members)
-            {
-                var body = member.Body;
-
-                if (body.linearVelocity.magnitude > stillMetresPerSecond * RunawayMultiple
-                    || body.angularVelocity.magnitude > stillRadiansPerSecond * RunawayMultiple)
-                {
-                    return false;
-                }
-
-                travel += body.linearVelocity;
-                turn += body.angularVelocity;
-            }
-
-            travel /= m_Members.Count;
-            turn /= m_Members.Count;
-
-            return travel.magnitude <= stillMetresPerSecond && turn.magnitude <= stillRadiansPerSecond;
-        }
-
-        /// <summary>
-        /// Whether some of this train is asleep and the rest of it is not.
-        ///
-        /// Never a state worth being in. It happens when something bumps a parked train: physics
-        /// wakes the vehicle that was hit and leaves the rest asleep, so the couplings between them
-        /// have one live end and one immovable one, and the train is pulled apart at the seam.
-        /// </summary>
-        public bool HalfAsleep()
-        {
-            var asleep = 0;
-
-            foreach (var member in m_Members)
-            {
-                if (member.Body.IsSleeping())
-                {
-                    asleep++;
-                }
-            }
-
-            return asleep > 0 && asleep < m_Members.Count;
-        }
-
-        void WakeEverything()
-        {
-            foreach (var member in m_Members)
-            {
-                if (member.Body.IsSleeping())
-                {
-                    member.Body.WakeUp();
-                }
-            }
-        }
-
-        /// <summary>
         /// How much say the machine that owns this train currently has over where it is.
         ///
         /// Nothing at all for a moment after anything hits it, then easing back. A whole train goes
@@ -364,6 +241,21 @@ namespace BelowTheWing.Vehicles
 
         static HingeJoint Hitch(VehicleController inFront, VehicleController behind, ChainJointSettings settings)
         {
+            // No coupling at one of the two ends means there is no joint to make. A baggage
+            // tractor has nothing at its front: anchoring there would anchor at its origin, a point
+            // on the tarmac between its front wheels, and the train would drag it along by its axle.
+            // Refused rather than approximated, and the train is left uncoupled at that joint, which
+            // is a state it already has a meaning for -- a train this machine is not simulating.
+            if (behind.FrontHitchLocal == null || inFront.RearHitchLocal == null)
+            {
+                Debug.LogError(
+                    $"'{behind.name}' cannot be hitched behind '{inFront.name}': " +
+                    $"{(behind.FrontHitchLocal == null ? behind.name + " has no coupling at its front" : inFront.name + " has no coupling at its back")}.",
+                    behind);
+
+                return null;
+            }
+
             // The joint lives on the vehicle being towed, which is the one whose movement it
             // constrains, and connects forward to the one doing the towing.
             var coupling = behind.gameObject.AddComponent<HingeJoint>();
@@ -381,11 +273,13 @@ namespace BelowTheWing.Vehicles
             // Meeting in the middle leaves the difference as fixed geometry the joint never argues
             // with. Parked at coupling distance -- which is how the layout places them -- the two
             // anchors land on the same world point and the joint begins life already satisfied.
-            var meetAt = 0.5f * (behind.FrontHitchLocal.y + inFront.RearHitchLocal.y);
+            var ourEnd = behind.FrontHitchLocal.Value;
+            var theirEnd = inFront.RearHitchLocal.Value;
+            var meetAt = 0.5f * (ourEnd.y + theirEnd.y);
 
             coupling.autoConfigureConnectedAnchor = false;
-            coupling.anchor = new Vector3(0f, meetAt, behind.FrontHitchLocal.z);
-            coupling.connectedAnchor = new Vector3(0f, meetAt, inFront.RearHitchLocal.z);
+            coupling.anchor = new Vector3(0f, meetAt, ourEnd.z);
+            coupling.connectedAnchor = new Vector3(0f, meetAt, theirEnd.z);
 
             coupling.axis = Vector3.up;
             coupling.useLimits = true;

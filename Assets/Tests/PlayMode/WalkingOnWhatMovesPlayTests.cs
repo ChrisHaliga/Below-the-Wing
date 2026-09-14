@@ -13,7 +13,9 @@ namespace BelowTheWing.Tests.PlayMode
     /// Nothing attaches them and nothing freezes them. Friction carries them, and walking is
     /// relative to whatever is under their feet: standing still on a moving deck means moving with
     /// it, walking forward means moving with it and a bit more. That is the whole of riding, and
-    /// it is also why a corner slides a person off exactly as it slides a bag.
+    /// it is also why somebody who jumps off a moving deck keeps the speed it gave them, and why a
+    /// corner hard enough slides them off it exactly as it slides a bag. What their legs can do and
+    /// what their feet can hold are two different figures -- see FootingTests for the second one.
     /// </summary>
     public sealed class WalkingOnWhatMovesPlayTests
     {
@@ -109,6 +111,20 @@ namespace BelowTheWing.Tests.PlayMode
                 "second in the air, which is why they land well ahead of where they left");
         }
 
+
+        /// <summary>
+        /// A corner taken far harder than a pair of feet can hold: the deck changes velocity
+        /// sideways at twenty metres per second squared, twice what a person grips with.
+        /// </summary>
+        IEnumerator AHardCorner()
+        {
+            for (var i = 1; i <= 50; i++)
+            {
+                m_Deck.linearVelocity = new Vector3(0.4f * i, 0f, 3f);
+                yield return new WaitForFixedUpdate();
+            }
+        }
+
         [UnityTest]
         public IEnumerator AHardCornerSlidesAPersonOffTheDeck()
         {
@@ -118,19 +134,31 @@ namespace BelowTheWing.Tests.PlayMode
             // was never aboard.
             var stoodAt = OnTheDeck();
             yield return DriveTheDeck(new Vector3(0f, 0f, 3f), seconds: 1.5f);
-            Assert.That(Vector3.Distance(OnTheDeck(), stoodAt), Is.LessThan(1f), "aboard, before the corner");
+            Assert.That(Vector3.Distance(OnTheDeck(), stoodAt), Is.LessThan(1f), $"aboard, before the corner. {Where()}");
 
-            // Twenty metres a second squared sideways, which no pair of feet on a steel deck holds.
-            for (var i = 1; i <= 50; i++)
-            {
-                m_Deck.linearVelocity = new Vector3(0.4f * i, 0f, 3f);
-                yield return new WaitForFixedUpdate();
-            }
-
+            yield return AHardCorner();
             yield return Steps.Seconds(1f);
 
             Assert.That(Mathf.Abs(OnTheDeck().x), Is.GreaterThan(1.5f),
-                "there is no lip for a person, and a corner that would throw a bag throws them too");
+                $"there is no lip for a person, and a corner that would throw a bag throws them " +
+                $"too. {Where()}");
+        }
+
+        [UnityTest]
+        public IEnumerator SomebodySlidingCannotWalkThemselvesBackAboard()
+        {
+            yield return Steps.Seconds(1f);
+            yield return DriveTheDeck(new Vector3(0f, 0f, 3f), seconds: 1f);
+
+            // Walking as hard as they can toward the middle of the deck, the whole way through.
+            m_Crew.IntentSource = new HeldKeys(new Vector2(1f, 0f));
+
+            yield return AHardCorner();
+            yield return Steps.Seconds(1f);
+
+            Assert.That(Mathf.Abs(OnTheDeck().x), Is.GreaterThan(1.5f),
+                $"they walked out of a skid. Feet that can push while they are sliding are feet " +
+                $"that never lose the deck, and the corner costs a rider nothing. {Where()}");
         }
     }
 }

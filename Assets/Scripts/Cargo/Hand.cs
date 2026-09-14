@@ -57,7 +57,11 @@ namespace BelowTheWing.Cargo
             carryGripNewtons = 800f,
             armSpringNewtonsPerMetre = 10000f,
             armDamperNewtonsPerMetrePerSecond = 300f,
-            gripBreakForceNewtons = 6000f,
+            // Five times what a player's own legs can pull, which is what stops walking away from
+            // a cart being a way to tear your own hand off it: the feet push 80 kg at 30 m/s^2, so
+            // 2.4 kN is the hardest a person can haul on their own grip. What is meant to break it
+            // is a vehicle, and a tractor pulls ten times that.
+            gripBreakForceNewtons = 12000f,
             minimumChargeSeconds = 0.15f,
             fullChargeSeconds = 1.2f,
             gentleSpeed = 2f,

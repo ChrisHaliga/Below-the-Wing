@@ -132,16 +132,82 @@ namespace BelowTheWing.Tests.PlayMode
                 "a bag nothing can throw off is the game not having the mechanic it is built around");
         }
 
+        /// <summary>
+        /// How far a body is from lying on one of its own faces, in degrees.
+        ///
+        /// A box at rest is flat on a face. Anything else -- balanced on an edge, propped on a
+        /// corner -- is a pose it was passing through on its way to falling over, and a body found
+        /// holding one was stopped rather than settled.
+        /// </summary>
+        static float OffItsFace(Transform box)
+        {
+            var worst = 180f;
+
+            foreach (var face in new[] { box.up, box.right, box.forward })
+            {
+                worst = Mathf.Min(worst, Mathf.Min(
+                    Vector3.Angle(face, Vector3.up), Vector3.Angle(face, Vector3.down)));
+            }
+
+            return worst;
+        }
+
         [UnityTest]
-        public IEnumerator ABagOnAParkedCartGoesToSleep()
+        public IEnumerator ABagOnAParkedCartSettlesWithoutBeingFrozen()
         {
             var bag = ABagAt(new Vector3(0f, m_Shape.InteriorLocal.min.y + 0.3f, 0f));
 
             yield return Steps.Seconds(4f);
 
-            Assert.That(bag.Body.IsSleeping(), Is.True,
-                "forty bags on parked carts that never sleep are forty bodies the solver works on " +
-                "every step on every machine, for a game where nothing is happening");
+            Assert.That(bag.Body.linearVelocity.magnitude, Is.LessThan(0.05f), "it has settled");
+            Assert.That(bag.Body.IsSleeping(), Is.False,
+                "a sleeping bag is frozen in whatever pose it had when it dozed off, including one " +
+                "it was halfway through falling out of, and it stays there until something sharp " +
+                "enough to wake it comes along");
+        }
+
+        [UnityTest]
+        public IEnumerator ABagTippedOnItsEdgeFallsOverRatherThanBalancing()
+        {
+            var bag = ABagAt(new Vector3(0f, m_Shape.InteriorLocal.min.y + 0.5f, 0f));
+            bag.transform.rotation = Quaternion.Euler(0f, 0f, 45f);
+
+            yield return Steps.Seconds(5f);
+
+            Assert.That(OffItsFace(bag.transform), Is.LessThan(10f),
+                $"the bag came to rest {OffItsFace(bag.transform):F0} degrees off any face of its " +
+                "own -- balanced on an edge. Dropped on a corner it has to fall over like anything " +
+                "else; stopping where it happened to be when it went quiet is not resting");
+        }
+
+        [UnityTest]
+        public IEnumerator ABagWithMostOfItselfPastTheEndOfADeckFallsOff()
+        {
+            // Two thirds of it out over the end: there is nothing under its middle.
+            var bag = ABagAt(new Vector3(
+                0f, m_Shape.InteriorLocal.min.y + 0.2f, m_Shape.InteriorLocal.extents.z + 0.2f));
+
+            yield return Steps.Seconds(5f);
+
+            Assert.That(bag.transform.position.y, Is.LessThan(m_Shape.InteriorLocal.min.y),
+                $"it is still up at {bag.transform.position.y:F2} m with its weight hanging past the " +
+                "end of the deck. A bag resting on nothing is a bag that was frozen where it was " +
+                "rather than left to fall");
+        }
+
+        [UnityTest]
+        public IEnumerator ABagAtRestGoesWithTheCartWhenItDrivesAway()
+        {
+            var bag = ABagAt(new Vector3(0f, m_Shape.InteriorLocal.min.y + 0.3f, 0f));
+            yield return Steps.Seconds(4f);
+
+            var satAt = InTheCart(bag);
+            yield return DriveTo(new Vector3(0f, 0f, 6f), seconds: 2f);
+            yield return Steps.Seconds(1f);
+
+            Assert.That(Vector3.Distance(InTheCart(bag), satAt), Is.LessThan(0.3f),
+                "the cart drove out from under it. A bag that settled has to be carried by the deck " +
+                "it settled on, which it cannot be if it was frozen in place in the world");
         }
 
         [UnityTest]

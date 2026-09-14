@@ -9,38 +9,13 @@ using UnityEngine.InputSystem;
 namespace BelowTheWing.Diagnostics
 {
     /// <summary>
-    /// Counting what physics is actually being asked to do.
-    ///
-    /// The cost of this game is the number of bodies awake at once, and a body that has gone to
-    /// sleep costs nothing until something wakes it. Neither number is visible from looking at the
-    /// screen, so they get counted.
-    /// </summary>
-    public static class BodyCensus
-    {
-        /// <summary>How many of these bodies physics is still integrating.</summary>
-        public static int AwakeCount(IReadOnlyList<Rigidbody> bodies)
-        {
-            var awake = 0;
-
-            foreach (var body in bodies)
-            {
-                if (body != null && !body.IsSleeping())
-                {
-                    awake++;
-                }
-            }
-
-            return awake;
-        }
-    }
-
-    /// <summary>
     /// An on-screen readout of what the simulation is doing, for a developer rather than a player.
     ///
-    /// Two things it shows cannot be seen any other way. How many bodies are awake says whether a
-    /// train has settled or is quietly jittering for ever, which looks identical from outside. And
-    /// who owns each vehicle says whether taking over a train actually moved all of it, which has
-    /// no visible effect at all until a second player is there to be broken by it.
+    /// Two things it shows cannot be seen any other way. How long a physics step is taking says
+    /// whether the apron is quietly costing more than it should, which looks identical from outside
+    /// until it does not. And who owns each vehicle says whether taking over a train actually moved
+    /// all of it, which has no visible effect at all until a second player is there to be broken
+    /// by it.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class RampReadout : MonoBehaviour
@@ -50,16 +25,12 @@ namespace BelowTheWing.Diagnostics
 
         readonly Stopwatch m_SinceStepBegan = new Stopwatch();
         readonly List<CartChain> m_Trains = new List<CartChain>();
-        readonly List<Rigidbody> m_Bodies = new List<Rigidbody>();
         readonly List<ContactTally> m_Tallies = new List<ContactTally>();
 
         IOwnershipBroker m_Broker;
 
         /// <summary>Whether the readout is currently drawn.</summary>
         public bool Visible { get; set; } = true;
-
-        /// <summary>How many rigidbodies physics is currently integrating.</summary>
-        public int AwakeBodyCount => BodyCensus.AwakeCount(m_Bodies);
 
         /// <summary>How long the last physics step took, in milliseconds.</summary>
         public float PhysicsStepMilliseconds { get; private set; }
@@ -105,14 +76,12 @@ namespace BelowTheWing.Diagnostics
             m_Trains.Clear();
             m_Trains.AddRange(trains);
 
-            m_Bodies.Clear();
             m_Tallies.Clear();
 
             foreach (var train in trains)
             {
                 foreach (var member in train.Members)
                 {
-                    m_Bodies.Add(member.Body);
 
                     var tally = member.GetComponent<ContactTally>();
                     if (tally != null)
@@ -225,7 +194,6 @@ namespace BelowTheWing.Diagnostics
 
             var lines = new List<string>
             {
-                $"awake bodies   {AwakeBodyCount} / {m_Bodies.Count}",
                 $"physics step   {PhysicsStepMilliseconds:F2} ms",
                 $"contacts       {ContactCount}"
             };

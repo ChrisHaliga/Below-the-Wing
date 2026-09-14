@@ -133,8 +133,17 @@ namespace BelowTheWing.Vehicles
 
                 // Put into place before anything hooks it up, so the coupling is made with its two
                 // ends already touching and has nothing to pull against.
-                var (position, rotation) = Coupling.WhereToStand(
-                    Driving.Members[Driving.Members.Count - 1], wanted);
+                var standing = Coupling.WhereToStand(Driving.Members[Driving.Members.Count - 1], wanted);
+                if (standing == null)
+                {
+                    // One of the two has no coupling at the end being joined, so there is nowhere to
+                    // put this that would line anything up. Only reachable if something offered a
+                    // vehicle that cannot be towed.
+                    Prompt = CouplingPrompt.Refused;
+                    return;
+                }
+
+                var (position, rotation) = standing.Value;
 
                 wanted.transform.SetPositionAndRotation(position, rotation);
                 wanted.Body.position = position;

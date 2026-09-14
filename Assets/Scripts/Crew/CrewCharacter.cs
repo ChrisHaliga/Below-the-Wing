@@ -357,6 +357,8 @@ namespace BelowTheWing.Crew
             }
         }
 
+        Footing m_Footing;
+
         void FixedUpdate()
         {
             if (m_Profile == null)
@@ -430,9 +432,37 @@ namespace BelowTheWing.Crew
             Stance.Want(asked.Crouch);
 
             // Walking is pushing against whatever is underfoot. Nothing there, nothing to push
-            // against: somebody in the air keeps the speed they left the ground with.
+            // against: somebody in the air keeps the speed they left the ground with, and lands on
+            // whatever they land on with their feet under them.
             if (!StandingOn(out var underfoot))
             {
+                m_Footing.Reset();
+                return;
+            }
+
+            var deck = MovingAt(underfoot, Feet);
+            var deckAcrossTheGround = new Vector3(deck.x, 0f, deck.z);
+
+            var velocity = Body.linearVelocity;
+            var acrossTheGround = new Vector3(velocity.x, 0f, velocity.z);
+
+            m_Footing.Settle(
+                underfoot,
+                deckAcrossTheGround,
+                acrossTheGround,
+                m_Profile.footGripMetresPerSecondSquared,
+                Time.fixedDeltaTime);
+
+            var grip = m_Profile.footGripMetresPerSecondSquared * Time.fixedDeltaTime;
+
+            if (m_Footing.Lost)
+            {
+                // Skidding. There is nothing to push off, so nothing they ask for happens: friction
+                // alone drags them toward whatever they are sliding across, and they get their legs
+                // back when they are moving with it again.
+                Body.AddForce(
+                    Vector3.ClampMagnitude(deckAcrossTheGround - acrossTheGround, grip),
+                    ForceMode.VelocityChange);
                 return;
             }
 
@@ -443,19 +473,11 @@ namespace BelowTheWing.Crew
             // Relative to what is underfoot. Standing still on a moving deck is moving with it, and
             // walking forward on one is that and a bit more -- which is the whole of riding a cart,
             // and needs nothing to attach the rider to it.
-            var deck = MovingAt(underfoot, Feet);
-            var deckAcrossTheGround = new Vector3(deck.x, 0f, deck.z);
             var wanted = deckAcrossTheGround + walking;
+            var gait = m_Profile.gaitResponseMetresPerSecondSquared * Time.fixedDeltaTime;
 
-            var velocity = Body.linearVelocity;
-            var acrossTheGround = new Vector3(velocity.x, 0f, velocity.z);
-
-            // Capped at what the feet can push before they slip. That cap is also what lets a
-            // corner taken hard enough take a deck out from under somebody.
-            var canChangeThisStep = m_Profile.accelerationMetresPerSecondSquared * Time.fixedDeltaTime;
-            var change = Vector3.ClampMagnitude(wanted - acrossTheGround, canChangeThisStep);
-            Body.AddForce(change, ForceMode.VelocityChange);
-
+            Body.AddForce(
+                Vector3.ClampMagnitude(wanted - acrossTheGround, gait), ForceMode.VelocityChange);
         }
     }
 }

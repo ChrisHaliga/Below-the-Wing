@@ -65,18 +65,31 @@ namespace BelowTheWing.EditorTools
             var profile = ScriptableObject.CreateInstance<VehicleProfile>();
             profile.equipmentNote =
                 "Baggage tractor: the small towing unit that pulls cart trains around an apron. "
-                + "Around three tonnes empty, which is typical of the diesel and electric units in "
-                + "this class.";
-            profile.massKg = 3000f;
-            profile.bodySizeMetres = new Vector3(1.3f, 1.6f, 3.0f);
-            profile.centerOfMassOffset = new Vector3(0f, 0.35f, 0f);
-            profile.wheelRadiusMetres = 0.3f;
-            profile.suspensionRestLengthMetres = 0.35f;
-            profile.springStrengthNewtons = 60000f;
-            profile.damperNewtonsPerMetrePerSecond = 6000f;
+                + "Two and a half tonnes empty, which is typical of the diesel and electric units "
+                + "in this class at 2.8 m long.";
+            profile.massKg = 2500f;
+
+            // Low, and measured from an origin on the ground rather than in the middle of the
+            // bodywork. The bodywork's own middle is a metre up; carrying the weight there would
+            // have a tug roll over the first time it cornered with a loaded train behind it.
+            profile.centerOfMassOffset = new Vector3(0f, 0.55f, 0f);
+
+            // Little suspension, because these are little wheels: 0.2203 m at the front and
+            // 0.2647 m at the back, measured off the model. Travel longer than half the smaller
+            // wheel and the tractor visibly floats above its own axles.
+            profile.suspensionRestLengthMetres = 0.10f;
+
+            // 6131 N on each corner at 2500 kg gives about 15% compression at rest, leaving room to
+            // squash under a load and to extend over a bump. The damper is around 0.45 of critical
+            // for that stiffness, which settles a bounce inside one oscillation.
+            profile.springStrengthNewtons = 41000f;
+            profile.damperNewtonsPerMetrePerSecond = 14000f;
             profile.coastingDragPerSecond = 0.4f;
             profile.lateralGripCurve = TireCurve();
-            profile.maxDriveForceNewtons = 25000f;
+
+            // 20 kN on 2500 kg is 8 m/s^2 off the line: brisk for a tug, and enough to move a train
+            // of loaded carts without spinning the wheels up.
+            profile.maxDriveForceNewtons = 20000f;
             profile.topSpeedMetresPerSecond = 20f;
             profile.bounciness = 0.4f;
             profile.sprintDriveMultiplier = 1.5f;
@@ -109,16 +122,13 @@ namespace BelowTheWing.EditorTools
                 + "driven, so it has no engine and no steering of its own.";
             profile.massKg = 550f;
 
-            profile.bodySizeMetres = new Vector3(1.8855f, 2.0155f, 3.8152f);
-
             // Low, and measured from an origin that is on the ground rather than in the middle of
             // the bodywork. A loaded cart that leans into a corner throws its load out of itself.
             profile.centerOfMassOffset = new Vector3(0f, 0.5f, 0f);
 
-            // Measured off the model. Small wheels, and correspondingly little suspension: 0.35 m
-            // of travel on a 0.157 m wheel is more than twice the wheel radius, and the cart would
-            // visibly float above its own axles.
-            profile.wheelRadiusMetres = 0.157f;
+            // Small wheels -- 0.157 m, measured off the model -- and correspondingly little
+            // suspension. Travel longer than the wheel has radius and the cart visibly floats
+            // above its own axles.
             profile.suspensionRestLengthMetres = 0.08f;
 
             // 1349 N on each corner at 550 kg gives about 15% compression at rest, leaving room to
@@ -164,7 +174,13 @@ namespace BelowTheWing.EditorTools
             profile.radiusMetres = 0.3f;
             profile.walkSpeedMetresPerSecond = 4f;
             profile.sprintSpeedMetresPerSecond = 7f;
-            profile.accelerationMetresPerSecondSquared = 8f;
+            // Two figures, because they answer two questions. Grip is real: 10 m/s^2 is above the 8
+            // a tractor pulls away at and below the 12 to 15 a cart makes cornering hard, so a
+            // launch keeps its riders and a corner takes them. Gait is feel: legs that really only
+            // managed the grip figure would take half a second to reach walking pace, which is felt
+            // as the controls going soft, and it only applies while the feet still have the deck.
+            profile.footGripMetresPerSecondSquared = 10f;
+            profile.gaitResponseMetresPerSecondSquared = 30f;
             return profile;
         }
 

@@ -23,7 +23,9 @@ namespace BelowTheWing.Session
     /// because only the owner's physics knows what the bag is resting on.
     ///
     /// A bag at rest says so once and then falls silent, so that forty parked bags cost nothing on
-    /// the wire and are free to fall asleep on every machine.
+    /// the wire. Being still is something a bag has to keep doing, though, rather than a state it
+    /// enters: nothing here lets one be put to sleep, because a sleeping body is frozen in whatever
+    /// pose it had when it went quiet -- including one it was halfway through falling out of a cart.
     ///
     /// Two players reaching for one bag in the same instant is settled by whoever is granted it
     /// first: the machine simulating a bag refuses to hand it over while its own hand holds it, and
@@ -32,7 +34,7 @@ namespace BelowTheWing.Session
     /// </summary>
     [RequireComponent(typeof(Bag))]
     [DisallowMultipleComponent]
-    public sealed class CargoMotion : MotionReplication
+    public sealed class CargoMotion : MotionReplication, IMovedFromHere
     {
         [SerializeField, Tooltip("Seconds before asking again for a bag somebody here has hold of.")]
         float m_AskAgainAfterSeconds = 0.5f;
@@ -49,12 +51,19 @@ namespace BelowTheWing.Session
                                  "vehicle at the bottom of it, in metres.")]
         float m_StackReachMetres = 2f;
 
+        [SerializeField, Tooltip("Below this speed a bag is standing still and stops being news, in " +
+                                 "metres per second.")]
+        float m_StillBelow = 0.05f;
+
+        [SerializeField, Tooltip("Below this rate of turn a bag is standing still, in radians per second.")]
+        float m_StillSpinBelow = 0.05f;
+
         readonly List<Joint> m_Joints = new List<Joint>();
         readonly RaycastHit[] m_Below = new RaycastHit[8];
 
         Bag m_Bag;
         Collider m_Box;
-        bool m_WasAwake;
+        bool m_WasMoving;
         bool m_Asking;
         float m_SinceLastAsked;
 
@@ -65,6 +74,15 @@ namespace BelowTheWing.Session
         }
 
         protected override Rigidbody Body => m_Bag.Body;
+
+        /// <summary>
+        /// Whether this machine is the one that says where this bag goes.
+        ///
+        /// Asked by anything that needs to know whether it is looking at the real bag or a copy of
+        /// somebody else's, without caring that it is a bag -- which is how what a player sees knows
+        /// not to trail a body this machine is simulating.
+        /// </summary>
+        public bool OursToMove => IsOwner;
 
         public override void OnNetworkSpawn()
         {
@@ -213,22 +231,29 @@ namespace BelowTheWing.Session
 
         /// <summary>
         /// Reports while moving, and once more on coming to rest so the last word is where it
-        /// stopped. A sleeping bag that kept reporting would keep every copy of it awake.
+        /// stopped.
+        ///
+        /// Moving is measured rather than taken from whether physics has put the body to sleep,
+        /// because bags are never put to sleep: a sleeping body is frozen in whatever pose it had
+        /// when it went quiet, including one it was halfway through falling out of. Forty still
+        /// bags cost nothing on the wire either way -- what matters is that they are still because
+        /// nothing is moving them, not because they were stopped.
         /// </summary>
         void SayWhereItIs()
         {
-            var awake = !Body.IsSleeping();
+            var moving = Body.linearVelocity.magnitude > m_StillBelow
+                         || Body.angularVelocity.magnitude > m_StillSpinBelow;
 
-            if (awake)
+            if (moving)
             {
                 Report();
             }
-            else if (m_WasAwake)
+            else if (m_WasMoving)
             {
                 ReportNow();
             }
 
-            m_WasAwake = awake;
+            m_WasMoving = moving;
         }
 
         /// <summary>

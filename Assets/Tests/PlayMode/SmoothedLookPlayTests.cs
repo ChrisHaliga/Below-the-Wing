@@ -18,6 +18,12 @@ namespace BelowTheWing.Tests.PlayMode
     /// </summary>
     public sealed class SmoothedLookPlayTests
     {
+        /// <summary>Something that says out loud which machine moves it.</summary>
+        sealed class Mover : MonoBehaviour, IMovedFromHere
+        {
+            public bool OursToMove { get; set; } = true;
+        }
+
         TestApron m_Apron;
         VehicleProfile m_TractorProfile;
 
@@ -48,6 +54,49 @@ namespace BelowTheWing.Tests.PlayMode
             vehicle.gameObject.AddComponent<ApronAppearance>().Show("Tug 1");
             vehicle.OursToMove = false;
             return vehicle;
+        }
+
+        /// <summary>A body with a shape drawn on it, and whatever it says about who moves it.</summary>
+        (Transform Body, SmoothedLook Shape) SomethingDrawn(bool sayItIsOurs, bool sayAnythingAtAll)
+        {
+            var body = m_Apron.Track(new GameObject("Body").transform);
+            if (sayAnythingAtAll)
+            {
+                body.gameObject.AddComponent<Mover>().OursToMove = sayItIsOurs;
+            }
+
+            var look = new GameObject(ApronAppearance.LookName).transform;
+            look.SetParent(body, worldPositionStays: false);
+
+            return (body, look.gameObject.AddComponent<SmoothedLook>());
+        }
+
+        [UnityTest]
+        public IEnumerator WhatThisMachineMovesIsDrawnExactlyWhereItIs()
+        {
+            var (body, shape) = SomethingDrawn(sayItIsOurs: true, sayAnythingAtAll: true);
+
+            body.position = new Vector3(0f, 0f, 5f);
+            yield return null;
+
+            Assert.That(shape.TrailingByMetres, Is.LessThan(0.01f),
+                $"it is drawn {shape.TrailingByMetres:F2} m from where it is. A tenth of a second of " +
+                "trailing is two metres at the speed a tractor does, which is a bag drawn hanging " +
+                "out the back of the cart it is sitting in");
+        }
+
+        [UnityTest]
+        public IEnumerator SomethingThatSaysNothingAboutWhoMovesItIsDrawnWhereItIs()
+        {
+            var (body, shape) = SomethingDrawn(sayItIsOurs: false, sayAnythingAtAll: false);
+
+            body.position = new Vector3(0f, 0f, 5f);
+            yield return null;
+
+            Assert.That(shape.TrailingByMetres, Is.LessThan(0.01f),
+                $"it is drawn {shape.TrailingByMetres:F2} m behind itself because nothing on it says " +
+                "whether this machine moves it. Trailing hides a correction arriving from somewhere " +
+                "else; something that never said it was a copy of anything has no corrections to hide");
         }
 
         [UnityTest]

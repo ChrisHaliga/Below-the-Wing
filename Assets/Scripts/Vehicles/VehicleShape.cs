@@ -5,7 +5,7 @@ using UnityEngine;
 namespace BelowTheWing.Vehicles
 {
     /// <summary>
-    /// Where a vehicle's parts physically are.
+    /// Where a vehicle's parts physically are, and how big they are.
     ///
     /// The companion to <see cref="VehicleProfile"/>, and the division between them is worth
     /// stating: a profile says how a vehicle <em>drives</em> -- its mass, its springs, its grip,
@@ -20,9 +20,7 @@ namespace BelowTheWing.Vehicles
     /// second copy is how the invisible suspension probes ended up fourteen centimetres from the
     /// visible wheels with one side of a cart sitting permanently compressed.
     ///
-    /// For a vehicle that has a model, these are filled in from the model's own landmarks when the
-    /// prefab is built. For one that does not, they are filled in from numbers. Nothing downstream
-    /// can tell which, and that is the point.
+    /// These are filled in from the model's own landmarks when the prefab is built.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class VehicleShape : MonoBehaviour
@@ -48,12 +46,50 @@ namespace BelowTheWing.Vehicles
             }
         }
 
+        /// <summary>
+        /// One wheel: where its centre sits in the vehicle's own space, and how big it is.
+        ///
+        /// The two travel together because everything the suspension does with one it does with the
+        /// other. A wheel's radius decides how far its ground ray has to reach, how high above it
+        /// the body hangs, and how far it has dropped when that ray finds the tarmac further away
+        /// than expected. A vehicle whose axles carry different wheels -- the baggage tractor has
+        /// 0.22 m at the front and 0.26 m at the back -- gets all three wrong on one axle the
+        /// moment those two facts are stored apart and one figure is used for every corner.
+        /// </summary>
+        [Serializable]
+        public struct WheelPlacement
+        {
+            [Tooltip("Centre of the wheel in the vehicle's own space. The origin is on the ground, " +
+                     "so a wheel standing on the tarmac has its centre one radius up.")]
+            public Vector3 CentreLocal;
+
+            [Tooltip("Radius of the wheel in metres.")]
+            public float RadiusMetres;
+
+            public WheelPlacement(Vector3 centreLocal, float radiusMetres)
+            {
+                CentreLocal = centreLocal;
+                RadiusMetres = radiusMetres;
+            }
+        }
+
         /// <summary>Everything measured about one vehicle, for filling a shape in at once.</summary>
         public struct Measurements
         {
-            public IReadOnlyList<Vector3> WheelCentresLocal;
-            public Vector3 FrontCouplingLocal;
-            public Vector3 RearCouplingLocal;
+            public IReadOnlyList<WheelPlacement> Wheels;
+
+            /// <summary>
+            /// Where a vehicle in front of this one attaches, or null if nothing can tow it.
+            ///
+            /// Null rather than the origin. A tractor has no coupling at its front, and a point at
+            /// (0,0,0) is not "no coupling" -- it is a coupling on the tarmac between the front
+            /// wheels, which is where a joint would drag the tractor from.
+            /// </summary>
+            public Vector3? FrontCouplingLocal;
+
+            /// <summary>Where a vehicle behind this one attaches, or null if nothing can follow it.</summary>
+            public Vector3? RearCouplingLocal;
+
             public Vector3 EnvelopeSizeMetres;
             public Vector3 EnvelopeCentreLocal;
             public Bounds InteriorLocal;
@@ -64,11 +100,17 @@ namespace BelowTheWing.Vehicles
                 => VehicleFootprint.Of(EnvelopeSizeMetres, FrontCouplingLocal, RearCouplingLocal);
         }
 
-        [SerializeField, Tooltip("Where the four wheels sit, in this vehicle's own space.")]
-        Vector3[] m_WheelCentresLocal = new Vector3[4];
+        [SerializeField, Tooltip("Where the wheels sit and how big they are.")]
+        WheelPlacement[] m_Wheels = Array.Empty<WheelPlacement>();
+
+        [SerializeField, Tooltip("Whether anything can be hitched in front of this vehicle at all.")]
+        bool m_HasFrontCoupling;
 
         [SerializeField, Tooltip("Where a vehicle in front of this one attaches.")]
         Vector3 m_FrontCouplingLocal;
+
+        [SerializeField, Tooltip("Whether anything can be hitched behind this vehicle at all.")]
+        bool m_HasRearCoupling;
 
         [SerializeField, Tooltip("Where a vehicle behind this one attaches.")]
         Vector3 m_RearCouplingLocal;
@@ -87,14 +129,25 @@ namespace BelowTheWing.Vehicles
         [SerializeField, Tooltip("The boxes this vehicle is solid in.")]
         SolidPart[] m_SolidParts = Array.Empty<SolidPart>();
 
-        /// <summary>Where the four wheels sit, in this vehicle's own space.</summary>
-        public IReadOnlyList<Vector3> WheelCentresLocal => m_WheelCentresLocal;
+        /// <summary>Where this vehicle's wheels sit and how big each one is.</summary>
+        public IReadOnlyList<WheelPlacement> Wheels => m_Wheels;
 
-        /// <summary>Where a vehicle in front of this one attaches, in this vehicle's own space.</summary>
-        public Vector3 FrontCouplingLocal => m_FrontCouplingLocal;
+        /// <summary>Whether anything can be hitched in front of this vehicle.</summary>
+        public bool HasFrontCoupling => m_HasFrontCoupling;
 
-        /// <summary>Where a vehicle behind this one attaches, in this vehicle's own space.</summary>
-        public Vector3 RearCouplingLocal => m_RearCouplingLocal;
+        /// <summary>Whether anything can be hitched behind this vehicle.</summary>
+        public bool HasRearCoupling => m_HasRearCoupling;
+
+        /// <summary>
+        /// Where a vehicle in front of this one attaches, or null if nothing can tow it.
+        ///
+        /// Nothing tows a baggage tractor, so it answers null here, and a caller that wants to
+        /// hitch something has to deal with that rather than being handed a point on the tarmac.
+        /// </summary>
+        public Vector3? FrontCouplingLocal => m_HasFrontCoupling ? m_FrontCouplingLocal : (Vector3?)null;
+
+        /// <summary>Where a vehicle behind this one attaches, or null if nothing can follow it.</summary>
+        public Vector3? RearCouplingLocal => m_HasRearCoupling ? m_RearCouplingLocal : (Vector3?)null;
 
         /// <summary>
         /// What laying this vehicle out needs to know about it: the room it takes up and how far
@@ -104,12 +157,12 @@ namespace BelowTheWing.Vehicles
         /// front and the socket is recessed behind -- which is why they are two numbers.
         /// </summary>
         public VehicleFootprint Footprint
-            => VehicleFootprint.Of(m_EnvelopeSizeMetres, m_FrontCouplingLocal, m_RearCouplingLocal);
+            => VehicleFootprint.Of(m_EnvelopeSizeMetres, FrontCouplingLocal, RearCouplingLocal);
 
-        /// <summary>How far the front coupling reaches past the origin, in metres.</summary>
+        /// <summary>How far the front coupling reaches past the origin, in metres. Zero if it has none.</summary>
         public float FrontReachMetres => Footprint.FrontReachMetres;
 
-        /// <summary>How far the rear coupling reaches past the origin, in metres.</summary>
+        /// <summary>How far the rear coupling reaches past the origin, in metres. Zero if it has none.</summary>
         public float RearReachMetres => Footprint.RearReachMetres;
 
         /// <summary>Width, height and length of the room this vehicle takes up, in metres.</summary>
@@ -133,12 +186,16 @@ namespace BelowTheWing.Vehicles
         /// <summary>Fills this in. Used when a prefab is built, and by tests.</summary>
         public void Describe(Measurements measurements)
         {
-            m_WheelCentresLocal = measurements.WheelCentresLocal != null
-                ? new List<Vector3>(measurements.WheelCentresLocal).ToArray()
-                : Array.Empty<Vector3>();
+            m_Wheels = measurements.Wheels != null
+                ? new List<WheelPlacement>(measurements.Wheels).ToArray()
+                : Array.Empty<WheelPlacement>();
 
-            m_FrontCouplingLocal = measurements.FrontCouplingLocal;
-            m_RearCouplingLocal = measurements.RearCouplingLocal;
+            m_HasFrontCoupling = measurements.FrontCouplingLocal.HasValue;
+            m_FrontCouplingLocal = measurements.FrontCouplingLocal ?? Vector3.zero;
+
+            m_HasRearCoupling = measurements.RearCouplingLocal.HasValue;
+            m_RearCouplingLocal = measurements.RearCouplingLocal ?? Vector3.zero;
+
             m_EnvelopeSizeMetres = measurements.EnvelopeSizeMetres;
             m_EnvelopeCentreLocal = measurements.EnvelopeCentreLocal;
             m_InteriorLocal = measurements.InteriorLocal;
@@ -150,7 +207,7 @@ namespace BelowTheWing.Vehicles
 
         float SpanAlong(Func<Vector3, float> pick)
         {
-            if (m_WheelCentresLocal == null || m_WheelCentresLocal.Length == 0)
+            if (m_Wheels == null || m_Wheels.Length == 0)
             {
                 return 0f;
             }
@@ -158,9 +215,9 @@ namespace BelowTheWing.Vehicles
             var least = float.MaxValue;
             var most = float.MinValue;
 
-            foreach (var wheel in m_WheelCentresLocal)
+            foreach (var wheel in m_Wheels)
             {
-                var along = pick(wheel);
+                var along = pick(wheel.CentreLocal);
                 least = Mathf.Min(least, along);
                 most = Mathf.Max(most, along);
             }

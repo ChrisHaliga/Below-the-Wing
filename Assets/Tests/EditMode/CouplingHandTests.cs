@@ -139,8 +139,8 @@ namespace BelowTheWing.Tests.EditMode
             var longer = m_Hitched;
 
             var back = longer[longer.Count - 2];
-            var theirHitch = back.transform.TransformPoint(back.RearHitchLocal);
-            var itsHitch = spare.transform.TransformPoint(spare.FrontHitchLocal);
+            var theirHitch = back.transform.TransformPoint(back.RearHitchLocal.Value);
+            var itsHitch = spare.transform.TransformPoint(spare.FrontHitchLocal.Value);
 
             Assert.That(Vector3.Distance(theirHitch, itsHitch), Is.LessThan(0.01f),
                 "a coupling created while its two ends are apart begins violated, never stops trying " +
