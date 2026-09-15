@@ -56,7 +56,7 @@ namespace BelowTheWing.Crew
 
         public Crouching Stance { get; private set; }
 
-        public Climbing Climb { get; } = new Climbing();
+        public PullingUp Hoisting { get; } = new PullingUp();
 
         public float HeightMetres => m_Collider != null ? m_Collider.height : 0f;
 
@@ -237,55 +237,23 @@ namespace BelowTheWing.Crew
             return body != null ? body.GetPointVelocity(feet) : Vector3.zero;
         }
 
-        readonly Collider[] m_ZonesInReach = new Collider[8];
-
-        void LookForSomethingToClimb()
+        void HoistThemselves(bool asked)
         {
-            if (m_Seated != null || m_Collider == null)
+            var hauling = Hoisting.Haul(asked, Handling != null ? Handling.BothHoldingAt : null, Feet);
+
+            if (!Hoisting.Pulling)
             {
-                Climb.NothingInReach();
+                if (Grounded)
+                {
+                    Hoisting.Landed();
+                }
+
                 return;
             }
 
-            var found = Physics.OverlapCapsuleNonAlloc(
-                transform.position + (Vector3.up * (m_Collider.height * 0.5f)),
-                transform.position - (Vector3.up * (m_Collider.height * 0.5f)),
-                m_Profile.radiusMetres,
-                m_ZonesInReach,
-                ~0,
-                QueryTriggerInteraction.Collide);
+            Body.linearVelocity = hauling;
 
-            Climb.NothingInReach();
-
-            for (var i = 0; i < found; i++)
-            {
-                if (m_ZonesInReach[i].TryGetComponent<ClimbZone>(out var zone))
-                {
-                    Climb.Consider(
-                        zone, Feet, m_Profile.climbReachMetres, m_Profile.crouchedHeightMetres);
-                }
-            }
-        }
-
-        void HaulThemselvesIn()
-        {
-            m_LastJumpedAt = Time.time;
-            m_PushedOff = true;
-            Body.linearVelocity = Climb.TakeHold(
-                Feet, m_Profile.crouchedHeightMetres, Mathf.Abs(Physics.gravity.y));
             m_Footing.Reset();
-        }
-
-        void KeepHauling()
-        {
-            var pull = Climb.Haul(
-                Feet, Body.linearVelocity, m_Profile.radiusMetres, Time.fixedDeltaTime,
-                Mathf.Abs(Physics.gravity.y));
-
-            if (pull != Vector3.zero)
-            {
-                Body.AddForce(pull, ForceMode.VelocityChange);
-            }
         }
 
         public void Jump()
@@ -369,24 +337,14 @@ namespace BelowTheWing.Crew
 
             NoticeTheyHaveLanded();
 
-            Climb.Settle(Time.fixedDeltaTime);
-            KeepHauling();
+            HoistThemselves(asked.Hoist);
 
-            LookForSomethingToClimb();
-
-            if (asked.Jump)
+            if (asked.Jump && !Hoisting.Pulling)
             {
-                if (Climb.Offered != null)
-                {
-                    HaulThemselvesIn();
-                }
-                else
-                {
-                    Jump();
-                }
+                Jump();
             }
 
-            Stance.Want(asked.Crouch || Climb.Hauling != null);
+            Stance.Want(asked.Crouch || Hoisting.Ducking);
 
             if (!StandingOn(out var underfoot))
             {
@@ -418,7 +376,7 @@ namespace BelowTheWing.Crew
             }
 
             var cameraYaw = Camera != null ? Camera.YawDegrees : transform.eulerAngles.y;
-            var walking = Climb.HandsFull
+            var walking = Hoisting.Pulling
                 ? Vector3.zero
                 : CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile)
                   * Stance.SpeedMultiplier;

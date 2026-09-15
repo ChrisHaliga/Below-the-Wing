@@ -51,7 +51,9 @@ namespace BelowTheWing.Crew
 
                 jump: m_Jump.Asked,
 
-                crouch: keyboard.cKey.isPressed);
+                crouch: keyboard.cKey.isPressed,
+
+                hoist: keyboard.spaceKey.isPressed);
 
             Look();
 

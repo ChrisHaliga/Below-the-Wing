@@ -171,8 +171,6 @@ namespace BelowTheWing.Vehicles
             DiscardBodywork();
             m_Bodywork = VehicleBody.Build(gameObject, Shape, profile.bounciness);
 
-            ClimbZone.BuildOn(this, Shape);
-
             BuildWheels(profile);
 
             if (GetComponent<ContactTally>() == null)
