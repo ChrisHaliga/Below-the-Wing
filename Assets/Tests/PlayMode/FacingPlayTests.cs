@@ -92,7 +92,7 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator ACharacterWithNoCameraKeepsItsOwnFacing()
         {
             m_Crew.Camera = null;
-            m_Crew.transform.rotation = Quaternion.Euler(0f, 30f, 0f);
+            m_Crew.Body.rotation = Quaternion.Euler(0f, 30f, 0f);
             yield return Steps.Seconds(0.5f);
 
             m_Crew.IntentSource = new HeldKeys(new Vector2(1f, 0f));
