@@ -1,5 +1,6 @@
 using System.Collections;
 using BelowTheWing.Net;
+using BelowTheWing.Tests.Support;
 using NUnit.Framework;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -21,6 +22,7 @@ namespace BelowTheWing.Tests.PlayMode
 
             m_Netcode = m_Host.AddComponent<NetworkManager>();
             var transport = m_Host.AddComponent<UnityTransport>();
+            transport.ConnectionData.Port = Ports.NobodyElseIsOn();
 
             m_Netcode.NetworkConfig = new NetworkConfig
             {
