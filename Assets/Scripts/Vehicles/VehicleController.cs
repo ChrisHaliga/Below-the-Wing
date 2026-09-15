@@ -122,10 +122,6 @@ namespace BelowTheWing.Vehicles
 
         public bool CanBeTowed => FrontHitchLocal.HasValue;
 
-        public bool CanTow => RearHitchLocal.HasValue;
-
-        public float FrontReach => Shape != null ? Shape.FrontReachMetres : 0f;
-
         public float RearReach => Shape != null ? Shape.RearReachMetres : 0f;
 
         public static float SuspensionCompressionAtRest(VehicleProfile profile)

@@ -54,8 +54,6 @@ namespace BelowTheWing.Vehicles
             }
         }
 
-        public VehicleController Offered => m_Offered;
-
         public void Refresh()
         {
             if (Driving == null || m_Asking)

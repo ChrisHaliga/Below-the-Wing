@@ -40,8 +40,6 @@ namespace BelowTheWing.Apron
 
         public Shape DrawnAs => m_Shape;
 
-        public Vector3 DrawnAtLocal => m_DrawnAtLocal;
-
         public string DisplayName => m_DisplayName;
 
         public void Show(string displayName)
