@@ -90,8 +90,9 @@ namespace BelowTheWing.Tests.Support
         public static AnimationCurve DrivenGripCurve()
             => new AnimationCurve(
                 new Keyframe(0f, 0f),
+                new Keyframe(3f, 16f),
                 new Keyframe(8f, 18f),
-                new Keyframe(20f, 15f));
+                new Keyframe(20f, 13f));
 
         public static AnimationCurve PeakingGripCurve()
             => new AnimationCurve(

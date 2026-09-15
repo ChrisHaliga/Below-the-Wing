@@ -13,6 +13,36 @@ the record of what was believed then.
 
 ---
 
+## 2026-09-15 — What a driver feels is the first tenth of a second, not the settled corner
+
+The entry below chose a tyre by sweeping settled full-lock corners and picked the curve that came
+round tightest. Driving it was worse, and the report was that the tractor turned less at speed, not
+more.
+
+Both measurements were of the same thing and it was the wrong thing. A settled corner is where a
+vehicle has found whatever slip angle balances the force it needs, so a tyre that makes little at
+small slip simply runs at a larger slip angle and arrives at nearly the same radius. Measured on the
+same tractor, the old tyre and the new one settle within a couple of degrees a second of each other
+at every steering input. Nothing in that number could have shown the fault.
+
+The number that shows it is how fast the vehicle answers the wheel. A tenth of a second after a small
+input at twenty metres a second, the chosen tyre was coming round at ten degrees a second and the one
+it replaced at thirty-three. It took three times as long to begin doing what it was told, and it
+overshot harder and snaked more once it did. That delay is what a driver calls not being able to
+turn.
+
+So the curve keeps the peak that made a hard corner work and regains its bite early, by reaching most
+of its force by three metres a second of slip rather than eight. It still falls away after the peak,
+so a tyre can still let go.
+
+Turned down: a curve that bites earlier still. It barely drops after its peak, which means it never
+breaks traction, and it left the test that proves a tyre can let go passing on a two per cent margin.
+
+The lasting part of this is the method, not the numbers. A steady-state measurement cannot see a
+transient fault, and a vehicle is driven in transients.
+
+---
+
 ## 2026-09-15 — A corner is bought with grip, not with steering lock
 
 The tractor would not change direction at speed. The obvious lever looked like the lock allowed at
