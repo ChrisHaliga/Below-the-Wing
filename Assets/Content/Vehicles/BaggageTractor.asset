@@ -33,8 +33,8 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 3
-      value: 12
+      time: 8
+      value: 18
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -42,8 +42,8 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 12
-      value: 5
+      time: 20
+      value: 15
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -62,5 +62,6 @@ MonoBehaviour:
   maxBrakeForceNewtons: 20000
   bounciness: 0.4
   maxSteerAngleDegrees: 60
+  steerLockAtTopSpeedDegrees: 30
   steerRateDegreesPerSecond: 120
   driveable: 1

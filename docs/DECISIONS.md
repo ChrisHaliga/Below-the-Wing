@@ -13,6 +13,70 @@ the record of what was believed then.
 
 ---
 
+## 2026-09-15 — A corner is bought with grip, not with steering lock
+
+The tractor would not change direction at speed. The obvious lever looked like the lock allowed at
+speed, so a sweep measured a settled full-lock corner across three locks and four tyre grip peaks.
+
+More lock made the circle wider, not narrower. At the shipped grip, raising the lock allowed at top
+speed from thirty degrees to sixty took the radius from thirty-nine metres to sixty-seven, because
+the extra wheel angle only drags the front tyres further past the slip they grip hardest at. The
+radius a vehicle can hold is its speed squared over the sideways acceleration its tyres can make,
+and no steering angle adds to that.
+
+The tractor's grip curve peak was raised by half. Measured on the same tractor at full throttle and
+full lock, the corner settles at twenty-two metres instead of thirty-nine, the yaw rate goes from
+twenty-five degrees a second to forty, and it holds fifteen and a half metres a second through the
+corner rather than scrubbing down to walking pace. A test pins both halves of that, because a tight
+circle bought by losing all the speed is a handbrake turn and not a corner.
+
+Turned down: a peak high enough to corner in five metres. It does corner in five, by scrubbing from
+twenty metres a second down to six, and that grip then applies at every other speed too.
+
+Left open, and the reason the entry stops here: the top speed itself. Seventy-two kilometres an hour
+is several times what a real baggage tractor does, and radius goes with the square of speed, so
+cutting it would tighten every corner at no cost in grip. That is a decision about how the apron
+feels to cross, and it was not made.
+
+---
+
+## 2026-09-15 — The shape of steering lock against speed is unsettled
+
+Two tests disagree and both are kept failing rather than picking a winner by default.
+
+One says the wheels go all the way over at walking pace, because lining a tractor up on a hitch wants
+every degree there is. The other says the lock sheds an even number of degrees across each quarter of
+the speed range, because a limit that collapses early leaves a driver with a wheel that stops
+answering the moment they are moving.
+
+A lock that falls evenly from its full value at rest to a reduced one at top speed cannot give the
+whole lock at any speed above rest. Holding the full lock through a low-speed band satisfies the
+first and breaks the second. There is no shape that satisfies both, so one of the two states an
+intent that is not actually wanted, and which one is a question for the repo owner.
+
+Until then the even falloff ships and the crawl test stays red as the record of the open question.
+
+---
+
+## 2026-09-15 — Hauling yourself up goes up first and in second
+
+Holding something with both hands and asking to be lifted used to raise the body straight up, which
+left a person rising alongside a cart and never crossing into it.
+
+Driving the body up and inward at the same time is worse, and measured so: the horizontal part
+presses the body against the very thing it is gripping, the capsule jams under it, and a climb that
+reached two and a third metres unaided rises four inches and stops.
+
+So the haul climbs vertically while the feet are below what the hands hold, and only closes the
+horizontal gap once the feet are clear of it. That is the order a person uses, and it is the order
+that works against a solid edge.
+
+The crouch outlasts the haul. It is released when the body is down on something rather than when the
+key comes up, because a body that stretches to full height in mid air meets whatever is overhead.
+The previous climb ended with a head against a cart roof for that reason.
+
+---
+
 ## 2026-09-14 — A towed cart on a machine that does not own it is moved by its couplings
 
 Three mechanisms were moving it at once: wheel physics running on every machine, couplings engaged

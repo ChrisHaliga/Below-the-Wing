@@ -56,6 +56,9 @@ namespace BelowTheWing.Vehicles
         [Tooltip("Steering lock, degrees from centre")]
         public float maxSteerAngleDegrees = 60f;
 
+        [Tooltip("Steering lock still allowed at top speed, degrees")]
+        public float steerLockAtTopSpeedDegrees = 30f;
+
         [Tooltip("Steering rate, degrees/s")]
         public float steerRateDegreesPerSecond = 120f;
 

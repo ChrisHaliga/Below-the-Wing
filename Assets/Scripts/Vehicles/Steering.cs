@@ -9,7 +9,7 @@ namespace BelowTheWing.Vehicles
             VehicleProfile profile)
         {
             var asked = Mathf.Clamp(steerInput, -1f, 1f) * profile.maxSteerAngleDegrees;
-            var canBite = AsFarAsTheTyresStillBite(speedMetresPerSecond, profile);
+            var canBite = AsFarAsItMayTurnAt(speedMetresPerSecond, profile);
 
             var wanted = Mathf.Sign(asked) * Mathf.Min(Mathf.Abs(asked), canBite);
             var asFarAsItCanTurnThisStep = profile.steerRateDegreesPerSecond * deltaTime;
@@ -17,19 +17,19 @@ namespace BelowTheWing.Vehicles
             return Mathf.MoveTowards(currentAngleDegrees, wanted, asFarAsItCanTurnThisStep);
         }
 
-        public static float AsFarAsTheTyresStillBite(float speedMetresPerSecond, VehicleProfile profile)
+        public static float AsFarAsItMayTurnAt(float speedMetresPerSecond, VehicleProfile profile)
         {
-            var slidingItCanTake = profile.SlipItGripsHardestAt;
-            var speed = Mathf.Abs(speedMetresPerSecond);
+            var top = profile.topSpeedMetresPerSecond;
 
-            if (slidingItCanTake <= 0f || speed <= slidingItCanTake)
+            if (top <= 0f)
             {
                 return profile.maxSteerAngleDegrees;
             }
 
-            return Mathf.Min(
-                profile.maxSteerAngleDegrees,
-                Mathf.Asin(Mathf.Clamp01(slidingItCanTake / speed)) * Mathf.Rad2Deg);
+            var atTheTop = Mathf.Min(profile.steerLockAtTopSpeedDegrees, profile.maxSteerAngleDegrees);
+            var through = Mathf.Clamp01(Mathf.Abs(speedMetresPerSecond) / top);
+
+            return Mathf.Lerp(profile.maxSteerAngleDegrees, atTheTop, through);
         }
     }
 }

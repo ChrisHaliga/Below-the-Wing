@@ -210,11 +210,15 @@ namespace BelowTheWing.Tests.EditMode
         {
             const float load = 750f;
 
-            var nearThePeak = Mathf.Abs(WheelPhysics.LateralForce(3f, load, Step, m_Tractor));
-            var wellPastIt = Mathf.Abs(WheelPhysics.LateralForce(10f, load, Step, m_Tractor));
+            var peak = m_Tractor.SlipItGripsHardestAt;
+
+            var nearThePeak = Mathf.Abs(WheelPhysics.LateralForce(peak, load, Step, m_Tractor));
+            var wellPastIt = Mathf.Abs(WheelPhysics.LateralForce(peak * 2f, load, Step, m_Tractor));
 
             Assert.That(wellPastIt, Is.LessThan(nearThePeak),
-                "a tire that grips harder the faster it slides can never let go, and nothing can ever slide");
+                $"this tyre grips hardest at {peak:F1} m/s of slip, making {nearThePeak:F0} N there " +
+                $"and {wellPastIt:F0} N at twice that. A tyre that grips harder the faster it slides " +
+                "can never let go, and nothing can ever slide");
         }
 
         [Test]
