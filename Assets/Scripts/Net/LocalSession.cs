@@ -1,4 +1,5 @@
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 
 namespace BelowTheWing.Net
@@ -18,6 +19,8 @@ namespace BelowTheWing.Net
                 return true;
             }
 
+            OnAPortNobodyIsUsing(netcode);
+
             if (!netcode.StartHost())
             {
                 Debug.LogError(
@@ -29,5 +32,15 @@ namespace BelowTheWing.Net
 
             return true;
         }
+
+        static void OnAPortNobodyIsUsing(NetworkManager netcode)
+        {
+            if (netcode.NetworkConfig?.NetworkTransport is UnityTransport transport)
+            {
+                transport.ConnectionData.Port = AskTheMachineForOne;
+            }
+        }
+
+        const ushort AskTheMachineForOne = 0;
     }
 }
