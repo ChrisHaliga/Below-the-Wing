@@ -284,54 +284,59 @@ namespace BelowTheWing.Vehicles
                     m_Profile);
             }
 
-            var massPerWheel = m_Profile.massKg / m_Wheels.Length;
-            var up = transform.up;
-            var steerRotation = Quaternion.AngleAxis(m_SteerAngleDegrees, up);
+            var steerRotation = Quaternion.AngleAxis(m_SteerAngleDegrees, transform.up);
 
             for (var i = 0; i < m_Wheels.Length; i++)
             {
-                var wheel = m_Wheels[i];
-                var mount = transform.TransformPoint(wheel.MountLocal);
-                var forward = wheel.Steers ? steerRotation * transform.forward : transform.forward;
-                var right = wheel.Steers ? steerRotation * transform.right : transform.right;
-
-                var rayLength = wheel.RadiusMetres + m_Profile.suspensionRestLengthMetres;
-
-                var probe = Physics.Raycast(mount, -up, out var hit, rayLength, m_GroundMask, QueryTriggerInteraction.Ignore)
-                    ? new GroundProbe(true, hit.distance)
-                    : GroundProbe.Airborne;
-
-                m_HangingBy[i] = probe.HitGround
-                    ? probe.DistanceToGround - wheel.RadiusMetres
-                    : m_Profile.suspensionRestLengthMetres;
-
-                var atTheContactPatch = Body.GetPointVelocity(mount);
-                var velocity = new ContactVelocity(
-                    Vector3.Dot(atTheContactPatch, up),
-                    Vector3.Dot(atTheContactPatch, right),
-                    Vector3.Dot(atTheContactPatch, forward));
-
-                var force = WheelPhysics.Evaluate(
-                    probe,
-                    velocity,
-                    new WheelLoad(massPerWheel, wheel.DriveShare, wheel.BrakeShare),
-                    intent,
-                    m_Profile.massKg,
-                    wheel.RadiusMetres,
-                    Time.fixedDeltaTime,
-                    m_Profile);
-
-                if (!force.Grounded)
-                {
-                    continue;
-                }
-
-                var total = (up * force.AlongSuspension)
-                            + (right * force.Lateral)
-                            + (forward * force.Forward);
-
-                Body.AddForceAtPosition(total, mount);
+                StandOnAndPushWith(i, steerRotation, intent);
             }
         }
+
+        void StandOnAndPushWith(int corner, Quaternion steerRotation, DriveIntent intent)
+        {
+            var wheel = m_Wheels[corner];
+
+            var up = transform.up;
+            var forward = wheel.Steers ? steerRotation * transform.forward : transform.forward;
+            var right = wheel.Steers ? steerRotation * transform.right : transform.right;
+
+            var mount = transform.TransformPoint(wheel.MountLocal);
+            var probe = WhatIsUnder(mount, up, wheel.RadiusMetres);
+
+            m_HangingBy[corner] = probe.HitGround
+                ? probe.DistanceToGround - wheel.RadiusMetres
+                : m_Profile.suspensionRestLengthMetres;
+
+            var atTheContactPatch = Body.GetPointVelocity(mount);
+
+            var force = WheelPhysics.Evaluate(
+                probe,
+                new ContactVelocity(
+                    Vector3.Dot(atTheContactPatch, up),
+                    Vector3.Dot(atTheContactPatch, right),
+                    Vector3.Dot(atTheContactPatch, forward)),
+                new WheelLoad(m_Profile.massKg / m_Wheels.Length, wheel.DriveShare, wheel.BrakeShare),
+                intent,
+                m_Profile.massKg,
+                wheel.RadiusMetres,
+                Time.fixedDeltaTime,
+                m_Profile);
+
+            if (!force.Grounded)
+            {
+                return;
+            }
+
+            Body.AddForceAtPosition(
+                (up * force.AlongSuspension) + (right * force.Lateral) + (forward * force.Forward),
+                mount);
+        }
+
+        GroundProbe WhatIsUnder(Vector3 mount, Vector3 up, float wheelRadiusMetres)
+            => Physics.Raycast(
+                mount, -up, out var hit, wheelRadiusMetres + m_Profile.suspensionRestLengthMetres,
+                m_GroundMask, QueryTriggerInteraction.Ignore)
+                ? new GroundProbe(true, hit.distance)
+                : GroundProbe.Airborne;
     }
 }
