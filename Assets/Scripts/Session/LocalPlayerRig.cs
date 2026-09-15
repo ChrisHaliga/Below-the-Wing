@@ -40,6 +40,9 @@ namespace BelowTheWing.Session
             if (left != null && right != null)
             {
                 m_Character.Handling = new Hands(left, right, m_Character.Body, m_Character.Profile.hands);
+
+                m_Character.gameObject.AddComponent<HandLook>()
+                    .Watch(m_Character.Handling, left, right);
             }
             else
             {
@@ -51,7 +54,8 @@ namespace BelowTheWing.Session
 
             m_Character.gameObject.AddComponent<MouseCapture>();
             m_Character.gameObject.AddComponent<LocalCrewInput>();
-            m_Character.gameObject.AddComponent<OccupancyPromptView>().Watch(m_Character.Seat);
+            m_Character.gameObject.AddComponent<CrewPromptView>()
+                .Watch(m_Character.Seat);
 
             if (camera != null)
             {

@@ -14,18 +14,22 @@ namespace BelowTheWing.Crew
 
         public readonly bool Crouch;
 
+        public readonly bool Hoist;
+
         public CrewIntent(
             Vector2 move,
             bool sprint = false,
             float brake = 0f,
             bool jump = false,
-            bool crouch = false)
+            bool crouch = false,
+            bool hoist = false)
         {
             Move = move;
             Sprint = sprint;
             Brake = brake;
             Jump = jump;
             Crouch = crouch;
+            Hoist = hoist;
         }
 
         public static CrewIntent Idle => new CrewIntent(Vector2.zero);

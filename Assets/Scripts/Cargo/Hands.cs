@@ -18,6 +18,24 @@ namespace BelowTheWing.Cargo
 
         public Hand Right { get; }
 
+        public Vector3? BothHoldingAt
+        {
+            get
+            {
+                if (Left.HoldingOnto == null || Right.HoldingOnto == null)
+                {
+                    return null;
+                }
+
+                var left = Left.HoldingAt;
+                var right = Right.HoldingAt;
+
+                return left.HasValue && right.HasValue
+                    ? (left.Value + right.Value) * 0.5f
+                    : (Vector3?)null;
+            }
+        }
+
         public void Tick()
         {
             Left.Tick();

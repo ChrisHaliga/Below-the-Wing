@@ -60,14 +60,16 @@ namespace BelowTheWing.EditorTools
             profile.springStrengthNewtons = 41000f;
             profile.damperNewtonsPerMetrePerSecond = 14000f;
             profile.coastingDragPerSecond = 0.4f;
-            profile.lateralGripCurve = TireCurve();
+            profile.lateralGripCurve = DrivenTireCurve();
 
             profile.maxDriveForceNewtons = 20000f;
+            profile.launchDriveMultiplier = 3f;
             profile.topSpeedMetresPerSecond = 20f;
             profile.bounciness = 0.4f;
             profile.sprintDriveMultiplier = 1.5f;
             profile.maxBrakeForceNewtons = 20000f;
-            profile.maxSteerAngleDegrees = 45f;
+            profile.maxSteerAngleDegrees = 60f;
+            profile.steerLockAtTopSpeedDegrees = 30f;
             profile.steerRateDegreesPerSecond = 120f;
             profile.driveable = true;
             return profile;
@@ -146,5 +148,12 @@ namespace BelowTheWing.EditorTools
                 new Keyframe(0f, 0f),
                 new Keyframe(3f, 12f),
                 new Keyframe(12f, 5f));
+
+        static AnimationCurve DrivenTireCurve()
+            => new AnimationCurve(
+                new Keyframe(0f, 0f),
+                new Keyframe(3f, 16f),
+                new Keyframe(8f, 18f),
+                new Keyframe(20f, 13f));
     }
 }

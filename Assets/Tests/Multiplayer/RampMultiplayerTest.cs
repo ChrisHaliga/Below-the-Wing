@@ -1,6 +1,5 @@
 using System.Collections;
-using System.Net;
-using System.Net.Sockets;
+using BelowTheWing.Tests.Support;
 using Unity.Multiplayer.Tools.NetworkSimulator.Runtime;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -24,7 +23,7 @@ namespace BelowTheWing.Tests.Multiplayer
 
         protected override void OnServerAndClientsCreated()
         {
-            m_Port = APortNobodyElseIsOn();
+            m_Port = Ports.NobodyElseIsOn();
 
             TalkOn(m_ServerNetworkManager);
 
@@ -44,15 +43,6 @@ namespace BelowTheWing.Tests.Multiplayer
 
         void TalkOn(NetworkManager machine)
             => machine.GetComponent<UnityTransport>().ConnectionData.Port = m_Port;
-
-        static ushort APortNobodyElseIsOn()
-        {
-            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
-            {
-                socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
-                return (ushort)((IPEndPoint)socket.LocalEndPoint).Port;
-            }
-        }
 
         protected override IEnumerator OnStartedServerAndClients()
         {

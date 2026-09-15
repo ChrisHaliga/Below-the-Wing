@@ -282,7 +282,10 @@ namespace BelowTheWing.Vehicles
 
             if (OursToMove)
             {
-                m_SteerAngleDegrees = Steering.Step(m_SteerAngleDegrees, intent.Steer, Time.fixedDeltaTime, m_Profile);
+                m_SteerAngleDegrees = Steering.Step(
+                    m_SteerAngleDegrees, intent.Steer,
+                    Vector3.Dot(Body.linearVelocity, transform.forward), Time.fixedDeltaTime,
+                    m_Profile);
             }
 
             var massPerWheel = m_Profile.massKg / m_Wheels.Length;

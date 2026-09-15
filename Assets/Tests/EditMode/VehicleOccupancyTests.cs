@@ -50,7 +50,7 @@ namespace BelowTheWing.Tests.EditMode
 
             seat.Refresh();
 
-            Assert.That(seat.Prompt, Is.EqualTo(OccupancyPrompt.OfferToDrive));
+            Assert.That(seat.Prompt, Is.EqualTo(CrewPrompt.Offer));
             Assert.That(seat.Offer, Is.SameAs(m_Train.Leader));
             Assert.That(seat.Message, Does.Contain(m_Train.Leader.DisplayName),
                 "the offer must say which vehicle it is offering");
@@ -64,7 +64,7 @@ namespace BelowTheWing.Tests.EditMode
 
             seat.Refresh();
 
-            Assert.That(seat.Prompt, Is.EqualTo(OccupancyPrompt.None));
+            Assert.That(seat.Prompt, Is.EqualTo(CrewPrompt.None));
             Assert.That(seat.Offer, Is.Null);
         }
 
@@ -124,7 +124,7 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(m_Train.Leader.IntentSource, Is.Null,
                 "a vehicle somebody else owns must not start reading this player's controls");
             Assert.That(seat.Subject, Is.SameAs(m_Crew), "and the camera stays on the character");
-            Assert.That(seat.Prompt, Is.EqualTo(OccupancyPrompt.VehicleTaken));
+            Assert.That(seat.Prompt, Is.EqualTo(CrewPrompt.Refused));
         }
 
         [Test]
@@ -136,7 +136,7 @@ namespace BelowTheWing.Tests.EditMode
 
             seat.Refresh();
 
-            Assert.That(seat.Prompt, Is.EqualTo(OccupancyPrompt.None));
+            Assert.That(seat.Prompt, Is.EqualTo(CrewPrompt.None));
             Assert.That(m_Train.Leader.AcceptsDriver, Is.False, "there is no room for a second driver");
         }
 

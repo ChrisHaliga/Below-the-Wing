@@ -61,7 +61,7 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator SomebodyStandingOnADeckKeepsTheirFootingWhenItPullsAway()
+        public IEnumerator SomebodyStandingOnADeckIsThrownAboutWhenTheTractorLaunches()
         {
             var tractorProfile = TestProfiles.Tractor();
             var cartProfile = TestProfiles.Cart();
@@ -86,10 +86,18 @@ namespace BelowTheWing.Tests.PlayMode
             var nowAt = cart.transform.InverseTransformPoint(m_Crew.transform.position);
             var slid = new Vector2(nowAt.x - aboardAt.x, nowAt.z - aboardAt.z).magnitude;
 
-            Assert.That(slid, Is.LessThan(0.5f),
-                $"they slid {slid:F2} m about the deck while the tractor pulled away. Feet that get " +
-                "a player moving instantly are also feet that hold them on a deck: that is the trade " +
-                "this figure makes, and it is made deliberately");
+            var launching = tractorProfile.maxDriveForceNewtons * tractorProfile.launchDriveMultiplier
+                            / tractorProfile.massKg;
+
+            Assert.That(launching, Is.GreaterThan(m_Profile.footGripMetresPerSecondSquared),
+                $"a standing start pulls {launching:F1} m/s^2 and a pair of feet hold at " +
+                $"{m_Profile.footGripMetresPerSecondSquared:F1}. These two figures decide between " +
+                "them whether a rider survives a launch, and nothing else does");
+
+            Assert.That(slid, Is.GreaterThan(0.5f),
+                $"they slid {slid:F2} m about the deck while the tractor pulled away. A launch that " +
+                "out-pulls what feet can hold has to take a rider off their feet, or the grip figure " +
+                "is doing nothing and a corner cannot throw them either");
 
             Object.DestroyImmediate(tractorProfile);
             Object.DestroyImmediate(cartProfile);

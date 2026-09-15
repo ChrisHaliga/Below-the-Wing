@@ -56,6 +56,8 @@ namespace BelowTheWing.Crew
 
         public Crouching Stance { get; private set; }
 
+        public PullingUp Hoisting { get; } = new PullingUp();
+
         public float HeightMetres => m_Collider != null ? m_Collider.height : 0f;
 
         public float EyeMetresAboveOrigin
@@ -159,8 +161,19 @@ namespace BelowTheWing.Crew
             }
 
             transform.SetParent(vehicle.transform, worldPositionStays: false);
-            transform.localPosition = Vector3.zero;
+            transform.localPosition = SatIn(vehicle);
             transform.localRotation = Quaternion.identity;
+        }
+
+        Vector3 SatIn(VehicleController vehicle)
+        {
+            var seat = vehicle.Shape != null ? vehicle.Shape.SeatLocal : null;
+            if (!seat.HasValue)
+            {
+                return Vector3.zero;
+            }
+
+            return seat.Value + (Vector3.up * (m_Profile.heightMetres * 0.5f));
         }
 
         void ClimbOut()
@@ -195,12 +208,52 @@ namespace BelowTheWing.Crew
 
         Vector3 Feet => transform.position - (Vector3.up * ((m_Profile.heightMetres * 0.5f) - 0.05f));
 
-        bool StandingOn(out Collider what) => Jumping.StandingOnSomething(Feet, 0.2f, m_StandsOn, out what);
+        bool m_PushedOff;
+
+        bool StandingOn(out Collider what)
+        {
+            if (m_PushedOff)
+            {
+                what = null;
+                return false;
+            }
+
+            return Jumping.StandingOnSomething(Feet, 0.2f, m_StandsOn, out what);
+        }
+
+        void NoticeTheyHaveLanded()
+        {
+            if (!m_PushedOff || Body.linearVelocity.y > 0f)
+            {
+                return;
+            }
+
+            m_PushedOff = !Jumping.StandingOnSomething(Feet, 0.2f, m_StandsOn, out _);
+        }
 
         static Vector3 MovingAt(Collider underfoot, Vector3 feet)
         {
             var body = underfoot.attachedRigidbody;
             return body != null ? body.GetPointVelocity(feet) : Vector3.zero;
+        }
+
+        void HoistThemselves(bool asked)
+        {
+            var hauling = Hoisting.Haul(asked, Handling != null ? Handling.BothHoldingAt : null, Feet);
+
+            if (!Hoisting.Pulling)
+            {
+                if (Grounded)
+                {
+                    Hoisting.Landed();
+                }
+
+                return;
+            }
+
+            Body.linearVelocity = hauling;
+
+            m_Footing.Reset();
         }
 
         public void Jump()
@@ -213,6 +266,7 @@ namespace BelowTheWing.Crew
             }
 
             m_LastJumpedAt = Time.time;
+            m_PushedOff = true;
 
             var up = Jumping.TakeOffSpeed(m_Profile.jumpHeightMetres, Mathf.Abs(Physics.gravity.y));
             var velocity = Body.linearVelocity;
@@ -281,12 +335,16 @@ namespace BelowTheWing.Crew
                 transform.rotation = Quaternion.Euler(0f, Camera.YawDegrees, 0f);
             }
 
-            if (asked.Jump)
+            NoticeTheyHaveLanded();
+
+            HoistThemselves(asked.Hoist);
+
+            if (asked.Jump && !Hoisting.Pulling)
             {
                 Jump();
             }
 
-            Stance.Want(asked.Crouch);
+            Stance.Want(asked.Crouch || Hoisting.Ducking);
 
             if (!StandingOn(out var underfoot))
             {
@@ -318,8 +376,10 @@ namespace BelowTheWing.Crew
             }
 
             var cameraYaw = Camera != null ? Camera.YawDegrees : transform.eulerAngles.y;
-            var walking = CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile)
-                          * Stance.SpeedMultiplier;
+            var walking = Hoisting.Pulling
+                ? Vector3.zero
+                : CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile)
+                  * Stance.SpeedMultiplier;
 
             var wanted = deckAcrossTheGround + walking;
             var gait = m_Profile.gaitResponseMetresPerSecondSquared * Time.fixedDeltaTime;

@@ -13,6 +13,100 @@ the record of what was believed then.
 
 ---
 
+## 2026-09-15 — What a driver feels is the first tenth of a second, not the settled corner
+
+The entry below chose a tyre by sweeping settled full-lock corners and picked the curve that came
+round tightest. Driving it was worse, and the report was that the tractor turned less at speed, not
+more.
+
+Both measurements were of the same thing and it was the wrong thing. A settled corner is where a
+vehicle has found whatever slip angle balances the force it needs, so a tyre that makes little at
+small slip simply runs at a larger slip angle and arrives at nearly the same radius. Measured on the
+same tractor, the old tyre and the new one settle within a couple of degrees a second of each other
+at every steering input. Nothing in that number could have shown the fault.
+
+The number that shows it is how fast the vehicle answers the wheel. A tenth of a second after a small
+input at twenty metres a second, the chosen tyre was coming round at ten degrees a second and the one
+it replaced at thirty-three. It took three times as long to begin doing what it was told, and it
+overshot harder and snaked more once it did. That delay is what a driver calls not being able to
+turn.
+
+So the curve keeps the peak that made a hard corner work and regains its bite early, by reaching most
+of its force by three metres a second of slip rather than eight. It still falls away after the peak,
+so a tyre can still let go.
+
+Turned down: a curve that bites earlier still. It barely drops after its peak, which means it never
+breaks traction, and it left the test that proves a tyre can let go passing on a two per cent margin.
+
+The lasting part of this is the method, not the numbers. A steady-state measurement cannot see a
+transient fault, and a vehicle is driven in transients.
+
+---
+
+## 2026-09-15 — A corner is bought with grip, not with steering lock
+
+The tractor would not change direction at speed. The obvious lever looked like the lock allowed at
+speed, so a sweep measured a settled full-lock corner across three locks and four tyre grip peaks.
+
+More lock made the circle wider, not narrower. At the shipped grip, raising the lock allowed at top
+speed from thirty degrees to sixty took the radius from thirty-nine metres to sixty-seven, because
+the extra wheel angle only drags the front tyres further past the slip they grip hardest at. The
+radius a vehicle can hold is its speed squared over the sideways acceleration its tyres can make,
+and no steering angle adds to that.
+
+The tractor's grip curve peak was raised by half. Measured on the same tractor at full throttle and
+full lock, the corner settles at twenty-two metres instead of thirty-nine, the yaw rate goes from
+twenty-five degrees a second to forty, and it holds fifteen and a half metres a second through the
+corner rather than scrubbing down to walking pace. A test pins both halves of that, because a tight
+circle bought by losing all the speed is a handbrake turn and not a corner.
+
+Turned down: a peak high enough to corner in five metres. It does corner in five, by scrubbing from
+twenty metres a second down to six, and that grip then applies at every other speed too.
+
+Left open, and the reason the entry stops here: the top speed itself. Seventy-two kilometres an hour
+is several times what a real baggage tractor does, and radius goes with the square of speed, so
+cutting it would tighten every corner at no cost in grip. That is a decision about how the apron
+feels to cross, and it was not made.
+
+---
+
+## 2026-09-15 — The shape of steering lock against speed is unsettled
+
+Two tests disagree and both are kept failing rather than picking a winner by default.
+
+One says the wheels go all the way over at walking pace, because lining a tractor up on a hitch wants
+every degree there is. The other says the lock sheds an even number of degrees across each quarter of
+the speed range, because a limit that collapses early leaves a driver with a wheel that stops
+answering the moment they are moving.
+
+A lock that falls evenly from its full value at rest to a reduced one at top speed cannot give the
+whole lock at any speed above rest. Holding the full lock through a low-speed band satisfies the
+first and breaks the second. There is no shape that satisfies both, so one of the two states an
+intent that is not actually wanted, and which one is a question for the repo owner.
+
+Until then the even falloff ships and the crawl test stays red as the record of the open question.
+
+---
+
+## 2026-09-15 — Hauling yourself up goes up first and in second
+
+Holding something with both hands and asking to be lifted used to raise the body straight up, which
+left a person rising alongside a cart and never crossing into it.
+
+Driving the body up and inward at the same time is worse, and measured so: the horizontal part
+presses the body against the very thing it is gripping, the capsule jams under it, and a climb that
+reached two and a third metres unaided rises four inches and stops.
+
+So the haul climbs vertically while the feet are below what the hands hold, and only closes the
+horizontal gap once the feet are clear of it. That is the order a person uses, and it is the order
+that works against a solid edge.
+
+The crouch outlasts the haul. It is released when the body is down on something rather than when the
+key comes up, because a body that stretches to full height in mid air meets whatever is overhead.
+The previous climb ended with a head against a cart roof for that reason.
+
+---
+
 ## 2026-09-14 — A towed cart on a machine that does not own it is moved by its couplings
 
 Three mechanisms were moving it at once: wheel physics running on every machine, couplings engaged
@@ -202,6 +296,120 @@ off the model by hand instead.
 
 That makes them the one thing a re-export can silently invalidate. Re-modelling the cart means
 re-measuring them, and nothing in the build will say so.
+
+## 2026-09-14 — Getting into a cart is a climb, and the roof is what makes it one
+
+A baggage cart is a box with a roof on it. The way in is the gap between the lip a person steps over
+and that roof, and on this cart that gap is shorter than a person is tall. Standing up, there is no
+trajectory into a cart at all: every attempt drives their head into the underside of the roof, which
+throws them back out and shoves the cart sideways. That is what made carts feel impossible to get
+into, and it is not something a taller step or a shorter person would have fixed.
+
+A climb is therefore two movements and a duck. They push off straight up -- hard enough to clear the
+lip, or low enough that a ducked head stays under the roof, whichever is lower -- and then, at the
+top of the lift when they are no longer rising, they are pulled inward fast enough to be past the
+lip before they fall back level with it. Both are changes to their own velocity, so the whole thing
+can fail: a cart can be driven out from under them, something can knock them off the arc, and the
+pull gives up if it has not come by the time it would be pointless.
+
+Rejected: raising how high a person can step, which is a climb wearing a disguise -- a capsule has
+no step height, so it would mean lifting the body over obstacles, which is teleporting, and a step
+tall enough for a cart lip would let people stroll up onto couplings and bodywork everywhere else.
+Rejected: making the person shorter, which changes every vertical relationship already settled
+against them -- reach, eye height, what they fit under -- to fix something their height was not
+causing.
+
+## 2026-09-14 — A person on their way up is not standing on anything
+
+The ground stays within reach of a person's feet for the first few steps of any leap, and while
+they counted as standing, their legs kept working: a jump aimed in some direction had that direction
+walked back off it before they had risen a hand's breadth. Jumping looked like it worked because a
+jump is mostly vertical and nobody missed the part that was being cancelled.
+
+What counts now is whether they pushed off deliberately, which lasts until they land. Deciding it
+from how fast they are rising instead would take walking up a ramp for a leap.
+
+## 2026-09-14 — The apron scene is saved twice, and its object identities move each time
+
+A networked object is known to other machines by an identity worked out from where it lives in a
+file. Building the scene in memory and saving it once cannot produce that: at the moment of the
+save the object has no file to live in, so the identity comes out as zero and zero is what is
+stored. Netcode refuses to spawn an object whose identity is zero, so the session never starts, the
+apron is never built, and a player is left on bare ground.
+
+None of that was ever seen in play, because opening the scene in the editor works the identity out
+and holds it in memory. Only a built player reads what is actually on the disk. The scene is
+therefore saved, reopened so the identities can be worked out, and saved again -- and the check
+that guards it reads the file as text, because a check that opens the scene repairs the fault
+before it looks at it.
+
+Accepted, not solved: the identities are different every time the scene is rebuilt, because the
+file positions they are derived from are not the same twice. Within one build that is harmless --
+every machine reads the same file -- but two builds of the scene do not agree with each other, and
+the whole scene file churns in the repository each time it is regenerated.
+
+That churn is the reason the scene already in the repository was repaired by opening and saving it
+rather than by rebuilding it. Rebuilding is a regeneration of everything, and the one attempt at it
+came back with the aircraft and crew profiles unassigned while every prefab reference survived --
+which the shipped-scene checks caught, and which is the whole argument against regenerating an
+asset to change one field in it.
+
+## 2026-09-14 — A machine is solid in the pieces it was modelled from
+
+A tractor used to collide as one box drawn round its whole bodywork: solid from just above the
+tarmac to above head height, the full length of the machine. There was nothing on it to stand on,
+no gap between the axles to walk through, and the open sides of it were a wall. The box was not a
+simplification of the shape, it was the absence of one.
+
+What a vehicle is solid in is now a list of parts where a part is either a box or a named piece of
+its model taken at its own shape, and a tractor names the pieces that make it solid -- its shell,
+frame, supports, the platform over its back wheels, the seat and its back, the dashboard. The
+platform is how somebody gets on, and it is a surface now rather than the lid of a block. Re-model
+any of it and the collision follows without anybody editing code.
+
+A cart stays boxes. Its deck, lips, ends and roof are slabs, and more to the point they are the
+description of a load space rather than a drawing of one: the space a cart keeps clear for cargo is
+the one thing about it that has to be stated rather than inferred from whatever the bodywork mesh
+happens to be.
+
+## 2026-09-14 — The front wheels go as far as the tyres still bite, and no further
+
+A tyre makes its sideways force out of sliding a little. Slide it much further and the force falls
+away again, which is the falling half of the grip curve that lets a vehicle break traction at all.
+At full lock and speed the front tyres were being dragged sideways four times harder than the slip
+they grip hardest at, so they were pushing with less than half of what they had -- and every extra
+degree of lock bought less turn than the one before it. Wound fully over, a tractor at speed took a
+hundred and thirteen metres to come round, with its wheels pointing somewhere it was not going.
+
+The wheels now go as far as they are asked or as far as they can go while the tyres still bite,
+whichever is less. That limit is worked out from where the vehicle's own grip curve peaks, so a
+retyred vehicle gets a different one without anybody choosing a number. Measured on the same tractor
+at the same speed with the same input, the lock settles at nine degrees instead of forty-five and it
+comes round three times faster; the straight-line speed is unchanged.
+
+Nothing about this adds grip. It stops the steering from throwing away the grip already there, and
+at a crawl -- where a tyre barely slides at all and a tractor is being lined up on a hitch -- the
+wheels still go all the way over.
+
+Not solved, and a separate question: grip alone holds a tractor at this speed to a sixty-seven metre
+circle however well it steers. Only the speed itself moves that, and a test records that the top
+speed is a deliberate choice.
+
+## 2026-09-15 — A launch now out-pulls what a rider's feet can hold
+
+The entry of 2026-09-14 on grip and gait set a person's foot grip at 10 m/s^2 on the grounds that it
+sat above what a tractor could pull away at, so a launch kept its riders, and below what a cart makes
+cornering hard at, so a corner took them. A drive force multiplier of three off the line puts a
+standing start at about 24 m/s^2, which is above both. A rider on a cart is now thrown by the launch
+as well as by the corner.
+
+That was not chosen, it fell out of the request for harder acceleration. The two wants are no longer
+satisfiable by one figure: a corner pulls 13 to 23 m/s^2, so any grip high enough to survive a
+24 m/s^2 launch also survives every corner, and riders stop being thrown at all. Whichever of the two
+matters more is a decision for the repo owner, and until it is made the launch wins because it is the
+one that was asked for.
+
+Reversed from the earlier entry, which stands as the record of what was believed then.
 
 ## 2026-09-14 — Sources carry no comments
 

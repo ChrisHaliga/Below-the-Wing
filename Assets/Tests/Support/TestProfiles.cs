@@ -17,14 +17,16 @@ namespace BelowTheWing.Tests.Support
             p.suspensionRestLengthMetres = 0.10f;
             p.springStrengthNewtons = 41000f;
             p.damperNewtonsPerMetrePerSecond = 14000f;
-            p.lateralGripCurve = PeakingGripCurve();
+            p.lateralGripCurve = DrivenGripCurve();
             p.maxDriveForceNewtons = 20000f;
             p.sprintDriveMultiplier = 1.5f;
             p.topSpeedMetresPerSecond = 20f;
             p.coastingDragPerSecond = 0.4f;
             p.bounciness = 0.4f;
             p.maxBrakeForceNewtons = 20000f;
-            p.maxSteerAngleDegrees = 45f;
+            p.maxSteerAngleDegrees = 60f;
+            p.steerLockAtTopSpeedDegrees = 30f;
+            p.launchDriveMultiplier = 3f;
             p.steerRateDegreesPerSecond = 120f;
             p.driveable = true;
             return p;
@@ -84,6 +86,13 @@ namespace BelowTheWing.Tests.Support
             p.centrelineHeightMetres = 3.4f;
             return p;
         }
+
+        public static AnimationCurve DrivenGripCurve()
+            => new AnimationCurve(
+                new Keyframe(0f, 0f),
+                new Keyframe(3f, 16f),
+                new Keyframe(8f, 18f),
+                new Keyframe(20f, 13f));
 
         public static AnimationCurve PeakingGripCurve()
             => new AnimationCurve(

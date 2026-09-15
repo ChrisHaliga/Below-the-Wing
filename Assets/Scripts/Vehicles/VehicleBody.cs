@@ -40,10 +40,27 @@ namespace BelowTheWing.Vehicles
                 var piece = new GameObject(part.Name);
                 piece.transform.SetParent(parts.transform, worldPositionStays: false);
 
-                var box = piece.AddComponent<BoxCollider>();
-                box.size = part.SizeMetres;
-                box.center = Vector3.zero;
-                box.sharedMaterial = bodywork;
+                Collider solid;
+
+                if (part.IsAPieceOfTheModel)
+                {
+                    var shaped = piece.AddComponent<MeshCollider>();
+                    shaped.sharedMesh = part.Piece;
+                    shaped.convex = true;
+                    solid = shaped;
+
+                    piece.transform.localRotation = part.PieceTurn;
+                    piece.transform.localScale = part.PieceScale;
+                }
+                else
+                {
+                    var box = piece.AddComponent<BoxCollider>();
+                    box.size = part.SizeMetres;
+                    box.center = Vector3.zero;
+                    solid = box;
+                }
+
+                solid.sharedMaterial = bodywork;
                 piece.transform.localPosition = part.CentreLocal;
             }
 

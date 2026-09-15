@@ -9,6 +9,7 @@ namespace BelowTheWing.Tests.Support
         public bool Sprint;
         public bool Jump;
         public bool Crouch;
+        public bool Hoist;
 
         public HeldKeys(Vector2 move = default, bool sprint = false)
         {
@@ -17,6 +18,6 @@ namespace BelowTheWing.Tests.Support
         }
 
         public CrewIntent Current
-            => new CrewIntent(Move, Sprint, jump: Jump, crouch: Crouch);
+            => new CrewIntent(Move, Sprint, jump: Jump, crouch: Crouch, hoist: Hoist);
     }
 }
