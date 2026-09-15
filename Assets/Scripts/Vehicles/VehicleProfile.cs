@@ -41,6 +41,9 @@ namespace BelowTheWing.Vehicles
         [Tooltip("Drive force at full throttle, N")]
         public float maxDriveForceNewtons = 12000f;
 
+        [Tooltip("Drive force multiplier off the line, 1 for none")]
+        public float launchDriveMultiplier = 3f;
+
         [Tooltip("Sprint multiplier on drive force and top speed")]
         public float sprintDriveMultiplier = 1.5f;
 
@@ -51,7 +54,7 @@ namespace BelowTheWing.Vehicles
         public float maxBrakeForceNewtons = 20000f;
 
         [Tooltip("Steering lock, degrees from centre")]
-        public float maxSteerAngleDegrees = 45f;
+        public float maxSteerAngleDegrees = 60f;
 
         [Tooltip("Steering rate, degrees/s")]
         public float steerRateDegreesPerSecond = 120f;

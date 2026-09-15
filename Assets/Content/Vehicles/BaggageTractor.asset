@@ -56,10 +56,11 @@ MonoBehaviour:
   rollingResistanceCoefficient: 0.02
   coastingDragPerSecond: 0.4
   maxDriveForceNewtons: 20000
+  launchDriveMultiplier: 3
   sprintDriveMultiplier: 1.5
   topSpeedMetresPerSecond: 20
   maxBrakeForceNewtons: 20000
   bounciness: 0.4
-  maxSteerAngleDegrees: 45
+  maxSteerAngleDegrees: 60
   steerRateDegreesPerSecond: 120
   driveable: 1

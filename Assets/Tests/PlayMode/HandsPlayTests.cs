@@ -36,6 +36,9 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_Profile);
         }
 
+        Ray Looking(Vector3 at)
+            => new Ray(m_Crew.transform.position, (at - m_Crew.transform.position).normalized);
+
         Transform Anchor(string name, Vector3 local)
         {
             var anchor = new GameObject(name).transform;
@@ -77,7 +80,7 @@ namespace BelowTheWing.Tests.PlayMode
             var bag = ABagAt(m_LeftAnchor.position + Vector3.forward * 0.5f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Left.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(bag.position));
 
             Assert.That(m_Hands.Left.Carrying, Is.SameAs(bag));
             Assert.That(m_Hands.Right.Empty, Is.True);
@@ -90,8 +93,8 @@ namespace BelowTheWing.Tests.PlayMode
             var right = ABagAt(m_RightAnchor.position + Vector3.forward * 0.4f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Left.Press(Time.time);
-            m_Hands.Right.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(left.position));
+            m_Hands.Right.Press(Time.time, Looking(right.position));
 
             Assert.That(m_Hands.Left.Carrying, Is.SameAs(left));
             Assert.That(m_Hands.Right.Carrying, Is.SameAs(right),
@@ -106,8 +109,8 @@ namespace BelowTheWing.Tests.PlayMode
             var rail = ARailAt(m_RightAnchor.position + Vector3.right * 1.0f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Left.Press(Time.time);
-            m_Hands.Right.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(bag.position));
+            m_Hands.Right.Press(Time.time, Looking(rail.position));
 
             Assert.That(m_Hands.Left.Carrying, Is.SameAs(bag));
             Assert.That(m_Hands.Right.HoldingOnto, Is.SameAs(rail),
@@ -120,10 +123,10 @@ namespace BelowTheWing.Tests.PlayMode
             var bag = ABagAt(m_LeftAnchor.position + Vector3.left * 0.6f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Right.Press(Time.time);
+            m_Hands.Right.Press(Time.time, Looking(bag.position));
             Assert.That(m_Hands.Right.Empty, Is.True, "too far for the right hand");
 
-            m_Hands.Left.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(bag.position));
             Assert.That(m_Hands.Left.Carrying, Is.SameAs(bag));
         }
 
@@ -131,10 +134,10 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator AHandTakesTheNearestThingWhateverItIs()
         {
             var bag = ABagAt(m_RightAnchor.position + Vector3.forward * 0.3f);
-            ARailAt(m_RightAnchor.position + Vector3.right * 1.6f);
+            var placed1 = ARailAt(m_RightAnchor.position + Vector3.right * 1.6f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Right.Press(Time.time);
+            m_Hands.Right.Press(Time.time, Looking(bag.position));
 
             Assert.That(m_Hands.Right.Carrying, Is.SameAs(bag));
             Assert.That(m_Hands.Right.HoldingOnto, Is.Null);
@@ -147,7 +150,7 @@ namespace BelowTheWing.Tests.PlayMode
             yield return Steps.Seconds(0.5f);
 
             var now = Time.time;
-            m_Hands.Left.Press(now);
+            m_Hands.Left.Press(now, Looking(bag.position));
             m_Hands.Left.Release(now + 0.05f, Vector3.forward);
 
             Assert.That(m_Hands.Left.Carrying, Is.SameAs(bag),
@@ -161,13 +164,13 @@ namespace BelowTheWing.Tests.PlayMode
             var bag = ABagAt(m_LeftAnchor.position + Vector3.forward * 0.4f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Left.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(bag.position));
             m_Hands.Left.Release(Time.time, Vector3.forward);
             yield return Steps.Seconds(1f);
             Assert.That(m_Hands.Left.Carrying, Is.SameAs(bag), "held, before the tap");
 
             var now = Time.time;
-            m_Hands.Left.Press(now);
+            m_Hands.Left.Press(now, Looking(bag.position));
             m_Hands.Left.Release(now + 0.05f, Vector3.forward);
             yield return new WaitForFixedUpdate();
 
@@ -183,12 +186,12 @@ namespace BelowTheWing.Tests.PlayMode
             var bag = ABagAt(m_LeftAnchor.position + Vector3.forward * 0.4f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Left.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(bag.position));
             m_Hands.Left.Release(Time.time, Vector3.forward);
             yield return Steps.Seconds(0.5f);
 
             var now = Time.time;
-            m_Hands.Left.Press(now);
+            m_Hands.Left.Press(now, Looking(bag.position));
             m_Hands.Left.Release(now + HandSettings.Default.fullChargeSeconds + 0.1f, Vector3.forward);
             yield return new WaitForFixedUpdate();
 
@@ -201,10 +204,10 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator ACarriedBagComesAlongWithThePlayer()
         {
-            ABagAt(m_LeftAnchor.position + Vector3.forward * 0.4f);
+            var placed2 = ABagAt(m_LeftAnchor.position + Vector3.forward * 0.4f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Left.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(placed2.position));
             var bag = m_Hands.Left.Carrying;
             var startedAt = m_Crew.transform.position;
 
@@ -220,10 +223,10 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator AHardHitKnocksABagOutOfTheHand()
         {
-            ABagAt(m_LeftAnchor.position + Vector3.forward * 0.4f);
+            var placed3 = ABagAt(m_LeftAnchor.position + Vector3.forward * 0.4f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Left.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(placed3.position));
             var bag = m_Hands.Left.Carrying;
             yield return Steps.Seconds(0.5f);
 
@@ -244,7 +247,7 @@ namespace BelowTheWing.Tests.PlayMode
             bag.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Left.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(bag.position));
             Assert.That(m_Hands.Left.Carrying, Is.SameAs(bag), "held, so that the spring is real");
             yield return Steps.Seconds(1.5f);
 
@@ -257,16 +260,20 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator ACarriedBagComesToRestAtTheHand()
         {
-            ABagAt(m_LeftAnchor.position + Vector3.forward * 0.4f);
+            var placed4 = ABagAt(m_LeftAnchor.position + Vector3.forward * 0.4f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Left.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(placed4.position));
             var bag = m_Hands.Left.Carrying;
             yield return Steps.Seconds(2f);
 
-            Assert.That(Vector3.Distance(bag.position, m_LeftAnchor.position), Is.LessThan(0.2f),
-                $"bag at {bag.position} moving {bag.linearVelocity}, hand at {m_LeftAnchor.position}, " +
-                $"holder moving {m_Crew.Body.linearVelocity}");
+            var held = m_Hands.Left.HoldingAt.Value;
+
+            Assert.That(Vector3.Distance(held, m_LeftAnchor.position), Is.LessThan(0.2f),
+                $"the spot the hand took hold of is at {held}, the hand at {m_LeftAnchor.position}, " +
+                $"the bag centre at {bag.position} moving {bag.linearVelocity}. A hand draws the " +
+                "grip it took, so it is the grip that has to arrive at the hand rather than the " +
+                "middle of whatever was grabbed");
             Assert.That(bag.linearVelocity.magnitude, Is.LessThan(0.2f),
                 "a bag that is still being hauled toward the hand two seconds later is a spring " +
                 "with no damping, and it never stops");
@@ -279,7 +286,7 @@ namespace BelowTheWing.Tests.PlayMode
             bag.transform.rotation = Quaternion.Euler(30f, 40f, 50f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Left.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(bag.position));
             yield return Steps.Seconds(1f);
 
             Assert.That(bag.angularVelocity.magnitude, Is.LessThan(0.2f),
@@ -301,13 +308,13 @@ namespace BelowTheWing.Tests.PlayMode
             var bag = ABagAt(m_LeftAnchor.position + Vector3.forward * 0.4f);
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Left.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(bag.position));
             m_Hands.Left.Release(Time.time, Vector3.forward);
             yield return Steps.Seconds(1f);
 
             var lookingUp = Quaternion.Euler(-30f, 0f, 0f) * Vector3.forward;
             var now = Time.time;
-            m_Hands.Left.Press(now);
+            m_Hands.Left.Press(now, Looking(bag.position));
             m_Hands.Left.Release(now + HandSettings.Default.fullChargeSeconds + 0.1f, lookingUp);
             yield return new WaitForFixedUpdate();
 

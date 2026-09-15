@@ -15,12 +15,15 @@ namespace BelowTheWing.Crew
 
         public const float GiveUpAfterSeconds = 1.5f;
 
+        public const float SettlesForSeconds = 0.35f;
+
         public ClimbZone Offered { get; private set; }
 
         public ClimbZone Hauling { get; private set; }
 
         float m_NearestOffered;
         float m_HauledFor;
+        float m_SettlingFor;
 
         public string Message => Offered != null ? WhatToPress : "";
 
@@ -80,6 +83,7 @@ namespace BelowTheWing.Crew
 
             Hauling = Offered;
             m_HauledFor = 0f;
+            m_SettlingFor = SettlesForSeconds;
             NothingInReach();
 
             var top = Hauling.TopOfTheEdge;
@@ -128,10 +132,22 @@ namespace BelowTheWing.Crew
             return inward * (stillToGo / beforeTheyAreLevelWithItAgain);
         }
 
+        public bool HandsFull => Hauling != null || m_SettlingFor > 0f;
+
         public void LetGo()
         {
             Hauling = null;
             m_HauledFor = 0f;
+        }
+
+        public void Settle(float deltaTime)
+        {
+            if (m_SettlingFor <= 0f)
+            {
+                return;
+            }
+
+            m_SettlingFor = Mathf.Max(0f, m_SettlingFor - deltaTime);
         }
 
         public static float StraightUpFor(float riseMetres, float gravity)

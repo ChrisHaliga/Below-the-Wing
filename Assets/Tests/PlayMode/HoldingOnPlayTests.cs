@@ -36,6 +36,9 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_Profile);
         }
 
+        Ray Looking(Vector3 at)
+            => new Ray(m_Crew.transform.position, (at - m_Crew.transform.position).normalized);
+
         Transform Anchor(string name, Vector3 local)
         {
             var anchor = new GameObject(name).transform;
@@ -63,7 +66,7 @@ namespace BelowTheWing.Tests.PlayMode
             var cart = ACartAt(new Vector3(0f, 0.6f, 2.5f));
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Right.Press(Time.time);
+            m_Hands.Right.Press(Time.time, Looking(cart.position));
 
             Assert.That(m_Hands.Right.HoldingOnto, Is.SameAs(cart));
         }
@@ -74,7 +77,7 @@ namespace BelowTheWing.Tests.PlayMode
             var cart = ACartAt(new Vector3(0f, 0.6f, 2.5f));
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Right.Press(Time.time);
+            m_Hands.Right.Press(Time.time, Looking(cart.position));
             var startedAt = m_Crew.transform.position;
 
             cart.linearVelocity = new Vector3(0f, 0f, 3f);
@@ -97,7 +100,7 @@ namespace BelowTheWing.Tests.PlayMode
             var cart = ACartAt(new Vector3(0f, 0.6f, 2.5f));
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Right.Press(Time.time);
+            m_Hands.Right.Press(Time.time, Looking(cart.position));
             var grabbedAt = m_RightAnchor.position;
 
             m_Crew.IntentSource = new HeldKeys(new Vector2(0f, -1f), sprint: true);
@@ -118,7 +121,7 @@ namespace BelowTheWing.Tests.PlayMode
             var cart = ACartAt(new Vector3(0f, 0.6f, 2.5f));
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Right.Press(Time.time);
+            m_Hands.Right.Press(Time.time, Looking(cart.position));
             yield return Steps.Seconds(0.2f);
             Assert.That(m_Hands.Right.HoldingOnto, Is.SameAs(cart), "holding, before letting go");
             m_Hands.Right.Release(Time.time, Vector3.forward);
@@ -141,7 +144,7 @@ namespace BelowTheWing.Tests.PlayMode
             var cart = ACartAt(new Vector3(0f, 0.6f, 2.5f));
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Right.Press(Time.time);
+            m_Hands.Right.Press(Time.time, Looking(cart.position));
 
             for (var i = 0; i < 25; i++)
             {
@@ -161,7 +164,7 @@ namespace BelowTheWing.Tests.PlayMode
             var cart = ACartAt(new Vector3(0f, 0.6f, 2.5f));
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Right.Press(Time.time);
+            m_Hands.Right.Press(Time.time, Looking(cart.position));
             yield return Steps.Seconds(0.2f);
             Assert.That(m_Hands.Right.HoldingOnto, Is.SameAs(cart), "holding, before the hit");
 
@@ -181,8 +184,8 @@ namespace BelowTheWing.Tests.PlayMode
             var right = ACartAt(new Vector3(2.3f, 0.6f, 0.6f));
             yield return Steps.Seconds(0.5f);
 
-            m_Hands.Left.Press(Time.time);
-            m_Hands.Right.Press(Time.time);
+            m_Hands.Left.Press(Time.time, Looking(left.position));
+            m_Hands.Right.Press(Time.time, Looking(right.position));
             Assert.That(m_Hands.Left.HoldingOnto, Is.SameAs(left));
             Assert.That(m_Hands.Right.HoldingOnto, Is.SameAs(right));
 

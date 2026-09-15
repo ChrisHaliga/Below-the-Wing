@@ -111,6 +111,8 @@ MonoBehaviour:
   m_HasFrontCoupling: 0
   m_FrontCouplingLocal: {x: 0, y: 0, z: 0}
   m_HasRearCoupling: 1
+  m_HasSeat: 1
+  m_SeatLocal: {x: -0.0000000047849795, y: 0.67105424, z: -0.7365314}
   m_RearCouplingLocal: {x: -0.00000007178252, y: 0.2075001, z: -1.3691827}
   m_EnvelopeSizeMetres: {x: 1.6179583, y: 1.7022825, z: 2.8001933}
   m_EnvelopeCentreLocal: {x: 0.00000011920929, y: 0.99885863, z: -0.08584654}

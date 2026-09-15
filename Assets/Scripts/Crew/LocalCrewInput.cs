@@ -99,13 +99,21 @@ namespace BelowTheWing.Crew
         {
             if (pressesCount && button.wasPressedThisFrame)
             {
-                hand.Press(Time.time);
+                hand.Press(Time.time, Aim());
             }
 
             if (button.wasReleasedThisFrame)
             {
                 hand.Release(Time.time, ThrowingTowards());
             }
+        }
+
+        Ray Aim()
+        {
+            var eye = m_Character.Camera;
+            return eye != null
+                ? new Ray(eye.transform.position, eye.transform.forward)
+                : new Ray(m_Character.transform.position, m_Character.transform.forward);
         }
 
         Vector3 ThrowingTowards()

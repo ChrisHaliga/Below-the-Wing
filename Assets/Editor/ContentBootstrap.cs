@@ -63,11 +63,12 @@ namespace BelowTheWing.EditorTools
             profile.lateralGripCurve = TireCurve();
 
             profile.maxDriveForceNewtons = 20000f;
+            profile.launchDriveMultiplier = 3f;
             profile.topSpeedMetresPerSecond = 20f;
             profile.bounciness = 0.4f;
             profile.sprintDriveMultiplier = 1.5f;
             profile.maxBrakeForceNewtons = 20000f;
-            profile.maxSteerAngleDegrees = 45f;
+            profile.maxSteerAngleDegrees = 60f;
             profile.steerRateDegreesPerSecond = 120f;
             profile.driveable = true;
             return profile;

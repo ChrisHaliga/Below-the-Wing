@@ -161,8 +161,19 @@ namespace BelowTheWing.Crew
             }
 
             transform.SetParent(vehicle.transform, worldPositionStays: false);
-            transform.localPosition = Vector3.zero;
+            transform.localPosition = SatIn(vehicle);
             transform.localRotation = Quaternion.identity;
+        }
+
+        Vector3 SatIn(VehicleController vehicle)
+        {
+            var seat = vehicle.Shape != null ? vehicle.Shape.SeatLocal : null;
+            if (!seat.HasValue)
+            {
+                return Vector3.zero;
+            }
+
+            return seat.Value + (Vector3.up * (m_Profile.heightMetres * 0.5f));
         }
 
         void ClimbOut()
@@ -358,6 +369,7 @@ namespace BelowTheWing.Crew
 
             NoticeTheyHaveLanded();
 
+            Climb.Settle(Time.fixedDeltaTime);
             KeepHauling();
 
             LookForSomethingToClimb();
@@ -406,8 +418,10 @@ namespace BelowTheWing.Crew
             }
 
             var cameraYaw = Camera != null ? Camera.YawDegrees : transform.eulerAngles.y;
-            var walking = CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile)
-                          * Stance.SpeedMultiplier;
+            var walking = Climb.HandsFull
+                ? Vector3.zero
+                : CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile)
+                  * Stance.SpeedMultiplier;
 
             var wanted = deckAcrossTheGround + walking;
             var gait = m_Profile.gaitResponseMetresPerSecondSquared * Time.fixedDeltaTime;

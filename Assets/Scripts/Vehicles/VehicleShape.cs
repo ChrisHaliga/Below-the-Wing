@@ -76,6 +76,8 @@ namespace BelowTheWing.Vehicles
 
             public Vector3? RearCouplingLocal;
 
+            public Vector3? SeatLocal;
+
             public Vector3 EnvelopeSizeMetres;
             public Vector3 EnvelopeCentreLocal;
             public Bounds InteriorLocal;
@@ -96,6 +98,12 @@ namespace BelowTheWing.Vehicles
 
         [SerializeField, Tooltip("Whether anything may hitch behind")]
         bool m_HasRearCoupling;
+
+        [SerializeField, Tooltip("Whether anybody sits in it")]
+        bool m_HasSeat;
+
+        [SerializeField, Tooltip("Where a driver sits in the vehicle's own space, m")]
+        Vector3 m_SeatLocal;
 
         [SerializeField, Tooltip("Rear coupling in the vehicle's own space, m")]
         Vector3 m_RearCouplingLocal;
@@ -121,6 +129,8 @@ namespace BelowTheWing.Vehicles
         public Vector3? FrontCouplingLocal => m_HasFrontCoupling ? m_FrontCouplingLocal : (Vector3?)null;
 
         public Vector3? RearCouplingLocal => m_HasRearCoupling ? m_RearCouplingLocal : (Vector3?)null;
+
+        public Vector3? SeatLocal => m_HasSeat ? m_SeatLocal : (Vector3?)null;
 
         public VehicleFootprint Footprint
             => VehicleFootprint.Of(m_EnvelopeSizeMetres, FrontCouplingLocal, RearCouplingLocal);
@@ -230,6 +240,9 @@ namespace BelowTheWing.Vehicles
 
             m_HasRearCoupling = measurements.RearCouplingLocal.HasValue;
             m_RearCouplingLocal = measurements.RearCouplingLocal ?? Vector3.zero;
+
+            m_HasSeat = measurements.SeatLocal.HasValue;
+            m_SeatLocal = measurements.SeatLocal ?? Vector3.zero;
 
             m_EnvelopeSizeMetres = measurements.EnvelopeSizeMetres;
             m_EnvelopeCentreLocal = measurements.EnvelopeCentreLocal;

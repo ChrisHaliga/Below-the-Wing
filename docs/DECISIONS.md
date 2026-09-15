@@ -301,6 +301,22 @@ Not solved, and a separate question: grip alone holds a tractor at this speed to
 circle however well it steers. Only the speed itself moves that, and a test records that the top
 speed is a deliberate choice.
 
+## 2026-09-15 — A launch now out-pulls what a rider's feet can hold
+
+The entry of 2026-09-14 on grip and gait set a person's foot grip at 10 m/s^2 on the grounds that it
+sat above what a tractor could pull away at, so a launch kept its riders, and below what a cart makes
+cornering hard at, so a corner took them. A drive force multiplier of three off the line puts a
+standing start at about 24 m/s^2, which is above both. A rider on a cart is now thrown by the launch
+as well as by the corner.
+
+That was not chosen, it fell out of the request for harder acceleration. The two wants are no longer
+satisfiable by one figure: a corner pulls 13 to 23 m/s^2, so any grip high enough to survive a
+24 m/s^2 launch also survives every corner, and riders stop being thrown at all. Whichever of the two
+matters more is a decision for the repo owner, and until it is made the launch wins because it is the
+one that was asked for.
+
+Reversed from the earlier entry, which stands as the record of what was believed then.
+
 ## 2026-09-14 — Sources carry no comments
 
 Decided by the repo owner. Facts that must hold are assertions or tests; decisions worth keeping are

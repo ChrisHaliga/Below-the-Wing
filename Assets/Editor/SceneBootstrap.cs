@@ -110,6 +110,7 @@ namespace BelowTheWing.EditorTools
                     Wheels = measured.Placements,
                     FrontCouplingLocal = null,
                     RearCouplingLocal = MarkerLocal(tractor, model, "HITCH_Female"),
+                    SeatLocal = MarkerLocal(tractor, model, "SEAT"),
                     EnvelopeSizeMetres = bodywork.size,
                     EnvelopeCentreLocal = bodywork.center,
                     InteriorLocal = new Bounds(Vector3.zero, Vector3.zero),
