@@ -64,8 +64,7 @@ MonoBehaviour:
   bounciness: 0.4
   arcadeHandling: 1
   fastestTurnDegreesPerSecond: 240
-  cannotRollOver: 1
-  staysUprightPerSecond: 6
+  staysUprightPerSecond: 12
   mostSideGripMetresPerSecondSquared: 20
   gripHoldsHeadingPerSecond: 3
   maxSteerAngleDegrees: 60

@@ -161,9 +161,6 @@ namespace BelowTheWing.Vehicles
 
             m_Body.centerOfMass = profile.centerOfMassOffset;
 
-            m_Body.constraints = profile.arcadeHandling && profile.cannotRollOver
-                ? RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ
-                : RigidbodyConstraints.None;
             m_Body.interpolation = RigidbodyInterpolation.Interpolate;
 
             m_Body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
@@ -312,8 +309,10 @@ namespace BelowTheWing.Vehicles
             var yaw = ArcadeHandling.YawDegreesPerSecond(
                 wound, forwardSpeed, Shape != null ? Shape.WheelbaseMetres : 0f, m_Profile);
             var spin = Body.angularVelocity;
-            spin.y = yaw * Mathf.Deg2Rad;
-            Body.angularVelocity = spin;
+            var itsOwnUp = transform.up;
+
+            Body.angularVelocity =
+                spin + (itsOwnUp * ((yaw * Mathf.Deg2Rad) - Vector3.Dot(spin, itsOwnUp)));
 
             var flat = new Vector3(Body.linearVelocity.x, 0f, Body.linearVelocity.z);
             var heading = new Vector3(transform.forward.x, 0f, transform.forward.z).normalized;
