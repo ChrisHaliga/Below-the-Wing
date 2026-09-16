@@ -119,5 +119,35 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(holding, Is.LessThan(float.PositiveInfinity),
                 "and has to be draggable, so a tractor can still shift it and a crash can move it");
         }
+    
+        [Test]
+        public void ADrawbarSpansFromTheCartsNoseOutToItsCouplingPoint()
+        {
+            var bar = Drawbar.Spans(new Vector3(0f, 0.4f, 2.6f), noseAtZ: 1.8f);
+
+            Assert.That(bar.LengthMetres, Is.EqualTo(0.8f).Within(1e-4f));
+            Assert.That(bar.PivotLocal.z, Is.EqualTo(1.8f).Within(1e-4f),
+                "it has to hinge at the cart, or lifting it swings the whole bar into the ground");
+            Assert.That(bar.ReachesMetres, Is.EqualTo(0.8f).Within(1e-4f));
+        }
+
+        [Test]
+        public void ADrawbarBehindTheCartSpansBackwardsJustTheSame()
+        {
+            var bar = Drawbar.Spans(new Vector3(0f, 0.4f, -2.6f), noseAtZ: -1.8f);
+
+            Assert.That(bar.LengthMetres, Is.EqualTo(0.8f).Within(1e-4f));
+            Assert.That(bar.ReachesMetres, Is.EqualTo(-0.8f).Within(1e-4f));
+        }
+
+        [Test]
+        public void OnlyALooseUnparkedCartCanBePulledAround()
+        {
+            Assert.That(Drawbar.CanBePulled(parked: false, hitched: false), Is.True);
+            Assert.That(Drawbar.CanBePulled(parked: true, hitched: false), Is.False,
+                "a parked cart is braked, so hauling it by hand would defeat the brake");
+            Assert.That(Drawbar.CanBePulled(parked: false, hitched: true), Is.False,
+                "a hitched cart belongs to the tractor, and grabbing its bar fights the joint");
+        }
     }
 }

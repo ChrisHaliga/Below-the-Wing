@@ -168,6 +168,14 @@ namespace BelowTheWing.Vehicles
             DiscardBodywork();
             m_Bodywork = VehicleBody.Build(gameObject, Shape, profile.bounciness);
 
+            SlidingDoors.Build(gameObject, Shape, m_Bodywork);
+
+            if (!profile.driveable)
+            {
+                var brake = GetComponent<CartBrake>() ?? gameObject.AddComponent<CartBrake>();
+                brake.SwingsThis(Drawbar.Build(gameObject, Shape, m_Bodywork));
+            }
+
             BuildWheels(profile);
 
             if (GetComponent<ContactTally>() == null)

@@ -1,7 +1,9 @@
 {
     "name": "BelowTheWing.Vehicles",
     "rootNamespace": "BelowTheWing.Vehicles",
-    "references": [],
+    "references": [
+        "BelowTheWing.Cargo"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
