@@ -18,7 +18,7 @@ namespace BelowTheWing.Tests.Support
             p.springStrengthNewtons = 41000f;
             p.damperNewtonsPerMetrePerSecond = 14000f;
             p.lateralGripCurve = DrivenGripCurve();
-            p.maxDriveForceNewtons = 20000f;
+            p.maxDriveForceNewtons = 30000f;
             p.sprintDriveMultiplier = 1.5f;
             p.topSpeedMetresPerSecond = 20f;
             p.coastingDragPerSecond = 0.4f;
@@ -26,7 +26,8 @@ namespace BelowTheWing.Tests.Support
             p.maxBrakeForceNewtons = 20000f;
             p.maxSteerAngleDegrees = 60f;
             p.steerLockAtTopSpeedDegrees = 30f;
-            p.launchDriveMultiplier = 3f;
+            p.launchDriveMultiplier = 6f;
+            p.launchFadesByFractionOfTopSpeed = 0.6f;
             p.steerRateDegreesPerSecond = 120f;
             p.driveable = true;
             return p;

@@ -71,7 +71,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             yield return Steps.Seconds(2f);
 
-            m_Train.Leader.IntentSource = new FixedIntent(steer: 1f, throttle: 0.4f);
+            m_Train.Leader.IntentSource = new FixedIntent(steer: 1f, throttle: 0.2f);
             yield return Steps.Seconds(6f);
 
             var tractorHeading = m_Train.Leader.transform.eulerAngles.y;

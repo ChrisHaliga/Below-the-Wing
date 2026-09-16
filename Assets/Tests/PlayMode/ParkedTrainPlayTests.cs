@@ -18,7 +18,7 @@ namespace BelowTheWing.Tests.PlayMode
         [SetUp]
         public void SetUp()
         {
-            m_Apron = new TestApron(400f);
+            m_Apron = new TestApron(1200f);
             m_TractorProfile = TestProfiles.Tractor();
             m_CartProfile = TestProfiles.Cart();
             m_BagProfile = TestProfiles.CheckedBag();

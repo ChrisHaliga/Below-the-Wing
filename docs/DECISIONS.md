@@ -13,6 +13,35 @@ the record of what was believed then.
 
 ---
 
+## 2026-09-15 — The tractor's launch is a feel figure and outranks the tests that argued with it
+
+Decided by the repo owner, in those words: press the gas, feel the tractor shoot forward and really
+jerk you forward, and realism does not enter into it.
+
+Two tests stood in the way and both encoded an opinion nobody had asked for. One said a launch still
+boosting at cruise is not a launch but a different engine. The other required full drive force and no
+more at half of top speed. Both were written here, not requested, and both are gone.
+
+The tractor now leaves the line at about seventy metres a second squared, a little over seven times
+gravity, holding above sixty for the first tenth of a second and lifting its own nose five and a half
+degrees. No tug on any apron does this. A test says so in its own failure message, so that nobody
+later reads the figure as a measurement and tunes it back down to something a real machine could do.
+
+The shove is a multiplier on drive force that fades out by six tenths of top speed, and it scales with
+throttle, so feathering the pedal gives a proportionally smaller kick rather than none.
+
+Known and accepted: a rider standing on a towed cart is thrown by every launch, because feet grip at
+ten metres a second squared. That was already true at twenty-four and is recorded above.
+
+Two test fixtures had to grow. They built two hundred and four hundred metre aprons, which were large
+enough only because a tractor took so long to get going; a train that now reaches nineteen metres a
+second drove off the edge and the fall read as a runaway. The assertions were untouched and the
+ground was made to outlast the vehicle. A third fixture cornered a train at four tenths throttle,
+which used to be a towing pace and is now brisk, so it corners at two tenths instead and the test
+measures the towing geometry it was written for.
+
+---
+
 ## 2026-09-15 — What a driver feels is the first tenth of a second, not the settled corner
 
 The entry below chose a tyre by sweeping settled full-lock corners and picked the curve that came

@@ -92,7 +92,10 @@ namespace BelowTheWing.Tests.EditMode
                 "under half the smaller of its two wheels");
             Assert.That(tractor.centerOfMassOffset.y, Is.EqualTo(0.55f).Within(0.05f),
                 "low in bodywork whose own middle is a metre up, or it rolls over in the first corner");
-            Assert.That(tractor.maxDriveForceNewtons, Is.EqualTo(20000f).Within(1f));
+            Assert.That(tractor.maxDriveForceNewtons, Is.EqualTo(30000f).Within(1f),
+                "1.2 g of thrust, which no real tug has. Along with top speed this is a figure " +
+                "chosen for how the apron feels to cross rather than measured off a machine, and " +
+                "the launch multiplier is stacked on top of it");
             Assert.That(tractor.maxSteerAngleDegrees, Is.GreaterThanOrEqualTo(40f),
                 "a tug turns tightly; it spends its life reversing carts into stands");
         }

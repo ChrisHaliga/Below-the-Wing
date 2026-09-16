@@ -62,8 +62,9 @@ namespace BelowTheWing.EditorTools
             profile.coastingDragPerSecond = 0.4f;
             profile.lateralGripCurve = DrivenTireCurve();
 
-            profile.maxDriveForceNewtons = 20000f;
-            profile.launchDriveMultiplier = 3f;
+            profile.maxDriveForceNewtons = 30000f;
+            profile.launchDriveMultiplier = 6f;
+            profile.launchFadesByFractionOfTopSpeed = 0.6f;
             profile.topSpeedMetresPerSecond = 20f;
             profile.bounciness = 0.4f;
             profile.sprintDriveMultiplier = 1.5f;

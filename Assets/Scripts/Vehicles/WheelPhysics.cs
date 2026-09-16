@@ -164,13 +164,11 @@ namespace BelowTheWing.Vehicles
                 return 1f;
             }
 
-            var through = Mathf.Clamp01(
-                speed / (topSpeedMetresPerSecond * LaunchFadesByFraction));
+            var fadesAcross = Mathf.Max(profile.launchFadesByFractionOfTopSpeed, 1e-3f);
+            var through = Mathf.Clamp01(speed / (topSpeedMetresPerSecond * fadesAcross));
 
             return Mathf.Lerp(profile.launchDriveMultiplier, 1f, Mathf.SmoothStep(0f, 1f, through));
         }
-
-        const float LaunchFadesByFraction = 0.35f;
 
         public static bool PushingWithTheMotion(float throttle, float forwardVelocity)
             => !Mathf.Approximately(throttle, 0f)

@@ -53,6 +53,9 @@ namespace BelowTheWing.Vehicles
         [Tooltip("Braking force, N")]
         public float maxBrakeForceNewtons = 20000f;
 
+        [Tooltip("Fraction of top speed the launch shove fades across")]
+        public float launchFadesByFractionOfTopSpeed = 0.35f;
+
         [Tooltip("Steering lock, degrees from centre")]
         public float maxSteerAngleDegrees = 60f;
 
