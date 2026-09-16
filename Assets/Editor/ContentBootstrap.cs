@@ -63,7 +63,7 @@ namespace BelowTheWing.EditorTools
             profile.lateralGripCurve = TireCurve();
 
             profile.maxDriveForceNewtons = 30000f;
-            profile.launchDriveMultiplier = 4f;
+            profile.launchDriveMultiplier = 2.5f;
             profile.launchFadesByFractionOfTopSpeed = 0.6f;
             profile.topSpeedMetresPerSecond = 20f;
             profile.bounciness = 0.4f;

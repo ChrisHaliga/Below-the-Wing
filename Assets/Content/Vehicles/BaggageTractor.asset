@@ -56,7 +56,7 @@ MonoBehaviour:
   rollingResistanceCoefficient: 0.02
   coastingDragPerSecond: 0.4
   maxDriveForceNewtons: 30000
-  launchDriveMultiplier: 4
+  launchDriveMultiplier: 2.5
   launchFadesByFractionOfTopSpeed: 0.6
   sprintDriveMultiplier: 1.5
   topSpeedMetresPerSecond: 20
@@ -64,6 +64,7 @@ MonoBehaviour:
   bounciness: 0.4
   arcadeHandling: 1
   fastestTurnDegreesPerSecond: 240
+  turnsIntoItPerSecond: 8
   staysUprightPerSecond: 12
   mostSideGripMetresPerSecondSquared: 20
   gripHoldsHeadingPerSecond: 3

@@ -30,7 +30,7 @@ namespace BelowTheWing.Tests.Support
             p.gripHoldsHeadingPerSecond = 3f;
             p.maxSteerAngleDegrees = 60f;
             p.steerLockAtTopSpeedDegrees = 30f;
-            p.launchDriveMultiplier = 4f;
+            p.launchDriveMultiplier = 2.5f;
             p.launchFadesByFractionOfTopSpeed = 0.6f;
             p.steerRateDegreesPerSecond = 90f;
             p.driveable = true;

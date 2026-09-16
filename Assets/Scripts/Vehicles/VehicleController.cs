@@ -298,42 +298,6 @@ namespace BelowTheWing.Vehicles
             }
         }
 
-        void TurnItLikeAnArcadeVehicle(DriveIntent intent)
-        {
-            var forwardSpeed = Vector3.Dot(Body.linearVelocity, transform.forward);
-
-            var wound = m_Profile.maxSteerAngleDegrees > 0f
-                ? m_SteerAngleDegrees / m_Profile.maxSteerAngleDegrees
-                : 0f;
-
-            var yaw = ArcadeHandling.YawDegreesPerSecond(
-                wound, forwardSpeed, Shape != null ? Shape.WheelbaseMetres : 0f, m_Profile);
-            var spin = Body.angularVelocity;
-            var itsOwnUp = transform.up;
-
-            Body.angularVelocity =
-                spin + (itsOwnUp * ((yaw * Mathf.Deg2Rad) - Vector3.Dot(spin, itsOwnUp)));
-
-            var flat = new Vector3(Body.linearVelocity.x, 0f, Body.linearVelocity.z);
-            var heading = new Vector3(transform.forward.x, 0f, transform.forward.z).normalized;
-
-            var held = ArcadeHandling.HeldToItsHeading(
-                flat, heading, m_Profile.gripHoldsHeadingPerSecond,
-                m_Profile.mostSideGripMetresPerSecondSquared, Time.fixedDeltaTime);
-
-            var top = m_Profile.topSpeedMetresPerSecond
-                      * (intent.Sprint ? m_Profile.sprintDriveMultiplier : 1f);
-
-            if (top > 0f && held.magnitude > top)
-            {
-                held = held.normalized * top;
-            }
-
-            Body.linearVelocity = new Vector3(held.x, Body.linearVelocity.y, held.z);
-
-            KeepItOnItsWheels();
-        }
-
         void StandOnAndPushWith(int corner, Quaternion steerRotation, DriveIntent intent)
         {
             var wheel = m_Wheels[corner];
@@ -374,6 +338,45 @@ namespace BelowTheWing.Vehicles
             Body.AddForceAtPosition(
                 (up * force.AlongSuspension) + (right * sideways) + (forward * force.Forward),
                 mount);
+        }
+
+        void TurnItLikeAnArcadeVehicle(DriveIntent intent)
+        {
+            var forwardSpeed = Vector3.Dot(Body.linearVelocity, transform.forward);
+
+            var wound = m_Profile.maxSteerAngleDegrees > 0f
+                ? m_SteerAngleDegrees / m_Profile.maxSteerAngleDegrees
+                : 0f;
+
+            var wanted = ArcadeHandling.YawDegreesPerSecond(
+                wound, forwardSpeed, Shape != null ? Shape.WheelbaseMetres : 0f, m_Profile)
+                * Mathf.Deg2Rad;
+
+            var itsOwnUp = transform.up;
+            var coming = Vector3.Dot(Body.angularVelocity, itsOwnUp);
+
+            Body.AddTorque(
+                itsOwnUp * ((wanted - coming) * m_Profile.turnsIntoItPerSecond),
+                ForceMode.Acceleration);
+
+            HoldItToItsHeading();
+        }
+
+        void HoldItToItsHeading()
+        {
+            var flat = new Vector3(Body.linearVelocity.x, 0f, Body.linearVelocity.z);
+            var heading = new Vector3(transform.forward.x, 0f, transform.forward.z).normalized;
+
+            if (flat.magnitude < 0.1f || heading.sqrMagnitude < 0.5f)
+            {
+                return;
+            }
+
+            var held = ArcadeHandling.HeldToItsHeading(
+                flat, heading, m_Profile.gripHoldsHeadingPerSecond,
+                m_Profile.mostSideGripMetresPerSecondSquared, Time.fixedDeltaTime);
+
+            Body.AddForce((held - flat) / Time.fixedDeltaTime, ForceMode.Acceleration);
         }
 
         void KeepItOnItsWheels()
