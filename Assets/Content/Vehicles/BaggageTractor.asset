@@ -63,7 +63,7 @@ MonoBehaviour:
   maxBrakeForceNewtons: 20000
   bounciness: 0.4
   arcadeHandling: 1
-  fastestTurnDegreesPerSecond: 180
+  fastestTurnDegreesPerSecond: 240
   gripHoldsHeadingPerSecond: 3
   maxSteerAngleDegrees: 60
   steerLockAtTopSpeedDegrees: 30

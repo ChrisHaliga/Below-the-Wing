@@ -14,7 +14,7 @@ namespace BelowTheWing.Tests.EditMode
         {
             m_Profile = TestProfiles.Tractor();
             m_Profile.maxSteerAngleDegrees = 60f;
-            m_Profile.fastestTurnDegreesPerSecond = 180f;
+            m_Profile.fastestTurnDegreesPerSecond = 240f;
         }
 
         [TearDown]
