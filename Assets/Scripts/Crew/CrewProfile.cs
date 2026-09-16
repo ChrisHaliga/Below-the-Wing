@@ -39,9 +39,6 @@ namespace BelowTheWing.Crew
         [Tooltip("Standing jump height, m")]
         public float jumpHeightMetres = 1.4f;
 
-        [Tooltip("Highest edge they can haul themselves over, m")]
-        public float climbReachMetres = 1.2f;
-
         [Header("Hands")]
         [Tooltip("Hand settings")]
         public HandSettings hands = HandSettings.Default;

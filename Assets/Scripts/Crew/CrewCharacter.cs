@@ -293,50 +293,18 @@ namespace BelowTheWing.Crew
                 return;
             }
 
-            Seat?.Refresh();
+            KeepTheirGearInStep();
+            TakeTheSeatOrLeaveIt();
 
-            Handling?.Tick();
-
-            Stance.Settle();
-
-            if (Hitching != null)
-            {
-                Hitching.Driving = Seat?.Driving != null ? Seat.Driving.Chain : null;
-                Hitching.Refresh();
-            }
-
-            var drivingNow = Seat?.Driving;
-            if (drivingNow != m_Seated)
-            {
-                if (drivingNow != null)
-                {
-                    ClimbIn(drivingNow);
-                }
-                else
-                {
-                    ClimbOut();
-                }
-            }
-
-            if (m_Seated != null)
-            {
-                return;
-            }
-
-            if (!OursToMove)
+            if (m_Seated != null || !OursToMove)
             {
                 return;
             }
 
             var asked = IntentSource?.Current ?? CrewIntent.Idle;
 
-            if (Camera != null)
-            {
-                transform.rotation = Quaternion.Euler(0f, Camera.YawDegrees, 0f);
-            }
-
+            FaceWhereTheyAreLooking();
             NoticeTheyHaveLanded();
-
             HoistThemselves(asked.Hoist);
 
             if (asked.Jump && !Hoisting.Pulling)
@@ -352,11 +320,55 @@ namespace BelowTheWing.Crew
                 return;
             }
 
-            var deck = MovingAt(underfoot, Feet);
-            var deckAcrossTheGround = new Vector3(deck.x, 0f, deck.z);
+            CarryThemAlongTheDeck(asked, underfoot);
+        }
 
-            var velocity = Body.linearVelocity;
-            var acrossTheGround = new Vector3(velocity.x, 0f, velocity.z);
+        void KeepTheirGearInStep()
+        {
+            Seat?.Refresh();
+            Handling?.Tick();
+            Stance.Settle();
+
+            if (Hitching == null)
+            {
+                return;
+            }
+
+            Hitching.Driving = Seat?.Driving != null ? Seat.Driving.Chain : null;
+            Hitching.Refresh();
+        }
+
+        void TakeTheSeatOrLeaveIt()
+        {
+            var drivingNow = Seat?.Driving;
+
+            if (drivingNow == m_Seated)
+            {
+                return;
+            }
+
+            if (drivingNow != null)
+            {
+                ClimbIn(drivingNow);
+            }
+            else
+            {
+                ClimbOut();
+            }
+        }
+
+        void FaceWhereTheyAreLooking()
+        {
+            if (Camera != null)
+            {
+                transform.rotation = Quaternion.Euler(0f, Camera.YawDegrees, 0f);
+            }
+        }
+
+        void CarryThemAlongTheDeck(CrewIntent asked, Collider underfoot)
+        {
+            var deckAcrossTheGround = Flat(MovingAt(underfoot, Feet));
+            var acrossTheGround = Flat(Body.linearVelocity);
 
             m_Footing.Settle(
                 underfoot,
@@ -365,27 +377,34 @@ namespace BelowTheWing.Crew
                 m_Profile.footGripMetresPerSecondSquared,
                 Time.fixedDeltaTime);
 
-            var grip = m_Profile.footGripMetresPerSecondSquared * Time.fixedDeltaTime;
-
             if (m_Footing.Lost)
             {
-                Body.AddForce(
-                    Vector3.ClampMagnitude(deckAcrossTheGround - acrossTheGround, grip),
-                    ForceMode.VelocityChange);
+                Shove(deckAcrossTheGround - acrossTheGround,
+                    m_Profile.footGripMetresPerSecondSquared * Time.fixedDeltaTime);
                 return;
             }
 
-            var cameraYaw = Camera != null ? Camera.YawDegrees : transform.eulerAngles.y;
-            var walking = Hoisting.Pulling
-                ? Vector3.zero
-                : CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile)
-                  * Stance.SpeedMultiplier;
-
-            var wanted = deckAcrossTheGround + walking;
-            var gait = m_Profile.gaitResponseMetresPerSecondSquared * Time.fixedDeltaTime;
-
-            Body.AddForce(
-                Vector3.ClampMagnitude(wanted - acrossTheGround, gait), ForceMode.VelocityChange);
+            Shove(deckAcrossTheGround + TheirOwnStride(asked) - acrossTheGround,
+                m_Profile.gaitResponseMetresPerSecondSquared * Time.fixedDeltaTime);
         }
+
+        Vector3 TheirOwnStride(CrewIntent asked)
+        {
+            if (Hoisting.Pulling)
+            {
+                return Vector3.zero;
+            }
+
+            var cameraYaw = Camera != null ? Camera.YawDegrees : transform.eulerAngles.y;
+
+            return CrewLocomotion.DesiredVelocity(asked.Move, cameraYaw, asked.Sprint, m_Profile)
+                   * Stance.SpeedMultiplier;
+        }
+
+        void Shove(Vector3 towards, float mostItMayChangeBy)
+            => Body.AddForce(
+                Vector3.ClampMagnitude(towards, mostItMayChangeBy), ForceMode.VelocityChange);
+
+        static Vector3 Flat(Vector3 velocity) => new Vector3(velocity.x, 0f, velocity.z);
     }
 }
