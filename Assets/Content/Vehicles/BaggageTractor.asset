@@ -55,11 +55,20 @@ MonoBehaviour:
     m_RotationOrder: 4
   rollingResistanceCoefficient: 0.02
   coastingDragPerSecond: 0.4
-  maxDriveForceNewtons: 20000
+  maxDriveForceNewtons: 30000
+  launchDriveMultiplier: 2.5
+  launchFadesByFractionOfTopSpeed: 0.6
   sprintDriveMultiplier: 1.5
   topSpeedMetresPerSecond: 20
   maxBrakeForceNewtons: 20000
   bounciness: 0.4
-  maxSteerAngleDegrees: 45
-  steerRateDegreesPerSecond: 120
+  arcadeHandling: 1
+  fastestTurnDegreesPerSecond: 240
+  turnsIntoItPerSecond: 8
+  staysUprightPerSecond: 12
+  mostSideGripMetresPerSecondSquared: 20
+  gripHoldsHeadingPerSecond: 3
+  maxSteerAngleDegrees: 60
+  steerLockAtTopSpeedDegrees: 30
+  steerRateDegreesPerSecond: 90
   driveable: 1

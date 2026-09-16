@@ -10,6 +10,9 @@ namespace BelowTheWing.Cargo
         [Tooltip("Reach, m")]
         public float reachMetres;
 
+        [Tooltip("Half angle of the cone a hand reaches into, degrees")]
+        public float reachesIntoConeDegrees;
+
         [Tooltip("Carry spring, N/m")]
         public float carrySpringNewtonsPerMetre;
 
@@ -43,6 +46,7 @@ namespace BelowTheWing.Cargo
         public static HandSettings Default => new HandSettings
         {
             reachMetres = 1.2f,
+            reachesIntoConeDegrees = 40f,
             carrySpringNewtonsPerMetre = 3000f,
             carryDamperNewtonsPerMetrePerSecond = 300f,
             carryGripNewtons = 800f,
@@ -62,10 +66,11 @@ namespace BelowTheWing.Cargo
         readonly Transform m_Anchor;
         readonly Rigidbody m_Body;
         readonly HandSettings m_Settings;
-        readonly List<Collider> m_InReach = new List<Collider>();
 
         Rigidbody m_Carried;
         Collider m_CarriedPart;
+        Vector3 m_HeldAtLocal;
+        bool m_Holding;
         ConfigurableJoint m_Carry;
         bool m_Carrying;
         bool m_TookHoldOnThisPress;
@@ -84,6 +89,24 @@ namespace BelowTheWing.Cargo
 
         public Rigidbody Carrying => m_Carry != null ? m_Carried : null;
 
+        public Vector3? HoldingAt
+        {
+            get
+            {
+                if (m_Holding && m_Carried != null)
+                {
+                    return m_Carried.transform.TransformPoint(m_HeldAtLocal);
+                }
+
+                if (m_Tether != null && m_Tether.connectedBody != null)
+                {
+                    return m_Tether.connectedBody.transform.TransformPoint(m_Tether.connectedAnchor);
+                }
+
+                return m_Tether != null ? m_Tether.connectedAnchor : (Vector3?)null;
+            }
+        }
+
         public Rigidbody HoldingOnto => m_Tether != null ? m_Tether.connectedBody : null;
 
         public bool Empty => m_Carry == null && m_Tether == null;
@@ -93,7 +116,7 @@ namespace BelowTheWing.Cargo
         public float Charge(float now)
             => WindingUp ? Mathf.Clamp01((now - m_WoundUpAt) / Mathf.Max(m_Settings.fullChargeSeconds, 1e-3f)) : 0f;
 
-        public void Press(float now)
+        public void Press(float now, Ray aim)
         {
             if (m_Carry != null)
             {
@@ -106,8 +129,8 @@ namespace BelowTheWing.Cargo
                 return;
             }
 
-            var nearest = Nearest(out var use);
-            if (nearest == null)
+            var reachedFor = Aimed(aim, out var use);
+            if (reachedFor == null)
             {
                 return;
             }
@@ -115,10 +138,10 @@ namespace BelowTheWing.Cargo
             switch (use.As)
             {
                 case HandUse.Category.Carry:
-                    PickUp(nearest);
+                    PickUp(reachedFor, reachedFor.ClosestPoint(m_Anchor.position));
                     break;
                 case HandUse.Category.HoldOnto:
-                    HoldOnto(nearest);
+                    HoldOnto(reachedFor);
                     break;
             }
         }
@@ -154,6 +177,8 @@ namespace BelowTheWing.Cargo
             }
         }
 
+        const float AsFarAsAnybodyLooks = 30f;
+
         public void Tick()
         {
             if (m_Carrying && (m_Carry == null || m_CarriedPart == null || !InReach(m_CarriedPart)))
@@ -183,48 +208,52 @@ namespace BelowTheWing.Cargo
         bool InReach(Collider part)
             => Vector3.Distance(part.ClosestPoint(m_Anchor.position), m_Anchor.position) <= m_Settings.reachMetres;
 
-        Collider Nearest(out HandUse use)
+
+        Collider Aimed(Ray aim, out HandUse use)
         {
-            use = null;
-            Collider best = null;
-            var bestDistance = float.MaxValue;
+            var found = Aiming.At(
+                aim, m_Anchor.position, m_Settings.reachMetres, AsFarAsAnybodyLooks,
+                m_Settings.reachesIntoConeDegrees,
+                candidate => WorthReachingFor(candidate, out _) && InReach(candidate));
 
-            m_InReach.Clear();
-            m_InReach.AddRange(Physics.OverlapSphere(
-                m_Anchor.position, m_Settings.reachMetres, ~0, QueryTriggerInteraction.Ignore));
-
-            foreach (var candidate in m_InReach)
+            if (found == null)
             {
-                if (candidate.attachedRigidbody == m_Body || !HandUse.TryFind(candidate, out var says))
-                {
-                    continue;
-                }
-
-                if (says.As == HandUse.Category.Carry && !CanBePickedUp(candidate.attachedRigidbody))
-                {
-                    continue;
-                }
-
-                var distance = Vector3.Distance(candidate.ClosestPoint(m_Anchor.position), m_Anchor.position);
-                if (distance < bestDistance)
-                {
-                    bestDistance = distance;
-                    best = candidate;
-                    use = says;
-                }
+                use = null;
+                return null;
             }
 
-            return best;
+            WorthReachingFor(found, out use);
+            return found;
+        }
+
+        bool WorthReachingFor(Collider candidate, out HandUse use)
+        {
+            use = null;
+
+            if (candidate.attachedRigidbody == m_Body || !HandUse.TryFind(candidate, out var says))
+            {
+                return false;
+            }
+
+            if (says.As == HandUse.Category.Carry && !CanBePickedUp(candidate.attachedRigidbody))
+            {
+                return false;
+            }
+
+            use = says;
+            return true;
         }
 
         static bool CanBePickedUp(Rigidbody body) => body != null && !body.isKinematic;
 
-        void PickUp(Collider part)
+        void PickUp(Collider part, Vector3 grabbedAt)
         {
             var bag = part.attachedRigidbody;
             m_Carried = bag;
             m_CarriedPart = part;
             m_Carrying = true;
+            m_HeldAtLocal = bag.transform.InverseTransformPoint(grabbedAt);
+            m_Holding = true;
 
             bag.transform.rotation = m_Body.transform.rotation;
             bag.rotation = m_Body.transform.rotation;
@@ -233,7 +262,7 @@ namespace BelowTheWing.Cargo
             m_Carry = bag.gameObject.AddComponent<ConfigurableJoint>();
             m_Carry.autoConfigureConnectedAnchor = false;
             m_Carry.connectedBody = m_Body;
-            m_Carry.anchor = Vector3.zero;
+            m_Carry.anchor = m_HeldAtLocal;
             m_Carry.connectedAnchor = m_Body.transform.InverseTransformPoint(m_Anchor.position);
 
             var pull = new JointDrive
@@ -268,6 +297,7 @@ namespace BelowTheWing.Cargo
             m_Carried = null;
             m_CarriedPart = null;
             m_Carrying = false;
+            m_Holding = false;
             m_TookHoldOnThisPress = false;
             m_WoundUpAt = -1f;
         }

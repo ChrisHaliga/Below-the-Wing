@@ -106,7 +106,7 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator AHardCornerTipsABagStandingOnEndOverTheLip()
         {
             var bag = ABagAt(new Vector3(0f, m_Shape.InteriorLocal.min.y + 0.4f, 0f));
-            bag.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            bag.Body.rotation = Quaternion.Euler(90f, 0f, 0f);
             yield return Steps.Seconds(1.5f);
 
             yield return AHardCorner();

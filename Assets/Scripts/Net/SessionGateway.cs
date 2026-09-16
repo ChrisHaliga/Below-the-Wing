@@ -24,7 +24,7 @@ namespace BelowTheWing.Net
     }
 
     [DisallowMultipleComponent]
-    public sealed class SessionGateway : MonoBehaviour
+    public sealed class SessionGateway : MonoBehaviour, ILeaveTheService
     {
         [SerializeField, Tooltip("Session type name")]
         string m_SessionType = "below-the-wing";
@@ -42,6 +42,30 @@ namespace BelowTheWing.Net
 
         public bool Busy => Phase is SessionPhase.SigningIn or SessionPhase.Connecting;
 
+        public bool InOne => m_Session != null;
+
+        public async Task LeaveAsync()
+        {
+            var leaving = m_Session;
+            m_Session = null;
+
+            if (leaving == null)
+            {
+                return;
+            }
+
+            try
+            {
+                await leaving.LeaveAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning(
+                    $"Could not tell the service this player had left: {e.Message}. The session " +
+                    "record stays until the service times it out.", this);
+            }
+        }
+
         public bool IsSessionOwner
         {
             get
@@ -50,6 +74,10 @@ namespace BelowTheWing.Net
                 return manager != null && manager.IsListening && manager.LocalClient.IsSessionOwner;
             }
         }
+
+        void Awake()
+            => gameObject.AddComponent<SessionLifetime>()
+                .Ends(GetComponent<NetworkManager>(), this);
 
         async void Start()
         {

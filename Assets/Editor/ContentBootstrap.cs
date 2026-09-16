@@ -62,13 +62,16 @@ namespace BelowTheWing.EditorTools
             profile.coastingDragPerSecond = 0.4f;
             profile.lateralGripCurve = TireCurve();
 
-            profile.maxDriveForceNewtons = 20000f;
+            profile.maxDriveForceNewtons = 30000f;
+            profile.launchDriveMultiplier = 2.5f;
+            profile.launchFadesByFractionOfTopSpeed = 0.6f;
             profile.topSpeedMetresPerSecond = 20f;
             profile.bounciness = 0.4f;
             profile.sprintDriveMultiplier = 1.5f;
             profile.maxBrakeForceNewtons = 20000f;
-            profile.maxSteerAngleDegrees = 45f;
-            profile.steerRateDegreesPerSecond = 120f;
+            profile.maxSteerAngleDegrees = 60f;
+            profile.steerLockAtTopSpeedDegrees = 30f;
+            profile.steerRateDegreesPerSecond = 90f;
             profile.driveable = true;
             return profile;
         }
@@ -99,15 +102,15 @@ namespace BelowTheWing.EditorTools
 
             profile.springStrengthNewtons = 9000f;
             profile.damperNewtonsPerMetrePerSecond = 3500f;
-            profile.coastingDragPerSecond = 0.1f;
-            profile.lateralGripCurve = TireCurve();
+            profile.coastingDragPerSecond = 0.8f;
+            profile.lateralGripCurve = CartTireCurve();
             profile.maxDriveForceNewtons = 0f;
             profile.topSpeedMetresPerSecond = 0f;
             profile.bounciness = 0.4f;
 
             profile.sprintDriveMultiplier = 1f;
             profile.maxBrakeForceNewtons = 2000f;
-            profile.maxSteerAngleDegrees = 0f;
+            profile.maxSteerAngleDegrees = 55f;
             profile.steerRateDegreesPerSecond = 0f;
             profile.driveable = false;
             return profile;
@@ -146,5 +149,12 @@ namespace BelowTheWing.EditorTools
                 new Keyframe(0f, 0f),
                 new Keyframe(3f, 12f),
                 new Keyframe(12f, 5f));
+
+        static AnimationCurve CartTireCurve()
+            => new AnimationCurve(
+                new Keyframe(0f, 0f),
+                new Keyframe(3f, 20f),
+                new Keyframe(12f, 8f));
+
     }
 }

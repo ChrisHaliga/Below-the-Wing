@@ -292,17 +292,31 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(tractorShape.InteriorLocal.size, Is.EqualTo(Vector3.zero),
                 "BaggageTractor: nothing rides inside a tractor, and an interior nobody can reach is " +
                 "a hole in its side waiting to be found");
-            Assert.That(tractorShape.SolidParts.Count, Is.EqualTo(1),
-                "BaggageTractor: one box, the bodywork");
+            Assert.That(tractorShape.SolidParts.Count, Is.GreaterThan(1),
+                "BaggageTractor: a tractor is solid in the pieces it was modelled from, not in one " +
+                "box around all of them. One box is a crate as tall as the machine: nothing to " +
+                "stand on, nowhere to walk between the axles, and open sides that are a wall");
 
-            var solid = tractorShape.SolidParts[0];
-            Assert.That(solid.CentreLocal.y - (solid.SizeMetres.y * 0.5f), Is.GreaterThan(0.1f),
-                "BaggageTractor: the solid body reaches the tarmac. Resting on the ground it carries " +
-                "the tractor's own weight, the suspension never compresses, and what should be a " +
-                "tractor on wheels is a crate sliding about on the floor");
-            Assert.That(solid.SizeMetres, Is.EqualTo(tractorShape.EnvelopeSizeMetres),
-                "BaggageTractor: solid through and through, so what it collides as is the room it " +
-                "takes up");
+            var lowest = float.MaxValue;
+            var everythingSolid = new Bounds(
+                VehicleShape.TheRoomAPartTakesUp(tractorShape.SolidParts[0]).center, Vector3.zero);
+
+            foreach (var part in tractorShape.SolidParts)
+            {
+                var room = VehicleShape.TheRoomAPartTakesUp(part);
+                everythingSolid.Encapsulate(room);
+                lowest = Mathf.Min(lowest, room.min.y);
+            }
+
+            Assert.That(lowest, Is.GreaterThan(0.1f),
+                $"BaggageTractor: something solid reaches {lowest:F2} m, which is the tarmac. Resting " +
+                "on the ground it carries the tractor's own weight, the suspension never compresses, " +
+                "and what should be a tractor on wheels is a crate sliding about on the floor");
+
+            Assert.That(everythingSolid.size.y, Is.LessThanOrEqualTo(tractorShape.EnvelopeSizeMetres.y + 0.01f),
+                "BaggageTractor: what it is solid in has to fit inside the room it takes up, because " +
+                "the apron is laid out from that room and a player steps clear of it when they get " +
+                "off. Solid outside it and vehicles collide before they look like they have");
 
             var headlights = tractor.transform.Find($"{ApronAppearance.LookName}/Headlights");
             Assert.That(headlights, Is.Not.Null,
@@ -324,6 +338,26 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(crew.GetComponent<NetworkObject>().DontDestroyWithOwner, Is.False,
                 "a player who leaves takes their character with them; one left behind stands in the " +
                 "way for the rest of the session with nobody driving it");
+        }
+
+        [Test]
+        public void NothingSpawnedOntoTheApronBringsACameraOrALightOfItsOwn()
+        {
+            foreach (var path in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Content/Prefabs" }))
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(path));
+
+                var cameras = prefab.GetComponentsInChildren<Camera>(true);
+                var lights = prefab.GetComponentsInChildren<Light>(true);
+
+                Assert.That(cameras, Is.Empty,
+                    $"'{prefab.name}' carries {cameras.Length} camera(s), which a model exported with " +
+                    "cameras turned on will hand it. Spawn a dozen of these and the view belongs to " +
+                    "whichever one wins on depth, so the player loads in looking through a baggage cart");
+                Assert.That(lights, Is.Empty,
+                    $"'{prefab.name}' carries {lights.Length} light(s). A dozen of them is a dozen " +
+                    "shadow maps competing for the atlas, for something nobody asked to be lit");
+            }
         }
 
         [Test]

@@ -210,11 +210,15 @@ namespace BelowTheWing.Tests.EditMode
         {
             const float load = 750f;
 
-            var nearThePeak = Mathf.Abs(WheelPhysics.LateralForce(3f, load, Step, m_Tractor));
-            var wellPastIt = Mathf.Abs(WheelPhysics.LateralForce(10f, load, Step, m_Tractor));
+            var peak = m_Tractor.SlipItGripsHardestAt;
+
+            var nearThePeak = Mathf.Abs(WheelPhysics.LateralForce(peak, load, Step, m_Tractor));
+            var wellPastIt = Mathf.Abs(WheelPhysics.LateralForce(peak * 2f, load, Step, m_Tractor));
 
             Assert.That(wellPastIt, Is.LessThan(nearThePeak),
-                "a tire that grips harder the faster it slides can never let go, and nothing can ever slide");
+                $"this tyre grips hardest at {peak:F1} m/s of slip, making {nearThePeak:F0} N there " +
+                $"and {wellPastIt:F0} N at twice that. A tyre that grips harder the faster it slides " +
+                "can never let go, and nothing can ever slide");
         }
 
         [Test]
@@ -227,13 +231,67 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void APullingAwayShovesHarderThanACruise()
+        {
+            var offTheLine = WheelPhysics.DriveForce(1f, false, 0f, m_Tractor);
+            var rolling = WheelPhysics.DriveForce(
+                1f, false, m_Tractor.topSpeedMetresPerSecond * 0.5f, m_Tractor);
+
+            Assert.That(offTheLine, Is.GreaterThan(rolling * 2f),
+                $"pulling away pushes with {offTheLine:F0} N and half way up it pushes {rolling:F0} N. " +
+                "A drive force that does not change with speed makes the climb to top speed a " +
+                "straight line, which is a machine that never feels like it has anything in hand");
+        }
+
+        [Test]
+        public void TheShoveFadesSmoothlyRatherThanSteppingOff()
+        {
+            var was = float.MaxValue;
+            var top = m_Tractor.topSpeedMetresPerSecond;
+
+            for (var i = 0; i <= 100; i++)
+            {
+                var speed = top * i / 100f;
+                var now = WheelPhysics.DriveForce(1f, false, speed, m_Tractor);
+
+                Assert.That(now, Is.LessThanOrEqualTo(was + 0.01f),
+                    $"the shove went up again at {speed:F2} m/s, from {was:F0} N to {now:F0} N. A " +
+                    "drive force that climbs as the machine speeds up runs away with itself");
+
+                if (was < float.MaxValue)
+                {
+                    Assert.That(Mathf.Abs(now - was),
+                        Is.LessThan(m_Tractor.maxDriveForceNewtons * 0.5f),
+                        $"the shove jumped {Mathf.Abs(now - was):F0} N across a hundredth of the " +
+                        $"speed range at {speed:F2} m/s. A step in drive force is a kick through " +
+                        "the seat at one particular speed");
+                }
+
+                was = now;
+            }
+        }
+
+        [Test]
+        public void ThrottleAgainstTheMotionIsNeverBoosted()
+        {
+            var against = WheelPhysics.DriveForce(-1f, false, 5f, m_Tractor);
+
+            Assert.That(Mathf.Abs(against), Is.EqualTo(m_Tractor.maxDriveForceNewtons).Within(0.01f),
+                "a launch boost is for getting a standing machine moving. Applied to a throttle " +
+                "fighting the way the machine is already going it becomes a brake several times " +
+                "stronger than the brakes");
+        }
+
+        [Test]
         public void ThrottleProducesTheProfilesDriveForce()
         {
+            var offTheLine = m_Tractor.maxDriveForceNewtons * m_Tractor.launchDriveMultiplier;
+
             Assert.That(WheelPhysics.DriveForce(1f, sprinting: false, forwardVelocity: 0f, m_Tractor),
-                Is.EqualTo(m_Tractor.maxDriveForceNewtons).Within(0.01f));
+                Is.EqualTo(offTheLine).Within(0.01f));
             Assert.That(WheelPhysics.DriveForce(0f, sprinting: false, forwardVelocity: 0f, m_Tractor), Is.EqualTo(0f).Within(1e-4f));
             Assert.That(WheelPhysics.DriveForce(0.5f, sprinting: false, forwardVelocity: 0f, m_Tractor),
-                Is.EqualTo(m_Tractor.maxDriveForceNewtons * 0.5f).Within(0.01f));
+                Is.EqualTo(offTheLine * 0.5f).Within(0.01f));
         }
 
         [Test]
@@ -242,9 +300,11 @@ namespace BelowTheWing.Tests.EditMode
             var cruising = WheelPhysics.DriveForce(1f, sprinting: false, forwardVelocity: 0f, m_Tractor);
             var flatOut = WheelPhysics.DriveForce(1f, sprinting: true, forwardVelocity: 0f, m_Tractor);
 
-            Assert.That(cruising, Is.EqualTo(m_Tractor.maxDriveForceNewtons).Within(0.01f));
+            var offTheLine = m_Tractor.maxDriveForceNewtons * m_Tractor.launchDriveMultiplier;
+
+            Assert.That(cruising, Is.EqualTo(offTheLine).Within(0.01f));
             Assert.That(flatOut,
-                Is.EqualTo(m_Tractor.maxDriveForceNewtons * m_Tractor.sprintDriveMultiplier).Within(0.01f));
+                Is.EqualTo(offTheLine * m_Tractor.sprintDriveMultiplier).Within(0.01f));
             Assert.That(flatOut, Is.GreaterThan(cruising));
         }
 
@@ -364,8 +424,9 @@ namespace BelowTheWing.Tests.EditMode
             var flatOut = WheelPhysics.DriveForce(1f, sprinting: false, m_Tractor.topSpeedMetresPerSecond, m_Tractor);
             var beyond = WheelPhysics.DriveForce(1f, sprinting: false, m_Tractor.topSpeedMetresPerSecond * 1.2f, m_Tractor);
 
-            Assert.That(standing, Is.EqualTo(m_Tractor.maxDriveForceNewtons).Within(0.01f));
-            Assert.That(halfway, Is.EqualTo(m_Tractor.maxDriveForceNewtons).Within(0.01f), "full pull through most of the range");
+            Assert.That(standing, Is.EqualTo(m_Tractor.maxDriveForceNewtons * m_Tractor.launchDriveMultiplier).Within(0.01f), "a standing start is boosted");
+            Assert.That(halfway, Is.GreaterThanOrEqualTo(m_Tractor.maxDriveForceNewtons),
+                "full pull or better through the middle of the range");
             Assert.That(flatOut, Is.EqualTo(0f).Within(0.01f), "and nothing left at the top");
             Assert.That(beyond, Is.EqualTo(0f).Within(0.01f), "never a push past it");
         }

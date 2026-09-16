@@ -167,6 +167,49 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ATractorIsStillBeingShovedHardHalfASecondOffTheLine()
+        {
+            var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);
+            yield return Steps.Seconds(2f);
+
+            tractor.IntentSource = new FixedIntent(throttle: 1f);
+            yield return Steps.Seconds(0.5f);
+
+            var atHalfASecond = tractor.Body.linearVelocity.magnitude;
+
+            yield return Steps.Seconds(0.3f);
+
+            var reached = tractor.Body.linearVelocity.magnitude;
+
+            Assert.That(atHalfASecond, Is.GreaterThan(10f),
+                $"half a second of full throttle put it at {atHalfASecond:F1} m/s. A shove that is " +
+                "spent by the time a driver has noticed it is a number in a profile rather than " +
+                "something anybody feels");
+            Assert.That(reached, Is.GreaterThan(14f),
+                $"{reached:F1} m/s after eight tenths of a second, against a top speed of " +
+                $"{m_TractorProfile.topSpeedMetresPerSecond:F0}. The shove has to carry into the " +
+                "speed a driver actually crosses the apron at, not fade out at walking pace");
+        }
+
+        [UnityTest]
+        public IEnumerator ATractorKicksHardEnoughToThrowTheDriverBackInTheSeat()
+        {
+            var tractor = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);
+            yield return Steps.Seconds(2f);
+
+            tractor.IntentSource = new FixedIntent(throttle: 1f);
+            yield return Steps.Seconds(0.1f);
+
+            var afterATenth = tractor.Body.linearVelocity.magnitude;
+
+            Assert.That(afterATenth / 0.1f, Is.GreaterThan(28f),
+                $"a tenth of a second of full throttle gained {afterATenth:F2} m/s, which is " +
+                $"{afterATenth / 0.1f:F0} m/s^2. This figure is chosen for how it feels to press the " +
+                "throttle and nothing else, and no tug on any apron accelerates like this. It was 40 " +
+                "when the launch multiplier was 6, and the repo owner asked for less");
+        }
+
+        [UnityTest]
         public IEnumerator ATractorNeverExceedsItsTopSpeedAndGetsCloseToIt()
         {
             m_Apron.TearDown();

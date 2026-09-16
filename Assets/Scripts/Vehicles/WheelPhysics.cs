@@ -145,13 +145,29 @@ namespace BelowTheWing.Vehicles
                 top *= profile.sprintDriveMultiplier;
             }
 
+            var speed = Mathf.Abs(forwardVelocity);
+            var shove = LaunchShove(speed, top, profile);
+
             if (!PushingWithTheMotion(throttle, forwardVelocity))
             {
-                return asked;
+                return Mathf.Approximately(forwardVelocity, 0f) ? asked * shove : asked;
             }
 
-            var headroom = top > 0f ? Mathf.Clamp01((top - Mathf.Abs(forwardVelocity)) / (top * TopSpeedFadeFraction)) : 0f;
-            return asked * headroom;
+            var headroom = top > 0f ? Mathf.Clamp01((top - speed) / (top * TopSpeedFadeFraction)) : 0f;
+            return asked * shove * headroom;
+        }
+
+        public static float LaunchShove(float speed, float topSpeedMetresPerSecond, VehicleProfile profile)
+        {
+            if (topSpeedMetresPerSecond <= 0f || profile.launchDriveMultiplier <= 1f)
+            {
+                return 1f;
+            }
+
+            var fadesAcross = Mathf.Max(profile.launchFadesByFractionOfTopSpeed, 1e-3f);
+            var through = Mathf.Clamp01(speed / (topSpeedMetresPerSecond * fadesAcross));
+
+            return Mathf.Lerp(profile.launchDriveMultiplier, 1f, Mathf.SmoothStep(0f, 1f, through));
         }
 
         public static bool PushingWithTheMotion(float throttle, float forwardVelocity)

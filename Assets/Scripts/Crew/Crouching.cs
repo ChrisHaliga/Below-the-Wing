@@ -28,7 +28,7 @@ namespace BelowTheWing.Crew
 
         public float SpeedMultiplier => Crouched ? Mathf.Clamp01(m_Profile.crouchSpeedMultiplier) : 1f;
 
-        public bool RoomToStand
+        bool RoomToStand
         {
             get
             {

@@ -23,6 +23,7 @@ namespace BelowTheWing.Session
             m_Camera = camera;
 
             m_Character.TakeTheSeat(broker, nearbyVehicles);
+            m_Character.Seat.Aim = () => m_Character.LookingAlong();
             m_Character.Camera = camera;
 
             m_Character.Hitching = new CouplingHand(
@@ -35,11 +36,17 @@ namespace BelowTheWing.Session
                     session.Reshaped(back, session.ATrainNumberNobodyIsUsing());
                 });
 
+            m_Character.Hitching.LookingAt =
+                () => Aiming.At<VehicleController>(m_Character.LookingAlong(), ReachesMetres, ConeDegrees);
+
             var left = m_Character.transform.Find(Hands.LeftAnchorName);
             var right = m_Character.transform.Find(Hands.RightAnchorName);
             if (left != null && right != null)
             {
                 m_Character.Handling = new Hands(left, right, m_Character.Body, m_Character.Profile.hands);
+
+                m_Character.gameObject.AddComponent<HandLook>()
+                    .Watch(m_Character.Handling, left, right);
             }
             else
             {
@@ -51,13 +58,18 @@ namespace BelowTheWing.Session
 
             m_Character.gameObject.AddComponent<MouseCapture>();
             m_Character.gameObject.AddComponent<LocalCrewInput>();
-            m_Character.gameObject.AddComponent<OccupancyPromptView>().Watch(m_Character.Seat);
+            m_Character.gameObject.AddComponent<CrewPromptView>()
+                .Watch(m_Character.Seat);
 
             if (camera != null)
             {
                 camera.Subject = m_Character.transform;
             }
         }
+
+        const float ReachesMetres = 3f;
+
+        const float ConeDegrees = 40f;
 
         public void FollowWhateverTheyAreControlling()
         {

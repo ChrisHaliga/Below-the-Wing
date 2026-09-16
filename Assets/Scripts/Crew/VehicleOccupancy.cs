@@ -1,20 +1,12 @@
 using System;
 using System.Collections.Generic;
+using BelowTheWing.Cargo;
 using BelowTheWing.Vehicles;
 using UnityEngine;
 
 namespace BelowTheWing.Crew
 {
-    public enum OccupancyPrompt
-    {
-        None,
-
-        OfferToDrive,
-
-        VehicleTaken
-    }
-
-    public sealed class VehicleOccupancy
+    public sealed class VehicleOccupancy : IOfferSomething
     {
         const float DismountClearanceMetres = 1f;
 
@@ -33,6 +25,10 @@ namespace BelowTheWing.Crew
 
         VehicleController m_AskedFor;
 
+        public Func<Ray> Aim { get; set; }
+
+        public float LooksIntoConeDegrees { get; set; } = 40f;
+
         public VehicleOccupancy(Transform crew, IOwnershipBroker broker, Func<IReadOnlyList<VehicleController>> nearbyVehicles, float reachMetres)
         {
             m_Crew = crew != null ? crew : throw new ArgumentNullException(nameof(crew));
@@ -47,7 +43,7 @@ namespace BelowTheWing.Crew
 
         public Transform Subject => m_Driving != null ? m_Driving.transform : m_Crew;
 
-        public OccupancyPrompt Prompt { get; private set; } = OccupancyPrompt.None;
+        public CrewPrompt Prompt { get; private set; } = CrewPrompt.None;
 
         public string Message { get; private set; } = "";
 
@@ -64,7 +60,7 @@ namespace BelowTheWing.Crew
                 }
 
                 Offer = null;
-                Say(OccupancyPrompt.None, "");
+                Say(CrewPrompt.None, "");
                 return;
             }
 
@@ -74,24 +70,36 @@ namespace BelowTheWing.Crew
                 m_AskedFor = null;
             }
 
-            Offer = DriverPrompt.Nearest(m_Crew.position, m_ReachMetres, m_NearbyVehicles());
+            Offer = WhatTheyAreLookingAt();
 
             if (Offer == null)
             {
                 m_Refused = null;
-                Say(OccupancyPrompt.None, "");
+                Say(CrewPrompt.None, "");
                 return;
             }
 
             if (ReferenceEquals(Offer, m_Refused))
             {
-                Say(OccupancyPrompt.VehicleTaken, Offer.AcceptsDriver
+                Say(CrewPrompt.Refused, Offer.AcceptsDriver
                     ? $"{Offer.DisplayName} did not answer. Try again."
                     : $"{Offer.DisplayName} is being driven");
                 return;
             }
 
-            Say(OccupancyPrompt.OfferToDrive, $"Press E to drive {Offer.DisplayName}");
+            Say(CrewPrompt.Offer, $"Press E to drive {Offer.DisplayName}");
+        }
+
+        VehicleController WhatTheyAreLookingAt()
+        {
+            if (Aim == null)
+            {
+                return DriverPrompt.Nearest(m_Crew.position, m_ReachMetres, m_NearbyVehicles());
+            }
+
+            var looked = Aiming.At<VehicleController>(Aim(), m_ReachMetres, LooksIntoConeDegrees);
+
+            return looked != null && looked.AcceptsDriver ? looked : null;
         }
 
         public void Toggle(IDriveIntentSource intentSource)
@@ -120,7 +128,7 @@ namespace BelowTheWing.Crew
                 if (!granted)
                 {
                     m_Refused = wanted;
-                    Say(OccupancyPrompt.VehicleTaken, wanted.AcceptsDriver
+                    Say(CrewPrompt.Refused, wanted.AcceptsDriver
                         ? $"{wanted.DisplayName} did not answer. Try again."
                         : $"{wanted.DisplayName} is being driven");
                     return;
@@ -137,7 +145,7 @@ namespace BelowTheWing.Crew
                 wanted.IntentSource = intentSource;
                 wanted.Occupied = true;
                 Offer = null;
-                Say(OccupancyPrompt.None, "");
+                Say(CrewPrompt.None, "");
             });
         }
 
@@ -160,10 +168,10 @@ namespace BelowTheWing.Crew
             m_Driving.Occupied = false;
             m_Driving = null;
 
-            Say(OccupancyPrompt.None, "");
+            Say(CrewPrompt.None, "");
         }
 
-        void Say(OccupancyPrompt prompt, string message)
+        void Say(CrewPrompt prompt, string message)
         {
             Prompt = prompt;
             Message = message;

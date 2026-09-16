@@ -101,40 +101,60 @@ MonoBehaviour:
   m_Wheels:
   - CentreLocal: {x: -0.79253507, y: 0.15567946, z: 1.5804386}
     RadiusMetres: 0.15702271
-  - CentreLocal: {x: 0.7925354, y: 0.15567946, z: 1.5804385}
+  - CentreLocal: {x: 0.7925354, y: 0.15567946, z: 1.5804384}
     RadiusMetres: 0.15702271
   - CentreLocal: {x: -0.7925353, y: 0.15568006, z: -1.5804381}
-    RadiusMetres: 0.15702271
-  - CentreLocal: {x: 0.79253507, y: 0.15567994, z: -1.5804383}
+    RadiusMetres: 0.15702266
+  - CentreLocal: {x: 0.79253507, y: 0.15567994, z: -1.5804384}
     RadiusMetres: 0.15702271
   m_HasFrontCoupling: 1
-  m_FrontCouplingLocal: {x: 0.00000027640633, y: 0.20751238, z: 3.1617198}
+  m_FrontCouplingLocal: {x: 0.0000002764063, y: 0.20751238, z: 3.1617196}
   m_HasRearCoupling: 1
-  m_RearCouplingLocal: {x: -0.00000015874664, y: 0.13095415, z: -1.8158497}
-  m_EnvelopeSizeMetres: {x: 1.8855, y: 2.0155, z: 3.8152}
-  m_EnvelopeCentreLocal: {x: 0, y: 1.0909, z: 0.1296}
+  m_HasSeat: 0
+  m_SeatLocal: {x: 0, y: 0, z: 0}
+  m_RearCouplingLocal: {x: -0.00000015874663, y: 0.13095415, z: -1.8158498}
+  m_EnvelopeSizeMetres: {x: 1.885549, y: 2.100016, z: 3.8151636}
+  m_EnvelopeCentreLocal: {x: 0, y: 1.0486649, z: 0.12955248}
   m_InteriorLocal:
-    m_Center: {x: 0, y: 1.2857001, z: 0}
-    m_Extent: {x: 0.86055, y: 0.813, z: 1.5769}
+    m_Center: {x: 0, y: 1.2093349, z: 0.00000011920929}
+    m_Extent: {x: 0.8563427, y: 0.7412075, z: 1.5718848}
   m_SolidParts:
   - Name: Deck
-    SizeMetres: {x: 1.7211, y: 0.15, z: 3.1538}
-    CentreLocal: {x: 0, y: 0.3977, z: 0}
+    SizeMetres: {x: 1.7126853, y: 0.15, z: 3.1437695}
+    CentreLocal: {x: 0, y: 0.39312738, z: 0}
+    Piece: {fileID: 0}
+    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
+    PieceScale: {x: 1, y: 1, z: 1}
   - Name: Lip left
-    SizeMetres: {x: 0.05, y: 0.18, z: 3.1538}
-    CentreLocal: {x: -0.83555, y: 0.56270003, z: 0}
+    SizeMetres: {x: 0.05, y: 0.18, z: 3.1437695}
+    CentreLocal: {x: -0.8313427, y: 0.5581274, z: 0}
+    Piece: {fileID: 0}
+    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
+    PieceScale: {x: 1, y: 1, z: 1}
   - Name: Lip right
-    SizeMetres: {x: 0.05, y: 0.18, z: 3.1538}
-    CentreLocal: {x: 0.83555, y: 0.56270003, z: 0}
+    SizeMetres: {x: 0.05, y: 0.18, z: 3.1437695}
+    CentreLocal: {x: 0.8313427, y: 0.5581274, z: 0}
+    Piece: {fileID: 0}
+    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
+    PieceScale: {x: 1, y: 1, z: 1}
   - Name: End front
-    SizeMetres: {x: 1.7211, y: 1.626, z: 0.15}
-    CentreLocal: {x: 0, y: 1.2857001, z: 1.6519}
+    SizeMetres: {x: 1.7126853, y: 1.482415, z: 0.15}
+    CentreLocal: {x: 0, y: 1.2093349, z: 1.6468848}
+    Piece: {fileID: 0}
+    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
+    PieceScale: {x: 1, y: 1, z: 1}
   - Name: End rear
-    SizeMetres: {x: 1.7211, y: 1.626, z: 0.15}
-    CentreLocal: {x: 0, y: 1.2857001, z: -1.6519}
+    SizeMetres: {x: 1.7126853, y: 1.482415, z: 0.15}
+    CentreLocal: {x: 0, y: 1.2093349, z: -1.6468848}
+    Piece: {fileID: 0}
+    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
+    PieceScale: {x: 1, y: 1, z: 1}
   - Name: Roof
-    SizeMetres: {x: 1.7211, y: 0.15, z: 3.1538}
-    CentreLocal: {x: 0, y: 2.1737, z: 0}
+    SizeMetres: {x: 1.7126853, y: 0.15, z: 3.1437695}
+    CentreLocal: {x: 0, y: 2.0255423, z: 0}
+    Piece: {fileID: 0}
+    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
+    PieceScale: {x: 1, y: 1, z: 1}
 --- !u!114 &5418079734087993141
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -148,10 +168,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Vehicles::BelowTheWing.Vehicles.WheelLook
   m_Wheels:
-  - {fileID: 2665918244179932628}
-  - {fileID: 4166644020088898475}
-  - {fileID: 8728113332229163869}
-  - {fileID: 1385847413508544347}
+  - {fileID: 5191173098028836958}
+  - {fileID: 9128361450258193913}
+  - {fileID: 1151713545770418603}
+  - {fileID: 4405293623983845492}
 --- !u!114 &3322196097056669251
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -240,7 +260,7 @@ MonoBehaviour:
   m_Shape: 3
   m_SizeMetres: {x: 1, y: 1, z: 1}
   m_Colour: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  m_LabelHeightMetres: 2.3002
+  m_LabelHeightMetres: 2.3086746
   m_DrawnAtLocal: {x: 0, y: 0, z: 0}
   m_DisplayName: 
 --- !u!114 &7284710948490794246
@@ -266,7 +286,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
       propertyPath: m_LocalPosition.y
@@ -278,19 +298,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.000000030908616
+      value: -0.00000004371139
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.00000003090862
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.7071067
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.7071068
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -313,19 +333,14 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
---- !u!4 &1385847413508544347 stripped
+--- !u!4 &1151713545770418603 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 5767699876361246285, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
+  m_CorrespondingSourceObject: {fileID: 5533461342400757949, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
   m_PrefabInstance: {fileID: 4841783685114069270}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &2665918244179932628 stripped
+--- !u!4 &4405293623983845492 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: -1743378904941169470, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
-  m_PrefabInstance: {fileID: 4841783685114069270}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &4166644020088898475 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8855093034197844669, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
+  m_CorrespondingSourceObject: {fileID: -138547612803911326, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
   m_PrefabInstance: {fileID: 4841783685114069270}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &4952765411633194749 stripped
@@ -333,8 +348,13 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
   m_PrefabInstance: {fileID: 4841783685114069270}
   m_PrefabAsset: {fileID: 0}
---- !u!4 &8728113332229163869 stripped
+--- !u!4 &5191173098028836958 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 4184130265353767499, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
+  m_CorrespondingSourceObject: {fileID: 809443926574573896, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
+  m_PrefabInstance: {fileID: 4841783685114069270}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &9128361450258193913 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -4783090242510660369, guid: 3d405da54b7bf434390de8a96ce23286, type: 3}
   m_PrefabInstance: {fileID: 4841783685114069270}
   m_PrefabAsset: {fileID: 0}

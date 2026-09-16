@@ -213,7 +213,9 @@ namespace BelowTheWing.Session
         {
             foreach (var arrival in arrivals)
             {
-                if (!Physics.CheckBox(arrival.Position, arrival.SizeMetres * 0.5f, arrival.Rotation))
+                if (!Physics.CheckBox(
+                        arrival.Position, arrival.SizeMetres * 0.5f, arrival.Rotation, ~0,
+                        QueryTriggerInteraction.Ignore))
                 {
                     return arrival;
                 }

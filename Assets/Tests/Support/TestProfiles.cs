@@ -18,14 +18,21 @@ namespace BelowTheWing.Tests.Support
             p.springStrengthNewtons = 41000f;
             p.damperNewtonsPerMetrePerSecond = 14000f;
             p.lateralGripCurve = PeakingGripCurve();
-            p.maxDriveForceNewtons = 20000f;
+            p.maxDriveForceNewtons = 30000f;
             p.sprintDriveMultiplier = 1.5f;
             p.topSpeedMetresPerSecond = 20f;
             p.coastingDragPerSecond = 0.4f;
             p.bounciness = 0.4f;
             p.maxBrakeForceNewtons = 20000f;
-            p.maxSteerAngleDegrees = 45f;
-            p.steerRateDegreesPerSecond = 120f;
+            p.arcadeHandling = true;
+            p.fastestTurnDegreesPerSecond = 240f;
+            p.mostSideGripMetresPerSecondSquared = 20f;
+            p.gripHoldsHeadingPerSecond = 3f;
+            p.maxSteerAngleDegrees = 60f;
+            p.steerLockAtTopSpeedDegrees = 30f;
+            p.launchDriveMultiplier = 2.5f;
+            p.launchFadesByFractionOfTopSpeed = 0.6f;
+            p.steerRateDegreesPerSecond = 90f;
             p.driveable = true;
             return p;
         }
@@ -39,14 +46,14 @@ namespace BelowTheWing.Tests.Support
             p.suspensionRestLengthMetres = 0.08f;
             p.springStrengthNewtons = 9000f;
             p.damperNewtonsPerMetrePerSecond = 3500f;
-            p.lateralGripCurve = PeakingGripCurve();
+            p.lateralGripCurve = CartGripCurve();
             p.maxDriveForceNewtons = 0f;
             p.sprintDriveMultiplier = 1f;
             p.topSpeedMetresPerSecond = 0f;
-            p.coastingDragPerSecond = 0.1f;
+            p.coastingDragPerSecond = 0.8f;
             p.bounciness = 0.4f;
             p.maxBrakeForceNewtons = 2000f;
-            p.maxSteerAngleDegrees = 0f;
+            p.maxSteerAngleDegrees = 55f;
             p.steerRateDegreesPerSecond = 0f;
             p.driveable = false;
             return p;
@@ -84,6 +91,13 @@ namespace BelowTheWing.Tests.Support
             p.centrelineHeightMetres = 3.4f;
             return p;
         }
+
+
+        public static AnimationCurve CartGripCurve()
+            => new AnimationCurve(
+                new Keyframe(0f, 0f),
+                new Keyframe(3f, 20f),
+                new Keyframe(12f, 8f));
 
         public static AnimationCurve PeakingGripCurve()
             => new AnimationCurve(

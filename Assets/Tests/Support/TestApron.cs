@@ -12,7 +12,7 @@ namespace BelowTheWing.Tests.Support
 
         public GameObject Ground { get; }
 
-        public TestApron(float sizeMetres = 200f)
+        public TestApron(float sizeMetres = 1200f)
         {
             Physics.simulationMode = SimulationMode.FixedUpdate;
 

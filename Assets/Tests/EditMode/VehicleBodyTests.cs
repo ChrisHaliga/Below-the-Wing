@@ -35,14 +35,25 @@ namespace BelowTheWing.Tests.EditMode
 
             var parts = m_Vehicle.GetComponentsInChildren<Collider>();
             Assert.That(parts, Is.Not.Empty);
+            var solid = 0;
             foreach (var part in parts)
             {
+                if (part.isTrigger)
+                {
+                    continue;
+                }
+
+                solid++;
+
                 Assert.That(part.sharedMaterial, Is.Not.Null, $"{part.name} has no material, so it bumps like clay");
                 Assert.That(part.sharedMaterial.bounciness, Is.EqualTo(0.37f).Within(1e-4f), part.name);
                 Assert.That(part.sharedMaterial.bounceCombine, Is.EqualTo(PhysicsMaterialCombine.Average),
                     "taking the greater bounce of the pair would make a soft bag spring off a cart's lip; " +
                     "averaging gives vehicles the full figure against each other and lets a bag say no");
             }
+
+            Assert.That(solid, Is.GreaterThan(0),
+                "a vehicle whose every collider is a trigger is one nothing can crash into");
         }
     }
 }

@@ -54,7 +54,7 @@ namespace BelowTheWing.Vehicles
             }
         }
 
-        public VehicleController Offered => m_Offered;
+        public Func<VehicleController> LookingAt { get; set; }
 
         public void Refresh()
         {
@@ -63,7 +63,9 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
-            m_Offered = Coupling.WorthHitching(Driving, m_Nearby());
+            m_Offered = LookingAt != null
+                ? Coupling.CanBeHitched(LookingAt(), Driving) ? LookingAt() : null
+                : Coupling.WorthHitching(Driving, m_Nearby());
 
             if (m_Offered != null)
             {
