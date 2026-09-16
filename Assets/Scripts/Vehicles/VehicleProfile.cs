@@ -62,6 +62,24 @@ namespace BelowTheWing.Vehicles
         [Tooltip("Steering lock still allowed at top speed, degrees")]
         public float steerLockAtTopSpeedDegrees = 30f;
 
+        [Tooltip("Handles as an arcade vehicle rather than through its tyres")]
+        public bool arcadeHandling;
+
+        [Tooltip("Fastest it may come round, degrees/s")]
+        public float fastestTurnDegreesPerSecond = 240f;
+
+        [Tooltip("How hard it drives toward the turn it was asked for, per second")]
+        public float turnsIntoItPerSecond = 8f;
+
+        [Tooltip("How hard it picks itself back up when it leans, per second squared. Zero lets it roll over")]
+        public float staysUprightPerSecond = 6f;
+
+        [Tooltip("Most sideways grip before it slides, m/s^2")]
+        public float mostSideGripMetresPerSecondSquared = 20f;
+
+        [Tooltip("How fast grip pulls a slide back onto the heading, per second")]
+        public float gripHoldsHeadingPerSecond = 3f;
+
         [Tooltip("Steering rate, degrees/s")]
         public float steerRateDegreesPerSecond = 120f;
 

@@ -60,10 +60,10 @@ namespace BelowTheWing.EditorTools
             profile.springStrengthNewtons = 41000f;
             profile.damperNewtonsPerMetrePerSecond = 14000f;
             profile.coastingDragPerSecond = 0.4f;
-            profile.lateralGripCurve = DrivenTireCurve();
+            profile.lateralGripCurve = TireCurve();
 
             profile.maxDriveForceNewtons = 30000f;
-            profile.launchDriveMultiplier = 6f;
+            profile.launchDriveMultiplier = 2.5f;
             profile.launchFadesByFractionOfTopSpeed = 0.6f;
             profile.topSpeedMetresPerSecond = 20f;
             profile.bounciness = 0.4f;
@@ -71,7 +71,7 @@ namespace BelowTheWing.EditorTools
             profile.maxBrakeForceNewtons = 20000f;
             profile.maxSteerAngleDegrees = 60f;
             profile.steerLockAtTopSpeedDegrees = 30f;
-            profile.steerRateDegreesPerSecond = 120f;
+            profile.steerRateDegreesPerSecond = 90f;
             profile.driveable = true;
             return profile;
         }
@@ -102,15 +102,15 @@ namespace BelowTheWing.EditorTools
 
             profile.springStrengthNewtons = 9000f;
             profile.damperNewtonsPerMetrePerSecond = 3500f;
-            profile.coastingDragPerSecond = 0.1f;
-            profile.lateralGripCurve = TireCurve();
+            profile.coastingDragPerSecond = 0.8f;
+            profile.lateralGripCurve = CartTireCurve();
             profile.maxDriveForceNewtons = 0f;
             profile.topSpeedMetresPerSecond = 0f;
             profile.bounciness = 0.4f;
 
             profile.sprintDriveMultiplier = 1f;
             profile.maxBrakeForceNewtons = 2000f;
-            profile.maxSteerAngleDegrees = 0f;
+            profile.maxSteerAngleDegrees = 55f;
             profile.steerRateDegreesPerSecond = 0f;
             profile.driveable = false;
             return profile;
@@ -150,11 +150,11 @@ namespace BelowTheWing.EditorTools
                 new Keyframe(3f, 12f),
                 new Keyframe(12f, 5f));
 
-        static AnimationCurve DrivenTireCurve()
+        static AnimationCurve CartTireCurve()
             => new AnimationCurve(
                 new Keyframe(0f, 0f),
-                new Keyframe(3f, 16f),
-                new Keyframe(8f, 18f),
-                new Keyframe(20f, 13f));
+                new Keyframe(3f, 20f),
+                new Keyframe(12f, 8f));
+
     }
 }

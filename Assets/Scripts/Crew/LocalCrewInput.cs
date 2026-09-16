@@ -1,4 +1,5 @@
 using BelowTheWing.Cargo;
+using BelowTheWing.Vehicles;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -57,7 +58,7 @@ namespace BelowTheWing.Crew
 
             Look();
 
-            if (keyboard.eKey.wasPressedThisFrame)
+            if (keyboard.eKey.wasPressedThisFrame && !ParkedWhateverTheyAreLookingAt())
             {
                 m_Character.Seat?.Toggle(m_Character);
             }
@@ -109,6 +110,17 @@ namespace BelowTheWing.Crew
                 hand.Release(Time.time, ThrowingTowards());
             }
         }
+
+        bool ParkedWhateverTheyAreLookingAt()
+        {
+            var looked = Aiming.At<CartBrake>(Aim(), ReachesMetres, ConeDegrees);
+
+            return looked != null && looked.Toggle();
+        }
+
+        const float ReachesMetres = 3f;
+
+        const float ConeDegrees = 40f;
 
         Ray Aim()
         {

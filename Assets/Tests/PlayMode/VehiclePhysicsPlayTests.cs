@@ -202,10 +202,11 @@ namespace BelowTheWing.Tests.PlayMode
 
             var afterATenth = tractor.Body.linearVelocity.magnitude;
 
-            Assert.That(afterATenth / 0.1f, Is.GreaterThan(40f),
+            Assert.That(afterATenth / 0.1f, Is.GreaterThan(28f),
                 $"a tenth of a second of full throttle gained {afterATenth:F2} m/s, which is " +
                 $"{afterATenth / 0.1f:F0} m/s^2. This figure is chosen for how it feels to press the " +
-                "throttle and nothing else, and no tug on any apron accelerates like this");
+                "throttle and nothing else, and no tug on any apron accelerates like this. It was 40 " +
+                "when the launch multiplier was 6, and the repo owner asked for less");
         }
 
         [UnityTest]

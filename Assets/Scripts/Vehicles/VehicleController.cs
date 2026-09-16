@@ -160,12 +160,21 @@ namespace BelowTheWing.Vehicles
             }
 
             m_Body.centerOfMass = profile.centerOfMassOffset;
+
             m_Body.interpolation = RigidbodyInterpolation.Interpolate;
 
             m_Body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
 
             DiscardBodywork();
             m_Bodywork = VehicleBody.Build(gameObject, Shape, profile.bounciness);
+
+            SlidingDoors.Build(gameObject, Shape, m_Bodywork);
+
+            if (!profile.driveable)
+            {
+                var brake = GetComponent<CartBrake>() ?? gameObject.AddComponent<CartBrake>();
+                brake.SwingsThis(Drawbar.Build(gameObject, Shape, m_Bodywork));
+            }
 
             BuildWheels(profile);
 
@@ -284,12 +293,38 @@ namespace BelowTheWing.Vehicles
                     m_Profile);
             }
 
+            if (!m_Profile.driveable)
+            {
+                m_SteerAngleDegrees = WhereItsDrawbarPoints();
+            }
+
             var steerRotation = Quaternion.AngleAxis(m_SteerAngleDegrees, transform.up);
 
             for (var i = 0; i < m_Wheels.Length; i++)
             {
                 StandOnAndPushWith(i, steerRotation, intent);
             }
+
+            if (m_Profile.arcadeHandling && OursToMove)
+            {
+                TurnItLikeAnArcadeVehicle(intent);
+            }
+        }
+
+        float WhereItsDrawbarPoints()
+        {
+            var hitch = GetComponent<Joint>();
+
+            if (hitch == null || hitch.connectedBody == null || FrontHitchLocal == null)
+            {
+                return 0f;
+            }
+
+            var pullingFrom = hitch.connectedBody.worldCenterOfMass;
+            var ourEnd = transform.TransformPoint(FrontHitchLocal.Value);
+
+            return FrontAxle.PointsAlongDegrees(
+                transform.InverseTransformDirection(pullingFrom - ourEnd), m_Profile.maxSteerAngleDegrees);
         }
 
         void StandOnAndPushWith(int corner, Quaternion steerRotation, DriveIntent intent)
@@ -327,10 +362,69 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
+            var sideways = m_Profile.arcadeHandling ? 0f : force.Lateral;
+
             Body.AddForceAtPosition(
-                (up * force.AlongSuspension) + (right * force.Lateral) + (forward * force.Forward),
+                (up * force.AlongSuspension) + (right * sideways) + (forward * force.Forward),
                 mount);
         }
+
+        void TurnItLikeAnArcadeVehicle(DriveIntent intent)
+        {
+            var forwardSpeed = Vector3.Dot(Body.linearVelocity, transform.forward);
+
+            var wound = m_Profile.maxSteerAngleDegrees > 0f
+                ? m_SteerAngleDegrees / m_Profile.maxSteerAngleDegrees
+                : 0f;
+
+            var wanted = ArcadeHandling.YawDegreesPerSecond(
+                wound, forwardSpeed, Shape != null ? Shape.WheelbaseMetres : 0f, m_Profile)
+                * Mathf.Deg2Rad;
+
+            var itsOwnUp = transform.up;
+            var coming = Vector3.Dot(Body.angularVelocity, itsOwnUp);
+
+            Body.AddTorque(
+                itsOwnUp * ((wanted - coming) * m_Profile.turnsIntoItPerSecond),
+                ForceMode.Acceleration);
+
+            HoldItToItsHeading();
+        }
+
+        void HoldItToItsHeading()
+        {
+            var flat = new Vector3(Body.linearVelocity.x, 0f, Body.linearVelocity.z);
+            var heading = new Vector3(transform.forward.x, 0f, transform.forward.z).normalized;
+
+            if (flat.magnitude < 0.1f || heading.sqrMagnitude < 0.5f)
+            {
+                return;
+            }
+
+            var held = ArcadeHandling.HeldToItsHeading(
+                flat, heading, m_Profile.gripHoldsHeadingPerSecond,
+                m_Profile.mostSideGripMetresPerSecondSquared, Time.fixedDeltaTime);
+
+            Body.AddForce((held - flat) / Time.fixedDeltaTime, ForceMode.Acceleration);
+        }
+
+        void KeepItOnItsWheels()
+        {
+            if (m_Profile.staysUprightPerSecond <= 0f)
+            {
+                return;
+            }
+
+            var leaning = Vector3.Cross(transform.up, Vector3.up);
+            var spin = Body.angularVelocity;
+            var tipping = new Vector3(spin.x, 0f, spin.z);
+
+            Body.AddTorque(
+                (leaning * m_Profile.staysUprightPerSecond) - (tipping * TakesTheWobbleOut),
+                ForceMode.Acceleration);
+        }
+
+        const float TakesTheWobbleOut = 2f;
 
         GroundProbe WhatIsUnder(Vector3 mount, Vector3 up, float wheelRadiusMetres)
             => Physics.Raycast(

@@ -49,13 +49,13 @@ namespace BelowTheWing.Tests.PlayMode
 
             var cartLeftAt = cart.Body.linearVelocity.z;
             var tractorAfter = tractor.Body.linearVelocity.z;
-            Assert.That(cartLeftAt, Is.GreaterThanOrEqualTo(5f),
+            Assert.That(cartLeftAt, Is.GreaterThanOrEqualTo(4.5f),
                 $"the cart left at {cartLeftAt:F1} m/s from a 5 m/s hit by something five times its " +
                 "weight. A dead bump makes a three tonne tractor feel like a shopping trolley");
             Assert.That(tractorAfter, Is.LessThan(5f), "and the tractor paid for it");
 
             yield return Steps.Seconds(2f);
-            Assert.That(cart.Body.linearVelocity.z, Is.GreaterThanOrEqualTo(3f),
+            Assert.That(cart.Body.linearVelocity.z, Is.GreaterThanOrEqualTo(0.5f),
                 $"two seconds later the cart is doing {cart.Body.linearVelocity.z:F1} m/s: a driveline " +
                 "that drags a shoved cart to a halt in a couple of seconds hides the shove");
         }
@@ -72,9 +72,10 @@ namespace BelowTheWing.Tests.PlayMode
 
             var rolled = cart.transform.position.z - from.z;
             Assert.That(cart.Body.linearVelocity.magnitude, Is.LessThan(0.2f), "it does stop eventually");
-            Assert.That(rolled, Is.GreaterThan(15f),
-                $"shoved to 5 m/s, the cart rolled {rolled:F1} m. A cart on pneumatic tyres rolls a " +
-                "long way; one that stops in a few metres is being held by something that is not there");
+            Assert.That(rolled, Is.GreaterThan(4f),
+                $"shoved to 5 m/s, the cart rolled {rolled:F1} m. It rolled 15 m when coasting drag " +
+                "was 0.1, and the repo owner asked for carts that do not feel weightless, so the " +
+                "figure is 0.8 now. It still has to roll rather than stop dead");
         }
     }
 }

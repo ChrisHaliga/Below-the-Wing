@@ -34,7 +34,7 @@ MonoBehaviour:
       outWeight: 0
     - serializedVersion: 3
       time: 3
-      value: 16
+      value: 12
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -42,17 +42,8 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 8
-      value: 18
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 20
-      value: 13
+      time: 12
+      value: 5
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -65,13 +56,19 @@ MonoBehaviour:
   rollingResistanceCoefficient: 0.02
   coastingDragPerSecond: 0.4
   maxDriveForceNewtons: 30000
-  launchDriveMultiplier: 6
+  launchDriveMultiplier: 2.5
   launchFadesByFractionOfTopSpeed: 0.6
   sprintDriveMultiplier: 1.5
   topSpeedMetresPerSecond: 20
   maxBrakeForceNewtons: 20000
   bounciness: 0.4
+  arcadeHandling: 1
+  fastestTurnDegreesPerSecond: 240
+  turnsIntoItPerSecond: 8
+  staysUprightPerSecond: 12
+  mostSideGripMetresPerSecondSquared: 20
+  gripHoldsHeadingPerSecond: 3
   maxSteerAngleDegrees: 60
   steerLockAtTopSpeedDegrees: 30
-  steerRateDegreesPerSecond: 120
+  steerRateDegreesPerSecond: 90
   driveable: 1
