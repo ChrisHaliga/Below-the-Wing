@@ -71,10 +71,11 @@ namespace BelowTheWing.Tests.EditMode
             var sliding = new Vector3(4f, 0f, 10f);
             var held = ArcadeHandling.HeldToItsHeading(sliding, Vector3.forward, holdsPerSecond: 3f, mostSideGripMetresPerSecondSquared: 100f, deltaTime: 0.1f);
 
-            Assert.That(held.z, Is.EqualTo(10f).Within(0.01f), "it may not lose the speed it is carrying");
-            Assert.That(Mathf.Abs(held.x), Is.LessThan(4f),
-                $"sideways speed went from 4.00 to {held.x:F2} m/s. Grip is what turns a slide back " +
-                "into travel, and none of it was applied");
+            Assert.That(held.magnitude, Is.EqualTo(sliding.magnitude).Within(0.01f),
+                $"it went into the corner at {sliding.magnitude:F2} m/s and came out at " +
+                $"{held.magnitude:F2}. Grip turns a slide into travel; it does not scrub the speed off");
+            Assert.That(Vector3.Angle(held, Vector3.forward), Is.LessThan(Vector3.Angle(sliding, Vector3.forward)),
+                "it is travelling no closer to where it is pointed than it was, so no grip was applied");
         }
 
         [Test]

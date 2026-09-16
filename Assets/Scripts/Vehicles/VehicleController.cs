@@ -301,8 +301,12 @@ namespace BelowTheWing.Vehicles
         {
             var forwardSpeed = Vector3.Dot(Body.linearVelocity, transform.forward);
 
+            var wound = m_Profile.maxSteerAngleDegrees > 0f
+                ? m_SteerAngleDegrees / m_Profile.maxSteerAngleDegrees
+                : 0f;
+
             var yaw = ArcadeHandling.YawDegreesPerSecond(
-                intent.Steer, forwardSpeed, Shape != null ? Shape.WheelbaseMetres : 0f, m_Profile);
+                wound, forwardSpeed, Shape != null ? Shape.WheelbaseMetres : 0f, m_Profile);
             var spin = Body.angularVelocity;
             spin.y = yaw * Mathf.Deg2Rad;
             Body.angularVelocity = spin;
@@ -314,7 +318,17 @@ namespace BelowTheWing.Vehicles
                 flat, heading, m_Profile.gripHoldsHeadingPerSecond,
                 m_Profile.mostSideGripMetresPerSecondSquared, Time.fixedDeltaTime);
 
+            var top = m_Profile.topSpeedMetresPerSecond
+                      * (intent.Sprint ? m_Profile.sprintDriveMultiplier : 1f);
+
+            if (top > 0f && held.magnitude > top)
+            {
+                held = held.normalized * top;
+            }
+
             Body.linearVelocity = new Vector3(held.x, Body.linearVelocity.y, held.z);
+
+            KeepItOnItsWheels();
         }
 
         void StandOnAndPushWith(int corner, Quaternion steerRotation, DriveIntent intent)
@@ -358,6 +372,24 @@ namespace BelowTheWing.Vehicles
                 (up * force.AlongSuspension) + (right * sideways) + (forward * force.Forward),
                 mount);
         }
+
+        void KeepItOnItsWheels()
+        {
+            if (m_Profile.staysUprightPerSecond <= 0f)
+            {
+                return;
+            }
+
+            var leaning = Vector3.Cross(transform.up, Vector3.up);
+            var spin = Body.angularVelocity;
+            var tipping = new Vector3(spin.x, 0f, spin.z);
+
+            Body.AddTorque(
+                (leaning * m_Profile.staysUprightPerSecond) - (tipping * TakesTheWobbleOut),
+                ForceMode.Acceleration);
+        }
+
+        const float TakesTheWobbleOut = 2f;
 
         GroundProbe WhatIsUnder(Vector3 mount, Vector3 up, float wheelRadiusMetres)
             => Physics.Raycast(

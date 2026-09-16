@@ -24,11 +24,15 @@ namespace BelowTheWing.Tests.Support
             p.coastingDragPerSecond = 0.4f;
             p.bounciness = 0.4f;
             p.maxBrakeForceNewtons = 20000f;
+            p.arcadeHandling = true;
+            p.fastestTurnDegreesPerSecond = 240f;
+            p.mostSideGripMetresPerSecondSquared = 20f;
+            p.gripHoldsHeadingPerSecond = 3f;
             p.maxSteerAngleDegrees = 60f;
             p.steerLockAtTopSpeedDegrees = 30f;
-            p.launchDriveMultiplier = 6f;
+            p.launchDriveMultiplier = 4f;
             p.launchFadesByFractionOfTopSpeed = 0.6f;
-            p.steerRateDegreesPerSecond = 120f;
+            p.steerRateDegreesPerSecond = 90f;
             p.driveable = true;
             return p;
         }

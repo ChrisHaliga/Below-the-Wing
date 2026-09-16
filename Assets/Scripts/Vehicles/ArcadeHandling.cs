@@ -27,13 +27,19 @@ namespace BelowTheWing.Vehicles
             Vector3 velocity, Vector3 heading, float holdsPerSecond,
             float mostSideGripMetresPerSecondSquared, float deltaTime)
         {
-            var sideways = velocity - Vector3.Project(velocity, heading);
+            var speed = velocity.magnitude;
 
-            var wanted = sideways * (1f - Mathf.Exp(-Mathf.Max(holdsPerSecond, 0f) * deltaTime));
-            var afforded = Vector3.ClampMagnitude(
-                wanted, Mathf.Max(mostSideGripMetresPerSecondSquared, 0f) * deltaTime);
+            if (speed < 1e-3f || heading.sqrMagnitude < 1e-6f)
+            {
+                return velocity;
+            }
 
-            return velocity - afforded;
+            var off = Vector3.Angle(velocity, heading) * Mathf.Deg2Rad;
+            var wanted = off * (1f - Mathf.Exp(-Mathf.Max(holdsPerSecond, 0f) * deltaTime));
+            var afforded = Mathf.Max(mostSideGripMetresPerSecondSquared, 0f) * deltaTime / speed;
+
+            return Vector3.RotateTowards(
+                velocity, heading.normalized * speed, Mathf.Min(wanted, afforded), 0f);
         }
     }
 }

@@ -63,7 +63,7 @@ namespace BelowTheWing.EditorTools
             profile.lateralGripCurve = TireCurve();
 
             profile.maxDriveForceNewtons = 30000f;
-            profile.launchDriveMultiplier = 6f;
+            profile.launchDriveMultiplier = 4f;
             profile.launchFadesByFractionOfTopSpeed = 0.6f;
             profile.topSpeedMetresPerSecond = 20f;
             profile.bounciness = 0.4f;
@@ -71,7 +71,7 @@ namespace BelowTheWing.EditorTools
             profile.maxBrakeForceNewtons = 20000f;
             profile.maxSteerAngleDegrees = 60f;
             profile.steerLockAtTopSpeedDegrees = 30f;
-            profile.steerRateDegreesPerSecond = 120f;
+            profile.steerRateDegreesPerSecond = 90f;
             profile.driveable = true;
             return profile;
         }

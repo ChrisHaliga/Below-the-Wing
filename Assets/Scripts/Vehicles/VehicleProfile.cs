@@ -68,6 +68,9 @@ namespace BelowTheWing.Vehicles
         [Tooltip("Fastest it may come round, degrees/s")]
         public float fastestTurnDegreesPerSecond = 240f;
 
+        [Tooltip("How hard it picks itself back up when it leans, per second squared. Zero lets it roll over")]
+        public float staysUprightPerSecond = 6f;
+
         [Tooltip("Most sideways grip before it slides, m/s^2")]
         public float mostSideGripMetresPerSecondSquared = 20f;
 

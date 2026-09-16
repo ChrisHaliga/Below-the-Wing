@@ -10,6 +10,15 @@ namespace BelowTheWing.Vehicles
         [Tooltip("Coupling swing to either side, degrees")]
         public float yawLimitDegrees;
 
+        [Tooltip("Slack in a coupling before it pulls, m")]
+        public float slackMetres;
+
+        [Tooltip("Coupling stiffness once the slack is used up, N/m")]
+        public float springNewtonsPerMetre;
+
+        [Tooltip("Coupling damping, N/(m/s)")]
+        public float damperNewtonsPerMetrePerSecond;
+
         [Tooltip("Position solver iterations per body")]
         public int solverPositionIterations;
 
@@ -19,6 +28,9 @@ namespace BelowTheWing.Vehicles
         public static ChainJointSettings Default => new ChainJointSettings
         {
             yawLimitDegrees = 75f,
+            slackMetres = 0.12f,
+            springNewtonsPerMetre = 90000f,
+            damperNewtonsPerMetrePerSecond = 4000f,
             solverPositionIterations = 16,
             solverVelocityIterations = 4
         };
@@ -28,13 +40,13 @@ namespace BelowTheWing.Vehicles
     {
         readonly List<VehicleController> m_Members;
 
-        readonly List<HingeJoint> m_Couplings;
+        readonly List<ConfigurableJoint> m_Couplings;
 
         readonly List<Rigidbody> m_Bodies;
         readonly ContactBlackout m_Crashing = new ContactBlackout(BlackoutSettings.Default);
         readonly ChainJointSettings m_Settings;
 
-        CartChain(List<VehicleController> members, List<HingeJoint> couplings, ChainJointSettings settings)
+        CartChain(List<VehicleController> members, List<ConfigurableJoint> couplings, ChainJointSettings settings)
         {
             m_Members = members;
             m_Couplings = couplings;
@@ -86,7 +98,7 @@ namespace BelowTheWing.Vehicles
             }
 
             var members = new List<VehicleController>(frontToBack);
-            var couplings = new List<HingeJoint>(new HingeJoint[Mathf.Max(0, members.Count - 1)]);
+            var couplings = new List<ConfigurableJoint>(new ConfigurableJoint[Mathf.Max(0, members.Count - 1)]);
 
             return new CartChain(members, couplings, settings);
         }
@@ -148,7 +160,7 @@ namespace BelowTheWing.Vehicles
         public Joint CouplingBehind(int memberIndex)
             => memberIndex >= 0 && memberIndex < m_Couplings.Count ? m_Couplings[memberIndex] : null;
 
-        static HingeJoint Hitch(VehicleController inFront, VehicleController behind, ChainJointSettings settings)
+        static ConfigurableJoint Hitch(VehicleController inFront, VehicleController behind, ChainJointSettings settings)
         {
             if (behind.FrontHitchLocal == null || inFront.RearHitchLocal == null)
             {
@@ -160,7 +172,7 @@ namespace BelowTheWing.Vehicles
                 return null;
             }
 
-            var coupling = behind.gameObject.AddComponent<HingeJoint>();
+            var coupling = behind.gameObject.AddComponent<ConfigurableJoint>();
             coupling.connectedBody = inFront.Body;
 
             var ourEnd = behind.FrontHitchLocal.Value;
@@ -172,19 +184,31 @@ namespace BelowTheWing.Vehicles
             coupling.connectedAnchor = new Vector3(0f, meetAt, theirEnd.z);
 
             coupling.axis = Vector3.up;
-            coupling.useLimits = true;
-            coupling.limits = new JointLimits
+            coupling.secondaryAxis = Vector3.forward;
+
+            coupling.xMotion = ConfigurableJointMotion.Locked;
+            coupling.yMotion = ConfigurableJointMotion.Locked;
+            coupling.zMotion = ConfigurableJointMotion.Limited;
+
+            coupling.linearLimit = new SoftJointLimit { limit = settings.slackMetres };
+            coupling.linearLimitSpring = new SoftJointLimitSpring
             {
-                min = -settings.yawLimitDegrees,
-                max = settings.yawLimitDegrees
+                spring = settings.springNewtonsPerMetre,
+                damper = settings.damperNewtonsPerMetrePerSecond
             };
+
+            coupling.angularXMotion = ConfigurableJointMotion.Locked;
+            coupling.angularZMotion = ConfigurableJointMotion.Locked;
+            coupling.angularYMotion = ConfigurableJointMotion.Limited;
+
+            coupling.angularYLimit = new SoftJointLimit { limit = settings.yawLimitDegrees };
 
             coupling.enablePreprocessing = false;
 
             return coupling;
         }
 
-        static void Unhitch(HingeJoint coupling)
+        static void Unhitch(ConfigurableJoint coupling)
         {
             if (coupling == null)
             {
