@@ -66,7 +66,6 @@ namespace BelowTheWing.Cargo
         readonly Transform m_Anchor;
         readonly Rigidbody m_Body;
         readonly HandSettings m_Settings;
-        readonly List<Collider> m_InReach = new List<Collider>();
 
         Rigidbody m_Carried;
         Collider m_CarriedPart;
@@ -178,6 +177,8 @@ namespace BelowTheWing.Cargo
             }
         }
 
+        const float AsFarAsAnybodyLooks = 30f;
+
         public void Tick()
         {
             if (m_Carrying && (m_Carry == null || m_CarriedPart == null || !InReach(m_CarriedPart)))
@@ -207,47 +208,22 @@ namespace BelowTheWing.Cargo
         bool InReach(Collider part)
             => Vector3.Distance(part.ClosestPoint(m_Anchor.position), m_Anchor.position) <= m_Settings.reachMetres;
 
-        const float AsFarAsAnybodyLooks = 30f;
 
         Collider Aimed(Ray aim, out HandUse use)
         {
-            if (Physics.Raycast(aim, out var looked, AsFarAsAnybodyLooks, ~0, QueryTriggerInteraction.Ignore)
-                && WorthReachingFor(looked.collider, out var lookedAt)
-                && InReach(looked.collider))
+            var found = Aiming.At(
+                aim, m_Anchor.position, m_Settings.reachMetres, AsFarAsAnybodyLooks,
+                m_Settings.reachesIntoConeDegrees,
+                candidate => WorthReachingFor(candidate, out _) && InReach(candidate));
+
+            if (found == null)
             {
-                use = lookedAt;
-                return looked.collider;
+                use = null;
+                return null;
             }
 
-            use = null;
-            Collider best = null;
-            var narrowest = m_Settings.reachesIntoConeDegrees;
-
-            m_InReach.Clear();
-            m_InReach.AddRange(Physics.OverlapSphere(
-                m_Anchor.position, m_Settings.reachMetres, ~0, QueryTriggerInteraction.Ignore));
-
-            foreach (var candidate in m_InReach)
-            {
-                if (!WorthReachingFor(candidate, out var says))
-                {
-                    continue;
-                }
-
-                var offTheAim = Vector3.Angle(
-                    aim.direction, candidate.ClosestPoint(aim.origin) - aim.origin);
-
-                if (offTheAim >= narrowest)
-                {
-                    continue;
-                }
-
-                narrowest = offTheAim;
-                best = candidate;
-                use = says;
-            }
-
-            return best;
+            WorthReachingFor(found, out use);
+            return found;
         }
 
         bool WorthReachingFor(Collider candidate, out HandUse use)

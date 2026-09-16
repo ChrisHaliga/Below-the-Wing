@@ -110,7 +110,7 @@ namespace BelowTheWing.EditorTools
 
             profile.sprintDriveMultiplier = 1f;
             profile.maxBrakeForceNewtons = 2000f;
-            profile.maxSteerAngleDegrees = 0f;
+            profile.maxSteerAngleDegrees = 55f;
             profile.steerRateDegreesPerSecond = 0f;
             profile.driveable = false;
             return profile;

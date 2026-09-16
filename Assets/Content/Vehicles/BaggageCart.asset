@@ -60,6 +60,6 @@ MonoBehaviour:
   topSpeedMetresPerSecond: 0
   maxBrakeForceNewtons: 2000
   bounciness: 0.4
-  maxSteerAngleDegrees: 0
+  maxSteerAngleDegrees: 55
   steerRateDegreesPerSecond: 0
   driveable: 0

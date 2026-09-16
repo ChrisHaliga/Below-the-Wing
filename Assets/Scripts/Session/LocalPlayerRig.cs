@@ -23,6 +23,7 @@ namespace BelowTheWing.Session
             m_Camera = camera;
 
             m_Character.TakeTheSeat(broker, nearbyVehicles);
+            m_Character.Seat.Aim = () => m_Character.LookingAlong();
             m_Character.Camera = camera;
 
             m_Character.Hitching = new CouplingHand(
@@ -34,6 +35,9 @@ namespace BelowTheWing.Session
                     session.Reshaped(front, session.TrainIndexOf(front));
                     session.Reshaped(back, session.ATrainNumberNobodyIsUsing());
                 });
+
+            m_Character.Hitching.LookingAt =
+                () => Aiming.At<VehicleController>(m_Character.LookingAlong(), ReachesMetres, ConeDegrees);
 
             var left = m_Character.transform.Find(Hands.LeftAnchorName);
             var right = m_Character.transform.Find(Hands.RightAnchorName);
@@ -62,6 +66,10 @@ namespace BelowTheWing.Session
                 camera.Subject = m_Character.transform;
             }
         }
+
+        const float ReachesMetres = 3f;
+
+        const float ConeDegrees = 40f;
 
         public void FollowWhateverTheyAreControlling()
         {

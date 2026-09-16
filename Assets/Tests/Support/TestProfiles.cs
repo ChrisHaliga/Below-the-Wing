@@ -53,7 +53,7 @@ namespace BelowTheWing.Tests.Support
             p.coastingDragPerSecond = 0.8f;
             p.bounciness = 0.4f;
             p.maxBrakeForceNewtons = 2000f;
-            p.maxSteerAngleDegrees = 0f;
+            p.maxSteerAngleDegrees = 55f;
             p.steerRateDegreesPerSecond = 0f;
             p.driveable = false;
             return p;

@@ -285,6 +285,11 @@ namespace BelowTheWing.Vehicles
                     m_Profile);
             }
 
+            if (!m_Profile.driveable)
+            {
+                m_SteerAngleDegrees = WhereItsDrawbarPoints();
+            }
+
             var steerRotation = Quaternion.AngleAxis(m_SteerAngleDegrees, transform.up);
 
             for (var i = 0; i < m_Wheels.Length; i++)
@@ -296,6 +301,22 @@ namespace BelowTheWing.Vehicles
             {
                 TurnItLikeAnArcadeVehicle(intent);
             }
+        }
+
+        float WhereItsDrawbarPoints()
+        {
+            var hitch = GetComponent<Joint>();
+
+            if (hitch == null || hitch.connectedBody == null || FrontHitchLocal == null)
+            {
+                return 0f;
+            }
+
+            var pullingFrom = hitch.connectedBody.worldCenterOfMass;
+            var ourEnd = transform.TransformPoint(FrontHitchLocal.Value);
+
+            return FrontAxle.PointsAlongDegrees(
+                transform.InverseTransformDirection(pullingFrom - ourEnd), m_Profile.maxSteerAngleDegrees);
         }
 
         void StandOnAndPushWith(int corner, Quaternion steerRotation, DriveIntent intent)

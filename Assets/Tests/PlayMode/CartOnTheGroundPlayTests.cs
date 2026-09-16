@@ -192,15 +192,21 @@ namespace BelowTheWing.Tests.PlayMode
             yield return Steps.Seconds(1f);
 
             cart.Body.linearVelocity = new Vector3(0f, 0f, 4f);
+
             var before = look.TurnedDegrees(0);
+            var from = cart.transform.position;
 
             yield return Steps.Seconds(1f);
 
-            var expected = 4f / cart.GetComponent<VehicleShape>().Wheels[0].RadiusMetres * Mathf.Rad2Deg;
+            var rolled = Vector3.Distance(cart.transform.position, from);
+            var expected = rolled / cart.GetComponent<VehicleShape>().Wheels[0].RadiusMetres * Mathf.Rad2Deg;
 
             Assert.That(look.TurnedDegrees(0) - before, Is.EqualTo(expected).Within(expected * 0.25f),
-                "a wheel that turns at anything but road speed reads as the cart skidding " +
-                "everywhere it goes");
+                $"it rolled {rolled:F2} m and its wheel turned {look.TurnedDegrees(0) - before:F0} " +
+                $"degrees against the {expected:F0} that distance is worth. A wheel that turns at " +
+                "anything but road speed reads as the cart skidding everywhere it goes. Measured " +
+                "against distance rather than against a speed it was set to, because coasting drag " +
+                "takes that speed away inside the window");
         }
 
         [UnityTest]

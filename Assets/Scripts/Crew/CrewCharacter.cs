@@ -204,6 +204,11 @@ namespace BelowTheWing.Crew
             }
         }
 
+        public Ray LookingAlong()
+            => Camera != null
+                ? new Ray(Camera.transform.position, Camera.transform.forward)
+                : new Ray(transform.position, transform.forward);
+
         public bool Grounded => StandingOn(out _);
 
         Vector3 Feet => transform.position - (Vector3.up * ((m_Profile.heightMetres * 0.5f) - 0.05f));

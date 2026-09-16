@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BelowTheWing.Cargo;
 using BelowTheWing.Vehicles;
 using UnityEngine;
 
@@ -23,6 +24,10 @@ namespace BelowTheWing.Crew
         bool m_Asking;
 
         VehicleController m_AskedFor;
+
+        public Func<Ray> Aim { get; set; }
+
+        public float LooksIntoConeDegrees { get; set; } = 40f;
 
         public VehicleOccupancy(Transform crew, IOwnershipBroker broker, Func<IReadOnlyList<VehicleController>> nearbyVehicles, float reachMetres)
         {
@@ -65,7 +70,7 @@ namespace BelowTheWing.Crew
                 m_AskedFor = null;
             }
 
-            Offer = DriverPrompt.Nearest(m_Crew.position, m_ReachMetres, m_NearbyVehicles());
+            Offer = WhatTheyAreLookingAt();
 
             if (Offer == null)
             {
@@ -83,6 +88,18 @@ namespace BelowTheWing.Crew
             }
 
             Say(CrewPrompt.Offer, $"Press E to drive {Offer.DisplayName}");
+        }
+
+        VehicleController WhatTheyAreLookingAt()
+        {
+            if (Aim == null)
+            {
+                return DriverPrompt.Nearest(m_Crew.position, m_ReachMetres, m_NearbyVehicles());
+            }
+
+            var looked = Aiming.At<VehicleController>(Aim(), m_ReachMetres, LooksIntoConeDegrees);
+
+            return looked != null && looked.AcceptsDriver ? looked : null;
         }
 
         public void Toggle(IDriveIntentSource intentSource)
