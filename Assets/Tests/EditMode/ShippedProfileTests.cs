@@ -236,8 +236,10 @@ namespace BelowTheWing.Tests.EditMode
                 "BaggageTractor: pulls away at more than six metres per second squared");
             Assert.That(tractor.bounciness, Is.GreaterThan(0.2f), "BaggageTractor: bumps have to come back");
             Assert.That(cart.bounciness, Is.GreaterThan(0.2f), "BaggageCart: bumps have to come back");
-            Assert.That(cart.coastingDragPerSecond, Is.LessThan(0.2f),
-                "BaggageCart: a shoved cart has to roll away, not be dragged to a halt by a driveline it does not have");
+            Assert.That(cart.coastingDragPerSecond, Is.InRange(0.5f, 1.2f),
+                "BaggageCart: a cart shoved with 2000 Ns rolls 3.7 m at 0.8 and 15.8 m at 0.1. The " +
+                "second reads as a cart with no weight in it, which is what this figure is set by. " +
+                "It still has no driveline dragging it down: nothing here brakes it, only drag");
         }
     }
 }

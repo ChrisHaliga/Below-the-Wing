@@ -34,7 +34,7 @@ MonoBehaviour:
       outWeight: 0
     - serializedVersion: 3
       time: 3
-      value: 12
+      value: 20
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -43,7 +43,7 @@ MonoBehaviour:
       outWeight: 0
     - serializedVersion: 3
       time: 12
-      value: 5
+      value: 8
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -54,7 +54,7 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   rollingResistanceCoefficient: 0.02
-  coastingDragPerSecond: 0.1
+  coastingDragPerSecond: 0.8
   maxDriveForceNewtons: 0
   sprintDriveMultiplier: 1
   topSpeedMetresPerSecond: 0

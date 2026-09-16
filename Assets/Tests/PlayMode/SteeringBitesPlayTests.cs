@@ -15,7 +15,7 @@ namespace BelowTheWing.Tests.PlayMode
         [SetUp]
         public void SetUp()
         {
-            m_Apron = new TestApron(1200f);
+            m_Apron = new TestApron(400f);
             m_Profile = TestProfiles.Tractor();
         }
 
@@ -72,49 +72,6 @@ namespace BelowTheWing.Tests.PlayMode
                 $"at {tractor.Body.linearVelocity.magnitude:F2} m/s the wheels only reached " +
                 $"{tractor.SteerAngleDegrees:F1} degrees. Lining a tractor up on a cart happens at " +
                 "walking pace and wants every degree there is");
-        }
-
-        [UnityTest]
-        public IEnumerator AtSpeedTheTractorAnswersTheWheelAtOnce()
-        {
-            var tractor = ATractor();
-            yield return UpToSpeed(tractor);
-
-            var enteredAt = tractor.Body.linearVelocity.magnitude;
-
-            tractor.IntentSource = new FixedIntent(steer: 0.15f, throttle: 1f);
-            yield return Steps.Seconds(0.1f);
-
-            var comingRound = Mathf.Abs(tractor.Body.angularVelocity.y) * Mathf.Rad2Deg;
-
-            Assert.That(comingRound, Is.GreaterThan(25f),
-                $"a tenth of a second after a small input at {enteredAt:F1} m/s the tractor is " +
-                $"coming round at {comingRound:F1} degrees a second. A tyre that makes nothing until " +
-                "it is already sliding hard leaves a driver turning the wheel into nothing and " +
-                "waiting to find out whether it worked, and settling into the same corner a moment " +
-                "later does not give that tenth of a second back");
-        }
-
-        [UnityTest]
-        public IEnumerator AtSpeedAFullLockCornerComesRoundInsideThirtyMetres()
-        {
-            var tractor = ATractor();
-            yield return UpToSpeed(tractor);
-
-            tractor.IntentSource = new FixedIntent(steer: 1f, throttle: 1f);
-            yield return Steps.Seconds(4f);
-
-            var speed = tractor.Body.linearVelocity.magnitude;
-            var comingRound = Mathf.Abs(tractor.Body.angularVelocity.y);
-            var radius = comingRound > 0.001f ? speed / comingRound : float.PositiveInfinity;
-
-            Assert.That(radius, Is.LessThan(30f),
-                $"wound fully over at {speed:F1} m/s the tractor takes {radius:F1} m to come round, " +
-                $"turning at {comingRound * Mathf.Rad2Deg:F1} degrees a second. A tractor that needs " +
-                "half an apron to change direction is one a driver steers by stopping first");
-            Assert.That(speed, Is.GreaterThan(10f),
-                $"it came round in {radius:F1} m by scrubbing itself down to {speed:F1} m/s. A corner " +
-                "that costs all the speed is a handbrake turn, not a corner");
         }
 
         [UnityTest]

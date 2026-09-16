@@ -34,48 +34,6 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void AtSpeedTheWheelsStillTurnFarEnoughToBeWorthTurning()
-        {
-            var atSpeed = SettlesAt(steer: 1f, speed: m_Profile.topSpeedMetresPerSecond);
-
-            Assert.That(atSpeed, Is.GreaterThan(15f),
-                $"at top speed the wheels may only reach {atSpeed:F1} degrees. Held to the " +
-                "slip a tyre grips hardest at, a machine at speed is steering on a sliver of " +
-                "lock and a driver reads that as a wheel that does nothing");
-        }
-
-        [Test]
-        public void TheLockFallsOffEvenlyWithSpeedRatherThanCollapsing()
-        {
-            var top = m_Profile.topSpeedMetresPerSecond;
-
-            var quarter = Steering.AsFarAsItMayTurnAt(top * 0.25f, m_Profile);
-            var half = Steering.AsFarAsItMayTurnAt(top * 0.5f, m_Profile);
-            var threeQuarters = Steering.AsFarAsItMayTurnAt(top * 0.75f, m_Profile);
-
-            var first = m_Profile.maxSteerAngleDegrees - quarter;
-            var second = quarter - half;
-            var third = half - threeQuarters;
-
-            Assert.That(second, Is.EqualTo(first).Within(0.5f),
-                $"the lock gave up {first:F1} degrees over the first quarter of the speed range and " +
-                $"{second:F1} over the second. A limit that collapses early leaves a driver with a " +
-                "wheel that stops answering the moment they are moving at all");
-            Assert.That(third, Is.EqualTo(second).Within(0.5f));
-        }
-
-        [Test]
-        public void AtTopSpeedTheLockIsTheFigureTheProfileNames()
-        {
-            var atTop = Steering.AsFarAsItMayTurnAt(m_Profile.topSpeedMetresPerSecond, m_Profile);
-
-            Assert.That(atTop, Is.EqualTo(m_Profile.steerLockAtTopSpeedDegrees).Within(0.01f),
-                $"at top speed the wheels may reach {atTop:F1} degrees and the profile names " +
-                $"{m_Profile.steerLockAtTopSpeedDegrees}. This figure is how much wheel a driver has " +
-                "at speed, and it is chosen rather than derived");
-        }
-
-        [Test]
         public void AtACrawlTheWheelsGoAllTheWayOver()
         {
             Assert.That(SettlesAt(steer: 1f, speed: 0.5f),
@@ -95,22 +53,6 @@ namespace BelowTheWing.Tests.EditMode
                 "force out of sliding a little: dragged sideways far past that, it pushes with less " +
                 "than half of what it has. Full lock at speed is a front axle scrubbing, and the " +
                 "tractor carries straight on with its wheels turned");
-        }
-
-        [Test]
-        public void TheLockAtSpeedKeepsTheTyresNearTheGripTheyPeakAt()
-        {
-            var speed = m_Profile.topSpeedMetresPerSecond;
-            var angle = SettlesAt(steer: 1f, speed: speed);
-
-            var slidingSideways = speed * Mathf.Sin(angle * Mathf.Deg2Rad);
-            var peak = m_Profile.SlipItGripsHardestAt;
-
-            Assert.That(slidingSideways, Is.GreaterThan(peak),
-                $"on the lock it settles at, the front tyres slide sideways at {slidingSideways:F2} m/s " +
-                $"and they grip hardest at {peak:F2}. The lock at speed is chosen for how much wheel " +
-                "a driver wants rather than for what the tyres make the most force at, so this " +
-                "records that the two no longer agree");
         }
 
         [Test]

@@ -290,6 +290,29 @@ namespace BelowTheWing.Vehicles
             {
                 StandOnAndPushWith(i, steerRotation, intent);
             }
+
+            if (m_Profile.arcadeHandling && OursToMove)
+            {
+                TurnItLikeAnArcadeVehicle(intent);
+            }
+        }
+
+        void TurnItLikeAnArcadeVehicle(DriveIntent intent)
+        {
+            var forwardSpeed = Vector3.Dot(Body.linearVelocity, transform.forward);
+
+            var yaw = ArcadeHandling.YawDegreesPerSecond(intent.Steer, forwardSpeed, m_Profile);
+            var spin = Body.angularVelocity;
+            spin.y = yaw * Mathf.Deg2Rad;
+            Body.angularVelocity = spin;
+
+            var flat = new Vector3(Body.linearVelocity.x, 0f, Body.linearVelocity.z);
+            var heading = new Vector3(transform.forward.x, 0f, transform.forward.z).normalized;
+
+            var held = ArcadeHandling.HeldToItsHeading(
+                flat, heading, m_Profile.gripHoldsHeadingPerSecond, Time.fixedDeltaTime);
+
+            Body.linearVelocity = new Vector3(held.x, Body.linearVelocity.y, held.z);
         }
 
         void StandOnAndPushWith(int corner, Quaternion steerRotation, DriveIntent intent)
@@ -327,8 +350,10 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
+            var sideways = m_Profile.arcadeHandling ? 0f : force.Lateral;
+
             Body.AddForceAtPosition(
-                (up * force.AlongSuspension) + (right * force.Lateral) + (forward * force.Forward),
+                (up * force.AlongSuspension) + (right * sideways) + (forward * force.Forward),
                 mount);
         }
 
