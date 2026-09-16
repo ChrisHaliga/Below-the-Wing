@@ -341,6 +341,26 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void NothingSpawnedOntoTheApronBringsACameraOrALightOfItsOwn()
+        {
+            foreach (var path in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Content/Prefabs" }))
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(path));
+
+                var cameras = prefab.GetComponentsInChildren<Camera>(true);
+                var lights = prefab.GetComponentsInChildren<Light>(true);
+
+                Assert.That(cameras, Is.Empty,
+                    $"'{prefab.name}' carries {cameras.Length} camera(s), which a model exported with " +
+                    "cameras turned on will hand it. Spawn a dozen of these and the view belongs to " +
+                    "whichever one wins on depth, so the player loads in looking through a baggage cart");
+                Assert.That(lights, Is.Empty,
+                    $"'{prefab.name}' carries {lights.Length} light(s). A dozen of them is a dozen " +
+                    "shadow maps competing for the atlas, for something nobody asked to be lit");
+            }
+        }
+
+        [Test]
         public void EveryPrefabIsConfiguredFromAProfileRatherThanFromNothing()
         {
             AssertHasProfile(Prefab("BaggageTractor").GetComponent<VehicleController>(), "m_Profile");
