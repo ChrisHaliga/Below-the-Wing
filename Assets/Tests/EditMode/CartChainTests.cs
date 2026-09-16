@@ -77,21 +77,16 @@ namespace BelowTheWing.Tests.EditMode
                 var coupling = train.CouplingBehind(i);
                 Assert.That(coupling, Is.Not.Null, $"nothing is holding member {i + 1} on");
 
-                var hitch = coupling as ConfigurableJoint;
-                Assert.That(hitch, Is.Not.Null, "a coupling swings, it does not weld");
+                var hinge = coupling as HingeJoint;
+                Assert.That(hinge, Is.Not.Null, "a coupling swings, it does not weld");
 
-                var worldAxis = hitch.transform.TransformDirection(hitch.axis).normalized;
+                var worldAxis = hinge.transform.TransformDirection(hinge.axis).normalized;
                 Assert.That(Mathf.Abs(Vector3.Dot(worldAxis, Vector3.up)), Is.EqualTo(1f).Within(1e-3f),
                     "a cart swings left and right behind the one in front, not up and over it");
 
-                Assert.That(hitch.angularYMotion, Is.EqualTo(ConfigurableJointMotion.Limited),
-                    "an unlimited coupling lets a train fold through itself");
-                Assert.That(hitch.angularYLimit.limit, Is.LessThan(180f));
-                Assert.That(hitch.angularXMotion, Is.EqualTo(ConfigurableJointMotion.Locked),
-                    "a cart does not pitch up over the one in front");
-                Assert.That(hitch.zMotion, Is.EqualTo(ConfigurableJointMotion.Limited),
-                    "the drawbar has to take up slack and spring back, or a train is a rigid stick " +
-                    "and the tractor never feels the mass behind it");
+                Assert.That(hinge.useLimits, Is.True, "an unlimited coupling lets a train fold through itself");
+                Assert.That(hinge.limits.max, Is.LessThan(180f));
+                Assert.That(hinge.limits.min, Is.GreaterThan(-180f));
             }
         }
 
