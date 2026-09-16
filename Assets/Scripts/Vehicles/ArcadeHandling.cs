@@ -5,15 +5,22 @@ namespace BelowTheWing.Vehicles
     public static class ArcadeHandling
     {
         public static float YawDegreesPerSecond(
-            float steerInput, float forwardSpeedMetresPerSecond, VehicleProfile profile)
+            float steerInput, float forwardSpeedMetresPerSecond, float wheelbaseMetres,
+            VehicleProfile profile)
         {
             var asked = Mathf.Clamp(steerInput, -1f, 1f);
-            var radius = Mathf.Max(profile.tightestTurnRadiusMetres, 0.01f);
+            var wheel = Mathf.Abs(asked) * profile.maxSteerAngleDegrees;
 
+            if (Mathf.Approximately(wheel, 0f) || wheelbaseMetres <= 0f)
+            {
+                return 0f;
+            }
+
+            var radius = wheelbaseMetres / Mathf.Tan(wheel * Mathf.Deg2Rad);
             var toHoldThatRadius = Mathf.Abs(forwardSpeedMetresPerSecond) / radius * Mathf.Rad2Deg;
-            var allowed = Mathf.Min(toHoldThatRadius, profile.fastestTurnDegreesPerSecond);
 
-            return asked * Mathf.Sign(forwardSpeedMetresPerSecond) * allowed;
+            return Mathf.Sign(asked) * Mathf.Sign(forwardSpeedMetresPerSecond)
+                   * Mathf.Min(toHoldThatRadius, profile.fastestTurnDegreesPerSecond);
         }
 
         public static Vector3 HeldToItsHeading(

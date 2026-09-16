@@ -13,35 +13,34 @@ namespace BelowTheWing.Tests.EditMode
         public void SetUp()
         {
             m_Profile = TestProfiles.Tractor();
-            m_Profile.tightestTurnRadiusMetres = 8f;
-            m_Profile.fastestTurnDegreesPerSecond = 120f;
+            m_Profile.maxSteerAngleDegrees = 60f;
+            m_Profile.fastestTurnDegreesPerSecond = 180f;
         }
 
         [TearDown]
         public void TearDown() => Object.DestroyImmediate(m_Profile);
 
+        const float Wheelbase = 1.515f;
+
         static float RadiusAt(float speed, float yawDegreesPerSecond)
             => speed / (yawDegreesPerSecond * Mathf.Deg2Rad);
 
         [Test]
-        public void FullLockHoldsTheRadiusItWasAskedForAtEverySpeed()
+        public void FullLockTurnsAsTightlyAsItsWheelsAndWheelbaseAllow()
         {
-            foreach (var speed in new[] { 5f, 10f, 15f })
-            {
-                var yaw = ArcadeHandling.YawDegreesPerSecond(1f, speed, m_Profile);
+            var geometric = Wheelbase / Mathf.Tan(m_Profile.maxSteerAngleDegrees * Mathf.Deg2Rad);
+            var yaw = ArcadeHandling.YawDegreesPerSecond(1f, 2f, Wheelbase, m_Profile);
 
-                Assert.That(RadiusAt(speed, yaw), Is.EqualTo(m_Profile.tightestTurnRadiusMetres).Within(0.1f),
-                    $"at {speed:F0} m/s full lock came round at {yaw:F1} degrees a second, which is a " +
-                    $"{RadiusAt(speed, yaw):F1} m circle. The figure on the profile says " +
-                    $"{m_Profile.tightestTurnRadiusMetres:F0} m, and a driver who cannot predict the " +
-                    "circle from the number cannot be given one");
-            }
+            Assert.That(RadiusAt(2f, yaw), Is.EqualTo(geometric).Within(0.05f),
+                $"at a crawl with {m_Profile.maxSteerAngleDegrees:F0} degrees of lock and a " +
+                $"{Wheelbase:F2} m wheelbase the circle should be {geometric:F2} m, and it came round " +
+                $"on {RadiusAt(2f, yaw):F2} m. The number a driver asks for is the wheel angle");
         }
 
         [Test]
         public void ItNeverSpinsFasterThanTheProfileAllows()
         {
-            var yaw = ArcadeHandling.YawDegreesPerSecond(1f, 40f, m_Profile);
+            var yaw = ArcadeHandling.YawDegreesPerSecond(1f, 40f, Wheelbase, m_Profile);
 
             Assert.That(yaw, Is.EqualTo(m_Profile.fastestTurnDegreesPerSecond).Within(0.01f),
                 $"at 40 m/s it wanted {yaw:F0} degrees a second. Holding one radius at any speed means " +
@@ -51,15 +50,15 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void StandingStillItDoesNotTurn()
         {
-            Assert.That(ArcadeHandling.YawDegreesPerSecond(1f, 0f, m_Profile), Is.EqualTo(0f).Within(0.01f),
+            Assert.That(ArcadeHandling.YawDegreesPerSecond(1f, 0f, Wheelbase, m_Profile), Is.EqualTo(0f).Within(0.01f),
                 "a parked tractor turned its whole body when the wheel moved, which no vehicle does");
         }
 
         [Test]
         public void ReversingTurnsTheOtherWay()
         {
-            var forward = ArcadeHandling.YawDegreesPerSecond(1f, 6f, m_Profile);
-            var back = ArcadeHandling.YawDegreesPerSecond(1f, -6f, m_Profile);
+            var forward = ArcadeHandling.YawDegreesPerSecond(1f, 6f, Wheelbase, m_Profile);
+            var back = ArcadeHandling.YawDegreesPerSecond(1f, -6f, Wheelbase, m_Profile);
 
             Assert.That(back, Is.EqualTo(-forward).Within(0.01f),
                 $"going forward it came round at {forward:F1} and reversing at {back:F1}. Reversing " +

@@ -301,7 +301,8 @@ namespace BelowTheWing.Vehicles
         {
             var forwardSpeed = Vector3.Dot(Body.linearVelocity, transform.forward);
 
-            var yaw = ArcadeHandling.YawDegreesPerSecond(intent.Steer, forwardSpeed, m_Profile);
+            var yaw = ArcadeHandling.YawDegreesPerSecond(
+                intent.Steer, forwardSpeed, Shape != null ? Shape.WheelbaseMetres : 0f, m_Profile);
             var spin = Body.angularVelocity;
             spin.y = yaw * Mathf.Deg2Rad;
             Body.angularVelocity = spin;

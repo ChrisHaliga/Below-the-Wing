@@ -65,11 +65,8 @@ namespace BelowTheWing.Vehicles
         [Tooltip("Handles as an arcade vehicle rather than through its tyres")]
         public bool arcadeHandling;
 
-        [Tooltip("Tightest circle it will hold under full lock, m")]
-        public float tightestTurnRadiusMetres = 8f;
-
         [Tooltip("Fastest it may come round, degrees/s")]
-        public float fastestTurnDegreesPerSecond = 120f;
+        public float fastestTurnDegreesPerSecond = 180f;
 
         [Tooltip("How fast grip pulls a slide back onto the heading, per second")]
         public float gripHoldsHeadingPerSecond = 3f;
