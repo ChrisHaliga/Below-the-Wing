@@ -263,5 +263,79 @@ namespace BelowTheWing.Tests.EditMode
 
             Assert.That(broker.HandedBack, Is.Empty);
         }
+    
+        [Test]
+        public void LookingAtACartOfYourOwnTrainOffersToDropItEvenWithASpareInReach()
+        {
+            var spare = LooseCartBehindTheTrain();
+            var hand = HandAt(new Answering(), spare);
+            hand.LookingAt = () => m_Train.Members[1];
+
+            hand.Refresh();
+
+            Assert.That(hand.Prompt, Is.EqualTo(CouplingPrompt.OfferToUnhitch),
+                "an apron is full of spare carts, so a hitch offer that wins whenever one is in " +
+                "the cone leaves no way to ever drop the cart you are looking at");
+        }
+
+        [Test]
+        public void DroppingTheCartYouLookAtLeavesTheOnesInFrontOfItOn()
+        {
+            var hand = HandAt(new Answering());
+            hand.LookingAt = () => m_Train.Members[1];
+
+            hand.Refresh();
+            hand.Act();
+
+            Assert.That(m_Front, Is.Not.Null);
+            Assert.That(m_Front.Count, Is.EqualTo(1), "only the tractor stays on");
+            Assert.That(m_Dropped.Count, Is.EqualTo(2),
+                "the cart looked at and everything behind it comes off with it");
+        }
+
+        [Test]
+        public void LookingAtTheTractorYouAreDrivingDropsTheBackCartRatherThanTheWholeTrain()
+        {
+            var hand = HandAt(new Answering());
+            hand.LookingAt = () => m_Train.Leader;
+
+            hand.Refresh();
+            hand.Act();
+
+            Assert.That(m_Dropped, Is.Not.Null);
+            Assert.That(m_Dropped.Count, Is.EqualTo(1),
+                "a driver looking down at their own tractor has not asked to lose every cart");
+        }
+    
+        [Test]
+        public void OnFootQDropsTheCartYouAreLookingAtFromTheTrainItIsIn()
+        {
+            var hand = HandAt(new Answering());
+            hand.Driving = null;
+            hand.LookingAt = () => m_Train.Members[1];
+
+            hand.Refresh();
+
+            Assert.That(hand.Prompt, Is.EqualTo(CouplingPrompt.OfferToUnhitch),
+                "a player walks up to a parked train to split it, and is not sitting in anything, " +
+                "so a hand that only works while driving cannot disconnect a cart at all");
+
+            hand.Act();
+
+            Assert.That(m_Dropped, Is.Not.Null);
+            Assert.That(m_Dropped.Count, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void OnFootLookingAtNothingOffersNothing()
+        {
+            var hand = HandAt(new Answering());
+            hand.Driving = null;
+            hand.LookingAt = () => null;
+
+            hand.Refresh();
+
+            Assert.That(hand.Prompt, Is.EqualTo(CouplingPrompt.None));
+        }
     }
 }

@@ -74,5 +74,50 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(bar.GetComponentInChildren<Collider>(), Is.Not.Null,
                 "the bar needs something to grab");
         }
+    
+        [Test]
+        public void ADoorPoleSlidesFreelyAndOnlyBouncesWhenItReachesAStop()
+        {
+            foreach (var pole in m_Cart.GetComponentsInChildren<SlidingDoorPole>(true))
+            {
+                var rail = pole.GetComponent<ConfigurableJoint>();
+
+                Assert.That(rail.zMotion, Is.EqualTo(ConfigurableJointMotion.Limited));
+                Assert.That(rail.linearLimitSpring.spring, Is.EqualTo(0f).Within(1e-4f),
+                    $"{pole.name} has a spring pulling it back to the middle of its track, so it " +
+                    "sits half open and jiggles instead of sliding where it is pushed");
+                Assert.That(rail.linearLimit.bounciness, Is.GreaterThan(0f),
+                    $"{pole.name} has to bounce off its stop when it is slammed");
+            }
+        }
+
+        [Test]
+        public void ADoorPoleDoesNotFightTheCartItRunsAlong()
+        {
+            var poles = m_Cart.GetComponentsInChildren<SlidingDoorPole>(true);
+            Assert.That(poles, Is.Not.Empty);
+
+            foreach (var pole in poles)
+            {
+                Assert.That(pole.GetComponent<Collider>().excludeLayers.value, Is.Not.EqualTo(0),
+                    $"{pole.name} sits inside the cart's own bodywork, so unless it is excluded " +
+                    "from it the pole is jammed in a collision and cannot slide at all");
+            }
+        }
+
+        [Test]
+        public void NothingDrivesTheVinylAwayFromTheWeightTheModelShipsWith()
+        {
+            foreach (var skin in m_Cart.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (!skin.name.StartsWith("Door_Fabric"))
+                {
+                    continue;
+                }
+
+                Assert.That(skin.GetBlendShapeWeight(0), Is.EqualTo(100f).Within(1e-3f),
+                    $"{skin.name} was authored at 100 and nothing should be moving it");
+            }
+        }
     }
 }

@@ -6,7 +6,6 @@ namespace BelowTheWing.Vehicles
     public sealed class SlidingDoorPole : MonoBehaviour
     {
         SkinnedMeshRenderer m_Panel;
-        SkinnedMeshRenderer m_Fabric;
         Transform m_Cover;
         Vector3 m_ShutAt;
         Vector3 m_Along;
@@ -16,11 +15,10 @@ namespace BelowTheWing.Vehicles
         public float Openness { get; private set; }
 
         public void Runs(
-            SkinnedMeshRenderer panel, SkinnedMeshRenderer fabric, Transform cover,
+            SkinnedMeshRenderer panel, Transform cover,
             Vector3 shutAtLocal, Vector3 alongLocal, float trackMetres, float openingMetres)
         {
             m_Panel = panel;
-            m_Fabric = fabric;
             m_Cover = cover;
             m_ShutAt = shutAtLocal;
             m_Along = alongLocal.normalized;
@@ -38,8 +36,7 @@ namespace BelowTheWing.Vehicles
             Openness = SlidingDoor.OpennessAt(
                 Vector3.Dot(transform.localPosition - m_ShutAt, m_Along), m_TrackMetres);
 
-            Show(m_Panel, "Open", Openness);
-            Show(m_Fabric, "Closed", 1f - Openness);
+            Show(m_Panel, SlidingDoor.PanelWeight(Openness));
 
             if (m_Cover == null)
             {
@@ -53,19 +50,14 @@ namespace BelowTheWing.Vehicles
             m_Cover.localScale = new Vector3(0.06f, m_Cover.localScale.y, Mathf.Max(covered, 0.001f));
         }
 
-        static void Show(SkinnedMeshRenderer on, string shape, float weight)
+        static void Show(SkinnedMeshRenderer on, float weight)
         {
-            if (on == null || on.sharedMesh == null)
+            if (on == null || on.sharedMesh == null || on.sharedMesh.blendShapeCount == 0)
             {
                 return;
             }
 
-            var index = on.sharedMesh.GetBlendShapeIndex(shape);
-
-            if (index >= 0)
-            {
-                on.SetBlendShapeWeight(index, Mathf.Clamp01(weight) * 100f);
-            }
+            on.SetBlendShapeWeight(0, weight);
         }
     }
 }

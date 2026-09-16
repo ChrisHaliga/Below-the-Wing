@@ -8,6 +8,7 @@ namespace BelowTheWing.Vehicles
         public const string PolesName = "Doors";
 
         const float PoleKg = 6f;
+        const float BouncesBackBy = 0.35f;
         const float PoleThickness = 0.06f;
 
         public static void Build(GameObject vehicle, VehicleShape shape, PhysicsMaterial bodywork)
@@ -25,14 +26,13 @@ namespace BelowTheWing.Vehicles
             for (var i = 1; i <= 4; i++)
             {
                 var panel = Find(vehicle.transform, $"Door{i}");
-                var fabric = Find(vehicle.transform, $"Door_Fabric{i}");
 
                 if (panel == null)
                 {
                     continue;
                 }
 
-                Raise(vehicle, poles.transform, panel, fabric, shape, bodywork);
+                Raise(vehicle, poles.transform, panel, shape, bodywork);
             }
         }
 
@@ -51,7 +51,7 @@ namespace BelowTheWing.Vehicles
 
         static void Raise(
             GameObject vehicle, Transform poles, SkinnedMeshRenderer panel,
-            SkinnedMeshRenderer fabric, VehicleShape shape, PhysicsMaterial bodywork)
+            VehicleShape shape, PhysicsMaterial bodywork)
         {
             var onTheCart = vehicle.transform.InverseTransformPoint(panel.bounds.center);
             var inside = shape.InteriorLocal;
@@ -66,6 +66,7 @@ namespace BelowTheWing.Vehicles
             var bar = pole.AddComponent<BoxCollider>();
             bar.size = new Vector3(PoleThickness, inside.size.y * 0.9f, PoleThickness);
             bar.sharedMaterial = bodywork;
+            bar.excludeLayers = 1 << vehicle.layer;
 
             var body = pole.AddComponent<Rigidbody>();
             body.mass = PoleKg;
@@ -85,7 +86,7 @@ namespace BelowTheWing.Vehicles
             sheet.sharedMaterial = bodywork;
 
             pole.AddComponent<SlidingDoorPole>().Runs(
-                panel, fabric, cover,
+                panel, cover,
                 pole.transform.localPosition, new Vector3(0f, 0f, -Mathf.Sign(outerEdge)),
                 track, track);
         }
@@ -110,8 +111,11 @@ namespace BelowTheWing.Vehicles
             rail.angularYMotion = ConfigurableJointMotion.Locked;
             rail.angularZMotion = ConfigurableJointMotion.Locked;
 
-            rail.linearLimit = new SoftJointLimit { limit = trackMetres * 0.5f };
-            rail.linearLimitSpring = new SoftJointLimitSpring { spring = 2600f, damper = 12f };
+            rail.linearLimit = new SoftJointLimit
+            {
+                limit = trackMetres * 0.5f,
+                bounciness = BouncesBackBy
+            };
 
             rail.enablePreprocessing = false;
         }

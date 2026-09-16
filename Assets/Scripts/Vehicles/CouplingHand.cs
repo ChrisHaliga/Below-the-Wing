@@ -23,6 +23,8 @@ namespace BelowTheWing.Vehicles
         readonly Action<IReadOnlyList<VehicleController>, IReadOnlyList<VehicleController>> m_Split;
 
         VehicleController m_Offered;
+        CartChain m_Splitting;
+        int m_DroppingAfter = -1;
         bool m_Asking;
 
         public CouplingHand(
@@ -49,7 +51,7 @@ namespace BelowTheWing.Vehicles
                     Hitch();
                     break;
                 case CouplingPrompt.OfferToUnhitch:
-                    UnhitchTheBack();
+                    Split(m_Splitting, m_DroppingAfter);
                     break;
             }
         }
@@ -58,27 +60,51 @@ namespace BelowTheWing.Vehicles
 
         public void Refresh()
         {
-            if (Driving == null || m_Asking)
+            if (m_Asking)
             {
                 return;
             }
 
-            m_Offered = LookingAt != null
-                ? Coupling.CanBeHitched(LookingAt(), Driving) ? LookingAt() : null
-                : Coupling.WorthHitching(Driving, m_Nearby());
+            var looked = LookingAt?.Invoke();
+
+            m_Offered = Coupling.CanBeHitched(looked, Driving)
+                ? looked
+                : LookingAt == null && Driving != null
+                    ? Coupling.WorthHitching(Driving, m_Nearby())
+                    : null;
 
             if (m_Offered != null)
             {
                 Prompt = CouplingPrompt.OfferToHitch;
+                return;
             }
-            else if (Driving.Members.Count > 1)
+
+            m_Splitting = Driving ?? (looked != null ? looked.Chain : null);
+            m_DroppingAfter = WhereToSplitFor(m_Splitting, looked);
+
+            Prompt = Coupling.CanBeSplitAfter(m_Splitting, m_DroppingAfter)
+                ? CouplingPrompt.OfferToUnhitch
+                : CouplingPrompt.None;
+        }
+
+        static int WhereToSplitFor(CartChain train, VehicleController looked)
+        {
+            if (train == null)
             {
-                Prompt = CouplingPrompt.OfferToUnhitch;
+                return -1;
             }
-            else
+
+            var members = train.Members;
+
+            for (var i = 1; i < members.Count; i++)
             {
-                Prompt = CouplingPrompt.None;
+                if (members[i] == looked)
+                {
+                    return i - 1;
+                }
             }
+
+            return members.Count - 2;
         }
 
         public void Hitch()
@@ -123,14 +149,19 @@ namespace BelowTheWing.Vehicles
             });
         }
 
-        public void UnhitchAfter(int memberIndex)
+        public void UnhitchTheBack()
+            => UnhitchAfter(Driving == null ? -1 : Driving.Members.Count - 2);
+
+        public void UnhitchAfter(int memberIndex) => Split(Driving, memberIndex);
+
+        void Split(CartChain train, int memberIndex)
         {
-            if (!Coupling.CanBeSplitAfter(Driving, memberIndex))
+            if (!Coupling.CanBeSplitAfter(train, memberIndex))
             {
                 return;
             }
 
-            var members = Driving.Members;
+            var members = train.Members;
             var staying = new List<VehicleController>(members.Count);
             var dropped = new List<VehicleController>(members.Count);
 
@@ -145,7 +176,5 @@ namespace BelowTheWing.Vehicles
             m_Split?.Invoke(staying, dropped);
         }
 
-        public void UnhitchTheBack()
-            => UnhitchAfter(Driving == null ? -1 : Driving.Members.Count - 2);
     }
 }

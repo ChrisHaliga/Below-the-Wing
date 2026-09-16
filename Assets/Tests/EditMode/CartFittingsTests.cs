@@ -149,5 +149,15 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(Drawbar.CanBePulled(parked: false, hitched: true), Is.False,
                 "a hitched cart belongs to the tractor, and grabbing its bar fights the joint");
         }
+    
+        [Test]
+        public void AShutDoorLeavesThePanelAtTheWeightTheModelShipsWith()
+        {
+            Assert.That(SlidingDoor.PanelWeight(0f), Is.EqualTo(100f).Within(1e-3f),
+                "Door1 to Door4 ship at 100 and the vinyl ships at 100, so 100 is the shut pose; " +
+                "driving the panel the other way is what made the two halves move apart");
+            Assert.That(SlidingDoor.PanelWeight(1f), Is.EqualTo(0f).Within(1e-3f));
+            Assert.That(SlidingDoor.PanelWeight(0.25f), Is.EqualTo(75f).Within(1e-3f));
+        }
     }
 }

@@ -4,6 +4,8 @@ namespace BelowTheWing.Vehicles
 {
     public static class SlidingDoor
     {
+        public static float PanelWeight(float openness) => (1f - Mathf.Clamp01(openness)) * 100f;
+
         public static float OpennessAt(float poleMetres, float trackMetres)
             => trackMetres <= 0f ? 0f : Mathf.Clamp01(poleMetres / trackMetres);
 
