@@ -311,7 +311,8 @@ namespace BelowTheWing.Vehicles
             var heading = new Vector3(transform.forward.x, 0f, transform.forward.z).normalized;
 
             var held = ArcadeHandling.HeldToItsHeading(
-                flat, heading, m_Profile.gripHoldsHeadingPerSecond, Time.fixedDeltaTime);
+                flat, heading, m_Profile.gripHoldsHeadingPerSecond,
+                m_Profile.mostSideGripMetresPerSecondSquared, Time.fixedDeltaTime);
 
             Body.linearVelocity = new Vector3(held.x, Body.linearVelocity.y, held.z);
         }

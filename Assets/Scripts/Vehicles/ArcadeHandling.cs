@@ -24,12 +24,16 @@ namespace BelowTheWing.Vehicles
         }
 
         public static Vector3 HeldToItsHeading(
-            Vector3 velocity, Vector3 heading, float holdsPerSecond, float deltaTime)
+            Vector3 velocity, Vector3 heading, float holdsPerSecond,
+            float mostSideGripMetresPerSecondSquared, float deltaTime)
         {
-            var along = Vector3.Project(velocity, heading);
-            var sideways = velocity - along;
+            var sideways = velocity - Vector3.Project(velocity, heading);
 
-            return along + (sideways * Mathf.Exp(-Mathf.Max(holdsPerSecond, 0f) * deltaTime));
+            var wanted = sideways * (1f - Mathf.Exp(-Mathf.Max(holdsPerSecond, 0f) * deltaTime));
+            var afforded = Vector3.ClampMagnitude(
+                wanted, Mathf.Max(mostSideGripMetresPerSecondSquared, 0f) * deltaTime);
+
+            return velocity - afforded;
         }
     }
 }

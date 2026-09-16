@@ -69,7 +69,7 @@ namespace BelowTheWing.Tests.EditMode
         public void GripPullsTheBodyBackOntoItsHeading()
         {
             var sliding = new Vector3(4f, 0f, 10f);
-            var held = ArcadeHandling.HeldToItsHeading(sliding, Vector3.forward, holdsPerSecond: 3f, deltaTime: 0.1f);
+            var held = ArcadeHandling.HeldToItsHeading(sliding, Vector3.forward, holdsPerSecond: 3f, mostSideGripMetresPerSecondSquared: 100f, deltaTime: 0.1f);
 
             Assert.That(held.z, Is.EqualTo(10f).Within(0.01f), "it may not lose the speed it is carrying");
             Assert.That(Mathf.Abs(held.x), Is.LessThan(4f),
@@ -81,7 +81,7 @@ namespace BelowTheWing.Tests.EditMode
         public void NoGripAtAllIsAFullSlide()
         {
             var sliding = new Vector3(4f, 0f, 10f);
-            var held = ArcadeHandling.HeldToItsHeading(sliding, Vector3.forward, holdsPerSecond: 0f, deltaTime: 0.1f);
+            var held = ArcadeHandling.HeldToItsHeading(sliding, Vector3.forward, holdsPerSecond: 0f, mostSideGripMetresPerSecondSquared: 100f, deltaTime: 0.1f);
 
             Assert.That(held.x, Is.EqualTo(4f).Within(0.01f),
                 "with no grip the sideways speed has to survive untouched, or there is no such thing " +
