@@ -143,20 +143,20 @@ namespace BelowTheWing.EditorTools
 
         static MeasuredVehicle MeasureTheCart(GameObject cart, Transform model)
         {
+            const float deckTopMetres = 0.4727f;
+            const float deckWidthMetres = 1.7211f;
+            const float deckLengthMetres = 3.1538f;
             const float slabThicknessMetres = 0.15f;
+            const float clearInsideMetres = 1.626f;
             const float lipHeightMetres = 0.18f;
             const float lipThicknessMetres = 0.05f;
 
+            var envelopeSizeMetres = new Vector3(1.8855f, 2.0155f, 3.8152f);
+            var envelopeCentreLocal = new Vector3(0f, 1.0909f, 0.1296f);
+
             var measured = Wheels(cart, model, new[] { "Wheel_1", "Wheel_2", "Wheel_3", "Wheel_4" });
 
-            var loadSpace = TheSpaceTheDoorsCloseOver(cart, model);
-            var envelope = EverythingItIsMadeOf(cart, model);
-
-            var deckTopMetres = loadSpace.min.y;
-            var roofUnderside = loadSpace.max.y;
-            var clearInsideMetres = loadSpace.size.y;
-            var deckWidthMetres = loadSpace.size.x;
-            var deckLengthMetres = loadSpace.size.z;
+            var roofUnderside = deckTopMetres + clearInsideMetres;
 
             var solid = new List<VehicleShape.SolidPart>
             {
@@ -209,66 +209,14 @@ namespace BelowTheWing.EditorTools
                     Wheels = measured.Placements,
                     FrontCouplingLocal = MarkerLocal(cart, model, "HITCH_Male"),
                     RearCouplingLocal = MarkerLocal(cart, model, "HITCH_Female"),
-                    EnvelopeSizeMetres = envelope.size,
-                    EnvelopeCentreLocal = envelope.center,
-                    InteriorLocal = loadSpace,
+                    EnvelopeSizeMetres = envelopeSizeMetres,
+                    EnvelopeCentreLocal = envelopeCentreLocal,
+                    InteriorLocal = new Bounds(
+                        new Vector3(0f, deckTopMetres + (clearInsideMetres * 0.5f), 0f),
+                        new Vector3(deckWidthMetres, clearInsideMetres, deckLengthMetres)),
                     SolidParts = solid
                 },
                 measured.Visible);
-        }
-
-        static Bounds TheSpaceTheDoorsCloseOver(GameObject cart, Transform model)
-        {
-            var doors = MeshBoxLocal(cart, model, "Door1");
-
-            foreach (var door in new[] { "Door2", "Door3", "Door4" })
-            {
-                doors.Encapsulate(MeshBoxLocal(cart, model, door));
-            }
-
-            return doors;
-        }
-
-        static bool IsCouplingHardware(string name)
-            => name.StartsWith("Hitch", StringComparison.OrdinalIgnoreCase);
-
-        static Bounds EverythingItIsMadeOf(GameObject vehicle, Transform model)
-        {
-            var all = new Bounds();
-            var anything = false;
-
-            foreach (var part in model.GetComponentsInChildren<Transform>(true))
-            {
-                var filter = part.GetComponent<MeshFilter>();
-                var skinned = part.GetComponent<SkinnedMeshRenderer>();
-                var mesh = filter != null ? filter.sharedMesh
-                    : skinned != null ? skinned.sharedMesh
-                    : null;
-
-                if (mesh == null || IsCouplingHardware(part.name))
-                {
-                    continue;
-                }
-
-                var box = MeshBoxLocal(vehicle, part);
-
-                if (anything)
-                {
-                    all.Encapsulate(box);
-                }
-                else
-                {
-                    all = box;
-                    anything = true;
-                }
-            }
-
-            if (!anything)
-            {
-                throw Unmeasurable(vehicle, "its model has no meshes to take an envelope from");
-            }
-
-            return all;
         }
 
         static (List<VehicleShape.WheelPlacement> Placements, List<Transform> Visible) Wheels(
@@ -292,96 +240,34 @@ namespace BelowTheWing.EditorTools
             return (placements, visible);
         }
 
-        static Vector3 MarkerLocal(GameObject vehicle, Transform model, string name)
+        static Vector3 MarkerLocal(GameObject vehicle, Transform model, string path)
         {
-            var found = Named(vehicle, model, name);
+            var found = model.Find(path)
+                        ?? throw Unmeasurable(vehicle, $"its model has no '{path}'");
 
-            if (MeshOn(found) != null)
+            if (found.GetComponent<MeshFilter>() != null)
             {
                 throw Unmeasurable(vehicle,
-                    $"'{name}' is a mesh rather than a marker, and reading a coupling off the metal " +
+                    $"'{path}' is a mesh rather than a marker, and reading a coupling off the metal " +
                     "around it puts that coupling tens of centimetres out");
             }
 
             return vehicle.transform.InverseTransformPoint(found.position);
         }
 
-        static Transform PartOfTheModel(GameObject vehicle, Transform model, string name)
+        static Transform PartOfTheModel(GameObject vehicle, Transform model, string path)
         {
-            var found = Named(vehicle, model, name);
+            var found = model.Find(path)
+                        ?? throw Unmeasurable(vehicle,
+                            $"its model has no '{path}'. Anything that is not a direct child of the " +
+                            "model root needs its path: a plain name finds nothing at all");
 
-            if (MeshOn(found) == null)
+            if (found.GetComponent<MeshFilter>() == null)
             {
-                throw Unmeasurable(vehicle, $"'{name}' is a marker rather than a part of the model");
+                throw Unmeasurable(vehicle, $"'{path}' is a marker rather than a part of the model");
             }
 
             return found;
-        }
-
-        static Transform Named(GameObject vehicle, Transform model, string name)
-        {
-            var byPath = model.Find(name);
-            if (byPath != null)
-            {
-                return byPath;
-            }
-
-            Transform found = null;
-
-            foreach (var candidate in model.GetComponentsInChildren<Transform>(true))
-            {
-                if (candidate == model || candidate.name != name)
-                {
-                    continue;
-                }
-
-                if (found != null)
-                {
-                    throw Unmeasurable(vehicle,
-                        $"its model has more than one '{name}', so there is no saying which one a " +
-                        "measurement would be taken from");
-                }
-
-                found = candidate;
-            }
-
-            if (found != null)
-            {
-                return found;
-            }
-
-            var leaf = name.Substring(name.LastIndexOf('/') + 1);
-
-            foreach (var candidate in model.GetComponentsInChildren<Transform>(true))
-            {
-                if (candidate == model || candidate.name != leaf)
-                {
-                    continue;
-                }
-
-                if (found != null)
-                {
-                    throw Unmeasurable(vehicle,
-                        $"its model has more than one '{leaf}', so there is no saying which one a " +
-                        "measurement would be taken from");
-                }
-
-                found = candidate;
-            }
-
-            return found ?? throw Unmeasurable(vehicle, $"its model has no '{name}' anywhere inside it");
-        }
-
-        static Mesh MeshOn(Transform part)
-        {
-            var filter = part.GetComponent<MeshFilter>();
-            if (filter != null)
-            {
-                return filter.sharedMesh;
-            }
-
-            var skinned = part.GetComponent<SkinnedMeshRenderer>();
-            return skinned != null ? skinned.sharedMesh : null;
         }
 
         static InvalidOperationException Unmeasurable(GameObject vehicle, string why)
@@ -394,7 +280,7 @@ namespace BelowTheWing.EditorTools
         static VehicleShape.SolidPart SolidAsModelled(GameObject vehicle, Transform model, string path)
         {
             var part = PartOfTheModel(vehicle, model, path);
-            var mesh = MeshOn(part);
+            var mesh = part.GetComponent<MeshFilter>().sharedMesh;
 
             if (mesh == null)
             {
@@ -413,7 +299,7 @@ namespace BelowTheWing.EditorTools
 
         static Bounds MeshBoxLocal(GameObject vehicle, Transform part)
         {
-            var mesh = MeshOn(part);
+            var mesh = part.GetComponent<MeshFilter>().sharedMesh;
             var least = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
             var most = new Vector3(float.MinValue, float.MinValue, float.MinValue);
 

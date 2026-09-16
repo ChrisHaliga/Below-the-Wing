@@ -13,34 +13,6 @@ the record of what was believed then.
 
 ---
 
-## 2026-09-15 — A cart is measured from the doors that close over its load space
-
-The cart carried the last set of figures in the project that were typed rather than measured: its
-deck top, width and length, the clear height inside, and the size and centre of its envelope. The
-entry of 2026-09-14 recorded them as the one exception left, and any re-model invalidated them.
-
-The re-exported cart has doors, and a door is exactly the boundary of the space it closes over. The
-union of the four door panels gives the deck top as their lowest edge, the roof underside as their
-highest, the clear height as their height, and the deck's width and length as their span. Derived
-that way the deck top comes out at 0.47 against the 0.4727 that was typed, and the length at 3.14
-against 3.1538.
-
-The envelope is the union of every mesh, less the coupling hardware. A drawbar reaches more than a
-metre past the body, and the layout already spaces vehicles by the coupling markers, so counting the
-drawbar in the envelope as well would space them by it twice. Left in, the cart measured 5.18 m long
-instead of 3.56.
-
-Two figures are still typed, the lip's height and its thickness, because no part of the model
-describes a lip. That is the whole of what remains.
-
-Two things the builder had to learn. A part may be found anywhere inside a model rather than as a
-direct child of its root, because this export wraps everything in a node and the next one may do
-something else again; a path still works, a bare name works, and an ambiguous name is refused rather
-than guessed. And a part may be a skinned mesh rather than a mesh filter, because a door that opens
-on a shape key has to be skinned.
-
----
-
 ## 2026-09-15 — The tractor's launch is a feel figure and outranks the tests that argued with it
 
 Decided by the repo owner, in those words: press the gas, feel the tractor shoot forward and really
