@@ -151,13 +151,21 @@ namespace BelowTheWing.Tests.EditMode
         }
     
         [Test]
-        public void AShutDoorLeavesThePanelAtTheWeightTheModelShipsWith()
+        public void ThePanelAndTheVinylShowTheSameDoorAtEveryPosition()
         {
-            Assert.That(SlidingDoor.PanelWeight(0f), Is.EqualTo(100f).Within(1e-3f),
-                "Door1 to Door4 ship at 100 and the vinyl ships at 100, so 100 is the shut pose; " +
-                "driving the panel the other way is what made the two halves move apart");
-            Assert.That(SlidingDoor.PanelWeight(1f), Is.EqualTo(0f).Within(1e-3f));
-            Assert.That(SlidingDoor.PanelWeight(0.25f), Is.EqualTo(75f).Within(1e-3f));
+            Assert.That(SlidingDoor.PanelWeight(0f), Is.EqualTo(0f).Within(1e-3f));
+            Assert.That(SlidingDoor.FabricWeight(0f), Is.EqualTo(100f).Within(1e-3f),
+                "Door1 carries one shape called Open and Door_Fabric1 one called Closed, so a shut " +
+                "door is Open at 0 and Closed at 100; driving only one of them is what left the " +
+                "frame and the vinyl showing different doors");
+
+            Assert.That(SlidingDoor.PanelWeight(1f), Is.EqualTo(100f).Within(1e-3f));
+            Assert.That(SlidingDoor.FabricWeight(1f), Is.EqualTo(0f).Within(1e-3f));
+
+            Assert.That(
+                SlidingDoor.PanelWeight(0.25f) + SlidingDoor.FabricWeight(0.25f),
+                Is.EqualTo(100f).Within(1e-3f),
+                "the two weights are complements at every position, or the halves drift apart");
         }
     }
 }

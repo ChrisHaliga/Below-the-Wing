@@ -97,27 +97,38 @@ namespace BelowTheWing.Tests.EditMode
             var poles = m_Cart.GetComponentsInChildren<SlidingDoorPole>(true);
             Assert.That(poles, Is.Not.Empty);
 
+            var deck = FindCartCollider("Deck");
+
             foreach (var pole in poles)
             {
-                Assert.That(pole.GetComponent<Collider>().excludeLayers.value, Is.Not.EqualTo(0),
-                    $"{pole.name} sits inside the cart's own bodywork, so unless it is excluded " +
-                    "from it the pole is jammed in a collision and cannot slide at all");
+                Assert.That(Physics.GetIgnoreCollision(pole.GetComponent<Collider>(), deck), Is.True,
+                    $"{pole.name} is raised inside the cart's own bodywork, so unless that pair is " +
+                    "ignored the pole is jammed in a collision and cannot slide at all");
             }
         }
 
         [Test]
-        public void NothingDrivesTheVinylAwayFromTheWeightTheModelShipsWith()
+        public void ADoorPoleStillCollidesWithWhateverIsNotTheCart()
         {
-            foreach (var skin in m_Cart.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-            {
-                if (!skin.name.StartsWith("Door_Fabric"))
-                {
-                    continue;
-                }
+            var pole = m_Cart.GetComponentInChildren<SlidingDoorPole>(true).GetComponent<Collider>();
 
-                Assert.That(skin.GetBlendShapeWeight(0), Is.EqualTo(100f).Within(1e-3f),
-                    $"{skin.name} was authored at 100 and nothing should be moving it");
+            Assert.That(pole.excludeLayers.value, Is.EqualTo(0),
+                "excluding a whole layer takes the pole out of every collision there is, bags and " +
+                "crew included, which is far more than keeping it off its own cart");
+        }
+
+        Collider FindCartCollider(string called)
+        {
+            foreach (var part in m_Cart.GetComponentsInChildren<Collider>(true))
+            {
+                if (part.name == called)
+                {
+                    return part;
+                }
             }
+
+            Assert.Fail($"the cart has no collider called {called}");
+            return null;
         }
     }
 }

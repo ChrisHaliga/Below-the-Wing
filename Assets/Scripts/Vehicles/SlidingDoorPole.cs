@@ -6,6 +6,7 @@ namespace BelowTheWing.Vehicles
     public sealed class SlidingDoorPole : MonoBehaviour
     {
         SkinnedMeshRenderer m_Panel;
+        SkinnedMeshRenderer m_Fabric;
         Transform m_Cover;
         Vector3 m_ShutAt;
         Vector3 m_Along;
@@ -15,10 +16,11 @@ namespace BelowTheWing.Vehicles
         public float Openness { get; private set; }
 
         public void Runs(
-            SkinnedMeshRenderer panel, Transform cover,
+            SkinnedMeshRenderer panel, SkinnedMeshRenderer fabric, Transform cover,
             Vector3 shutAtLocal, Vector3 alongLocal, float trackMetres, float openingMetres)
         {
             m_Panel = panel;
+            m_Fabric = fabric;
             m_Cover = cover;
             m_ShutAt = shutAtLocal;
             m_Along = alongLocal.normalized;
@@ -37,6 +39,7 @@ namespace BelowTheWing.Vehicles
                 Vector3.Dot(transform.localPosition - m_ShutAt, m_Along), m_TrackMetres);
 
             Show(m_Panel, SlidingDoor.PanelWeight(Openness));
+            Show(m_Fabric, SlidingDoor.FabricWeight(Openness));
 
             if (m_Cover == null)
             {

@@ -20,20 +20,29 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
-            var poles = new GameObject(PolesName);
-            poles.transform.SetParent(vehicle.transform, worldPositionStays: false);
+            Transform poles = null;
 
             for (var i = 1; i <= 4; i++)
             {
                 var panel = Find(vehicle.transform, $"Door{i}");
+                var fabric = Find(vehicle.transform, $"Door_Fabric{i}");
 
                 if (panel == null)
                 {
                     continue;
                 }
 
-                Raise(vehicle, poles.transform, panel, shape, bodywork);
+                poles ??= Container(vehicle);
+                Raise(vehicle, poles, panel, fabric, shape, bodywork);
             }
+        }
+
+        static Transform Container(GameObject vehicle)
+        {
+            var poles = new GameObject(PolesName).transform;
+            poles.SetParent(vehicle.transform, worldPositionStays: false);
+
+            return poles;
         }
 
         static SkinnedMeshRenderer Find(Transform under, string called)
@@ -51,7 +60,7 @@ namespace BelowTheWing.Vehicles
 
         static void Raise(
             GameObject vehicle, Transform poles, SkinnedMeshRenderer panel,
-            VehicleShape shape, PhysicsMaterial bodywork)
+            SkinnedMeshRenderer fabric, VehicleShape shape, PhysicsMaterial bodywork)
         {
             var onTheCart = vehicle.transform.InverseTransformPoint(panel.bounds.center);
             var inside = shape.InteriorLocal;
@@ -66,7 +75,6 @@ namespace BelowTheWing.Vehicles
             var bar = pole.AddComponent<BoxCollider>();
             bar.size = new Vector3(PoleThickness, inside.size.y * 0.9f, PoleThickness);
             bar.sharedMaterial = bodywork;
-            bar.excludeLayers = 1 << vehicle.layer;
 
             var body = pole.AddComponent<Rigidbody>();
             body.mass = PoleKg;
@@ -86,9 +94,24 @@ namespace BelowTheWing.Vehicles
             sheet.sharedMaterial = bodywork;
 
             pole.AddComponent<SlidingDoorPole>().Runs(
-                panel, cover,
+                panel, fabric, cover,
                 pole.transform.localPosition, new Vector3(0f, 0f, -Mathf.Sign(outerEdge)),
                 track, track);
+
+            LeaveTheCartAlone(bar, vehicle);
+        }
+
+        static void LeaveTheCartAlone(Collider bar, GameObject vehicle)
+        {
+            var cart = vehicle.GetComponent<Rigidbody>();
+
+            foreach (var part in vehicle.GetComponentsInChildren<Collider>(true))
+            {
+                if (part.attachedRigidbody == cart)
+                {
+                    Physics.IgnoreCollision(bar, part, true);
+                }
+            }
         }
 
         static void OnItsTrack(GameObject pole, Rigidbody cart, float trackMetres)
@@ -100,7 +123,7 @@ namespace BelowTheWing.Vehicles
             rail.connectedAnchor = cart.transform.InverseTransformPoint(pole.transform.position)
                                    + new Vector3(0f, 0f, -Mathf.Sign(pole.transform.localPosition.z) * trackMetres * 0.5f);
 
-            rail.axis = Vector3.forward;
+            rail.axis = Vector3.right;
             rail.secondaryAxis = Vector3.up;
 
             rail.xMotion = ConfigurableJointMotion.Locked;
@@ -116,6 +139,10 @@ namespace BelowTheWing.Vehicles
                 limit = trackMetres * 0.5f,
                 bounciness = BouncesBackBy
             };
+
+            rail.projectionMode = JointProjectionMode.PositionAndRotation;
+            rail.projectionDistance = 0.005f;
+            rail.projectionAngle = 0.5f;
 
             rail.enablePreprocessing = false;
         }
