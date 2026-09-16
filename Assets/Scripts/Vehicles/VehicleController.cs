@@ -160,6 +160,10 @@ namespace BelowTheWing.Vehicles
             }
 
             m_Body.centerOfMass = profile.centerOfMassOffset;
+
+            m_Body.constraints = profile.arcadeHandling && profile.cannotRollOver
+                ? RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ
+                : RigidbodyConstraints.None;
             m_Body.interpolation = RigidbodyInterpolation.Interpolate;
 
             m_Body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
