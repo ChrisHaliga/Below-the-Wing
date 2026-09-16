@@ -13,6 +13,35 @@ the record of what was believed then.
 
 ---
 
+## 2026-09-15 — A crash cannot free a port, so nothing is allowed to depend on one
+
+A player reported that closing the game unexpectedly left it holding their port with no way to shut
+it. The obvious reading is that the socket leaks, and it does not: an operating system frees a
+process's sockets when the process dies. A port still held means a process is still alive, and no
+code inside a dead one can run, so there is no shutdown event that fires on a crash.
+
+So the fix is in two halves, and only the second one survives a crash.
+
+The first half closes the session on every exit that does run code. Quitting shuts the transport
+down, and where a session was created through the multiplayer service, the quit is refused once
+while the service is told the player has gone, then allowed through when that finishes. It is also
+allowed through after a deadline whether the service answered or not, because a game that cannot be
+closed is the complaint being answered and nothing may hold a quit open indefinitely. The same
+closing runs when the thing holding the session is destroyed, which is what leaving play mode does.
+
+The second half removes the dependency. A session started alone asks the machine for a port instead
+of taking the one it was built with. Nothing dials into a session running alone, so the number was
+never needed, and a copy of the game still alive can no longer be in the way of the next launch.
+
+Turned down: picking a free port by probing for one. Between the probe and the bind, something else
+can take it. Asking for port zero has no such gap.
+
+Given up: a well-known port to be dialled directly by address, with no service and no relay. Nothing
+in the game dials one today.
+
+Not solved: a session left behind in the multiplayer service by a host that died without leaving.
+It expires on the service's own timeout, and nothing in a dead process can shorten that. Finding and
+clearing one at the next launch would be the fix, and it was not done.
 ## 2026-09-15 — A cart is measured from the doors that close over its load space
 
 The cart carried the last set of figures in the project that were typed rather than measured: its
