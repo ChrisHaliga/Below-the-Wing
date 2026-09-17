@@ -92,28 +92,6 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ADoorPoleSlidesAllTheWayOpenWhenItIsPushedAlongTheCart()
-        {
-            var pole = APoleOnACart(out var cart);
-
-            yield return Steps.Seconds(0.5f);
-
-            pole.GetComponent<Rigidbody>().AddForce(
-                cart.transform.forward * 12f, ForceMode.Impulse);
-
-            var widest = 0f;
-
-            for (var step = 0; step < 120; step++)
-            {
-                yield return new WaitForFixedUpdate();
-                widest = Mathf.Max(widest, pole.Openness);
-            }
-
-            Assert.That(widest, Is.GreaterThan(0.95f),
-                $"pushed along the cart at 2 m/s the pole only ever reached {widest:P0} open");
-        }
-
-        [UnityTest]
         public IEnumerator ADoorSlammedIntoItsStopStaysThereRatherThanBouncingBack()
         {
             var pole = APoleOnACart(out var cart);
@@ -144,6 +122,86 @@ namespace BelowTheWing.Tests.PlayMode
             Assert.That(pole.transform.localPosition.x, Is.EqualTo(startedAt).Within(0.02f),
                 $"the pole moved from x {startedAt:F3} to {pole.transform.localPosition.x:F3}. " +
                 "A door pole shoved across the cart has to stay on its rail");
+        }
+    
+        [UnityTest]
+        public IEnumerator ADoorStaysShutWhileTheCartIsDrivenAlong()
+        {
+            var pole = APoleOnACart(out var cart);
+
+            yield return Steps.Seconds(0.5f);
+
+            var pushing = cart.Body.mass * 3f;
+            var widest = 0f;
+
+            for (var step = 0; step < 100; step++)
+            {
+                cart.Body.AddForce(cart.transform.forward * pushing, ForceMode.Force);
+                yield return new WaitForFixedUpdate();
+                widest = Mathf.Max(widest, pole.Openness);
+            }
+
+            Assert.That(widest, Is.LessThan(0.1f),
+                $"driving off at 3 m/s squared slid the door {widest:P0} open on its own. A door " +
+                "the cart opens for you is a door the player has no say over");
+        }
+
+        [UnityTest]
+        public IEnumerator ADoorOpensAllTheWayUnderAHandsPull()
+        {
+            var pole = APoleOnACart(out var cart);
+
+            yield return Steps.Seconds(0.5f);
+
+            var body = pole.GetComponent<Rigidbody>();
+
+            for (var step = 0; step < 75; step++)
+            {
+                body.AddForce(cart.transform.forward * 60f, ForceMode.Force);
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(pole.Openness, Is.GreaterThan(0.95f),
+                $"pulled at 60 N for 1.5 seconds the door only reached {pole.Openness:P0} open. " +
+                "A door that will not follow a steady pull is a door the player cannot work");
+        }
+    
+        [UnityTest]
+        public IEnumerator ADoorLetGoOfComesToRestInsteadOfGlidingToTheEnd()
+        {
+            var pole = APoleOnACart(out var cart);
+
+            yield return Steps.Seconds(0.5f);
+
+            pole.GetComponent<Rigidbody>().AddForce(
+                cart.transform.forward * 2f, ForceMode.Impulse);
+
+            yield return Steps.Seconds(2f);
+
+            Assert.That(pole.Openness, Is.LessThan(0.6f),
+                $"nudged once and let go, the door carried on to {pole.Openness:P0} open. A door " +
+                "with no friction on its rail can only ever be fully shut or fully open, and the " +
+                "player never gets to leave it where they want it");
+        }
+
+        [UnityTest]
+        public IEnumerator ADoorStaysWhereItWasLeft()
+        {
+            var pole = APoleOnACart(out var cart);
+
+            yield return Steps.Seconds(0.5f);
+
+            pole.GetComponent<Rigidbody>().AddForce(
+                cart.transform.forward * 2f, ForceMode.Impulse);
+
+            yield return Steps.Seconds(1.5f);
+
+            var settledAt = pole.Openness;
+
+            yield return Steps.Seconds(2f);
+
+            Assert.That(pole.Openness, Is.EqualTo(settledAt).Within(0.02f),
+                $"the door drifted from {settledAt:P0} to {pole.Openness:P0} with nothing touching it");
         }
     }
 }

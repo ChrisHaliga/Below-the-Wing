@@ -1,3 +1,4 @@
+using BelowTheWing.Cargo;
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
 using UnityEditor;
@@ -169,6 +170,37 @@ namespace BelowTheWing.Tests.EditMode
 
             Assert.Fail($"the cart has no collider called {called}");
             return null;
+        }
+    
+        [Test]
+        public void EveryDoorPoleIsSomethingAHandCanTakeHoldOf()
+        {
+            var poles = m_Cart.GetComponentsInChildren<SlidingDoorPole>(true);
+            Assert.That(poles.Length, Is.EqualTo(4));
+
+            foreach (var pole in poles)
+            {
+                Assert.That(HandUse.TryFind(pole.GetComponent<Collider>(), out var use), Is.True,
+                    $"{pole.name} is the part of a door a player works it by");
+                Assert.That(use.As, Is.EqualTo(HandUse.Category.HoldOnto));
+            }
+        }
+
+        [Test]
+        public void ADoorsCoverBlocksBagsWithoutBeingSomethingAHandCanTake()
+        {
+            foreach (var part in m_Cart.GetComponentsInChildren<Collider>(true))
+            {
+                if (!part.name.EndsWith("cover"))
+                {
+                    continue;
+                }
+
+                Assert.That(part.isTrigger, Is.False, "a cover has to stop a bag going through it");
+                Assert.That(HandUse.TryFind(part, out _), Is.False,
+                    $"{part.name} is the door's wall, and grabbing the wall instead of the pole is " +
+                    "what makes a door feel like it cannot be worked");
+            }
         }
     }
 }

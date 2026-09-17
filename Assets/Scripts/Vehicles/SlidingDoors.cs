@@ -8,6 +8,8 @@ namespace BelowTheWing.Vehicles
         public const string PolesName = "Doors";
 
         const float PoleKg = 6f;
+        const float RailDragNewtonsPerMetrePerSecond = 40f;
+        const float RailHoldsAtNewtons = 1500f;
 
         public static void Build(GameObject vehicle, VehicleShape shape, PhysicsMaterial bodywork)
         {
@@ -94,6 +96,8 @@ namespace BelowTheWing.Vehicles
             var sheet = cover.gameObject.AddComponent<BoxCollider>();
             sheet.size = Vector3.one;
             sheet.sharedMaterial = bodywork;
+
+            cover.gameObject.AddComponent<HandUse>().As = HandUse.Category.Nothing;
 
             pole.AddComponent<SlidingDoorPole>().Runs(
                 panel, fabric, cover,
@@ -185,6 +189,13 @@ namespace BelowTheWing.Vehicles
             {
                 limit = Mathf.Abs(openAt - shutAt) * 0.5f,
                 bounciness = 0f
+            };
+
+            rail.zDrive = new JointDrive
+            {
+                positionSpring = 0f,
+                positionDamper = RailDragNewtonsPerMetrePerSecond,
+                maximumForce = RailHoldsAtNewtons
             };
 
             rail.projectionMode = JointProjectionMode.PositionAndRotation;

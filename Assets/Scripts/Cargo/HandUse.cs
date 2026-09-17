@@ -9,7 +9,9 @@ namespace BelowTheWing.Cargo
         {
             Carry,
 
-            HoldOnto
+            HoldOnto,
+
+            Nothing
         }
 
         [SerializeField, Tooltip("What hands may do with this")]
@@ -24,6 +26,12 @@ namespace BelowTheWing.Cargo
         public static bool TryFind(Collider collider, out HandUse use)
         {
             use = collider != null ? collider.GetComponentInParent<HandUse>() : null;
+
+            if (use != null && use.As == Category.Nothing)
+            {
+                use = null;
+            }
+
             return use != null;
         }
     }
