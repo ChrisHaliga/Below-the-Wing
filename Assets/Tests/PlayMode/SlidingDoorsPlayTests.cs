@@ -9,6 +9,11 @@ namespace BelowTheWing.Tests.PlayMode
 {
     public sealed class SlidingDoorsPlayTests
     {
+        const float ShutEdgeZ = 0.00748f;
+        const float FarEdgeZ = 1.57189f;
+        const float TravelMetres = 1.01163f;
+        const float PoleRadius = 0.02171f;
+
         TestApron m_Apron;
         VehicleProfile m_CartProfile;
 
@@ -26,6 +31,37 @@ namespace BelowTheWing.Tests.PlayMode
             Object.DestroyImmediate(m_CartProfile);
         }
 
+        static Mesh ADoorMesh()
+        {
+            var near = ShutEdgeZ;
+            var far = FarEdgeZ;
+            var acrossHalf = PoleRadius;
+            var tall = 0.74f;
+
+            var vertices = new[]
+            {
+                new Vector3(-acrossHalf, -tall, near), new Vector3(acrossHalf, -tall, near),
+                new Vector3(-acrossHalf, tall, near), new Vector3(acrossHalf, tall, near),
+                new Vector3(-acrossHalf, -tall, far), new Vector3(acrossHalf, -tall, far),
+                new Vector3(-acrossHalf, tall, far), new Vector3(acrossHalf, tall, far)
+            };
+
+            var mesh = new Mesh { vertices = vertices };
+            mesh.SetTriangles(new[] { 0, 1, 2, 2, 1, 3, 4, 6, 5, 5, 6, 7 }, 0);
+            mesh.RecalculateNormals();
+
+            var slide = new Vector3[vertices.Length];
+
+            for (var i = 0; i < 4; i++)
+            {
+                slide[i] = new Vector3(0f, 0f, TravelMetres);
+            }
+
+            mesh.AddBlendShapeFrame("Open", 100f, slide, null, null);
+
+            return mesh;
+        }
+
         SlidingDoorPole APoleOnACart(out VehicleController cart)
         {
             cart = m_Apron.AddVehicle(
@@ -33,7 +69,8 @@ namespace BelowTheWing.Tests.PlayMode
 
             var panel = new GameObject("Door1").AddComponent<SkinnedMeshRenderer>();
             panel.transform.SetParent(cart.transform, worldPositionStays: false);
-            panel.transform.localPosition = new Vector3(-0.83f, 1.21f, 0.79f);
+            panel.transform.localPosition = new Vector3(-0.83464f, 1.20934f, 0f);
+            panel.sharedMesh = ADoorMesh();
 
             SlidingDoors.Build(cart.gameObject, cart.Shape, null);
 
@@ -43,18 +80,26 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ADoorPoleSlidesAlongTheCartWhenItIsPushedAlongIt()
+        public IEnumerator ADoorPoleStartsShutWhereTheModelPutsIt()
+        {
+            var pole = APoleOnACart(out _);
+
+            yield return Steps.Seconds(0.5f);
+
+            Assert.That(pole.Openness, Is.EqualTo(0f).Within(0.02f),
+                $"a cart put down should have its doors shut, not sitting at {pole.Openness:P0} open");
+            Assert.That(pole.transform.localPosition.z, Is.EqualTo(0.02919f).Within(5e-3f));
+        }
+
+        [UnityTest]
+        public IEnumerator ADoorPoleSlidesAllTheWayOpenWhenItIsPushedAlongTheCart()
         {
             var pole = APoleOnACart(out var cart);
 
             yield return Steps.Seconds(0.5f);
 
-            Assert.That(pole.Openness, Is.EqualTo(0f).Within(0.05f),
-                $"a cart put down should have its doors shut, not sitting at " +
-                $"{pole.Openness:P0} open");
-
             pole.GetComponent<Rigidbody>().AddForce(
-                cart.transform.forward * -12f, ForceMode.Impulse);
+                cart.transform.forward * 12f, ForceMode.Impulse);
 
             var widest = 0f;
 
@@ -64,41 +109,25 @@ namespace BelowTheWing.Tests.PlayMode
                 widest = Mathf.Max(widest, pole.Openness);
             }
 
-            Assert.That(widest, Is.GreaterThan(0.8f),
-                $"pushed along the cart at 2 m/s the pole only ever reached {widest:P0} open. " +
-                "A door that cannot be slid open by pushing it along its own track is not a door");
+            Assert.That(widest, Is.GreaterThan(0.95f),
+                $"pushed along the cart at 2 m/s the pole only ever reached {widest:P0} open");
         }
 
         [UnityTest]
-        public IEnumerator ADoorSlammedIntoItsStopComesBackOffIt()
+        public IEnumerator ADoorSlammedIntoItsStopStaysThereRatherThanBouncingBack()
         {
             var pole = APoleOnACart(out var cart);
-            var body = pole.GetComponent<Rigidbody>();
 
             yield return Steps.Seconds(0.5f);
 
-            body.AddForce(cart.transform.forward * -60f, ForceMode.Impulse);
+            pole.GetComponent<Rigidbody>().AddForce(
+                cart.transform.forward * 60f, ForceMode.Impulse);
 
-            var slammed = false;
-            var cameBack = 0f;
+            yield return Steps.Seconds(2f);
 
-            for (var step = 0; step < 200; step++)
-            {
-                yield return new WaitForFixedUpdate();
-
-                if (pole.Openness > 0.99f)
-                {
-                    slammed = true;
-                }
-                else if (slammed)
-                {
-                    cameBack = Mathf.Max(cameBack, 1f - pole.Openness);
-                }
-            }
-
-            Assert.That(slammed, Is.True, "a 10 m/s shove has to reach the end of a 1.57 m track");
-            Assert.That(cameBack, Is.GreaterThan(0.02f),
-                "a door slammed into its stop has to bounce back off it rather than stick there");
+            Assert.That(pole.Openness, Is.EqualTo(1f).Within(0.02f),
+                $"slammed open at 10 m/s the door settled at {pole.Openness:P0}. A door with no " +
+                "spring on it stops where it is shoved and stays there");
         }
 
         [UnityTest]

@@ -46,20 +46,18 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void EveryDoorPanelAndFabricOnTheCartCarriesTheBlendShapeItIsDrivenBy()
+        public void EveryDoorPanelAndVinylCarriesExactlyOneShapeToBeDrivenBy()
         {
             foreach (var skin in m_Cart.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
-                if (skin.name.StartsWith("Door_Fabric"))
+                if (!skin.name.StartsWith("Door"))
                 {
-                    Assert.That(skin.sharedMesh.GetBlendShapeIndex("Closed"), Is.GreaterThanOrEqualTo(0),
-                        $"{skin.name} is driven by a Closed shape that its mesh does not have");
+                    continue;
                 }
-                else if (skin.name.StartsWith("Door"))
-                {
-                    Assert.That(skin.sharedMesh.GetBlendShapeIndex("Open"), Is.GreaterThanOrEqualTo(0),
-                        $"{skin.name} is driven by an Open shape that its mesh does not have");
-                }
+
+                Assert.That(skin.sharedMesh.blendShapeCount, Is.EqualTo(1),
+                    $"{skin.name} is driven by shape 0 and nothing else, so a second shape means " +
+                    "the model changed and the door no longer knows what it is driving");
             }
         }
 
@@ -76,19 +74,61 @@ namespace BelowTheWing.Tests.EditMode
         }
     
         [Test]
-        public void ADoorPoleSlidesFreelyAndOnlyBouncesWhenItReachesAStop()
+        public void ADoorPoleSlidesFreelyWithNoSpringAndNoBounce()
         {
             foreach (var pole in m_Cart.GetComponentsInChildren<SlidingDoorPole>(true))
             {
                 var rail = pole.GetComponent<ConfigurableJoint>();
 
                 Assert.That(rail.zMotion, Is.EqualTo(ConfigurableJointMotion.Limited));
+                Assert.That(rail.xMotion, Is.EqualTo(ConfigurableJointMotion.Locked));
                 Assert.That(rail.linearLimitSpring.spring, Is.EqualTo(0f).Within(1e-4f),
-                    $"{pole.name} has a spring pulling it back to the middle of its track, so it " +
-                    "sits half open and jiggles instead of sliding where it is pushed");
-                Assert.That(rail.linearLimit.bounciness, Is.GreaterThan(0f),
-                    $"{pole.name} has to bounce off its stop when it is slammed");
+                    $"{pole.name} has a spring on its track, and a door is meant to slide and stop");
+                Assert.That(rail.linearLimit.bounciness, Is.EqualTo(0f).Within(1e-4f),
+                    $"{pole.name} bounces off its stop, and a door is meant to slide and stop");
             }
+        }
+
+        [Test]
+        public void TheGrabbablePoleSitsWhereTheModelPutsItShutAndOpen()
+        {
+            var pole = APoleCalled("Door1 pole");
+            var grab = pole.GetComponent<CapsuleCollider>();
+
+            Assert.That(grab.radius, Is.EqualTo(0.02171f).Within(5e-4f),
+                "the pole a player grabs is 0.02171 m across in the model");
+            Assert.That(pole.transform.localPosition.z, Is.EqualTo(0.02919f).Within(5e-4f),
+                "a shut door puts its moving pole at 0.02919 m, near the middle of the cart");
+
+            var rail = pole.GetComponent<ConfigurableJoint>();
+
+            Assert.That(rail.linearLimit.limit * 2f, Is.EqualTo(1.01162f).Within(1e-3f),
+                "the pole travels 1.01162 m, from 0.02919 m shut out to 1.04081 m open");
+            Assert.That(rail.connectedAnchor.z, Is.EqualTo(0.535f).Within(1e-3f),
+                "the rail is anchored half way along that travel");
+        }
+
+        [Test]
+        public void TheDoorsOnTheBackOfTheCartRunTheOtherWay()
+        {
+            var pole = APoleCalled("Door3 pole");
+
+            Assert.That(pole.transform.localPosition.z, Is.EqualTo(-0.02919f).Within(5e-4f),
+                "a door on the back half opens toward the back, so every figure is mirrored");
+        }
+
+        SlidingDoorPole APoleCalled(string called)
+        {
+            foreach (var pole in m_Cart.GetComponentsInChildren<SlidingDoorPole>(true))
+            {
+                if (pole.name == called)
+                {
+                    return pole;
+                }
+            }
+
+            Assert.Fail($"no pole called {called} was raised");
+            return null;
         }
 
         [Test]

@@ -7,39 +7,46 @@ namespace BelowTheWing.Tests.EditMode
     public sealed class CartFittingsTests
     {
         [Test]
-        public void APoleAtTheStartOfItsTrackLeavesTheDoorShut()
+        public void APoleAtTheStartOfItsTravelLeavesTheDoorShut()
         {
-            Assert.That(SlidingDoor.OpennessAt(0f, 1.5f), Is.EqualTo(0f).Within(1e-4f));
-            Assert.That(SlidingDoor.StillCoveredMetres(0f, 1.5f), Is.EqualTo(1.5f).Within(1e-4f),
-                "a shut door has to cover the whole opening, or a bag walks straight through it");
+            Assert.That(SlidingDoor.OpennessAt(0f, 1.01162f), Is.EqualTo(0f).Within(1e-4f));
+            Assert.That(SlidingDoor.ShapeWeight(0f), Is.EqualTo(0f).Within(1e-3f));
         }
 
         [Test]
-        public void APoleAtTheEndOfItsTrackLeavesNothingCovered()
+        public void APoleAtTheEndOfItsTravelLeavesTheDoorFullyOpen()
         {
-            Assert.That(SlidingDoor.OpennessAt(1.5f, 1.5f), Is.EqualTo(1f).Within(1e-4f));
-            Assert.That(SlidingDoor.StillCoveredMetres(1f, 1.5f), Is.EqualTo(0f).Within(1e-4f));
+            Assert.That(SlidingDoor.OpennessAt(1.01162f, 1.01162f), Is.EqualTo(1f).Within(1e-4f));
+            Assert.That(SlidingDoor.ShapeWeight(1f), Is.EqualTo(100f).Within(1e-3f));
         }
 
         [Test]
-        public void TheCoverStaysAnchoredToTheShutEndAsItOpens()
+        public void APoleDraggedPastItsTravelIsStillReadAsFullyOpenOrFullyShut()
         {
-            var shut = SlidingDoor.CoverSitsAt(0f, 2f);
-            var half = SlidingDoor.CoverSitsAt(0.5f, 2f);
-            var open = SlidingDoor.CoverSitsAt(1f, 2f);
-
-            Assert.That(shut, Is.EqualTo(0f).Within(1e-4f), "shut, it is centred on the opening");
-            Assert.That(half, Is.EqualTo(-0.5f).Within(1e-4f),
-                "half open, the metre that is left sits against the shut end rather than floating");
-            Assert.That(open, Is.EqualTo(-1f).Within(1e-4f));
+            Assert.That(SlidingDoor.OpennessAt(2.5f, 1.01162f), Is.EqualTo(1f).Within(1e-4f));
+            Assert.That(SlidingDoor.OpennessAt(-0.4f, 1.01162f), Is.EqualTo(0f).Within(1e-4f));
         }
 
         [Test]
-        public void APoleDraggedPastItsTrackIsStillReadAsFullyOpenOrFullyShut()
+        public void TheCoverRunsFromTheMovingPoleToTheFixedOne()
         {
-            Assert.That(SlidingDoor.OpennessAt(-0.4f, 1.5f), Is.EqualTo(0f).Within(1e-4f));
-            Assert.That(SlidingDoor.OpennessAt(2.9f, 1.5f), Is.EqualTo(1f).Within(1e-4f),
-                "a pole bouncing past the end of its spring must not drive the shape key past one");
+            Assert.That(SlidingDoor.CoveredMetres(0.02919f, 1.55018f), Is.EqualTo(1.52099f).Within(1e-4f),
+                "a shut door covers everything between the two poles, or a bag walks through it");
+            Assert.That(SlidingDoor.CoveredMetres(1.04081f, 1.55018f), Is.EqualTo(0.50937f).Within(1e-4f),
+                "an open door still has its vinyl bunched at the end, which is still solid");
+
+            Assert.That(SlidingDoor.CoverSitsAt(0.02919f, 1.55018f), Is.EqualTo(0.789685f).Within(1e-4f));
+            Assert.That(SlidingDoor.CoverSitsAt(1.04081f, 1.55018f), Is.EqualTo(1.295495f).Within(1e-4f),
+                "the cover stays centred between the poles, so it shrinks toward the end as it opens");
+        }
+
+        [Test]
+        public void ADoorOnTheFarSideOfTheCartCoversTheSameSpanMirrored()
+        {
+            Assert.That(
+                SlidingDoor.CoveredMetres(-0.02919f, -1.55018f), Is.EqualTo(1.52099f).Within(1e-4f));
+            Assert.That(
+                SlidingDoor.CoverSitsAt(-0.02919f, -1.55018f), Is.EqualTo(-0.789685f).Within(1e-4f));
         }
 
         [Test]
@@ -151,21 +158,15 @@ namespace BelowTheWing.Tests.EditMode
         }
     
         [Test]
-        public void ThePanelAndTheVinylShowTheSameDoorAtEveryPosition()
+        public void ThePanelAndTheVinylTakeTheSameWeightAtEveryPosition()
         {
-            Assert.That(SlidingDoor.PanelWeight(0f), Is.EqualTo(0f).Within(1e-3f));
-            Assert.That(SlidingDoor.FabricWeight(0f), Is.EqualTo(100f).Within(1e-3f),
-                "Door1 carries one shape called Open and Door_Fabric1 one called Closed, so a shut " +
-                "door is Open at 0 and Closed at 100; driving only one of them is what left the " +
-                "frame and the vinyl showing different doors");
-
-            Assert.That(SlidingDoor.PanelWeight(1f), Is.EqualTo(100f).Within(1e-3f));
-            Assert.That(SlidingDoor.FabricWeight(1f), Is.EqualTo(0f).Within(1e-3f));
-
-            Assert.That(
-                SlidingDoor.PanelWeight(0.25f) + SlidingDoor.FabricWeight(0.25f),
-                Is.EqualTo(100f).Within(1e-3f),
-                "the two weights are complements at every position, or the halves drift apart");
+            Assert.That(SlidingDoor.ShapeWeight(0.25f), Is.EqualTo(25f).Within(1e-3f),
+                "Door1 carries one shape, Open, and Door_Fabric1 one shape, Closed, and measuring " +
+                "the baked meshes shows the two line up only when both take the same weight: at 0 " +
+                "the panel spans 0.00748 to 1.57189 and the vinyl 0.04329 to 1.53521, at 100 the " +
+                "panel spans 1.01911 to 1.57189 and the vinyl 1.03353 to 1.54316");
+            Assert.That(SlidingDoor.ShapeWeight(1.4f), Is.EqualTo(100f).Within(1e-3f));
+            Assert.That(SlidingDoor.ShapeWeight(-0.2f), Is.EqualTo(0f).Within(1e-3f));
         }
     }
 }

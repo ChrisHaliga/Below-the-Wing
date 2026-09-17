@@ -10,22 +10,22 @@ namespace BelowTheWing.Vehicles
         Transform m_Cover;
         Vector3 m_ShutAt;
         Vector3 m_Along;
-        float m_TrackMetres;
-        float m_OpeningMetres;
+        float m_TravelMetres;
+        float m_FixedPoleAt;
 
         public float Openness { get; private set; }
 
         public void Runs(
             SkinnedMeshRenderer panel, SkinnedMeshRenderer fabric, Transform cover,
-            Vector3 shutAtLocal, Vector3 alongLocal, float trackMetres, float openingMetres)
+            Vector3 shutAtLocal, Vector3 alongLocal, float travelMetres, float fixedPoleAt)
         {
             m_Panel = panel;
             m_Fabric = fabric;
             m_Cover = cover;
             m_ShutAt = shutAtLocal;
             m_Along = alongLocal.normalized;
-            m_TrackMetres = trackMetres;
-            m_OpeningMetres = openingMetres;
+            m_TravelMetres = travelMetres;
+            m_FixedPoleAt = fixedPoleAt;
         }
 
         void FixedUpdate()
@@ -36,21 +36,26 @@ namespace BelowTheWing.Vehicles
             }
 
             Openness = SlidingDoor.OpennessAt(
-                Vector3.Dot(transform.localPosition - m_ShutAt, m_Along), m_TrackMetres);
+                Vector3.Dot(transform.localPosition - m_ShutAt, m_Along), m_TravelMetres);
 
-            Show(m_Panel, SlidingDoor.PanelWeight(Openness));
-            Show(m_Fabric, SlidingDoor.FabricWeight(Openness));
+            var weight = SlidingDoor.ShapeWeight(Openness);
+
+            Show(m_Panel, weight);
+            Show(m_Fabric, weight);
 
             if (m_Cover == null)
             {
                 return;
             }
 
-            var covered = SlidingDoor.StillCoveredMetres(Openness, m_OpeningMetres);
-            var sits = SlidingDoor.CoverSitsAt(Openness, m_OpeningMetres);
+            var along = transform.localPosition.z;
+            var was = m_Cover.localScale;
 
-            m_Cover.localPosition = m_ShutAt + (m_Along * (sits + (m_OpeningMetres * 0.5f)));
-            m_Cover.localScale = new Vector3(0.06f, m_Cover.localScale.y, Mathf.Max(covered, 0.001f));
+            m_Cover.localPosition = new Vector3(
+                m_ShutAt.x, m_ShutAt.y, SlidingDoor.CoverSitsAt(along, m_FixedPoleAt));
+
+            m_Cover.localScale = new Vector3(
+                was.x, was.y, Mathf.Max(SlidingDoor.CoveredMetres(along, m_FixedPoleAt), 0.001f));
         }
 
         static void Show(SkinnedMeshRenderer on, float weight)

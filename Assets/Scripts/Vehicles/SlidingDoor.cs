@@ -4,17 +4,15 @@ namespace BelowTheWing.Vehicles
 {
     public static class SlidingDoor
     {
-        public static float PanelWeight(float openness) => Mathf.Clamp01(openness) * 100f;
+        public static float ShapeWeight(float openness) => Mathf.Clamp01(openness) * 100f;
 
-        public static float FabricWeight(float openness) => (1f - Mathf.Clamp01(openness)) * 100f;
+        public static float OpennessAt(float travelledMetres, float travelMetres)
+            => travelMetres <= 0f ? 0f : Mathf.Clamp01(travelledMetres / travelMetres);
 
-        public static float OpennessAt(float poleMetres, float trackMetres)
-            => trackMetres <= 0f ? 0f : Mathf.Clamp01(poleMetres / trackMetres);
+        public static float CoveredMetres(float poleAt, float fixedPoleAt)
+            => Mathf.Abs(fixedPoleAt - poleAt);
 
-        public static float StillCoveredMetres(float openness, float openingMetres)
-            => openingMetres * Mathf.Clamp01(1f - openness);
-
-        public static float CoverSitsAt(float openness, float openingMetres)
-            => (StillCoveredMetres(openness, openingMetres) - openingMetres) * 0.5f;
+        public static float CoverSitsAt(float poleAt, float fixedPoleAt)
+            => (poleAt + fixedPoleAt) * 0.5f;
     }
 }

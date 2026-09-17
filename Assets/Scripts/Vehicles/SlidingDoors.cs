@@ -8,14 +8,10 @@ namespace BelowTheWing.Vehicles
         public const string PolesName = "Doors";
 
         const float PoleKg = 6f;
-        const float BouncesBackBy = 0.35f;
-        const float PoleThickness = 0.06f;
 
         public static void Build(GameObject vehicle, VehicleShape shape, PhysicsMaterial bodywork)
         {
-            var already = vehicle.transform.Find(PolesName);
-
-            if (already != null || shape == null)
+            if (vehicle.transform.Find(PolesName) != null || shape == null)
             {
                 return;
             }
@@ -25,15 +21,15 @@ namespace BelowTheWing.Vehicles
             for (var i = 1; i <= 4; i++)
             {
                 var panel = Find(vehicle.transform, $"Door{i}");
-                var fabric = Find(vehicle.transform, $"Door_Fabric{i}");
 
-                if (panel == null)
+                if (panel == null || panel.sharedMesh == null
+                    || panel.sharedMesh.blendShapeCount == 0)
                 {
                     continue;
                 }
 
                 poles ??= Container(vehicle);
-                Raise(vehicle, poles, panel, fabric, shape, bodywork);
+                Raise(vehicle, poles, panel, Find(vehicle.transform, $"Door_Fabric{i}"), bodywork);
             }
         }
 
@@ -60,21 +56,27 @@ namespace BelowTheWing.Vehicles
 
         static void Raise(
             GameObject vehicle, Transform poles, SkinnedMeshRenderer panel,
-            SkinnedMeshRenderer fabric, VehicleShape shape, PhysicsMaterial bodywork)
+            SkinnedMeshRenderer fabric, PhysicsMaterial bodywork)
         {
-            var onTheCart = vehicle.transform.InverseTransformPoint(panel.bounds.center);
-            var inside = shape.InteriorLocal;
+            var shut = InCartSpace(panel, vehicle.transform, 0f);
+            var open = InCartSpace(panel, vehicle.transform, 100f);
 
-            var outerEdge = Mathf.Sign(onTheCart.z) * inside.extents.z;
-            var track = Mathf.Abs(outerEdge);
+            var towardsTheEnd = Mathf.Sign(shut.center.z);
+            var radius = shut.size.x * 0.5f;
+
+            var shutAt = NearestTheMiddle(shut, towardsTheEnd) + (towardsTheEnd * radius);
+            var openAt = NearestTheMiddle(open, towardsTheEnd) + (towardsTheEnd * radius);
+            var fixedPoleAt = FurthestFromTheMiddle(shut, towardsTheEnd) - (towardsTheEnd * radius);
 
             var pole = new GameObject($"{panel.name} pole");
             pole.transform.SetParent(poles, worldPositionStays: false);
-            pole.transform.localPosition = new Vector3(onTheCart.x, inside.center.y, outerEdge);
+            pole.transform.localPosition = new Vector3(shut.center.x, shut.center.y, shutAt);
 
-            var bar = pole.AddComponent<BoxCollider>();
-            bar.size = new Vector3(PoleThickness, inside.size.y * 0.9f, PoleThickness);
-            bar.sharedMaterial = bodywork;
+            var grab = pole.AddComponent<CapsuleCollider>();
+            grab.direction = 1;
+            grab.radius = radius;
+            grab.height = shut.size.y;
+            grab.sharedMaterial = bodywork;
 
             var body = pole.AddComponent<Rigidbody>();
             body.mass = PoleKg;
@@ -83,11 +85,11 @@ namespace BelowTheWing.Vehicles
 
             pole.AddComponent<HandUse>().As = HandUse.Category.HoldOnto;
 
-            OnItsTrack(pole, vehicle.GetComponent<Rigidbody>(), track);
+            OnItsTrack(pole, vehicle.GetComponent<Rigidbody>(), shutAt, openAt);
 
             var cover = new GameObject($"{panel.name} cover").transform;
             cover.SetParent(poles, worldPositionStays: false);
-            cover.localScale = new Vector3(PoleThickness, inside.size.y, 0.001f);
+            cover.localScale = new Vector3(radius * 2f, shut.size.y, 0.001f);
 
             var sheet = cover.gameObject.AddComponent<BoxCollider>();
             sheet.size = Vector3.one;
@@ -95,10 +97,53 @@ namespace BelowTheWing.Vehicles
 
             pole.AddComponent<SlidingDoorPole>().Runs(
                 panel, fabric, cover,
-                pole.transform.localPosition, new Vector3(0f, 0f, -Mathf.Sign(outerEdge)),
-                track, track);
+                pole.transform.localPosition, new Vector3(0f, 0f, towardsTheEnd),
+                Mathf.Abs(openAt - shutAt), fixedPoleAt);
 
-            LeaveTheCartAlone(bar, vehicle);
+            LeaveTheCartAlone(grab, vehicle);
+        }
+
+        static float NearestTheMiddle(Bounds box, float towardsTheEnd)
+            => towardsTheEnd > 0f ? box.min.z : box.max.z;
+
+        static float FurthestFromTheMiddle(Bounds box, float towardsTheEnd)
+            => towardsTheEnd > 0f ? box.max.z : box.min.z;
+
+        static Bounds InCartSpace(SkinnedMeshRenderer panel, Transform cart, float weight)
+        {
+            var was = panel.GetBlendShapeWeight(0);
+            panel.SetBlendShapeWeight(0, weight);
+
+            var baked = new Mesh();
+            panel.BakeMesh(baked, useScale: true);
+
+            var vertices = baked.vertices;
+            var box = new Bounds(At(cart, panel.transform, vertices[0]), Vector3.zero);
+
+            foreach (var vertex in vertices)
+            {
+                box.Encapsulate(At(cart, panel.transform, vertex));
+            }
+
+            Discard(baked);
+            panel.SetBlendShapeWeight(0, was);
+
+            return box;
+        }
+
+        static Vector3 At(Transform cart, Transform panel, Vector3 vertex)
+            => cart.InverseTransformPoint(panel.TransformPoint(vertex));
+
+        static void Discard(Object baked)
+        {
+            if (Application.isPlaying)
+            {
+                Object.Destroy(baked);
+            }
+            else
+            {
+                Object.DestroyImmediate(baked);
+            }
         }
 
         static void LeaveTheCartAlone(Collider bar, GameObject vehicle)
@@ -114,14 +159,16 @@ namespace BelowTheWing.Vehicles
             }
         }
 
-        static void OnItsTrack(GameObject pole, Rigidbody cart, float trackMetres)
+        static void OnItsTrack(GameObject pole, Rigidbody cart, float shutAt, float openAt)
         {
             var rail = pole.AddComponent<ConfigurableJoint>();
             rail.connectedBody = cart;
             rail.autoConfigureConnectedAnchor = false;
             rail.anchor = Vector3.zero;
-            rail.connectedAnchor = cart.transform.InverseTransformPoint(pole.transform.position)
-                                   + new Vector3(0f, 0f, -Mathf.Sign(pole.transform.localPosition.z) * trackMetres * 0.5f);
+            rail.connectedAnchor = new Vector3(
+                pole.transform.localPosition.x,
+                pole.transform.localPosition.y,
+                (shutAt + openAt) * 0.5f);
 
             rail.axis = Vector3.right;
             rail.secondaryAxis = Vector3.up;
@@ -136,8 +183,8 @@ namespace BelowTheWing.Vehicles
 
             rail.linearLimit = new SoftJointLimit
             {
-                limit = trackMetres * 0.5f,
-                bounciness = BouncesBackBy
+                limit = Mathf.Abs(openAt - shutAt) * 0.5f,
+                bounciness = 0f
             };
 
             rail.projectionMode = JointProjectionMode.PositionAndRotation;
