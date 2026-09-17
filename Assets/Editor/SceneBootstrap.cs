@@ -5,6 +5,7 @@ using BelowTheWing.Apron;
 using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Diagnostics;
+using BelowTheWing.Menu;
 using BelowTheWing.Net;
 using BelowTheWing.Session;
 using BelowTheWing.Vehicles;
@@ -14,6 +15,7 @@ using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace BelowTheWing.EditorTools
 {
@@ -22,6 +24,8 @@ namespace BelowTheWing.EditorTools
         const string PrefabFolder = "Assets/Content/Prefabs";
         const string ScenePath = "Assets/Scenes/Apron.unity";
         const string ApronMaterialPath = "Assets/Content/ApronConcrete.mat";
+        const string ThemePath = "Assets/UI/MenuTheme.tss";
+        const string PanelSettingsPath = "Assets/UI/MenuPanelSettings.asset";
 
         const string DefaultPrefabListPath = "Assets/DefaultNetworkPrefabs.asset";
 
@@ -640,12 +644,12 @@ namespace BelowTheWing.EditorTools
             var gateway = manager.gameObject.AddComponent<SessionGateway>();
             var broker = manager.gameObject.AddComponent<NetworkOwnershipBroker>();
 
-            Set(new GameObject("Session Entry Screen").AddComponent<SessionEntryScreen>(), "m_Gateway", gateway);
             var readout = new GameObject("Ramp Readout").AddComponent<RampReadout>();
 
             var sessionObject = new GameObject("Ramp Session");
             sessionObject.AddComponent<NetworkObject>();
             var session = sessionObject.AddComponent<RampSession>();
+            sessionObject.AddComponent<LobbyRoster>();
 
             Set(session, "m_AircraftProfile", aircraftProfile);
             Set(session, "m_CrewProfile", crewProfile);
@@ -663,9 +667,62 @@ namespace BelowTheWing.EditorTools
             Set(session, "m_Camera", camera);
             Set(session, "m_Readout", readout);
 
+            BuildMenu(gateway, session, aircraftProfile, crewProfile, tractor, cart, aircraft, camera);
+
             EditorSceneManager.SaveScene(scene, ScenePath);
             GiveTheSceneObjectsTheirIdentities();
             AddToBuildSettings();
+        }
+
+        static void BuildMenu(
+            SessionGateway gateway,
+            RampSession session,
+            AircraftProfile aircraftProfile,
+            CrewProfile crewProfile,
+            GameObject tractor,
+            GameObject cart,
+            GameObject aircraft,
+            FollowCamera playingCamera)
+        {
+            var eye = new GameObject("Menu Camera");
+            eye.AddComponent<Camera>();
+            var menuCamera = eye.AddComponent<MenuCamera>();
+
+            playingCamera.GetComponent<Camera>().enabled = false;
+
+            var menu = new GameObject("Menu");
+            var document = menu.AddComponent<UIDocument>();
+            document.panelSettings = MenuPanel();
+            document.sortingOrder = 100f;
+
+            var driver = menu.AddComponent<MenuDriver>();
+
+            Set(driver, "m_Gateway", gateway);
+            Set(driver, "m_Session", session);
+            Set(driver, "m_Camera", menuCamera);
+            Set(driver, "m_PlayingCamera", playingCamera.GetComponent<Camera>());
+            Set(driver, "m_AircraftProfile", aircraftProfile);
+            Set(driver, "m_CrewProfile", crewProfile);
+            Set(driver, "m_TractorPrefab", tractor);
+            Set(driver, "m_CartPrefab", cart);
+            Set(driver, "m_AircraftPrefab", aircraft);
+        }
+
+        static PanelSettings MenuPanel()
+        {
+            Directory.CreateDirectory("Assets/UI");
+
+            AssetDatabase.DeleteAsset(PanelSettingsPath);
+
+            var settings = ScriptableObject.CreateInstance<PanelSettings>();
+            settings.name = "Menu panel";
+            settings.themeStyleSheet = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(ThemePath);
+            settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            settings.referenceResolution = new Vector2Int(1920, 1080);
+
+            AssetDatabase.CreateAsset(settings, PanelSettingsPath);
+
+            return settings;
         }
 
         static void GiveTheSceneObjectsTheirIdentities()

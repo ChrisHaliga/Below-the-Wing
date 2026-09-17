@@ -56,11 +56,24 @@ namespace BelowTheWing.Session
         readonly Reclaiming m_Reclaiming = new Reclaiming();
         LocalPlayerRig m_LocalPlayer;
 
+        CrewCharacter m_OwnCrew;
+        bool m_HeldBack;
+        bool m_OnShift;
+
         public IReadOnlyList<CartChain> Trains => m_Trains.Trains;
 
         public IReadOnlyList<VehicleController> Vehicles => m_OnTheApron;
 
         void Awake() => m_Trains = new TrainRegistry(m_Coupling);
+
+        public void HoldTheCrewBack() => m_HeldBack = true;
+
+        public void StartTheShift()
+        {
+            m_OnShift = true;
+
+            HandOverTheCrew();
+        }
 
         public override void OnNetworkSpawn()
         {
@@ -203,8 +216,22 @@ namespace BelowTheWing.Session
             crew.GetComponent<ApronIdentity>().Called($"Player {NetworkManager.LocalClientId}");
             crew.Spawn();
 
-            m_LocalPlayer = new LocalPlayerRig(
-                crew.GetComponent<CrewCharacter>(), m_Camera, m_Broker, () => Vehicles, this);
+            m_OwnCrew = crew.GetComponent<CrewCharacter>();
+
+            if (!m_HeldBack || m_OnShift)
+            {
+                HandOverTheCrew();
+            }
+        }
+
+        void HandOverTheCrew()
+        {
+            if (m_OwnCrew == null || m_LocalPlayer != null)
+            {
+                return;
+            }
+
+            m_LocalPlayer = new LocalPlayerRig(m_OwnCrew, m_Camera, m_Broker, () => Vehicles, this);
         }
 
         static Placement FirstFreeArrival(IReadOnlyList<Placement> arrivals)
