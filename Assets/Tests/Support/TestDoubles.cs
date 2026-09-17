@@ -64,6 +64,52 @@ namespace BelowTheWing.Tests.Support
 
 namespace BelowTheWing.Tests.Support
 {
+    public sealed class DeferredBroker : IOwnershipBroker
+    {
+        readonly List<(IReadOnlyList<VehicleController> Vehicles, Action<bool> Answer)> m_Pending
+            = new List<(IReadOnlyList<VehicleController>, Action<bool>)>();
+
+        readonly Dictionary<VehicleController, ulong> m_Owners = new Dictionary<VehicleController, ulong>();
+
+        public ulong LocalClientId => 1;
+
+        public int Waiting => m_Pending.Count;
+
+        public List<VehicleController> HandedBack { get; } = new List<VehicleController>();
+
+        public ulong OwnerOf(VehicleController vehicle)
+            => m_Owners.TryGetValue(vehicle, out var id) ? id : 0;
+
+        public bool OwnedByUs(VehicleController vehicle) => OwnerOf(vehicle) == LocalClientId;
+
+        public void RequestAll(IReadOnlyList<VehicleController> vehicles, Action<bool> onResult)
+            => m_Pending.Add((new List<VehicleController>(vehicles), onResult));
+
+        public void HandBack(IReadOnlyList<VehicleController> vehicles)
+        {
+            foreach (var vehicle in vehicles)
+            {
+                HandedBack.Add(vehicle);
+                m_Owners[vehicle] = 0;
+            }
+        }
+
+        public void Answer(int request, bool granted)
+        {
+            var (vehicles, answer) = m_Pending[request];
+
+            if (granted)
+            {
+                foreach (var vehicle in vehicles)
+                {
+                    m_Owners[vehicle] = LocalClientId;
+                }
+            }
+
+            answer?.Invoke(granted);
+        }
+    }
+
     public sealed class SilentBroker : IOwnershipBroker
     {
         public List<IReadOnlyList<VehicleController>> Requests { get; } = new List<IReadOnlyList<VehicleController>>();

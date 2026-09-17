@@ -5,6 +5,7 @@ using BelowTheWing.Diagnostics;
 using BelowTheWing.Net;
 using BelowTheWing.Vehicles;
 using Unity.Netcode;
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Session
@@ -65,12 +66,9 @@ namespace BelowTheWing.Session
         {
             if (m_Broker == null)
             {
-                Debug.LogError(
-                    $"{nameof(RampSession)} has no ownership broker. Nothing would decide which machine " +
-                    "holds which train, so every copy of every vehicle would try to simulate itself and " +
-                    "fight what arrives over the network.", this);
-                enabled = false;
-                return;
+                throw MisbuiltException.Refuse(
+                    this,
+                    "has no ownership broker, so nothing would decide which machine holds which train");
             }
 
             if (NetworkManager.LocalClient.IsSessionOwner)

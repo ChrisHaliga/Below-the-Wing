@@ -2,6 +2,7 @@
     "name": "BelowTheWing.Net",
     "rootNamespace": "BelowTheWing.Net",
     "references": [
+        "BelowTheWing.Wiring",
         "BelowTheWing.Vehicles",
         "Unity.Netcode.Runtime",
         "Unity.Services.Core",

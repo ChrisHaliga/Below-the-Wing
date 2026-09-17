@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BelowTheWing.Cargo;
 using BelowTheWing.Vehicles;
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Crew
@@ -137,11 +138,8 @@ namespace BelowTheWing.Crew
         {
             if (m_Profile == null)
             {
-                Debug.LogError(
-                    $"'{name}' has no crew profile, so it keeps whatever mass and shape its prefab " +
-                    "happened to have -- typically one kilogram and the wrong collider -- and the " +
-                    "first thing that touches it sends it across the apron.", this);
-                enabled = false;
+                throw MisbuiltException.Refuse(
+                    this, "has no crew profile, so it keeps whatever mass and shape its prefab happened to have");
             }
         }
 

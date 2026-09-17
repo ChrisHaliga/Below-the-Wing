@@ -18,7 +18,7 @@ namespace BelowTheWing.Tests.Multiplayer
         const int BehindTheTractor = 1;
 
         static readonly Regex SpawnedWithNoSession =
-            new Regex($"no {nameof(RampSession)} in the scene");
+            new Regex("was spawned with no RampSession");
 
         GameObject m_TractorPrefab;
         GameObject m_CartPrefab;
@@ -78,7 +78,7 @@ namespace BelowTheWing.Tests.Multiplayer
             {
                 for (var i = 0; i < vehicles; i++)
                 {
-                    LogAssert.Expect(LogType.Error, SpawnedWithNoSession);
+                    LogAssert.Expect(LogType.Exception, SpawnedWithNoSession);
                 }
             }
         }

@@ -1,3 +1,4 @@
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Apron
@@ -15,10 +16,9 @@ namespace BelowTheWing.Apron
         {
             if (m_Profile == null)
             {
-                Debug.LogError(
-                    $"'{name}' has no aircraft profile, so it keeps the prefab's collider and is not " +
-                    "the size of an aircraft. Everything parks relative to it.", this);
-                return;
+                throw MisbuiltException.Refuse(
+                    this,
+                    "has no aircraft profile, so it is not the size of an aircraft and everything parks relative to it");
             }
 
             var body = GetComponent<Rigidbody>();

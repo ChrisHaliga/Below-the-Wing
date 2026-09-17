@@ -120,33 +120,44 @@ namespace BelowTheWing.Crew
             m_AskedFor = wanted;
             var train = wanted.Chain;
 
-            train.RequestOwnership(m_Broker, granted =>
+            train.RequestOwnership(m_Broker, granted => Answered(wanted, train, intentSource, granted));
+        }
+
+        void Answered(VehicleController wanted, CartChain train, IDriveIntentSource intentSource, bool granted)
+        {
+            var stillWanted = ReferenceEquals(m_AskedFor, wanted) && !IsDriving;
+
+            if (ReferenceEquals(m_AskedFor, wanted))
             {
                 m_Asking = false;
                 m_AskedFor = null;
+            }
 
-                if (!granted)
+            if (!granted)
+            {
+                if (stillWanted)
                 {
                     m_Refused = wanted;
                     Say(CrewPrompt.Refused, wanted.AcceptsDriver
                         ? $"{wanted.DisplayName} did not answer. Try again."
                         : $"{wanted.DisplayName} is being driven");
-                    return;
                 }
 
-                if (!WithinReachOf(wanted))
-                {
-                    m_Broker.HandBack(train.Members);
-                    return;
-                }
+                return;
+            }
 
-                m_Driving = wanted;
-                m_Refused = null;
-                wanted.IntentSource = intentSource;
-                wanted.Occupied = true;
-                Offer = null;
-                Say(CrewPrompt.None, "");
-            });
+            if (!stillWanted || !WithinReachOf(wanted))
+            {
+                m_Broker.HandBack(train.Members);
+                return;
+            }
+
+            m_Driving = wanted;
+            m_Refused = null;
+            wanted.IntentSource = intentSource;
+            wanted.Occupied = true;
+            Offer = null;
+            Say(CrewPrompt.None, "");
         }
 
         public Vector3 DismountPosition(VehicleController vehicle, float standingHeightMetres)

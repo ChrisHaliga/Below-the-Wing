@@ -1,5 +1,6 @@
 using BelowTheWing.Vehicles;
 using Unity.Netcode;
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Session
@@ -35,11 +36,9 @@ namespace BelowTheWing.Session
 
             if (m_Session == null)
             {
-                Debug.LogError(
-                    $"'{name}' was spawned with no {nameof(RampSession)} in the scene. Nothing will " +
-                    "work out which train it belongs to, so it will behave as a vehicle standing alone.",
-                    this);
-                return;
+                throw MisbuiltException.Refuse(
+                    this,
+                    $"was spawned with no {nameof(RampSession)} in the scene to work out which train it belongs to");
             }
 
             m_TrainIndex.OnValueChanged += OnPlaceChanged;

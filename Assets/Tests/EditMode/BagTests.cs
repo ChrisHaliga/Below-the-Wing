@@ -96,14 +96,5 @@ namespace BelowTheWing.Tests.EditMode
                 "a discrete check has it on one side of a cart wall and then the other");
         }
 
-        [Test]
-        public void ABagWithNoProfileRefusesToPretendItIsFine()
-        {
-            var bag = m_Object.AddComponent<Bag>();
-
-            Assert.That(bag.Profile, Is.Null,
-                "a bag with no profile has to be visibly wrong rather than quietly weighing a " +
-                "kilogram, because the second of those looks like a physics bug for the rest of the game");
-        }
     }
 }

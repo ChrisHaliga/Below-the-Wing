@@ -34,6 +34,8 @@ namespace BelowTheWing.Net
 
         ISession m_Session;
 
+        readonly ServiceLeave m_Leave = new ServiceLeave();
+
         public SessionPhase Phase { get; private set; } = SessionPhase.Offline;
 
         public string FailureReason { get; private set; } = "";
@@ -42,7 +44,7 @@ namespace BelowTheWing.Net
 
         public bool Busy => Phase is SessionPhase.SigningIn or SessionPhase.Connecting;
 
-        public bool InOne => m_Session != null;
+        public bool InOne => m_Session != null || m_Leave.Pending;
 
         public async Task LeaveAsync()
         {
@@ -56,7 +58,7 @@ namespace BelowTheWing.Net
 
             try
             {
-                await leaving.LeaveAsync();
+                await m_Leave.Run(leaving.LeaveAsync);
             }
             catch (Exception e)
             {
@@ -86,9 +88,9 @@ namespace BelowTheWing.Net
 
         public void PlayAlone()
         {
-            if (!LocalSession.Start(NetworkManager.Singleton))
+            if (!LocalSession.Start(NetworkManager.Singleton, out var refusal))
             {
-                Fail("Could not start a session on this machine.");
+                Fail(refusal);
                 return;
             }
 

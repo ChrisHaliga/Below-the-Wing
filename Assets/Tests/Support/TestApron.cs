@@ -35,9 +35,11 @@ namespace BelowTheWing.Tests.Support
 
             TestShapes.On(go, shape ?? TestShapes.BoxVehicle());
 
+            m_Spawned.Add(go);
+
             var vehicle = go.AddComponent<VehicleController>();
             vehicle.Configure(profile, displayName);
-            m_Spawned.Add(go);
+
             return vehicle;
         }
 

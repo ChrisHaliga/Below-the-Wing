@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using BelowTheWing.Crew;
 using BelowTheWing.Tests.Support;
 using BelowTheWing.Vehicles;
@@ -17,6 +16,7 @@ namespace BelowTheWing.Tests.EditMode
         VehicleProfile m_CartProfile;
         Transform m_Crew;
         CartChain m_Train;
+        VehicleController m_LookingAt;
 
         [SetUp]
         public void SetUp()
@@ -27,6 +27,7 @@ namespace BelowTheWing.Tests.EditMode
             m_Crew = m_Apron.Track(new GameObject("Crew").transform);
             m_Crew.position = Vector3.zero;
             m_Train = m_Apron.AddTrain(m_TractorProfile, m_CartProfile, cartCount: 4, new Vector3(0f, 0f, 2f));
+            m_LookingAt = m_Train.Leader;
         }
 
         [TearDown]
@@ -39,12 +40,23 @@ namespace BelowTheWing.Tests.EditMode
 
         VehicleOccupancy SeatWith(IOwnershipBroker broker)
         {
-            IReadOnlyList<VehicleController> Nearby() => m_Train.Members.Cast<VehicleController>().ToList();
-            return new VehicleOccupancy(m_Crew, broker, Nearby, Reach);
+            IReadOnlyList<VehicleController> Nearby() => m_Train.Members;
+
+            return new VehicleOccupancy(m_Crew, broker, Nearby, Reach) { Aim = LookingWhereTheyAre };
+        }
+
+        Ray LookingWhereTheyAre()
+        {
+            Physics.SyncTransforms();
+
+            var eye = m_Crew.position + Vector3.up;
+            var at = m_LookingAt != null ? m_LookingAt.transform.position + Vector3.up : eye + Vector3.forward;
+
+            return new Ray(eye, at - eye);
         }
 
         [Test]
-        public void WalkingUpToATractorOffersIt()
+        public void LookingAtATractorInReachOffersIt()
         {
             var seat = SeatWith(new RecordingBroker(grant: true));
 
@@ -69,14 +81,29 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void StandingBesideACartOffersNothing()
+        public void LookingAtACartOffersNothing()
         {
-            m_Crew.position = m_Train.Members[3].transform.position + new Vector3(1.2f, 0f, 0f);
+            m_LookingAt = m_Train.Members[3];
+            m_Crew.position = m_LookingAt.transform.position + new Vector3(1.2f, 0f, 0f);
             var seat = SeatWith(new RecordingBroker(grant: true));
 
             seat.Refresh();
 
             Assert.That(seat.Offer, Is.Null, "carts are towed, not driven");
+        }
+
+        [Test]
+        public void LookingAwayFromATractorThatIsInReachOffersNothing()
+        {
+            m_LookingAt = null;
+            m_Crew.position = m_Train.Leader.transform.position + new Vector3(2f, 0f, 0f);
+            var seat = SeatWith(new RecordingBroker(grant: true));
+
+            seat.Refresh();
+
+            Assert.That(seat.Offer, Is.Null,
+                "a tractor beside the player, off to one side, is not what they are looking at; " +
+                "offering whatever is nearest is how a player gets into the wrong vehicle");
         }
 
         [Test]
@@ -212,6 +239,74 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(broker.Requests.Count, Is.EqualTo(2),
                 "waiting for ever on an answer that is not coming leaves this player unable to get " +
                 "into anything at all for the rest of the session");
+        }
+
+        [Test]
+        public void AGrantForARequestThePlayerWalkedAwayFromIsHandedBackRatherThanSeated()
+        {
+            var broker = new DeferredBroker();
+            var seat = SeatWith(broker);
+            var driver = new FixedIntent();
+            var first = m_Train.Leader;
+            var second = m_Apron.AddTrain(
+                m_TractorProfile, m_CartProfile, cartCount: 0, new Vector3(0f, 0f, 7.6f), "Tug 2").Leader;
+
+            seat.Refresh();
+            seat.Toggle(driver);
+            Assert.That(broker.Waiting, Is.EqualTo(1), "precondition: the first request is in flight");
+
+            m_Crew.position = new Vector3(0f, 0f, -60f);
+            seat.Refresh();
+
+            m_Crew.position = new Vector3(0f, 0f, 4.8f);
+            m_LookingAt = second;
+            seat.Refresh();
+            seat.Toggle(driver);
+            Assert.That(broker.Waiting, Is.EqualTo(2), "precondition: both requests are in flight");
+            Assert.That(Vector3.Distance(m_Crew.position, first.transform.position), Is.LessThanOrEqualTo(Reach),
+                "precondition: the abandoned tractor is back within reach, which is the case the " +
+                "distance check cannot tell apart from a request the player still wants");
+
+            broker.Answer(0, granted: true);
+            broker.Answer(1, granted: true);
+
+            Assert.That(seat.Driving, Is.SameAs(second), "the seat the player asked for last is the one they get");
+            Assert.That(first.Occupied, Is.False,
+                "the tractor from the abandoned request is marked occupied by nobody, so no one " +
+                "else can board it for the rest of the session");
+            Assert.That(first.IntentSource, Is.Null,
+                "and it would otherwise steer and accelerate on this player's inputs while they " +
+                "sit in a different vehicle");
+            Assert.That(broker.HandedBack, Does.Contain(first),
+                "ownership taken for a seat nobody sat in has to go back");
+        }
+
+        [Test]
+        public void AStaleGrantArrivingAfterThePlayerIsAlreadySeatedIsHandedBack()
+        {
+            var broker = new DeferredBroker();
+            var seat = SeatWith(broker);
+            var driver = new FixedIntent();
+            var first = m_Train.Leader;
+            var second = m_Apron.AddTrain(
+                m_TractorProfile, m_CartProfile, cartCount: 0, new Vector3(0f, 0f, 7.6f), "Tug 2").Leader;
+
+            seat.Refresh();
+            seat.Toggle(driver);
+            m_Crew.position = new Vector3(0f, 0f, -60f);
+            seat.Refresh();
+            m_Crew.position = new Vector3(0f, 0f, 4.8f);
+            m_LookingAt = second;
+            seat.Refresh();
+            seat.Toggle(driver);
+
+            broker.Answer(1, granted: true);
+            broker.Answer(0, granted: true);
+
+            Assert.That(seat.Driving, Is.SameAs(second),
+                "a grant that arrives after the player has sat down somewhere else does not move them");
+            Assert.That(first.Occupied, Is.False);
+            Assert.That(broker.HandedBack, Does.Contain(first));
         }
 
         [Test]

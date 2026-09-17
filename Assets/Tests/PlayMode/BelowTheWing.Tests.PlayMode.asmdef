@@ -2,6 +2,7 @@
     "name": "BelowTheWing.Tests.PlayMode",
     "rootNamespace": "BelowTheWing.Tests.PlayMode",
     "references": [
+        "BelowTheWing.Wiring",
         "BelowTheWing.Cargo",
         "BelowTheWing.Vehicles",
         "BelowTheWing.Crew",

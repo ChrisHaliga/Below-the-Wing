@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Vehicles
@@ -86,9 +87,30 @@ namespace BelowTheWing.Vehicles
             }
 
             var members = new List<VehicleController>(frontToBack);
+
+            for (var i = 1; i < members.Count; i++)
+            {
+                RequireACouplingBetween(inFront: members[i - 1], behind: members[i]);
+            }
+
             var couplings = new List<HingeJoint>(new HingeJoint[Mathf.Max(0, members.Count - 1)]);
 
             return new CartChain(members, couplings, settings);
+        }
+
+        static void RequireACouplingBetween(VehicleController inFront, VehicleController behind)
+        {
+            if (behind.FrontHitchLocal != null && inFront.RearHitchLocal != null)
+            {
+                return;
+            }
+
+            throw MisbuiltException.For(
+                behind,
+                $"cannot be hitched behind '{inFront.name}': " +
+                (behind.FrontHitchLocal == null
+                    ? $"'{behind.name}' has no coupling at its front"
+                    : $"'{inFront.name}' has no coupling at its back"));
         }
 
         public void EngageCouplings()
@@ -150,16 +172,6 @@ namespace BelowTheWing.Vehicles
 
         static HingeJoint Hitch(VehicleController inFront, VehicleController behind, ChainJointSettings settings)
         {
-            if (behind.FrontHitchLocal == null || inFront.RearHitchLocal == null)
-            {
-                Debug.LogError(
-                    $"'{behind.name}' cannot be hitched behind '{inFront.name}': " +
-                    $"{(behind.FrontHitchLocal == null ? behind.name + " has no coupling at its front" : inFront.name + " has no coupling at its back")}.",
-                    behind);
-
-                return null;
-            }
-
             var coupling = behind.gameObject.AddComponent<HingeJoint>();
             coupling.connectedBody = inFront.Body;
 

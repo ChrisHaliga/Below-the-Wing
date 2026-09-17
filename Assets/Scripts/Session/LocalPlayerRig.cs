@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Vehicles;
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Session
@@ -41,20 +42,18 @@ namespace BelowTheWing.Session
 
             var left = m_Character.transform.Find(Hands.LeftAnchorName);
             var right = m_Character.transform.Find(Hands.RightAnchorName);
-            if (left != null && right != null)
-            {
-                m_Character.Handling = new Hands(left, right, m_Character.Body, m_Character.Profile.hands);
 
-                m_Character.gameObject.AddComponent<HandLook>()
-                    .Watch(m_Character.Handling, left, right);
-            }
-            else
+            if (left == null || right == null)
             {
-                Debug.LogError(
-                    $"'{m_Character.name}' has no '{Hands.LeftAnchorName}' and '{Hands.RightAnchorName}' " +
-                    "under it, so this player has no hands: nothing can be picked up or held onto.",
-                    m_Character);
+                throw MisbuiltException.For(
+                    m_Character,
+                    $"has no '{Hands.LeftAnchorName}' and '{Hands.RightAnchorName}' under it, so this player has no hands");
             }
+
+            m_Character.Handling = new Hands(left, right, m_Character.Body, m_Character.Profile.hands);
+
+            m_Character.gameObject.AddComponent<HandLook>()
+                .Watch(m_Character.Handling, left, right);
 
             m_Character.gameObject.AddComponent<MouseCapture>();
             m_Character.gameObject.AddComponent<LocalCrewInput>();

@@ -2,6 +2,7 @@
     "name": "BelowTheWing.Session",
     "rootNamespace": "BelowTheWing.Session",
     "references": [
+        "BelowTheWing.Wiring",
         "BelowTheWing.Cargo",
         "BelowTheWing.Vehicles",
         "BelowTheWing.Crew",

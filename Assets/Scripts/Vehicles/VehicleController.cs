@@ -1,3 +1,4 @@
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Vehicles
@@ -153,10 +154,10 @@ namespace BelowTheWing.Vehicles
             m_Body.sleepThreshold = 0f;
             if (profile.centerOfMassOffset.y <= 0f)
             {
-                Debug.LogError(
-                    $"'{name}' carries its centre of mass at or below its own origin, which is on " +
-                    "the ground. Weight transfer then works backwards -- braking pitches the nose " +
-                    "up -- and nothing can tip the vehicle over.", this);
+                throw MisbuiltException.Refuse(
+                    this,
+                    "carries its centre of mass at or below its own origin, which is on the ground; " +
+                    "weight transfer then works backwards and nothing can tip it over");
             }
 
             m_Body.centerOfMass = profile.centerOfMassOffset;
@@ -191,13 +192,8 @@ namespace BelowTheWing.Vehicles
             var wheels = Shape != null ? Shape.Wheels : null;
             if (wheels == null || wheels.Count == 0)
             {
-                Debug.LogError(
-                    $"'{name}' has no shape, so there is nowhere to hang its suspension from and it " +
-                    "will fall through the apron. Every vehicle prefab needs a VehicleShape.", this);
-
-                m_Wheels = new Wheel[0];
-                m_HangingBy = new float[0];
-                return;
+                throw MisbuiltException.Refuse(
+                    this, "has no shape, so there is nowhere to hang its suspension from");
             }
 
             var middleOfTheWheelbase = 0f;
@@ -245,11 +241,8 @@ namespace BelowTheWing.Vehicles
         {
             if (m_Profile == null)
             {
-                Debug.LogError(
-                    $"'{name}' has no vehicle profile, so it has no mass, no wheels and no size. It " +
-                    "will sit where it was put and do nothing. A vehicle without a profile is a piece " +
-                    "of wiring that was missed, not a vehicle that happens to be idle.", this);
-                enabled = false;
+                throw MisbuiltException.Refuse(
+                    this, "has no vehicle profile, so it has no mass, no wheels and no size");
             }
         }
 

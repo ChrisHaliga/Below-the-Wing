@@ -1,3 +1,5 @@
+using System;
+using BelowTheWing.Wiring;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -17,7 +19,9 @@ namespace BelowTheWing.Net
 
         public void Ends(NetworkManager netcode, ILeaveTheService service)
         {
-            m_Netcode = netcode;
+            m_Netcode = netcode != null
+                ? netcode
+                : throw MisbuiltException.For(this, "was given no NetworkManager to shut down on quit");
             m_Service = service;
         }
 
@@ -46,22 +50,30 @@ namespace BelowTheWing.Net
 
         async void LeaveThenQuit()
         {
-            await m_Service.LeaveAsync();
-
-            m_ServiceHasBeenLeft = true;
-
-            Application.Quit();
+            try
+            {
+                await m_Service.LeaveAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(
+                    $"Leaving the service failed on the way out: {e.Message}. Quitting anyway, " +
+                    "because nothing may hold a quit open.", this);
+            }
+            finally
+            {
+                m_ServiceHasBeenLeft = true;
+                Application.Quit();
+            }
         }
 
         bool StillLeavingTheService() => m_Service != null && m_Service.InOne;
 
         void StopListening()
         {
-            var netcode = m_Netcode != null ? m_Netcode : NetworkManager.Singleton;
-
-            if (netcode != null && netcode.IsListening)
+            if (m_Netcode != null && m_Netcode.IsListening)
             {
-                netcode.Shutdown();
+                m_Netcode.Shutdown();
             }
         }
 

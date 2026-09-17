@@ -2,6 +2,7 @@
     "name": "BelowTheWing.Apron",
     "rootNamespace": "BelowTheWing.Apron",
     "references": [
+        "BelowTheWing.Wiring",
         "BelowTheWing.Vehicles"
     ],
     "includePlatforms": [],

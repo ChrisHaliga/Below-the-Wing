@@ -1,3 +1,4 @@
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Cargo
@@ -79,11 +80,8 @@ namespace BelowTheWing.Cargo
         {
             if (m_Profile == null)
             {
-                Debug.LogError(
-                    $"'{name}' is a bag with no profile, so it weighs whatever its prefab happened to " +
-                    "say -- usually one kilogram -- and will be thrown across the apron by anything " +
-                    "that touches it.", this);
-                enabled = false;
+                throw MisbuiltException.Refuse(
+                    this, "has no bag profile, so it weighs whatever its prefab happened to say");
             }
         }
     }

@@ -502,3 +502,22 @@ Reversed from the earlier entry, which stands as the record of what was believed
 Decided by the repo owner. Facts that must hold are assertions or tests; decisions worth keeping are
 entries here; everything a comment used to say about what the code does is the code's job to say
 through its names. Tooltips give units and range only.
+
+## 2026-09-16 — A thing built wrong throws, and does not go on running
+
+Decided during the audit fix pass. Nine places logged an error about a missing profile, shape,
+coupling, broker, session or hand anchor and then carried on: some disabled themselves, some
+returned a default, some simply continued with the broken object. Three of them left a vehicle
+running its physics against state it never finished building.
+
+All of them now throw one exception type naming the object and the part it lacks. A component
+that throws out of its own configuration disables itself first, so nothing runs FixedUpdate on a
+half-built thing; the exception then surfaces once, with the object as context, which is the one
+report the person fixing the prefab needs. Nothing else catches it, because nothing downstream can
+act on a mis-built prefab.
+
+What this rules out: a default standing in for a part that is missing. A vehicle without a seat
+marker is refused, not seated at its origin. A missing bag prefab is refused, not silently no bags.
+The shipped content is guarded by the prefab tests; the throws are what catches content the tests
+have not seen yet.
+
