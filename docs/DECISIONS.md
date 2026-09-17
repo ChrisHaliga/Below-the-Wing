@@ -562,3 +562,20 @@ may have the old one open, and Unity does not reload a scene that changed undern
 that point puts the old scene back. The editor menu item rebuilds in place and does not have this
 problem, so it is the one to use when the editor is already open.
 
+## 2026-09-17 — Two mirrors generate two sets of guids, and a scene only resolves one
+
+A new script gets its guid from whichever Unity imports it first. The tests run in one mirror of
+the project and the scene rebuild runs in another, so a script created in this session was imported
+twice and given two different guids. The rebuilt scene was copied back carrying the rebuild
+mirror's guids; the meta files were copied back from the test mirror. Every menu component in the
+scene was then a missing script: the GameObjects were present and active, the component slots were
+dead, and the game ran with no menu and no error, because a missing script is not an error.
+
+The check that catches it: every `guid:` a scene or prefab references must appear in a `.meta`
+somewhere in `Assets` or in a package. Nothing in the suites did that, which is why it reached the
+owner instead.
+
+What follows from it: meta files for a new script come back from the same mirror that built the
+scene referencing them, or they do not come back at all and the scene is rebuilt after the metas
+exist. Copying from two mirrors in one change is what broke this.
+
