@@ -544,3 +544,21 @@ The rule that stands: what a player interacts with is whatever their camera ray
 hits inside the interaction distance, and otherwise the thing closest to the
 centre of their view cone. Distance from the body decides nothing.
 
+## 2026-09-17 — The scripts that drive a headless Unity live in the repository
+
+The editor takes an exclusive lock on a project, so neither the test suites nor the scene rebuild
+can be run against the project the editor has open. Both go through a mirror copy and a second,
+headless Unity. Those two scripts existed only in a session scratchpad for a long stretch of work,
+which meant every test result reported to the owner came from something the owner could not run,
+and the order to run them in was not written down anywhere.
+
+They now live in `tools/` with a README that says what each one is for and when to reach for it.
+The project path is derived from the script location rather than typed, the mirrors are written to
+the system temp folder rather than into the working tree, and the Unity path can be overridden with
+`BTW_UNITY`.
+
+The trap the README exists to name: `rebuild-scene.ps1` writes a new `Apron.unity` while the editor
+may have the old one open, and Unity does not reload a scene that changed underneath it. Saving at
+that point puts the old scene back. The editor menu item rebuilds in place and does not have this
+problem, so it is the one to use when the editor is already open.
+
