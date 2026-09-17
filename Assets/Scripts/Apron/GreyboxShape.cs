@@ -1,3 +1,4 @@
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Apron
@@ -32,18 +33,7 @@ namespace BelowTheWing.Apron
             var primitive = GameObject.CreatePrimitive(type);
             primitive.name = ApronAppearance.LookName;
 
-            var ownCollider = primitive.GetComponent<Collider>();
-            if (ownCollider != null)
-            {
-                if (Application.isPlaying)
-                {
-                    Object.Destroy(ownCollider);
-                }
-                else
-                {
-                    Object.DestroyImmediate(ownCollider);
-                }
-            }
+            Discard.Now(primitive.GetComponent<Collider>());
 
             primitive.GetComponent<MeshRenderer>().material.color = colour;
             primitive.transform.SetParent(target, worldPositionStays: false);

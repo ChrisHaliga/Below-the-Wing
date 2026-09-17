@@ -182,5 +182,26 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(m_Lobby.IsReady(Third), Is.False);
             Assert.That(m_Lobby.CanStart(Host), Is.True);
         }
+    
+        [Test]
+        public void ASlotThatDoesNotExistHoldsNobody()
+        {
+            m_Lobby.Arrived(Host);
+
+            Assert.That(m_Lobby.Who(-1).HasValue, Is.False);
+            Assert.That(m_Lobby.Who(LobbySlots.Capacity).HasValue, Is.False);
+        }
+
+        [Test]
+        public void APlayerWhoWasNeverHereLeavingChangesNothing()
+        {
+            m_Lobby.Arrived(Host);
+            m_Lobby.Ready(Host, true);
+
+            m_Lobby.Left(Third);
+
+            Assert.That(m_Lobby.Filled, Is.EqualTo(1));
+            Assert.That(m_Lobby.IsReady(Host), Is.True);
+        }
     }
 }

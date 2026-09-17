@@ -15,8 +15,11 @@ namespace BelowTheWing.Crew
         [SerializeField, Tooltip("Profile this runs on")]
         CrewProfile m_Profile;
 
-        [SerializeField, Tooltip("Reach for vehicles and couplings, m")]
+        [SerializeField, Tooltip("Reach for vehicles, couplings and brakes, m")]
         float m_ReachMetres = 3f;
+
+        [SerializeField, Tooltip("Half angle of the cone something has to be in to be looked at, degrees")]
+        float m_ConeDegrees = 40f;
 
         [SerializeField, Tooltip("Layers that count as something to stand on")]
         LayerMask m_StandsOn = ~0;
@@ -119,9 +122,13 @@ namespace BelowTheWing.Crew
             }
         }
 
-        public void TakeTheSeat(IOwnershipBroker broker, Func<IReadOnlyList<VehicleController>> nearbyVehicles)
+        public float ReachMetres => m_ReachMetres;
+
+        public float ConeDegrees => m_ConeDegrees;
+
+        public void TakeTheSeat(IOwnershipBroker broker)
         {
-            Seat = new VehicleOccupancy(transform, broker, nearbyVehicles, m_ReachMetres);
+            Seat = new VehicleOccupancy(transform, broker, LookingAlong, m_ReachMetres, m_ConeDegrees);
         }
 
         public bool OursToMove { get; set; } = true;

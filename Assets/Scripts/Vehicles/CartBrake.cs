@@ -68,7 +68,7 @@ namespace BelowTheWing.Vehicles
             }
 
             var holding = m_Parking.BrakingForce(
-                rolling.magnitude, Body.mass, m_HoldsAtMetresPerSecondSquared);
+                rolling.magnitude, Body.mass, m_HoldsAtMetresPerSecondSquared, Time.fixedDeltaTime);
 
             Body.AddForce(-rolling.normalized * holding, ForceMode.Force);
         }

@@ -32,7 +32,7 @@ namespace BelowTheWing.Tests.PlayMode
             crewGo.transform.position = new Vector3(0f, 0.9f, 0f);
             m_Crew = crewGo.AddComponent<CrewCharacter>();
             m_Crew.ConfigureBody(m_Profile);
-            m_Crew.TakeTheSeat(new RecordingBroker(grant: true), () => new List<VehicleController> { m_Tractor });
+            m_Crew.TakeTheSeat(new RecordingBroker(grant: true));
             m_Apron.Track(m_Crew);
 
             m_Wheel = new FixedIntent();

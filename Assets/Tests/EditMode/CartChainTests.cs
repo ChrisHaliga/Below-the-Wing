@@ -85,8 +85,10 @@ namespace BelowTheWing.Tests.EditMode
                     "a cart swings left and right behind the one in front, not up and over it");
 
                 Assert.That(hinge.useLimits, Is.True, "an unlimited coupling lets a train fold through itself");
-                Assert.That(hinge.limits.max, Is.LessThan(180f));
-                Assert.That(hinge.limits.min, Is.GreaterThan(-180f));
+                Assert.That(hinge.limits.max, Is.EqualTo(ChainJointSettings.Default.yawLimitDegrees).Within(1e-3f),
+                    "a coupling that swings less than its settings say cannot corner, and one that " +
+                    "swings more lets the train fold; a limit of zero satisfied the old check");
+                Assert.That(hinge.limits.min, Is.EqualTo(-ChainJointSettings.Default.yawLimitDegrees).Within(1e-3f));
             }
         }
 

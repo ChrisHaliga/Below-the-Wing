@@ -1,9 +1,7 @@
 {
     "name": "BelowTheWing.Menu",
     "rootNamespace": "BelowTheWing.Menu",
-    "references": [
-        "BelowTheWing.Settings"
-    ],
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

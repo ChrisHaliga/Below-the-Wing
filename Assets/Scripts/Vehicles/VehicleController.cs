@@ -257,15 +257,7 @@ namespace BelowTheWing.Vehicles
                 return;
             }
 
-            if (Application.isPlaying)
-            {
-                Destroy(m_Bodywork);
-            }
-            else
-            {
-                DestroyImmediate(m_Bodywork);
-            }
-
+            Discard.Now(m_Bodywork);
             m_Bodywork = null;
         }
 

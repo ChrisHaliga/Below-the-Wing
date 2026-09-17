@@ -196,22 +196,7 @@ namespace BelowTheWing.Vehicles
             return coupling;
         }
 
-        static void Unhitch(HingeJoint coupling)
-        {
-            if (coupling == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                UnityEngine.Object.Destroy(coupling);
-            }
-            else
-            {
-                UnityEngine.Object.DestroyImmediate(coupling);
-            }
-        }
+        static void Unhitch(HingeJoint coupling) => Discard.Now(coupling);
 
         void ApplySolverEffort()
         {

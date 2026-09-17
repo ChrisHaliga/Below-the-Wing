@@ -102,7 +102,7 @@ namespace BelowTheWing.Crew
         {
             if (pressesCount && button.wasPressedThisFrame)
             {
-                hand.Press(Time.time, Aim());
+                hand.Press(Time.time, m_Character.LookingAlong());
             }
 
             if (button.wasReleasedThisFrame)
@@ -113,32 +113,13 @@ namespace BelowTheWing.Crew
 
         bool ParkedWhateverTheyAreLookingAt()
         {
-            var looked = Aiming.At<CartBrake>(Aim(), ReachesMetres, ConeDegrees);
+            var looked = Aiming.At<CartBrake>(
+                m_Character.LookingAlong(), m_Character.ReachMetres, m_Character.ConeDegrees);
 
             return looked != null && looked.Toggle();
         }
 
-        const float ReachesMetres = 3f;
-
-        const float ConeDegrees = 40f;
-
-        Ray Aim()
-        {
-            var eye = m_Character.Camera;
-            return eye != null
-                ? new Ray(eye.transform.position, eye.transform.forward)
-                : new Ray(m_Character.transform.position, m_Character.transform.forward);
-        }
-
-        Vector3 ThrowingTowards()
-        {
-            if (m_Character.Camera == null)
-            {
-                return m_Character.transform.forward;
-            }
-
-            return m_Character.Camera.transform.forward;
-        }
+        Vector3 ThrowingTowards() => m_Character.LookingAlong().direction;
 
         static float Held(Keyboard keyboard, Key key) => keyboard[key].isPressed ? 1f : 0f;
     }

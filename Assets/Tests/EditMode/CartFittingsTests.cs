@@ -120,7 +120,7 @@ namespace BelowTheWing.Tests.EditMode
             var brake = new CartParking();
             brake.Toggle(0f);
 
-            var holding = brake.BrakingForce(2f, 550f, holdsAt: 6f);
+            var holding = brake.BrakingForce(2f, 550f, holdsAt: 6f, deltaTime: 0.02f);
 
             Assert.That(holding, Is.GreaterThan(0f), "a parked cart has to fight being dragged");
             Assert.That(holding, Is.LessThan(float.PositiveInfinity),
@@ -167,6 +167,32 @@ namespace BelowTheWing.Tests.EditMode
                 "panel spans 1.01911 to 1.57189 and the vinyl 1.03353 to 1.54316");
             Assert.That(SlidingDoor.ShapeWeight(1.4f), Is.EqualTo(100f).Within(1e-3f));
             Assert.That(SlidingDoor.ShapeWeight(-0.2f), Is.EqualTo(0f).Within(1e-3f));
+        }
+    
+        [Test]
+        public void ParkingAtExactlyTheSpeedLimitIsAllowed()
+        {
+            var brake = new CartParking();
+
+            Assert.That(brake.Toggle(CartParking.TooFastToParkMetresPerSecond), Is.True,
+                "the limit is a ceiling, and a cart rolling at it has just about stopped");
+        }
+
+        [Test]
+        public void ABrakeNeverPushesAParkedCartBackwards()
+        {
+            var brake = new CartParking();
+            brake.Toggle(0f);
+
+            foreach (var step in new[] { 0.02f, 0.01f, 0.005f })
+            {
+                var atMost = 0.1f * 550f / step;
+
+                Assert.That(brake.BrakingForce(0.1f, 550f, holdsAt: 6f, deltaTime: step),
+                    Is.LessThanOrEqualTo(atMost + 1e-3f),
+                    $"at a {step} s step a cart creeping at 0.1 m/s got more force than stops it in " +
+                    "one step, which reverses it instead");
+            }
         }
     }
 }

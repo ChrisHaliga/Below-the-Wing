@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using BelowTheWing.Crew;
 using BelowTheWing.Tests.Support;
 using BelowTheWing.Vehicles;
@@ -10,6 +9,7 @@ namespace BelowTheWing.Tests.EditMode
     public sealed class VehicleOccupancyTests
     {
         const float Reach = 3f;
+        const float Cone = 40f;
 
         TestApron m_Apron;
         VehicleProfile m_TractorProfile;
@@ -39,11 +39,7 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         VehicleOccupancy SeatWith(IOwnershipBroker broker)
-        {
-            IReadOnlyList<VehicleController> Nearby() => m_Train.Members;
-
-            return new VehicleOccupancy(m_Crew, broker, Nearby, Reach) { Aim = LookingWhereTheyAre };
-        }
+            => new VehicleOccupancy(m_Crew, broker, LookingWhereTheyAre, Reach, Cone);
 
         Ray LookingWhereTheyAre()
         {

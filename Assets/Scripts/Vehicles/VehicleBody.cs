@@ -1,3 +1,4 @@
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Vehicles
@@ -36,18 +37,9 @@ namespace BelowTheWing.Vehicles
         {
             var existing = vehicle.transform.Find(PartsName);
 
-            if (existing == null)
+            if (existing != null)
             {
-                return;
-            }
-
-            if (Application.isPlaying)
-            {
-                Object.Destroy(existing.gameObject);
-            }
-            else
-            {
-                Object.DestroyImmediate(existing.gameObject);
+                Discard.Now(existing.gameObject);
             }
         }
 

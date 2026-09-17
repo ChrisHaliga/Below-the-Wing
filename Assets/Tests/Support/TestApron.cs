@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using BelowTheWing.Apron;
 using BelowTheWing.Crew;
 using BelowTheWing.Vehicles;
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Tests.Support
@@ -100,7 +101,7 @@ namespace BelowTheWing.Tests.Support
             go.transform.position = position;
             var crew = go.AddComponent<CrewCharacter>();
             crew.ConfigureBody(profile);
-            crew.TakeTheSeat(broker ?? new RecordingBroker(grant: true), () => new List<VehicleController>());
+            crew.TakeTheSeat(broker ?? new RecordingBroker(grant: true));
             m_Spawned.Add(go);
             return crew;
         }
@@ -128,19 +129,7 @@ namespace BelowTheWing.Tests.Support
         {
             foreach (var go in m_Spawned)
             {
-                if (go == null)
-                {
-                    continue;
-                }
-
-                if (Application.isPlaying)
-                {
-                    Object.Destroy(go);
-                }
-                else
-                {
-                    Object.DestroyImmediate(go);
-                }
+                Discard.Now(go);
             }
 
             m_Spawned.Clear();

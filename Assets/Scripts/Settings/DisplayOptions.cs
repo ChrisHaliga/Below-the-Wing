@@ -5,17 +5,12 @@ namespace BelowTheWing.Settings
 {
     public static class DisplayOptions
     {
-        static readonly List<DisplayInfo> Connected = new List<DisplayInfo>();
-
-        public static IReadOnlyList<DisplayInfo> Monitors
+        public static List<DisplayInfo> Monitors()
         {
-            get
-            {
-                Connected.Clear();
-                Screen.GetDisplayLayout(Connected);
+            var connected = new List<DisplayInfo>();
+            Screen.GetDisplayLayout(connected);
 
-                return Connected;
-            }
+            return connected;
         }
 
         public static bool CanApply => !Application.isEditor;
@@ -63,7 +58,7 @@ namespace BelowTheWing.Settings
 
         static void MoveToTheChosenMonitor()
         {
-            var monitors = Monitors;
+            var monitors = Monitors();
 
             if (monitors.Count == 0)
             {
@@ -72,20 +67,13 @@ namespace BelowTheWing.Settings
 
             var target = monitors[Mathf.Clamp(CrewSettings.Monitor, 0, monitors.Count - 1)];
 
-            if (!TheSameScreen(target, Screen.mainWindowDisplayInfo))
+            if (!DisplayIdentity.Same(target, Screen.mainWindowDisplayInfo))
             {
                 Screen.MoveMainWindowTo(target, Vector2Int.zero);
             }
         }
 
-        static bool TheSameScreen(DisplayInfo a, DisplayInfo b)
-            => a.name == b.name && a.width == b.width && a.height == b.height;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void ApplyOnBoot()
-        {
-            CrewSettings.Load();
-            Apply();
-        }
+        static void ApplyOnBoot() => Apply();
     }
 }

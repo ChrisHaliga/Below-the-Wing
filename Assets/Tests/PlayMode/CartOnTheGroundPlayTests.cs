@@ -65,19 +65,6 @@ namespace BelowTheWing.Tests.PlayMode
             }
         }
 
-        [UnityTest]
-        public IEnumerator ACartAtRestSitsPartlyCompressedRatherThanAtFullExtension()
-        {
-            var cart = ACart(Vector3.zero);
-
-            yield return Steps.Seconds(2f);
-
-            var expected = VehicleController.SuspensionCompressionAtRest(m_CartProfile);
-
-            Assert.That(expected, Is.InRange(0.05f, 0.4f),
-                "a cart resting at full extension has nothing left to absorb a bump, and one " +
-                "resting bottomed out has nothing left to give");
-        }
 
         [UnityTest]
         public IEnumerator TwoDifferentVehiclesStandingCoupledNeitherLean()

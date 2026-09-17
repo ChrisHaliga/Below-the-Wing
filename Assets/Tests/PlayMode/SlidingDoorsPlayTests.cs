@@ -88,7 +88,8 @@ namespace BelowTheWing.Tests.PlayMode
 
             Assert.That(pole.Openness, Is.EqualTo(0f).Within(0.02f),
                 $"a cart put down should have its doors shut, not sitting at {pole.Openness:P0} open");
-            Assert.That(pole.transform.localPosition.z, Is.EqualTo(0.02919f).Within(5e-3f));
+            Assert.That(pole.transform.localPosition.z, Is.EqualTo(ShutEdgeZ + PoleRadius).Within(5e-3f),
+                "the pole sits one radius in from the panel edge the model puts at its shut position");
         }
 
         [UnityTest]

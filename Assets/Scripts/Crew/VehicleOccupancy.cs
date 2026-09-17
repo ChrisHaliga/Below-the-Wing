@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using BelowTheWing.Cargo;
 using BelowTheWing.Vehicles;
 using UnityEngine;
@@ -14,8 +13,9 @@ namespace BelowTheWing.Crew
 
         readonly Transform m_Crew;
         readonly IOwnershipBroker m_Broker;
-        readonly Func<IReadOnlyList<VehicleController>> m_NearbyVehicles;
+        readonly Func<Ray> m_Aim;
         readonly float m_ReachMetres;
+        readonly float m_ConeDegrees;
 
         VehicleController m_Driving;
 
@@ -25,16 +25,14 @@ namespace BelowTheWing.Crew
 
         VehicleController m_AskedFor;
 
-        public Func<Ray> Aim { get; set; }
-
-        public float LooksIntoConeDegrees { get; set; } = 40f;
-
-        public VehicleOccupancy(Transform crew, IOwnershipBroker broker, Func<IReadOnlyList<VehicleController>> nearbyVehicles, float reachMetres)
+        public VehicleOccupancy(
+            Transform crew, IOwnershipBroker broker, Func<Ray> aim, float reachMetres, float coneDegrees)
         {
             m_Crew = crew != null ? crew : throw new ArgumentNullException(nameof(crew));
             m_Broker = broker ?? throw new ArgumentNullException(nameof(broker));
-            m_NearbyVehicles = nearbyVehicles ?? throw new ArgumentNullException(nameof(nearbyVehicles));
+            m_Aim = aim ?? throw new ArgumentNullException(nameof(aim));
             m_ReachMetres = reachMetres;
+            m_ConeDegrees = coneDegrees;
         }
 
         public VehicleController Offer { get; private set; }
@@ -92,12 +90,7 @@ namespace BelowTheWing.Crew
 
         VehicleController WhatTheyAreLookingAt()
         {
-            if (Aim == null)
-            {
-                return DriverPrompt.Nearest(m_Crew.position, m_ReachMetres, m_NearbyVehicles());
-            }
-
-            var looked = Aiming.At<VehicleController>(Aim(), m_ReachMetres, LooksIntoConeDegrees);
+            var looked = Aiming.At<VehicleController>(m_Aim(), m_ReachMetres, m_ConeDegrees);
 
             return looked != null && looked.AcceptsDriver ? looked : null;
         }

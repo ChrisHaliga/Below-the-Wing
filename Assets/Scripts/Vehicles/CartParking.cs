@@ -25,7 +25,16 @@ namespace BelowTheWing.Vehicles
             => Mathf.MoveTowards(
                 current, Parked ? HitchRisesToDegrees : 0f, swingsAtDegreesPerSecond * deltaTime);
 
-        public float BrakingForce(float speedMetresPerSecond, float massKg, float holdsAt)
-            => Parked ? Mathf.Min(holdsAt * massKg, Mathf.Abs(speedMetresPerSecond) * massKg * 20f) : 0f;
+        public float BrakingForce(float speedMetresPerSecond, float massKg, float holdsAt, float deltaTime)
+        {
+            if (!Parked)
+            {
+                return 0f;
+            }
+
+            var enoughToStopItThisStep = Mathf.Abs(speedMetresPerSecond) * massKg / Mathf.Max(deltaTime, 1e-5f);
+
+            return Mathf.Min(holdsAt * massKg, enoughToStopItThisStep);
+        }
     }
 }

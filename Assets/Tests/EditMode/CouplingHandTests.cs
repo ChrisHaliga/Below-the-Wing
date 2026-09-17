@@ -252,15 +252,15 @@ namespace BelowTheWing.Tests.EditMode
         {
             var alone = m_Apron.AddVehicle(m_TractorProfile, "Tug 9", new Vector3(60f, 0f, 0f), Quaternion.identity);
             var broker = new Answering();
-            var hand = new CouplingHand(broker, () => new List<VehicleController>())
-            {
-                Driving = CartChain.Couple(new[] { alone }, ChainJointSettings.Default)
-            };
+            var hand = HandAt(broker);
+            hand.Driving = CartChain.Couple(new[] { alone }, ChainJointSettings.Default);
 
-            hand.UnhitchTheBack();
+            hand.Refresh();
+            hand.Act();
 
-            Assert.That(m_Dropped, Is.Null, "there is nothing behind it to drop");
-
+            Assert.That(hand.Prompt, Is.EqualTo(CouplingPrompt.None), "there is nothing behind it to drop");
+            Assert.That(m_Dropped, Is.Null,
+                "the split callback is wired here, so a hand that split a lone tractor would set it");
             Assert.That(broker.HandedBack, Is.Empty);
         }
     

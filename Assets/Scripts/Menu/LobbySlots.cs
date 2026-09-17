@@ -51,8 +51,6 @@ namespace BelowTheWing.Menu
 
         public ulong? Who(int slot) => slot >= 0 && slot < Capacity ? m_Sitting[slot] : null;
 
-        public bool ReadyInSlot(int slot) => slot >= 0 && slot < Capacity && m_Ready[slot];
-
         public bool Arrived(ulong player)
         {
             if (SlotOf(player) >= 0)

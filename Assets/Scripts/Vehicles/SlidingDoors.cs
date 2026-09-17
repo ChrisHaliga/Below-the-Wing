@@ -1,4 +1,5 @@
 using BelowTheWing.Cargo;
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Vehicles
@@ -129,7 +130,7 @@ namespace BelowTheWing.Vehicles
                 box.Encapsulate(At(cart, panel.transform, vertex));
             }
 
-            Discard(baked);
+            Wiring.Discard.Now(baked);
             panel.SetBlendShapeWeight(0, was);
 
             return box;
@@ -137,18 +138,6 @@ namespace BelowTheWing.Vehicles
 
         static Vector3 At(Transform cart, Transform panel, Vector3 vertex)
             => cart.InverseTransformPoint(panel.TransformPoint(vertex));
-
-        static void Discard(Object baked)
-        {
-            if (Application.isPlaying)
-            {
-                Object.Destroy(baked);
-            }
-            else
-            {
-                Object.DestroyImmediate(baked);
-            }
-        }
 
         static void LeaveTheCartAlone(Collider bar, GameObject vehicle)
         {

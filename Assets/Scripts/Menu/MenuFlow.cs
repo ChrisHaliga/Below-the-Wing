@@ -21,11 +21,11 @@ namespace BelowTheWing.Menu
     {
         public event Action<MenuScreen> Changed;
 
+        public event Action LeftTheSession;
+
         public MenuScreen Showing { get; private set; } = MenuScreen.Title;
 
         public bool Open => Showing != MenuScreen.None;
-
-        public bool LeavingTheSession { get; private set; }
 
         public void AnyButtonPressed()
         {
@@ -53,9 +53,14 @@ namespace BelowTheWing.Menu
                 return;
             }
 
-            LeavingTheSession = Showing == MenuScreen.Lobby;
+            var leaving = Showing == MenuScreen.Lobby;
 
             Show(MenuScreen.Main);
+
+            if (leaving)
+            {
+                LeftTheSession?.Invoke();
+            }
         }
 
         public void ShiftStarted() => Show(MenuScreen.None);

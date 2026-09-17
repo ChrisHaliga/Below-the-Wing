@@ -11,6 +11,15 @@ namespace BelowTheWing.Settings
         public const float NarrowestFieldOfView = 60f;
         public const float WidestFieldOfView = 110f;
 
+        public static readonly CrewDefaults Defaults = new CrewDefaults(
+            mode: FullScreenMode.FullScreenWindow,
+            monitor: 0,
+            lookSensitivity: 1f,
+            invertLookY: false,
+            masterVolume: 1f,
+            effectsVolume: 1f,
+            fieldOfViewDegrees: 75f);
+
         const string ModeKey = "settings.display.mode";
         const string MonitorKey = "settings.display.monitor";
         const string WidthKey = "settings.display.width";
@@ -21,19 +30,26 @@ namespace BelowTheWing.Settings
         const string EffectsKey = "settings.audio.effects";
         const string FieldOfViewKey = "settings.look.fieldOfView";
 
+        static ISettingsStore s_Store = new PlayerPrefsSettingsStore();
         static bool s_Loaded;
 
-        static FullScreenMode s_Mode = FullScreenMode.FullScreenWindow;
+        static FullScreenMode s_Mode;
         static int s_Monitor;
         static int s_Width;
         static int s_Height;
-        static float s_Look = 1f;
+        static float s_Look;
         static bool s_InvertY;
-        static float s_Master = 1f;
-        static float s_Effects = 1f;
-        static float s_FieldOfView = 75f;
+        static float s_Master;
+        static float s_Effects;
+        static float s_FieldOfView;
 
         public static event Action Changed;
+
+        public static void Use(ISettingsStore store)
+        {
+            s_Store = store ?? throw new ArgumentNullException(nameof(store));
+            Reload();
+        }
 
         public static FullScreenMode Mode
         {
@@ -114,15 +130,9 @@ namespace BelowTheWing.Settings
         public static void ResetToDefaults()
         {
             s_Loaded = true;
-            s_Mode = FullScreenMode.FullScreenWindow;
-            s_Monitor = 0;
+            TakeDefaults();
             s_Width = 0;
             s_Height = 0;
-            s_Look = 1f;
-            s_InvertY = false;
-            s_Master = 1f;
-            s_Effects = 1f;
-            s_FieldOfView = 75f;
 
             Save();
         }
@@ -142,15 +152,26 @@ namespace BelowTheWing.Settings
 
             s_Loaded = true;
 
-            s_Mode = (FullScreenMode)PlayerPrefs.GetInt(ModeKey, (int)FullScreenMode.FullScreenWindow);
-            s_Monitor = Mathf.Max(0, PlayerPrefs.GetInt(MonitorKey, 0));
-            s_Width = Mathf.Max(0, PlayerPrefs.GetInt(WidthKey, 0));
-            s_Height = Mathf.Max(0, PlayerPrefs.GetInt(HeightKey, 0));
-            s_Look = ClampSensitivity(PlayerPrefs.GetFloat(LookKey, 1f));
-            s_InvertY = PlayerPrefs.GetInt(InvertKey, 0) != 0;
-            s_Master = Mathf.Clamp01(PlayerPrefs.GetFloat(MasterKey, 1f));
-            s_Effects = Mathf.Clamp01(PlayerPrefs.GetFloat(EffectsKey, 1f));
-            s_FieldOfView = ClampFieldOfView(PlayerPrefs.GetFloat(FieldOfViewKey, 75f));
+            s_Mode = (FullScreenMode)s_Store.ReadInt(ModeKey, (int)Defaults.Mode);
+            s_Monitor = Mathf.Max(0, s_Store.ReadInt(MonitorKey, Defaults.Monitor));
+            s_Width = Mathf.Max(0, s_Store.ReadInt(WidthKey, 0));
+            s_Height = Mathf.Max(0, s_Store.ReadInt(HeightKey, 0));
+            s_Look = ClampSensitivity(s_Store.ReadFloat(LookKey, Defaults.LookSensitivity));
+            s_InvertY = s_Store.ReadInt(InvertKey, Defaults.InvertLookY ? 1 : 0) != 0;
+            s_Master = Mathf.Clamp01(s_Store.ReadFloat(MasterKey, Defaults.MasterVolume));
+            s_Effects = Mathf.Clamp01(s_Store.ReadFloat(EffectsKey, Defaults.EffectsVolume));
+            s_FieldOfView = ClampFieldOfView(s_Store.ReadFloat(FieldOfViewKey, Defaults.FieldOfViewDegrees));
+        }
+
+        static void TakeDefaults()
+        {
+            s_Mode = Defaults.Mode;
+            s_Monitor = Defaults.Monitor;
+            s_Look = Defaults.LookSensitivity;
+            s_InvertY = Defaults.InvertLookY;
+            s_Master = Defaults.MasterVolume;
+            s_Effects = Defaults.EffectsVolume;
+            s_FieldOfView = Defaults.FieldOfViewDegrees;
         }
 
         static T Read<T>(ref T field)
@@ -175,16 +196,16 @@ namespace BelowTheWing.Settings
 
         static void Save()
         {
-            PlayerPrefs.SetInt(ModeKey, (int)s_Mode);
-            PlayerPrefs.SetInt(MonitorKey, s_Monitor);
-            PlayerPrefs.SetInt(WidthKey, s_Width);
-            PlayerPrefs.SetInt(HeightKey, s_Height);
-            PlayerPrefs.SetFloat(LookKey, s_Look);
-            PlayerPrefs.SetInt(InvertKey, s_InvertY ? 1 : 0);
-            PlayerPrefs.SetFloat(MasterKey, s_Master);
-            PlayerPrefs.SetFloat(EffectsKey, s_Effects);
-            PlayerPrefs.SetFloat(FieldOfViewKey, s_FieldOfView);
-            PlayerPrefs.Save();
+            s_Store.Write(ModeKey, (int)s_Mode);
+            s_Store.Write(MonitorKey, s_Monitor);
+            s_Store.Write(WidthKey, s_Width);
+            s_Store.Write(HeightKey, s_Height);
+            s_Store.Write(LookKey, s_Look);
+            s_Store.Write(InvertKey, s_InvertY ? 1 : 0);
+            s_Store.Write(MasterKey, s_Master);
+            s_Store.Write(EffectsKey, s_Effects);
+            s_Store.Write(FieldOfViewKey, s_FieldOfView);
+            s_Store.Save();
 
             Changed?.Invoke();
         }
