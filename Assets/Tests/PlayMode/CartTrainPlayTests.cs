@@ -10,6 +10,8 @@ namespace BelowTheWing.Tests.PlayMode
 {
     public sealed class CartTrainPlayTests
     {
+        const float CouplingStretchMetres = 0.05f;
+
         TestApron m_Apron;
         VehicleProfile m_TractorProfile;
         VehicleProfile m_CartProfile;
@@ -58,8 +60,10 @@ namespace BelowTheWing.Tests.PlayMode
             for (var i = 0; i < atRest.Count; i++)
             {
                 Assert.That(m_Train.CouplingBehind(i), Is.Not.Null, $"the coupling behind member {i} has gone");
-                Assert.That(whileMoving[i], Is.EqualTo(atRest[i]).Within(0.5f),
-                    $"coupling {i} has stretched -- the solver is losing the constraint under load");
+                Assert.That(whileMoving[i], Is.EqualTo(atRest[i]).Within(CouplingStretchMetres),
+                    $"coupling {i} went from {atRest[i]:F3} m to {whileMoving[i]:F3} m under load. " +
+                    "A hinge holds its anchors together, so any stretch at all is the solver losing " +
+                    "the constraint; the allowance is for solver noise, not for a drawbar growing");
             }
 
             var travelled = Vector3.Distance(m_Train.Leader.transform.position, Vector3.zero);
@@ -99,8 +103,10 @@ namespace BelowTheWing.Tests.PlayMode
             foreach (var member in m_Train.Members)
             {
                 var lean = Vector3.Angle(member.transform.up, Vector3.up);
-                Assert.That(lean, Is.LessThan(30f),
-                    $"'{member.DisplayName}' is on its way over during a gentle turn");
+                Assert.That(lean, Is.LessThan(12f),
+                    $"'{member.DisplayName}' leaned {lean:F0} degrees through a gentle turn. Static " +
+                    "rollover for this tractor is about 49 degrees, so a threshold near it only " +
+                    "catches a vehicle already going over rather than one visibly up on two wheels");
             }
         }
 

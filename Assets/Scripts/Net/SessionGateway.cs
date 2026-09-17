@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using BelowTheWing.Wiring;
 using Unity.Netcode;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
@@ -28,9 +29,6 @@ namespace BelowTheWing.Net
     {
         [SerializeField, Tooltip("Session type name")]
         string m_SessionType = "below-the-wing";
-
-        [SerializeField, Tooltip("Players allowed in a session")]
-        int m_MaxPlayers = 5;
 
         ISession m_Session;
 
@@ -110,7 +108,7 @@ namespace BelowTheWing.Net
                 {
                     Type = m_SessionType,
                     Name = $"Below the Wing {DateTime.Now:HH:mm}",
-                    MaxPlayers = m_MaxPlayers
+                    MaxPlayers = Shift.MostCrew
                 }.WithDistributedAuthorityNetwork();
 
                 m_Session = await MultiplayerService.Instance.CreateSessionAsync(options);

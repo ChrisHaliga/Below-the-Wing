@@ -40,8 +40,8 @@ namespace BelowTheWing.Tests.PlayMode
             yield return Steps.Seconds(2f);
 
             Assert.That(cart.transform.position.y, Is.EqualTo(0f).Within(0.03f),
-                $"settled at {cart.transform.position.y:F3} m. The origin is ground level now, so a " +
-                "cart put down at zero has to stay at about zero -- anything else means it was " +
+                $"settled at {cart.transform.position.y:F3} m. A vehicle's origin is ground level, " +
+                "so a cart put down at zero has to stay at about zero -- anything else means it was " +
                 "dropped from a height or buried in the apron");
         }
 
@@ -188,7 +188,7 @@ namespace BelowTheWing.Tests.PlayMode
             var rolled = Vector3.Distance(cart.transform.position, from);
             var expected = rolled / cart.GetComponent<VehicleShape>().Wheels[0].RadiusMetres * Mathf.Rad2Deg;
 
-            Assert.That(look.TurnedDegrees(0) - before, Is.EqualTo(expected).Within(expected * 0.25f),
+            Assert.That(look.TurnedDegrees(0) - before, Is.EqualTo(expected).Within(expected * 0.05f),
                 $"it rolled {rolled:F2} m and its wheel turned {look.TurnedDegrees(0) - before:F0} " +
                 $"degrees against the {expected:F0} that distance is worth. A wheel that turns at " +
                 "anything but road speed reads as the cart skidding everywhere it goes. Measured " +

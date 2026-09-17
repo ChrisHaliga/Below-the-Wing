@@ -55,14 +55,7 @@ namespace BelowTheWing.Vehicles
                 wanted.Asked = true;
                 wanted.SinceAsked = 0f;
 
-                var chasing = wanted;
-                chasing.Train.RequestOwnership(broker, granted =>
-                {
-                    if (!granted)
-                    {
-                        chasing.Asked = true;
-                    }
-                });
+                wanted.Train.RequestOwnership(broker, _ => { });
             }
         }
 

@@ -65,7 +65,6 @@ MonoBehaviour:
   arcadeHandling: 1
   fastestTurnDegreesPerSecond: 240
   turnsIntoItPerSecond: 8
-  staysUprightPerSecond: 12
   mostSideGripMetresPerSecondSquared: 20
   gripHoldsHeadingPerSecond: 3
   maxSteerAngleDegrees: 60

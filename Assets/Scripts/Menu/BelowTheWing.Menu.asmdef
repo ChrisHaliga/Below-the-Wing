@@ -1,7 +1,9 @@
 {
     "name": "BelowTheWing.Menu",
     "rootNamespace": "BelowTheWing.Menu",
-    "references": [],
+    "references": [
+        "BelowTheWing.Wiring"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

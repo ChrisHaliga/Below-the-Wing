@@ -73,9 +73,9 @@ namespace BelowTheWing.Tests.PlayMode
             var rolled = cart.transform.position.z - from.z;
             Assert.That(cart.Body.linearVelocity.magnitude, Is.LessThan(0.2f), "it does stop eventually");
             Assert.That(rolled, Is.GreaterThan(4f),
-                $"shoved to 5 m/s, the cart rolled {rolled:F1} m. It rolled 15 m when coasting drag " +
-                "was 0.1, and the repo owner asked for carts that do not feel weightless, so the " +
-                "figure is 0.8 now. It still has to roll rather than stop dead");
+                $"shoved to 5 m/s, the cart rolled {rolled:F1} m. A cart shoved across the apron " +
+                "has to coast rather than stop dead, and rolling much further than this reads as " +
+                "weightless");
         }
     }
 }

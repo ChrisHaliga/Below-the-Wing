@@ -5,8 +5,6 @@ namespace BelowTheWing.Vehicles
 {
     public interface IOwnershipBroker
     {
-        ulong LocalClientId { get; }
-
         ulong OwnerOf(VehicleController vehicle);
 
         bool OwnedByUs(VehicleController vehicle);

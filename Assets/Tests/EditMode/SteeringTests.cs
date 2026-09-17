@@ -79,9 +79,9 @@ namespace BelowTheWing.Tests.EditMode
             var afterOneStep = Steering.Step(0f, 1f, 0.5f, 0.02f, m_Profile);
 
             Assert.That(afterOneStep, Is.EqualTo(120f * 0.02f).Within(0.01f),
-                "the wheels swing over at the rate they always did. Snapped straight to their limit " +
-                "instead, a tractor changes direction in a single step and whatever it is towing is " +
-                "left to catch up through its coupling");
+                "the wheels swing over at the profile's steer rate. Snapped straight to their " +
+                "limit instead, a tractor changes direction in a single step and whatever it is " +
+                "towing is left to catch up through its coupling");
         }
     }
 }

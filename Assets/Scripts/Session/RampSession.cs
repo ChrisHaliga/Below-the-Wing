@@ -219,7 +219,10 @@ namespace BelowTheWing.Session
                 }
             }
 
-            return arrivals[0];
+            throw new MisbuiltException(
+                $"Every one of the {arrivals.Count} arrival points is occupied, so this player has " +
+                "nowhere to stand. The session admits Shift.MostCrew players and the apron lays out " +
+                "that many points, so the two have come apart.");
         }
 
         Vector3 CrewSize()

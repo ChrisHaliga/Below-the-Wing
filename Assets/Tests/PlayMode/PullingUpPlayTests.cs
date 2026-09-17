@@ -172,7 +172,7 @@ namespace BelowTheWing.Tests.PlayMode
 
             yield return new WaitForFixedUpdate();
 
-            Assume.That(m_Crew.Grounded, Is.False,
+            Assert.That(m_Crew.Grounded, Is.False,
                 "this only says anything while they are still off the ground");
             Assert.That(m_Crew.HeightMetres, Is.LessThan(m_Profile.heightMetres - 0.01f),
                 $"the key came up and they stretched back to {m_Crew.HeightMetres:F2} m while still " +

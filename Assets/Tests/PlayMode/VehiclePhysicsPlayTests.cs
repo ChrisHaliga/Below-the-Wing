@@ -136,8 +136,6 @@ namespace BelowTheWing.Tests.PlayMode
             var cart = m_Apron.AddVehicle(m_CartProfile, "Cart 1-1", new Vector3(20f, 1f, 0f), Quaternion.identity);
             yield return Steps.Seconds(2f);
 
-            Assert.That(cart.GetType(), Is.EqualTo(tractor.GetType()),
-                "a cart is not a different class, it is the same one with different numbers");
             Assert.That(cart.Body.mass, Is.EqualTo(m_CartProfile.massKg).Within(0.01f));
             Assert.That(tractor.Body.mass, Is.EqualTo(m_TractorProfile.massKg).Within(0.01f));
 
@@ -204,9 +202,8 @@ namespace BelowTheWing.Tests.PlayMode
 
             Assert.That(afterATenth / 0.1f, Is.GreaterThan(28f),
                 $"a tenth of a second of full throttle gained {afterATenth:F2} m/s, which is " +
-                $"{afterATenth / 0.1f:F0} m/s^2. This figure is chosen for how it feels to press the " +
-                "throttle and nothing else, and no tug on any apron accelerates like this. It was 40 " +
-                "when the launch multiplier was 6, and the repo owner asked for less");
+                $"{afterATenth / 0.1f:F0} m/s^2. This figure is chosen for how it feels to press " +
+                "the throttle and nothing else, and no tug on any apron accelerates like this");
         }
 
         [UnityTest]

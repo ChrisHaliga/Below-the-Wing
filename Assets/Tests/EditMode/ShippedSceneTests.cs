@@ -15,8 +15,8 @@ namespace BelowTheWing.Tests.EditMode
 {
     public sealed class ShippedSceneTests
     {
-        const string ScenePath = "Assets/Scenes/Apron.unity";
-        const string PrefabFolder = "Assets/Content/Prefabs";
+        const string ScenePath = ShippedContent.ScenePath;
+        const string PrefabFolder = ShippedContent.PrefabFolder;
 
         Scene m_Apron;
 
@@ -33,12 +33,7 @@ namespace BelowTheWing.Tests.EditMode
             return found;
         }
 
-        static GameObject Prefab(string name)
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabFolder}/{name}.prefab");
-            Assert.That(prefab, Is.Not.Null, $"there is no prefab at {PrefabFolder}/{name}.prefab");
-            return prefab;
-        }
+        static GameObject Prefab(string name) => ShippedContent.PrefabNamed(name);
 
         [Test]
         public void TheNetworkManagerKnowsWhichPrefabsCanBeSpawned()
@@ -207,7 +202,7 @@ namespace BelowTheWing.Tests.EditMode
                 "BaggageCart: with no interior there is nowhere for a bag to be inside the cart");
 
             Assert.That(cart.transform.Find(ApronAppearance.LookName), Is.Not.Null,
-                "BaggageCart: nothing to look at. The model is what a player sees now, and a cart " +
+                "BaggageCart: nothing to look at. The model is what a player sees, and a cart " +
                 "drawn as nothing is a cart that appears to be a floating label");
             Assert.That(cart.GetComponentInChildren<WheelLook>(), Is.Not.Null,
                 "BaggageCart: with nothing driving the visible wheels they neither turn nor stay on " +

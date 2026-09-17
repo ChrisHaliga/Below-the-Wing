@@ -9,6 +9,8 @@ namespace BelowTheWing.Tests.PlayMode
 {
     public sealed class TowedTrainPlayTests
     {
+        const float GapDriftMetres = 0.05f;
+
         static readonly CorrectionSettings Settings = CorrectionSettings.Default;
 
         TestApron m_Apron;
@@ -95,7 +97,7 @@ namespace BelowTheWing.Tests.PlayMode
             var now = GapsBetweenMembers(train);
             for (var i = 0; i < now.Length; i++)
             {
-                Assert.That(now[i], Is.EqualTo(spacedAt[i]).Within(0.35f),
+                Assert.That(now[i], Is.EqualTo(spacedAt[i]).Within(GapDriftMetres),
                     $"the gap behind vehicle {i} went from {spacedAt[i]:F2} m to {now[i]:F2} m. A train " +
                     "that stretches and shuffles while standing still is one nobody can line a cart up " +
                     "behind or load anything onto");
@@ -161,7 +163,7 @@ namespace BelowTheWing.Tests.PlayMode
             var now = GapsBetweenMembers(train);
             for (var i = 0; i < now.Length; i++)
             {
-                Assert.That(now[i], Is.EqualTo(spacedAt[i]).Within(0.4f),
+                Assert.That(now[i], Is.EqualTo(spacedAt[i]).Within(GapDriftMetres),
                     $"the gap behind vehicle {i} is {now[i]:F2} m, was {spacedAt[i]:F2} m. Driven back " +
                     "from the front, the couplings have to carry the rest of the train with it");
             }
@@ -188,7 +190,7 @@ namespace BelowTheWing.Tests.PlayMode
             var now = GapsBetweenMembers(train);
             for (var i = 0; i < now.Length; i++)
             {
-                Assert.That(now[i], Is.EqualTo(spacedAt[i]).Within(0.5f),
+                Assert.That(now[i], Is.EqualTo(spacedAt[i]).Within(GapDriftMetres),
                     $"under a steady correction the gap behind vehicle {i} went from {spacedAt[i]:F2} m " +
                     $"to {now[i]:F2} m. The front of the train is the only part being pushed, so the " +
                     "couplings are what carry the rest of it along; a train that stretches while it is " +
@@ -235,26 +237,5 @@ namespace BelowTheWing.Tests.PlayMode
                 $"{string.Join(", ", now)}");
         }
 
-        [UnityTest]
-        public IEnumerator TheFrontOfATrainIsTheOnlyMemberAnybodyHasAReportFor()
-        {
-            var train = SomebodyElsesTrain();
-            yield return Steps.Seconds(1f);
-
-            var reported = 0;
-            foreach (var member in train.Members)
-            {
-                if (ReferenceEquals(member.Chain.Leader, member))
-                {
-                    reported++;
-                }
-            }
-
-            Assert.That(reported, Is.EqualTo(1),
-                "exactly one member of a train is the one steered toward what its owner said, and " +
-                "every other member follows through its coupling. Two of them and the couplings " +
-                "become an argument between the solver and the network; none of them and the whole " +
-                "train drifts off on its own physics");
-        }
     }
 }

@@ -1,29 +1,15 @@
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
     public sealed class SolidAsModelledTests
     {
-        const string TractorPrefabPath = "Assets/Content/Prefabs/BaggageTractor.prefab";
-        const string CartPrefabPath = "Assets/Content/Prefabs/BaggageCart.prefab";
-
-        static VehicleShape Shape(string path)
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            Assert.That(prefab, Is.Not.Null, $"there is no prefab at {path}");
-
-            var shape = prefab.GetComponent<VehicleShape>();
-            Assert.That(shape, Is.Not.Null, $"{path} has no shape");
-            return shape;
-        }
-
         [Test]
         public void ATractorIsSolidInTheShapeOfItsModelRatherThanOneBox()
         {
-            var parts = Shape(TractorPrefabPath).SolidParts;
+            var parts = ShippedContent.Shape(ShippedContent.TractorPrefabPath).SolidParts;
 
             Assert.That(parts.Count, Is.GreaterThan(1),
                 "a tractor described as a single box is solid from the tarmac to above head height " +
@@ -40,45 +26,58 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void ATractorHasSomethingToStandOnOverItsRearWheels()
+        public void ATractorIsSolidInTheMudguardSomebodyStepsOnToGetUp()
         {
-            var shape = Shape(TractorPrefabPath);
+            var shape = ShippedContent.Shape(ShippedContent.TractorPrefabPath);
 
-            var rearWheelTop = 0f;
-            foreach (var wheel in shape.Wheels)
-            {
-                if (wheel.CentreLocal.z < 0f)
-                {
-                    rearWheelTop = Mathf.Max(rearWheelTop, wheel.CentreLocal.y + wheel.RadiusMetres);
-                }
-            }
-
-            var platform = default(VehicleShape.SolidPart);
+            var stepped = default(VehicleShape.SolidPart);
             var found = false;
+
             foreach (var part in shape.SolidParts)
             {
-                if (part.CentreLocal.z < -0.4f && part.CentreLocal.y > rearWheelTop * 0.8f
-                    && part.CentreLocal.y < 1f)
+                if (part.Name != "Tire_Cover")
                 {
-                    platform = part;
-                    found = true;
+                    continue;
                 }
+
+                stepped = part;
+                found = true;
             }
 
             Assert.That(found, Is.True,
-                "these tractors carry a platform over their back wheels and it is how somebody gets " +
-                "on. Described as part of one big box, it is the top of a solid block a person can " +
-                $"neither step onto nor stand beside. Rear wheels reach {rearWheelTop:F2} m");
+                "the mudguard over the rear wheel is what somebody puts a foot on to get into one " +
+                "of these. Named rather than found by a height band, because a band wide enough to " +
+                "catch it also catches the seat cushions, and a test that settles for whichever " +
+                "part it happens to reach last passes with nothing to stand on at all");
 
-            Assert.That(platform.IsAPieceOfTheModel, Is.True,
-                $"'{platform.Name}' has to be solid at the shape it was modelled, because the useful " +
-                "part of a step is its surface and a box around it fills the space underneath");
+            Assert.That(stepped.IsAPieceOfTheModel, Is.True,
+                "a box around a mudguard fills the arch underneath it, so the wheel it covers is " +
+                "solid to the ground and the tractor cannot be walked past");
+
+            var rearWheel = default(VehicleShape.WheelPlacement);
+            var haveOne = false;
+
+            foreach (var wheel in shape.Wheels)
+            {
+                if (wheel.CentreLocal.z >= 0f || (haveOne && wheel.CentreLocal.x * stepped.CentreLocal.x <= 0f))
+                {
+                    continue;
+                }
+
+                rearWheel = wheel;
+                haveOne = true;
+            }
+
+            Assert.That(haveOne, Is.True, "a tractor with no rear wheel has nothing to cover");
+            Assert.That(stepped.CentreLocal.y, Is.GreaterThan(rearWheel.CentreLocal.y),
+                $"'{stepped.Name}' sits at {stepped.CentreLocal.y:F3} m against a rear wheel centred " +
+                $"at {rearWheel.CentreLocal.y:F3} m. Below the axle it is not a step, it is a skirt");
         }
 
         [Test]
         public void ACartIsStillSolidInBoxesBecauseADeckAndALipAreBoxes()
         {
-            var parts = Shape(CartPrefabPath).SolidParts;
+            var parts = ShippedContent.Shape(ShippedContent.CartPrefabPath).SolidParts;
 
             Assert.That(parts, Is.Not.Empty);
 

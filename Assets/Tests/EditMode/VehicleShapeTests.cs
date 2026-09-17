@@ -134,9 +134,10 @@ namespace BelowTheWing.Tests.EditMode
         public void ATractorsWheelbaseIsWhatItsAxlesMeasure()
         {
             Assert.That(m_Tractor.WheelbaseMetres, Is.EqualTo(1.5152f).Within(1e-3f),
-                "1.52 m between the axles, off the model. Worked out from a body length instead it " +
-                "came to 2.1 m, and a tractor that steers on a wheelbase it does not have turns " +
-                "through a corner it cannot make");
+                "1.52 m between the axles. This fixture types its own figures, so it guards the " +
+                "arithmetic rather than the model, and ShippedSceneTests is what holds the real " +
+                "tractor to it. A tractor that steers on a wheelbase it does not have turns through " +
+                "a corner it cannot make");
             Assert.That(m_Tractor.TrackMetres, Is.EqualTo(1.1975f).Within(2e-3f));
         }
 
@@ -266,7 +267,7 @@ namespace BelowTheWing.Tests.EditMode
             foreach (var cart in train.Carts)
             {
                 Assert.That(cart.Position.y, Is.EqualTo(0f).Within(1e-4f),
-                    "a vehicle's origin is on the ground now, so placing one means saying where it " +
+                    "a vehicle's origin is on the ground, so placing one means saying where it " +
                     "touches down rather than where the middle of its bodywork floats");
             }
         }

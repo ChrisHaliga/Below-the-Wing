@@ -108,8 +108,8 @@ namespace BelowTheWing.Tests.PlayMode
             Assert.That(afterSixty, Is.EqualTo(afterFour).Within(0.01f),
                 "smoothing is one rate and it applies whatever the body did. A cutoff above which " +
                 $"the shape gives up and arrives with the body -- {afterFour:P0} of the way behind " +
-                $"over four metres, {afterSixty:P0} over sixty -- is a snap being hidden, and there " +
-                "are no snaps left to hide");
+                $"over four metres, {afterSixty:P0} over sixty -- would hide a snap rather than " +
+                "smooth it");
 
             yield return null;
         }
@@ -165,9 +165,8 @@ namespace BelowTheWing.Tests.PlayMode
             shape.Follow(1f / 60f);
 
             Assert.That(shape.TrailingByMetres, Is.LessThan(0.01f),
-                "the body you walk is the one body that must never trail. Smoothing only knew how to " +
-                "ask a vehicle whether it was yours, so every player's own capsule was drawn a tenth " +
-                "of a second behind their feet");
+                "the body you walk is the one body that must never trail. A crew member drawn " +
+                "behind their own feet is one whose hands reach from somewhere they are not");
 
             yield return null;
         }

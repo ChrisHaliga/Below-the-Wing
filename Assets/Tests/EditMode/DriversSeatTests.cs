@@ -1,27 +1,16 @@
 using BelowTheWing.Tests.Support;
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
     public sealed class DriversSeatTests
     {
-        const string TractorPrefabPath = "Assets/Content/Prefabs/BaggageTractor.prefab";
-        const string CartPrefabPath = "Assets/Content/Prefabs/BaggageCart.prefab";
-
-        static VehicleShape Shape(string path)
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            Assert.That(prefab, Is.Not.Null, $"there is no prefab at {path}");
-            return prefab.GetComponent<VehicleShape>();
-        }
-
         [Test]
         public void ATractorKnowsWhereItsDriverSits()
         {
-            var seat = Shape(TractorPrefabPath).SeatLocal;
+            var seat = ShippedContent.Shape(ShippedContent.TractorPrefabPath).SeatLocal;
 
             Assert.That(seat.HasValue, Is.True,
                 "a tractor with no seat puts its driver at its own origin, which is a point on the " +
@@ -35,7 +24,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void ATractorsSeatIsBehindItsFrontAxle()
         {
-            var shape = Shape(TractorPrefabPath);
+            var shape = ShippedContent.Shape(ShippedContent.TractorPrefabPath);
             var seat = shape.SeatLocal.Value;
 
             var frontAxle = float.MinValue;
@@ -52,7 +41,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void ACartHasNoSeatBecauseNobodyDrivesIt()
         {
-            Assert.That(Shape(CartPrefabPath).SeatLocal.HasValue, Is.False,
+            Assert.That(ShippedContent.Shape(ShippedContent.CartPrefabPath).SeatLocal.HasValue, Is.False,
                 "a cart is towed. A seat on one is a driving position for a vehicle with no controls");
         }
 

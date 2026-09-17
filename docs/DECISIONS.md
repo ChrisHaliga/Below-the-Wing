@@ -521,3 +521,26 @@ marker is refused, not seated at its origin. A missing bag prefab is refused, no
 The shipped content is guarded by the prefab tests; the throws are what catches content the tests
 have not seen yet.
 
+## 2026-09-17 — One reach and one cone, on the crew member
+
+Decided during the audit fix pass. The distance a player could interact over was
+written as 3 m in three places and the cone as 40 degrees in four, one of them a
+serialized field on the crew prefab. Setting the field moved the seat offer and
+left parking and hitching on the old figure, so one key reached two different
+distances.
+
+Both now live on CrewCharacter and everything that aims reads them from there:
+the seat, the coupling hand, the cart brake. VehicleOccupancy takes the aim, the
+reach and the cone as constructor arguments rather than as settable properties,
+so there is no state in which it has a reach but no aim.
+
+What this removed: the nearest-vehicle fallback. VehicleOccupancy used to pick
+the closest driveable vehicle when no aim was supplied, and nothing in the game
+ever supplied no aim, so the fallback was reached only by its own tests while
+the cone-then-raycast path the game runs had no coverage at all. DriverPrompt,
+which existed to serve it, is gone.
+
+The rule that stands: what a player interacts with is whatever their camera ray
+hits inside the interaction distance, and otherwise the thing closest to the
+centre of their view cone. Distance from the body decides nothing.
+

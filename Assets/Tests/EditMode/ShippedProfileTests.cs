@@ -2,19 +2,18 @@ using BelowTheWing.Apron;
 using BelowTheWing.Crew;
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
     public sealed class ShippedProfileTests
     {
-        const string TractorPath = "Assets/Content/Vehicles/BaggageTractor.asset";
-        const string CartPath = "Assets/Content/Vehicles/BaggageCart.asset";
-        const string AircraftPath = "Assets/Content/Aircraft/NarrowbodyAirliner.asset";
-        const string CrewPath = "Assets/Content/Crew/RampWorker.asset";
-        const string TractorPrefabPath = "Assets/Content/Prefabs/BaggageTractor.prefab";
-        const string CartPrefabPath = "Assets/Content/Prefabs/BaggageCart.prefab";
+        const string TractorPath = ShippedContent.TractorProfilePath;
+        const string CartPath = ShippedContent.CartProfilePath;
+        const string AircraftPath = ShippedContent.AircraftProfilePath;
+        const string CrewPath = ShippedContent.CrewProfilePath;
+        const string TractorPrefabPath = ShippedContent.TractorPrefabPath;
+        const string CartPrefabPath = ShippedContent.CartPrefabPath;
 
         static VehicleShape Shape(string prefabPath)
             => Load<GameObject>(prefabPath).GetComponent<VehicleShape>();
@@ -30,12 +29,7 @@ namespace BelowTheWing.Tests.EditMode
             return smallest;
         }
 
-        static T Load<T>(string path) where T : UnityEngine.Object
-        {
-            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
-            Assert.That(asset, Is.Not.Null, $"expected a {typeof(T).Name} at {path}");
-            return asset;
-        }
+        static T Load<T>(string path) where T : UnityEngine.Object => ShippedContent.Load<T>(path);
 
         [Test]
         public void ABaggageTractorWeighsWhatABaggageTractorWeighs()
@@ -74,10 +68,8 @@ namespace BelowTheWing.Tests.EditMode
                 Assert.That(profile.suspensionRestLengthMetres, Is.LessThan(smallest),
                     $"{profilePath} has {profile.suspensionRestLengthMetres:F2} m of travel on a " +
                     $"{smallest:F3} m wheel. More travel than the wheel has radius and the vehicle " +
-                    "visibly floats above its own axles. These assets are written once, when they " +
-                    "do not exist, and never again -- so retuning a vehicle in the bootstrap and " +
-                    "assuming the game picked it up is how a shipped vehicle ends up running on " +
-                    "numbers nothing else in the project uses");
+                    "visibly floats above its own axles. This asset is what the game runs on, so it " +
+                    "is the copy of the figure that has to be right");
             }
         }
 
@@ -121,9 +113,9 @@ namespace BelowTheWing.Tests.EditMode
 
                 Assert.That(profile.centerOfMassOffset.y, Is.GreaterThan(0f),
                     $"{path} puts its centre of mass at or below its own origin. A vehicle's origin " +
-                    "is on the tarmac between its wheels now, so that is mass underneath every " +
-                    "contact patch: braking pitches the nose up, accelerating dives it, and nothing " +
-                    "can tip the vehicle over");
+                    "is on the tarmac between its wheels, so that is mass underneath every contact " +
+                    "patch: braking pitches the nose up, accelerating dives it, and nothing can tip " +
+                    "the vehicle over");
 
                 var bodywork = Shape(path == TractorPath ? TractorPrefabPath : CartPrefabPath);
 
@@ -214,9 +206,8 @@ namespace BelowTheWing.Tests.EditMode
         {
             var tractor = Load<VehicleProfile>(TractorPath);
             const int corners = 4;
-            const float gravity = 9.81f;
 
-            var weightPerCorner = tractor.massKg * gravity / corners;
+            var weightPerCorner = tractor.massKg * Mathf.Abs(Physics.gravity.y) / corners;
             var springAtFullCompression = tractor.springStrengthNewtons;
 
             Assert.That(springAtFullCompression, Is.GreaterThan(weightPerCorner),

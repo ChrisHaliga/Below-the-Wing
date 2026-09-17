@@ -575,7 +575,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Net::BelowTheWing.Net.SessionGateway
   m_SessionType: below-the-wing
-  m_MaxPlayers: 5
 --- !u!114 &1520282050
 MonoBehaviour:
   m_ObjectHideFlags: 0

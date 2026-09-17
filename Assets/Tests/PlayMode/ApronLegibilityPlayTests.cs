@@ -109,7 +109,10 @@ namespace BelowTheWing.Tests.PlayMode
 
             yield return Steps.Seconds(1f);
 
-            Assert.That(readout.PhysicsStepMilliseconds, Is.GreaterThan(0f));
+            Assert.That(readout.PhysicsStepMilliseconds, Is.GreaterThan(0f).And.LessThan(1000f * Time.fixedDeltaTime),
+                $"the readout says a physics step took {readout.PhysicsStepMilliseconds:F2} ms " +
+                $"against a fixed step of {1000f * Time.fixedDeltaTime:F2} ms. Any positive number " +
+                "at all passed before, including one from a stopwatch measuring the wrong thing");
         }
     }
 }

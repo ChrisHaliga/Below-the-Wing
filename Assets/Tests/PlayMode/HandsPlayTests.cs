@@ -131,16 +131,19 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator AHandTakesTheNearestThingWhateverItIs()
+        public IEnumerator AHandTakesWhatItIsAimedAtRatherThanWhatIsNearest()
         {
-            var bag = ABagAt(m_RightAnchor.position + Vector3.forward * 0.3f);
-            var placed1 = ARailAt(m_RightAnchor.position + Vector3.right * 1.6f);
+            var rail = ARailAt(m_RightAnchor.position + (Vector3.forward * 0.25f) + (Vector3.right * 0.1f));
+            var bag = ABagAt(m_RightAnchor.position + Vector3.forward * 0.6f);
             yield return Steps.Seconds(0.5f);
 
             m_Hands.Right.Press(Time.time, Looking(bag.position));
 
-            Assert.That(m_Hands.Right.Carrying, Is.SameAs(bag));
-            Assert.That(m_Hands.Right.HoldingOnto, Is.Null);
+            Assert.That(m_Hands.Right.Carrying, Is.SameAs(bag),
+                "the rail is nearer and both are in reach, so a hand that went by distance would " +
+                "have taken the rail; what the player is looking at is what they get");
+            Assert.That(m_Hands.Right.HoldingOnto, Is.Null,
+                $"the hand took hold of {rail.name} instead of carrying the bag it was aimed at");
         }
 
         [UnityTest]

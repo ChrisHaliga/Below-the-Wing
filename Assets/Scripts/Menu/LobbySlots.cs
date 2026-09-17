@@ -1,8 +1,10 @@
+using BelowTheWing.Wiring;
+
 namespace BelowTheWing.Menu
 {
     public sealed class LobbySlots
     {
-        public const int Capacity = 5;
+        public const int Capacity = Shift.MostCrew;
 
         readonly ulong?[] m_Sitting = new ulong?[Capacity];
         readonly bool[] m_Ready = new bool[Capacity];

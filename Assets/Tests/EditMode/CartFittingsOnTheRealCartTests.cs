@@ -1,29 +1,20 @@
 using BelowTheWing.Cargo;
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {
     public sealed class CartFittingsOnTheRealCartTests
     {
-        const string CartPrefabPath = "Assets/Content/Prefabs/BaggageCart.prefab";
-        const string CartProfilePath = "Assets/Content/Vehicles/BaggageCart.asset";
-
         GameObject m_Cart;
 
         [SetUp]
         public void SetUp()
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CartPrefabPath);
-            Assert.That(prefab, Is.Not.Null, $"there is no prefab at {CartPrefabPath}");
-
-            var profile = AssetDatabase.LoadAssetAtPath<VehicleProfile>(CartProfilePath);
-            Assert.That(profile, Is.Not.Null, $"there is no profile at {CartProfilePath}");
-
-            m_Cart = Object.Instantiate(prefab);
-            m_Cart.GetComponent<VehicleController>().Configure(profile, "Cart 1");
+            m_Cart = Object.Instantiate(ShippedContent.Prefab(ShippedContent.CartPrefabPath));
+            m_Cart.GetComponent<VehicleController>().Configure(
+                ShippedContent.Load<VehicleProfile>(ShippedContent.CartProfilePath), "Cart 1");
         }
 
         [TearDown]

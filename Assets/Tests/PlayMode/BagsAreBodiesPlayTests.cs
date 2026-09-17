@@ -10,6 +10,9 @@ namespace BelowTheWing.Tests.PlayMode
 {
     public sealed class BagsAreBodiesPlayTests
     {
+        const float BagHalfWidthMetres = 0.2f;
+        const float LipThicknessMetres = 0.05f;
+
         TestApron m_Apron;
         VehicleProfile m_CartProfile;
         BagProfile m_BagProfile;
@@ -95,8 +98,11 @@ namespace BelowTheWing.Tests.PlayMode
             yield return Steps.Seconds(1.5f);
 
             var slidTo = InTheCart(bag);
-            Assert.That(Mathf.Abs(slidTo.x), Is.GreaterThan(0.3f),
-                $"the bag is still at {slidTo.x:F2} m from the middle: friction held a bag through a " +
+            var againstTheLip = m_Shape.InteriorLocal.extents.x - (BagHalfWidthMetres + LipThicknessMetres);
+
+            Assert.That(Mathf.Abs(slidTo.x), Is.GreaterThan(againstTheLip * 0.9f),
+                $"the bag is at {slidTo.x:F2} m from the middle and the lip's inner face is at " +
+                $"{againstTheLip:F2} m. Stopping short of it is friction holding a bag through a " +
                 "corner that should have thrown it, and the lip never had a job to do");
             Assert.That(Mathf.Abs(slidTo.x), Is.LessThan(m_Shape.InteriorLocal.extents.x),
                 "the lip is taller than a flat bag's middle, and that is what a lip is for");

@@ -87,7 +87,7 @@ namespace BelowTheWing.Tests.PlayMode
             LocalSession.Start(m_Netcode);
             yield return null;
 
-            Assume.That(m_Netcode.IsListening, Is.True, "there has to be a session to close");
+            Assert.That(m_Netcode.IsListening, Is.True, "there has to be a session to close");
 
             AnEndingFor(new NothingToLeave()).CloseBeforeQuitting();
 
@@ -127,7 +127,7 @@ namespace BelowTheWing.Tests.PlayMode
 
             Assert.That(lifetime.CloseBeforeQuitting(), Is.True,
                 "the leave finished and the quit is still being refused. A game that cannot be " +
-                "closed is the fault being fixed here");
+                "closed is worse than a session record the service times out on its own");
         }
 
         [UnityTest]
@@ -138,7 +138,7 @@ namespace BelowTheWing.Tests.PlayMode
 
             var lifetime = AnEndingFor(new OneToLeave());
 
-            Assume.That(lifetime.CloseBeforeQuitting(), Is.False, "the first ask starts the leave");
+            Assert.That(lifetime.CloseBeforeQuitting(), Is.False, "the first ask starts the leave");
 
             yield return Steps.Seconds(SessionLifetime.WaitsForTheServiceSeconds + 0.5f);
 
@@ -198,7 +198,7 @@ namespace BelowTheWing.Tests.PlayMode
             LocalSession.Start(m_Netcode);
             yield return null;
 
-            Assume.That(m_Netcode.IsListening, Is.True);
+            Assert.That(m_Netcode.IsListening, Is.True, "there has to be a session to close");
             Assert.That(m_Transport.ConnectionData.Port, Is.Not.EqualTo(built),
                 $"a solo session bound {built}, the port it was serialised with. Nothing dials into " +
                 "a session running alone, so holding a fixed port buys nothing and costs a launch " +

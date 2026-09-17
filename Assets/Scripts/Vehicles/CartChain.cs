@@ -31,7 +31,6 @@ namespace BelowTheWing.Vehicles
 
         readonly List<HingeJoint> m_Couplings;
 
-        readonly List<Rigidbody> m_Bodies;
         readonly ContactBlackout m_Crashing = new ContactBlackout(BlackoutSettings.Default);
         readonly ChainJointSettings m_Settings;
 
@@ -40,12 +39,6 @@ namespace BelowTheWing.Vehicles
             m_Members = members;
             m_Couplings = couplings;
             m_Settings = settings;
-
-            m_Bodies = new List<Rigidbody>(members.Count);
-            foreach (var member in members)
-            {
-                m_Bodies.Add(member.Body);
-            }
 
             foreach (var member in m_Members)
             {
@@ -58,10 +51,6 @@ namespace BelowTheWing.Vehicles
         public IReadOnlyList<VehicleController> Members => m_Members;
 
         public VehicleController Leader => m_Members[0];
-
-        public IReadOnlyList<Rigidbody> Bodies => m_Bodies;
-
-        public ChainJointSettings Settings => m_Settings;
 
         public bool CouplingsEngaged
         {

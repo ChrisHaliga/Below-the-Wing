@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BelowTheWing.Vehicles;
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Apron
@@ -87,7 +88,7 @@ namespace BelowTheWing.Apron
             cartsPerTrain = 4,
             trainSpacingMetres = 6f,
             firstTractorPosition = new Vector3(-18f, 0f, -22f),
-            crewSpawnPoints = 5,
+            crewSpawnPoints = Shift.MostCrew,
             crewSpacingMetres = 2f
         };
     }

@@ -100,7 +100,7 @@ namespace BelowTheWing.Tests.PlayMode
                 Assert.That(wandered, Is.LessThan(0.01f),
                     $"'{member.name}' wandered {wandered * 100f:F1} cm in eight seconds with nobody " +
                     "near it. Standing still has to come from the tyres holding, because nothing " +
-                    "freezes a parked train any more");
+                    "holds a parked train still except its brakes");
                 Assert.That(Quaternion.Angle(member.transform.rotation, facing[i]), Is.LessThan(1f),
                     $"'{member.name}' turned on the spot while parked");
             }

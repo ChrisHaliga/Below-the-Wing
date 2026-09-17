@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BelowTheWing.Crew;
 using BelowTheWing.Tests.Support;
 using NUnit.Framework;
@@ -10,6 +11,8 @@ namespace BelowTheWing.Tests.EditMode
         GameObject m_Object;
         FollowCamera m_Camera;
 
+        readonly List<GameObject> m_Subjects = new List<GameObject>();
+
         [SetUp]
         public void SetUp()
         {
@@ -18,7 +21,17 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [TearDown]
-        public void TearDown() => Object.DestroyImmediate(m_Object);
+        public void TearDown()
+        {
+            Object.DestroyImmediate(m_Object);
+
+            foreach (var subject in m_Subjects)
+            {
+                Object.DestroyImmediate(subject);
+            }
+
+            m_Subjects.Clear();
+        }
 
         [Test]
         public void LookingUpHardStopsBeforeTheCameraGoesOverTheTop()
@@ -72,8 +85,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void OnFootTheCameraSitsInTheHead()
         {
-            var subject = new GameObject("Subject").transform;
-            subject.position = new Vector3(1f, 2f, 3f);
+            var subject = ASubjectAt(new Vector3(1f, 2f, 3f));
             m_Camera.Subject = subject;
             m_Camera.Frame(CameraFraming.OnFoot(0.75f));
             m_Camera.Look(new Vector2(200f, 0f));
@@ -83,14 +95,12 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(m_Object.transform.position, Is.EqualTo(new Vector3(1f, 2.75f, 3f)).Using(Nearly.Within(1e-3f)),
                 "first person is the camera at the eyes, not somewhere behind the head");
             Assert.That(Mathf.DeltaAngle(m_Object.transform.eulerAngles.y, m_Camera.YawDegrees), Is.EqualTo(0f).Within(1e-3f));
-            Object.DestroyImmediate(subject.gameObject);
         }
 
         [Test]
         public void DrivingTheCameraSitsCloseBehindTheVehicle()
         {
-            var subject = new GameObject("Subject").transform;
-            subject.position = new Vector3(0f, 0f, 10f);
+            var subject = ASubjectAt(new Vector3(0f, 0f, 10f));
             m_Camera.Subject = subject;
             m_Camera.Frame(CameraFraming.Driving);
 
@@ -103,24 +113,28 @@ namespace BelowTheWing.Tests.EditMode
                 "eight metres back, a tractor is a toy in the middle distance");
             Assert.That(Vector3.Angle(m_Object.transform.forward, aimedAt - m_Object.transform.position), Is.LessThan(1f),
                 "and it looks at the vehicle");
-            Object.DestroyImmediate(subject.gameObject);
         }
 
         [Test]
         public void PitchLimitsComeFromTheFraming()
         {
-            m_Camera.Frame(CameraFraming.OnFoot(0.75f));
-            for (var i = 0; i < 200; i++) m_Camera.Look(new Vector2(0f, -50f));
-            Assert.That(m_Camera.PitchDegrees, Is.EqualTo(80f).Within(0.5f), "on foot you can look almost straight up");
-            for (var i = 0; i < 200; i++) m_Camera.Look(new Vector2(0f, 50f));
-            Assert.That(m_Camera.PitchDegrees, Is.EqualTo(-80f).Within(0.5f), "and down at your own feet");
+            foreach (var framing in new[] { CameraFraming.OnFoot(0.75f), CameraFraming.Driving })
+            {
+                m_Camera.Frame(framing);
 
-            m_Camera.Frame(CameraFraming.Driving);
-            for (var i = 0; i < 200; i++) m_Camera.Look(new Vector2(0f, -50f));
-            Assert.That(m_Camera.PitchDegrees, Is.EqualTo(60f).Within(0.5f));
-            for (var i = 0; i < 200; i++) m_Camera.Look(new Vector2(0f, 50f));
-            Assert.That(m_Camera.PitchDegrees, Is.EqualTo(-20f).Within(0.5f),
-                "behind a vehicle the camera cannot go under the tarmac");
+                LookAllTheWay(up: true);
+                Assert.That(m_Camera.PitchDegrees, Is.EqualTo(framing.MaxPitchDegrees).Within(0.5f),
+                    "looking up stops where the framing says it stops, not at a figure typed here");
+
+                LookAllTheWay(up: false);
+                Assert.That(m_Camera.PitchDegrees, Is.EqualTo(framing.MinPitchDegrees).Within(0.5f),
+                    "and looking down does too, so behind a vehicle the camera cannot go under the tarmac");
+            }
+
+            Assert.That(CameraFraming.Driving.MinPitchDegrees,
+                Is.GreaterThan(CameraFraming.OnFoot(0.75f).MinPitchDegrees),
+                "a camera behind a vehicle has the tarmac in the way, so it cannot look as far down " +
+                "as one at a standing person's eyes");
         }
 
         [Test]
@@ -128,6 +142,23 @@ namespace BelowTheWing.Tests.EditMode
         {
             Assert.That(CameraFraming.For(driving: false, eyeMetresAboveOrigin: 0.75f), Is.EqualTo(CameraFraming.OnFoot(0.75f)));
             Assert.That(CameraFraming.For(driving: true, eyeMetresAboveOrigin: 0.75f), Is.EqualTo(CameraFraming.Driving));
+        }
+    
+        Transform ASubjectAt(Vector3 position)
+        {
+            var subject = new GameObject("Subject").transform;
+            subject.position = position;
+            m_Subjects.Add(subject.gameObject);
+
+            return subject;
+        }
+
+        void LookAllTheWay(bool up)
+        {
+            for (var i = 0; i < 200; i++)
+            {
+                m_Camera.Look(new Vector2(0f, up ? -50f : 50f));
+            }
         }
     }
 }

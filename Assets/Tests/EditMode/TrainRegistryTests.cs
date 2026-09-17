@@ -125,8 +125,6 @@ namespace BelowTheWing.Tests.EditMode
             var described = OneTrain();
             m_Registry.Rebuild(described);
             var before = m_Registry.Trains[0];
-            var broker = OwningEverything(before);
-
             var couplingBefore = before.CouplingBehind(0);
             Assert.That(couplingBefore, Is.Not.Null,
                 "precondition: this machine is holding the train, so there is a coupling to preserve");

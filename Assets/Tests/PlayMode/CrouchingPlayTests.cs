@@ -60,17 +60,28 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator ACrouchedPersonFitsWhereAStandingOneDoesNot()
+        public IEnumerator ACrouchedPersonFitsUnderARoofAStandingOneDoesNot()
         {
-            const float clearInsideACart = 1.626f;
+            var clearance = TestShapes.Cart().InteriorLocal.size.y;
 
             yield return Steps.Seconds(0.5f);
 
-            Assert.That(m_Profile.heightMetres, Is.GreaterThan(clearInsideACart),
+            Assert.That(m_Profile.heightMetres, Is.GreaterThan(clearance),
                 "this test means nothing unless a standing person genuinely does not fit");
-            Assert.That(m_Profile.crouchedHeightMetres, Is.LessThan(clearInsideACart));
 
-            yield return null;
+            PutACeilingAt(m_Crew.transform.position.y - (m_Profile.heightMetres * 0.5f) + clearance,
+                m_Crew.transform.position);
+
+            m_Keys.Crouch = true;
+            yield return Steps.Seconds(0.5f);
+
+            var crown = m_Crew.transform.position.y + (m_Crew.HeightMetres * 0.5f);
+            var underside = m_Ceiling.transform.position.y - (m_Ceiling.transform.localScale.y * 0.5f);
+
+            Assert.That(crown, Is.LessThan(underside),
+                $"crouched under a {clearance:F2} m roof the crown reached {crown:F2} m against an " +
+                $"underside at {underside:F2} m. Two profile numbers compared to each other pass " +
+                "with a capsule whose centre never moves");
         }
 
         [UnityTest]

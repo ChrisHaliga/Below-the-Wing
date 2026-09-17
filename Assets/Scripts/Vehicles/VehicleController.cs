@@ -393,23 +393,6 @@ namespace BelowTheWing.Vehicles
             Body.AddForce((held - flat) / Time.fixedDeltaTime, ForceMode.Acceleration);
         }
 
-        void KeepItOnItsWheels()
-        {
-            if (m_Profile.staysUprightPerSecond <= 0f)
-            {
-                return;
-            }
-
-            var leaning = Vector3.Cross(transform.up, Vector3.up);
-            var spin = Body.angularVelocity;
-            var tipping = new Vector3(spin.x, 0f, spin.z);
-
-            Body.AddTorque(
-                (leaning * m_Profile.staysUprightPerSecond) - (tipping * TakesTheWobbleOut),
-                ForceMode.Acceleration);
-        }
-
-        const float TakesTheWobbleOut = 2f;
 
         GroundProbe WhatIsUnder(Vector3 mount, Vector3 up, float wheelRadiusMetres)
             => Physics.Raycast(

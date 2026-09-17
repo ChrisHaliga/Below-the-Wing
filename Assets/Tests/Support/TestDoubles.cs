@@ -71,7 +71,7 @@ namespace BelowTheWing.Tests.Support
 
         readonly Dictionary<VehicleController, ulong> m_Owners = new Dictionary<VehicleController, ulong>();
 
-        public ulong LocalClientId => 1;
+        const ulong Us = 1;
 
         public int Waiting => m_Pending.Count;
 
@@ -80,7 +80,7 @@ namespace BelowTheWing.Tests.Support
         public ulong OwnerOf(VehicleController vehicle)
             => m_Owners.TryGetValue(vehicle, out var id) ? id : 0;
 
-        public bool OwnedByUs(VehicleController vehicle) => OwnerOf(vehicle) == LocalClientId;
+        public bool OwnedByUs(VehicleController vehicle) => OwnerOf(vehicle) == Us;
 
         public void RequestAll(IReadOnlyList<VehicleController> vehicles, Action<bool> onResult)
             => m_Pending.Add((new List<VehicleController>(vehicles), onResult));
@@ -102,7 +102,7 @@ namespace BelowTheWing.Tests.Support
             {
                 foreach (var vehicle in vehicles)
                 {
-                    m_Owners[vehicle] = LocalClientId;
+                    m_Owners[vehicle] = Us;
                 }
             }
 
@@ -113,8 +113,6 @@ namespace BelowTheWing.Tests.Support
     public sealed class SilentBroker : IOwnershipBroker
     {
         public List<IReadOnlyList<VehicleController>> Requests { get; } = new List<IReadOnlyList<VehicleController>>();
-
-        public ulong LocalClientId => 1;
 
         public ulong OwnerOf(VehicleController vehicle) => 9;
 

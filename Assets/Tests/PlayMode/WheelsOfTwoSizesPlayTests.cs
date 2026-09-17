@@ -91,7 +91,7 @@ namespace BelowTheWing.Tests.PlayMode
                 var expected = roadSpeed / radius * Mathf.Rad2Deg;
                 var turned = m_Look.TurnedDegrees(i) - before[i];
 
-                Assert.That(turned, Is.EqualTo(expected).Within(expected * 0.2f),
+                Assert.That(turned, Is.EqualTo(expected).Within(expected * 0.05f),
                     $"wheel {i + 1} is {radius:F4} m in radius and turned {turned:F0} degrees in a " +
                     $"second at {roadSpeed} m/s, where rolling would be {expected:F0}. A wheel " +
                     "turning at anything but its own road speed reads as the vehicle skidding");
