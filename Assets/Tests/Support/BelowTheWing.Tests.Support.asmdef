@@ -6,7 +6,8 @@
         "BelowTheWing.Cargo",
         "BelowTheWing.Vehicles",
         "BelowTheWing.Crew",
-        "BelowTheWing.Apron"
+        "BelowTheWing.Apron",
+        "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

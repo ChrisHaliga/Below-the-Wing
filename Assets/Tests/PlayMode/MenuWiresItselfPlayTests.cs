@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Reflection;
 using BelowTheWing.Menu;
+using BelowTheWing.Tests.Support;
 using BelowTheWing.Session;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 
@@ -12,6 +12,9 @@ namespace BelowTheWing.Tests.PlayMode
 {
     public sealed class MenuWiresItselfPlayTests
     {
+        [UnityTearDown]
+        public IEnumerator TearDown() => LoadedScene.Close();
+
         static readonly string[] SceneReferences =
         {
             "m_Gateway", "m_Session", "m_Camera", "m_PlayingCamera"
@@ -20,9 +23,7 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator TheMenuFindsWhatItDrivesEvenWithNothingWiredInTheInspector()
         {
-            SceneManager.LoadScene("Apron", LoadSceneMode.Single);
-
-            yield return null;
+            yield return LoadedScene.Open("Apron");
 
             var driver = Object.FindAnyObjectByType<MenuDriver>();
             Assert.That(driver, Is.Not.Null, "precondition: the scene has a MenuDriver");

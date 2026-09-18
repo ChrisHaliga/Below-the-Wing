@@ -1,8 +1,8 @@
 using System.Collections;
 using BelowTheWing.Menu;
+using BelowTheWing.Tests.Support;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UIElements;
 
@@ -10,14 +10,13 @@ namespace BelowTheWing.Tests.PlayMode
 {
     public sealed class MenuShowsUpPlayTests
     {
+        [UnityTearDown]
+        public IEnumerator TearDown() => LoadedScene.Close();
+
         [UnityTest]
         public IEnumerator TheApronSceneOpensOnATitleCardWithSomethingOnIt()
         {
-            SceneManager.LoadScene("Apron", LoadSceneMode.Single);
-
-            yield return null;
-            yield return null;
-            yield return null;
+            yield return LoadedScene.Open("Apron");
 
             var driver = Object.FindAnyObjectByType<MenuDriver>();
             Assert.That(driver, Is.Not.Null, "the scene has no MenuDriver in it at all");
@@ -57,11 +56,7 @@ namespace BelowTheWing.Tests.PlayMode
         [UnityTest]
         public IEnumerator TheApronSceneHasACameraLookingAtSomething()
         {
-            SceneManager.LoadScene("Apron", LoadSceneMode.Single);
-
-            yield return null;
-            yield return null;
-            yield return null;
+            yield return LoadedScene.Open("Apron");
 
             var on = 0;
 
