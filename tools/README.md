@@ -1,18 +1,20 @@
 # Tools
 
-Two PowerShell scripts and three Unity menu items. Nothing here is needed to open the project and
+Three PowerShell scripts and four Unity menu items. Nothing here is needed to open the project and
 press Play; everything here exists because the Unity editor takes an exclusive lock on a project,
 so a second Unity cannot be driven at it from a script while the editor is open.
 
-Both scripts copy `Assets`, `Packages` and `ProjectSettings` into a mirror under the system temp
-folder and run a headless Unity there. Neither writes anything into the working tree except where
+Each script copies `Assets`, `Packages` and `ProjectSettings` into a mirror under the system temp
+folder and runs a headless Unity there. None writes anything into the working tree except where
 it says it copies results back.
 
 | What | Where | Run it when |
 |---|---|---|
 | `run-tests.ps1` | here | checking a change against the suites |
-| `rebuild-scene.ps1` | here | after changing `SceneBootstrap`, or after adding a serialized field the shipped scene or prefabs need |
+| `rebuild-scene.ps1` | here | after changing `SceneBootstrap`, or after adding a serialized field the apron scene or the prefabs need |
 | Below the Wing → Rebuild apron scene and prefabs | Unity menu bar | same as above, when the editor is the thing you are sitting in front of |
+| `layout-menu-scene.ps1` | here | starting the menu scene over from nothing |
+| Below the Wing → Lay out the menu scene | Unity menu bar | same as above, from the editor |
 | Below the Wing → Create missing content | Unity menu bar | on a fresh clone, if the `.asset` profiles are missing |
 | Below the Wing → Give the apron scene's objects their identities | Unity menu bar | repairing scene object ids |
 
@@ -39,14 +41,30 @@ Useful arguments:
   reporting `NO RESULTS FILE`, so use separate names to run EditMode and PlayMode at once.
 - `-Bootstrap` generates missing content assets in the mirror and copies them back.
 
-## Rebuilding the scene
+## Who owns which scene
+
+`Assets/Scenes/Apron.unity` is generated. Its positions are derived rather than chosen: train
+spacing comes from the widest vehicle's footprint plus `ApronLayoutSettings.trainSpacingMetres`,
+cart pitch from each cart's front and rear reach, and the five arrival crew spawn into are probed
+for clearance. `ShippedSceneTests` checks the shipped scene against those rules. Moving something
+in it by hand is undone by the next rebuild.
+
+`Assets/Scenes/Menu.unity` is yours. Open it and move things. Nothing regenerates it except
+`Lay out the menu scene`, which writes it from scratch and discards whatever was placed by hand.
+`MenuSceneDressingTests` checks only what the menu needs to run: three camera stations, a door
+driver pointed at a cart and not riding on its prefab instance, five crew figures that each draw
+something, and the belt loader and jet the backdrop names. Framing, spacing and nameplate height
+are not asserted, so they are free to change.
+
+## Rebuilding the apron scene
 
 ```
 pwsh -File tools/rebuild-scene.ps1
 ```
 
 This runs the `Rebuild apron scene and prefabs` menu item in the mirror and copies
-`Assets/Scenes`, `Assets/Content/Prefabs` and `Assets/UI` back into the project.
+`Assets/Scenes/Apron.unity`, `Assets/Content/Prefabs` and `Assets/UI` back into the project. It
+does not touch `Menu.unity`.
 
 **The editor will not notice.** Unity does not reload a scene that changed on disk underneath it.
 After this runs, the open scene in the editor is the old one, and saving it writes the old one back
@@ -54,6 +72,19 @@ over the new. Reopen `Assets/Scenes/Apron.unity` before doing anything else.
 
 That is the reason to prefer the menu item when the editor is already open: it rebuilds in place
 and leaves the editor holding the result.
+
+## Laying out the menu scene
+
+```
+pwsh -File tools/layout-menu-scene.ps1
+```
+
+This throws away `Assets/Scenes/Menu.unity` and writes a fresh one: the apron dressing, the three
+camera stations the menu travels between, the crew line, the belt loader, the parked jet, and the
+UI document the menu draws into. Everything moved in the editor since the last run is lost, so run
+it to start over rather than to pick up a change.
+
+The same caveat about the editor not noticing applies. Reopen `Assets/Scenes/Menu.unity` afterwards.
 
 ## The Unity the scripts use
 

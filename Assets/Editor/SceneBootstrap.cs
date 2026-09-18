@@ -678,10 +678,49 @@ namespace BelowTheWing.EditorTools
             EditorSceneManager.SaveScene(scene, ScenePath);
             GiveTheSceneObjectsTheirIdentities();
 
-            BuildMenuScene(aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
+            // Menu.unity is authored by hand, so this leaves it alone and only keeps it ahead of the
+            // apron in the build order. Below the Wing/Lay out the menu scene writes it, and writing
+            // it throws away whatever was placed by hand since.
+            if (File.Exists(MenuScenePath))
+            {
+                AddToBuildSettings(MenuScenePath, first: true);
+            }
+
+            AddToBuildSettings(ScenePath, first: false);
+        }
+
+        [MenuItem("Below the Wing/Lay out the menu scene")]
+        public static void LayOutTheMenuScene()
+        {
+            var aircraftProfile = Needed<AircraftProfile>(AircraftProfilePath);
+            var crewProfile = Needed<CrewProfile>(CrewProfilePath);
+
+            BuildMenuScene(
+                aircraftProfile,
+                crewProfile,
+                Needed<GameObject>($"{PrefabFolder}/BaggageTractor.prefab"),
+                Needed<GameObject>($"{PrefabFolder}/BaggageCart.prefab"),
+                Needed<GameObject>($"{PrefabFolder}/NarrowbodyAirliner.prefab"),
+                Needed<GameObject>($"{PrefabFolder}/RampWorker.prefab"));
 
             AddToBuildSettings(MenuScenePath, first: true);
-            AddToBuildSettings(ScenePath, first: false);
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        static T Needed<T>(string path) where T : UnityEngine.Object
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+
+            if (asset == null)
+            {
+                throw new InvalidOperationException(
+                    $"There is no {typeof(T).Name} at {path}. Run Below the Wing/Rebuild apron scene " +
+                    "and prefabs first, which is what writes the prefabs the menu scene is dressed with.");
+            }
+
+            return asset;
         }
 
         static void BuildMenuScene(

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using BelowTheWing.Crew;
 using BelowTheWing.Menu;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
@@ -18,29 +17,6 @@ namespace BelowTheWing.Tests.EditMode
 
         [TearDown]
         public void CloseTheMenuScene() => EditorSceneManager.CloseScene(m_Menu, removeScene: true);
-
-        [Test]
-        public void OnlyTheFirstTrainIsDressedIntoTheBackdrop()
-        {
-            var named = new List<string>();
-
-            foreach (var thing in Everything())
-            {
-                if (thing.name.StartsWith("Tug ") || thing.name.StartsWith("Cart "))
-                {
-                    named.Add(thing.name);
-                }
-            }
-
-            Assert.That(named, Has.Member("Tug 1"));
-            Assert.That(named, Has.No.Member("Tug 2"),
-                "a second tractor stands between the camera and the crew when the shot pulls back");
-
-            foreach (var one in named)
-            {
-                Assert.That(one.StartsWith("Cart 2-"), Is.False, $"{one} belongs to the second train");
-            }
-        }
 
         [Test]
         public void TheBackdropHasAStationForEveryPlaceTheCameraStands()
@@ -67,20 +43,17 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void ABeltLoaderStandsBehindTheCrew()
+        public void TheBackdropStillNamesEveryPieceOfDressingTheMenuExpects()
         {
             var backdrop = Only<MenuBackdrop>();
 
-            Assert.That(backdrop.BeltLoader, Is.Not.Null);
+            Assert.That(backdrop.BeltLoader, Is.Not.Null, "no belt loader");
             Assert.That(backdrop.BeltLoader.GetComponentsInChildren<Renderer>(true).Length,
-                Is.GreaterThan(0));
+                Is.GreaterThan(0), "the belt loader draws nothing");
 
-            var toTheLoader = backdrop.BeltLoader.position - backdrop.FigureFor(2).transform.position;
-            var toTheCamera = backdrop.InsideShot.position - backdrop.FigureFor(2).transform.position;
-
-            Assert.That(Vector3.Dot(toTheLoader.normalized, toTheCamera.normalized), Is.LessThan(0f),
-                "the loader is what the crew line up in front of, so it sits on the far side of " +
-                "them from the camera");
+            Assert.That(backdrop.Airliner, Is.Not.Null, "no parked jet");
+            Assert.That(backdrop.Airliner.GetComponentsInChildren<Renderer>(true).Length,
+                Is.GreaterThan(0), "the parked jet draws nothing");
         }
 
         [Test]
@@ -113,41 +86,6 @@ namespace BelowTheWing.Tests.EditMode
                 "the importer's own rotation, and overwriting that rotation is what tips it");
         }
 
-        [Test]
-        public void AParkedJetFillsTheFarSideOfTheWideShot()
-        {
-            var backdrop = Only<MenuBackdrop>();
-
-            Assert.That(backdrop.Airliner, Is.Not.Null);
-
-            var box = DrawnBounds(backdrop.Airliner.gameObject);
-            var shot = backdrop.WideShot;
-            var toTheJet = box.center - shot.position;
-
-            Assert.That(Vector3.Dot(toTheJet, shot.right), Is.GreaterThan(0f),
-                "the jet is there to fill the side of the title frame the cart leaves empty");
-
-            Assert.That(Vector3.Dot(toTheJet, shot.forward), Is.GreaterThan(0f),
-                "a jet behind the camera fills nothing");
-
-            Assert.That(box.min.y, Is.GreaterThanOrEqualTo(0f).And.LessThan(2f),
-                $"the jet's lowest point is at {box.min.y:0.00} m, so it is buried or flying");
-        }
-
-        [Test]
-        public void ANameplateHangsJustClearOfTheTopOfACrewMembersHead()
-        {
-            var backdrop = Only<MenuBackdrop>();
-            var tall = ShippedContent.Load<CrewProfile>(ShippedContent.CrewProfilePath).heightMetres;
-
-            var feet = backdrop.FigureFor(0).transform.position.y - (tall * 0.5f);
-            var plate = backdrop.PlateOver(0).y - feet;
-
-            Assert.That(plate, Is.InRange(tall, tall * 1.15f),
-                $"the plate floats {plate:0.00} m up a {tall:0.00} m figure. Below the crown it " +
-                "lands on the body, and far above it stops reading as that person's plate");
-        }
-
         static Bounds DrawnBounds(GameObject thing)
         {
             var drawn = thing.GetComponentsInChildren<Renderer>(true);
@@ -162,25 +100,6 @@ namespace BelowTheWing.Tests.EditMode
             }
 
             return box;
-        }
-
-        [Test]
-        public void TheCrewStandInEvenlySpacedSlots()
-        {
-            var backdrop = Only<MenuBackdrop>();
-            var gaps = new List<float>();
-
-            for (var crew = 1; crew < backdrop.CrewCount; crew++)
-            {
-                gaps.Add(Vector3.Distance(
-                    backdrop.FigureFor(crew).transform.position,
-                    backdrop.FigureFor(crew - 1).transform.position));
-            }
-
-            foreach (var gap in gaps)
-            {
-                Assert.That(gap, Is.EqualTo(gaps[0]).Within(1e-3f));
-            }
         }
 
         [Test]
