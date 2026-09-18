@@ -11,27 +11,37 @@ namespace BelowTheWing.Menu
         Camera m_Eye;
         Pose m_From;
         Pose m_To;
+        float m_Seconds = TravelSeconds;
         float m_TravelledFor = TravelSeconds;
 
-        public Pose Showing => Between(m_From, m_To, m_TravelledFor / TravelSeconds);
+        public Camera Eye => m_Eye;
 
-        public bool Travelling => m_TravelledFor < TravelSeconds;
+        public Pose Showing => Between(m_From, m_To, HowFar(m_TravelledFor, m_Seconds));
+
+        public bool Travelling => m_TravelledFor < m_Seconds;
 
         public void StartOn(Transform shot)
         {
             m_From = At(shot);
             m_To = m_From;
-            m_TravelledFor = TravelSeconds;
+            m_Seconds = TravelSeconds;
+            m_TravelledFor = m_Seconds;
 
             Place();
         }
 
-        public void TravelTo(Transform shot)
+        public void TravelTo(Transform shot) => TravelTo(shot, TravelSeconds);
+
+        public void TravelTo(Transform shot, float seconds)
         {
             m_From = Showing;
             m_To = At(shot);
+            m_Seconds = Mathf.Max(seconds, 0f);
             m_TravelledFor = 0f;
         }
+
+        public static float HowFar(float travelledFor, float seconds)
+            => seconds <= 0f ? 1f : Mathf.Clamp01(travelledFor / seconds);
 
         public static Pose Between(Pose from, Pose to, float howFar)
         {
@@ -56,9 +66,9 @@ namespace BelowTheWing.Menu
 
         void LateUpdate()
         {
-            if (m_TravelledFor < TravelSeconds)
+            if (m_TravelledFor < m_Seconds)
             {
-                m_TravelledFor = Mathf.Min(m_TravelledFor + Time.unscaledDeltaTime, TravelSeconds);
+                m_TravelledFor = Mathf.Min(m_TravelledFor + Time.unscaledDeltaTime, m_Seconds);
             }
 
             Place();

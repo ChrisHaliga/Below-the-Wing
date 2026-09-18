@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using BelowTheWing.Wiring;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -14,7 +13,7 @@ namespace BelowTheWing.Menu
         readonly Label m_JoinCode;
         readonly Label m_Trouble;
         readonly TextField m_TypedCode;
-        readonly VisualElement m_Slots;
+        readonly MenuNameplates m_Plates = new MenuNameplates();
         readonly SettingsPanel m_Settings;
 
         MenuScreen m_Showing = MenuScreen.Title;
@@ -28,7 +27,7 @@ namespace BelowTheWing.Menu
             Add(MenuScreen.Title, Title());
             Add(MenuScreen.Main, Main());
             Add(MenuScreen.Join, Join(out m_TypedCode, out m_Trouble));
-            Add(MenuScreen.Lobby, Lobby(out m_JoinCode, out m_Slots));
+            Add(MenuScreen.Lobby, Lobby(out m_JoinCode));
 
             m_Settings = new SettingsPanel(() => Backed?.Invoke());
             Add(MenuScreen.Settings, m_Settings.Root);
@@ -106,74 +105,16 @@ namespace BelowTheWing.Menu
             m_Trouble.style.color = why.EndsWith("...") ? MenuLook.InkSoft : MenuLook.Bad;
         }
 
-        public void ShowOneSeatWaitingOnTheService()
-            => PaintSeats(new[] { ("You", AloneAndReady) }, AloneAndReady, AloneAndReady);
-
-        public void ShowTheSeats(IReadOnlyList<SeatedCrew> seated, bool amIReady, bool canStart)
+        public void ShowTheLobby(bool amIReady, bool canStart)
         {
-            var crew = new (string, bool)[seated.Count];
-
-            for (var seat = 0; seat < seated.Count; seat++)
-            {
-                crew[seat] = (seated[seat].Called.ToString(), seated[seat].Ready);
-            }
-
-            PaintSeats(crew, amIReady, canStart);
-        }
-
-        void PaintSeats(IReadOnlyList<(string Called, bool Ready)> crew, bool amIReady, bool canStart)
-        {
-            m_Slots.Clear();
-
-            for (var slot = 0; slot < Shift.MostCrew; slot++)
-            {
-                m_Slots.Add(slot < crew.Count
-                    ? Seat(slot, crew[slot].Called, crew[slot].Ready)
-                    : Seat(slot, null, false));
-            }
-
             var list = m_Lists[MenuScreen.Lobby];
+
             list.Available(m_StartOn, canStart);
-
-            m_ReadyLabel.text = amIReady ? "STAND DOWN" : "READY";
+            list.Rename(m_ReadyOn, amIReady ? "Stand down" : "Ready");
         }
 
-        Label m_ReadyLabel;
-
-        static VisualElement Seat(int slot, string called, bool ready)
-        {
-            var filled = called != null;
-
-            var row = new VisualElement();
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.alignItems = Align.Center;
-            row.style.height = 34;
-
-            var pip = new VisualElement();
-            pip.style.width = 7;
-            pip.style.height = 7;
-            pip.style.marginRight = 14;
-            pip.style.backgroundColor = ready ? MenuLook.Good : filled ? MenuLook.InkSoft : Color.clear;
-            MenuLook.Edges(pip, filled ? Color.clear : MenuLook.InkFaint, 1);
-
-            var name = MenuLook.Text(
-                filled ? called.ToUpperInvariant() : $"SLOT {slot + 1}",
-                15,
-                filled ? MenuLook.Ink : MenuLook.InkFaint,
-                MenuLook.Typeface.Body);
-            name.style.flexGrow = 1;
-            name.style.letterSpacing = 1.4f;
-
-            var state = MenuLook.Eyebrow(
-                filled ? (ready ? "READY" : "STANDING BY") : "OPEN",
-                ready ? MenuLook.Good : MenuLook.InkFaint);
-
-            row.Add(pip);
-            row.Add(name);
-            row.Add(state);
-
-            return row;
-        }
+        public void ShowCrewOnStage(IReadOnlyList<CrewOnStage> crew, Camera eye)
+            => m_Plates.Show(crew, eye);
 
         void Add(MenuScreen screen, VisualElement element) => m_Screens[screen] = element;
 
@@ -197,28 +138,29 @@ namespace BelowTheWing.Menu
         static VisualElement Title()
         {
             var screen = MenuLook.Screen("title");
-            var column = Stage(screen, 0.62f, 0.86f);
 
-            var bar = MenuLook.Rule(64, MenuLook.HiVis, 4);
-            bar.style.marginBottom = 26;
+            screen.Add(MenuLook.Dim(0.55f));
 
-            var name = MenuLook.Display("BELOW THE WING", 86);
-            name.style.marginBottom = 10;
+            var middle = new VisualElement();
+            MenuLook.Fill(middle);
+            middle.pickingMode = PickingMode.Ignore;
+            middle.style.alignItems = Align.Center;
+            middle.style.justifyContent = Justify.Center;
 
-            var what = MenuLook.Eyebrow("RAMP OPERATIONS", MenuLook.InkSoft);
-            what.style.marginBottom = 52;
+            var name = MenuLook.Display("BELOW THE WING", 94);
+            name.style.unityTextAlign = TextAnchor.MiddleCenter;
+            name.style.marginBottom = 46;
 
-            var prompt = MenuLook.Eyebrow("PRESS ANY BUTTON", MenuLook.HiVis);
+            var prompt = MenuLook.Display("PRESS ANY BUTTON", 34);
+            prompt.style.color = MenuLook.HiVis;
+            prompt.style.unityTextAlign = TextAnchor.MiddleCenter;
 
-            column.Add(bar);
-            column.Add(name);
-            column.Add(what);
-            column.Add(prompt);
+            middle.Add(name);
+            middle.Add(prompt);
+            screen.Add(middle);
 
-            MenuLook.SettleIn(bar, 0.05f);
-            MenuLook.SettleIn(name, 0.12f);
-            MenuLook.SettleIn(what, 0.24f);
-            MenuLook.SettleIn(prompt, 0.5f);
+            MenuLook.SettleIn(name, 0.1f);
+            MenuLook.SettleIn(prompt, 0.45f);
 
             return screen;
         }
@@ -226,13 +168,11 @@ namespace BelowTheWing.Menu
         VisualElement Main()
         {
             var screen = MenuLook.Screen("main");
-            var column = Stage(screen, 0.52f, 0.84f);
-
-            column.Add(Header("BELOW THE WING", "MAIN MENU"));
+            var column = Stage(screen, 0.58f, 0.92f);
 
             var list = new MenuList();
-            list.Add("Host a shift", () => Hosted?.Invoke());
-            list.Add("Join a shift", () => Joining?.Invoke());
+            list.Add("Host", () => Hosted?.Invoke());
+            list.Add("Join", () => Joining?.Invoke());
             list.Add("Settings", () => SettingsOpened?.Invoke());
             list.Add("Quit", () => Quit?.Invoke());
 
@@ -245,7 +185,7 @@ namespace BelowTheWing.Menu
         VisualElement Join(out TextField typed, out Label trouble)
         {
             var screen = MenuLook.Screen("join");
-            var column = Stage(screen, 0.52f, 0.84f);
+            var column = Stage(screen, 0.58f, 0.92f);
 
             column.Add(Header("JOIN A SHIFT", "ENTER THE HOST'S CODE"));
 
@@ -282,17 +222,13 @@ namespace BelowTheWing.Menu
             return screen;
         }
 
-        VisualElement Lobby(out Label code, out VisualElement slots)
+        VisualElement Lobby(out Label code)
         {
             var screen = MenuLook.Screen("lobby");
-            var column = Stage(screen, 0.54f, 0.84f);
 
-            column.Add(Header("CREW", "WHO IS ON THIS SHIFT"));
+            screen.Add(m_Plates.Root);
 
-            slots = new VisualElement();
-            slots.style.marginTop = 6;
-            slots.style.marginBottom = 18;
-            column.Add(slots);
+            var column = Stage(screen, 0.46f, 0.88f);
 
             var codeRow = new VisualElement();
             codeRow.style.flexDirection = FlexDirection.Row;
@@ -313,19 +249,15 @@ namespace BelowTheWing.Menu
             m_ReadyOn = list.Count;
             list.Add("Ready", () => ReadyToggled?.Invoke());
             m_StartOn = list.Count;
-            list.Add("Start shift", () => ShiftStarted?.Invoke());
+            list.Add("Start", () => ShiftStarted?.Invoke());
             list.Add("Leave", () => Backed?.Invoke());
             list.Available(m_StartOn, false);
 
             m_Lists[MenuScreen.Lobby] = list;
             column.Add(list.Root);
 
-            m_ReadyLabel = ReadyLabelOf(list);
-
             return screen;
         }
-
-        static Label ReadyLabelOf(MenuList list) => list.Root[0].Q<Label>();
 
         static VisualElement Header(string heading, string eyebrow)
         {

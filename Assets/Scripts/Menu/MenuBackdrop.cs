@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Menu
@@ -6,23 +7,51 @@ namespace BelowTheWing.Menu
     [DisallowMultipleComponent]
     public sealed class MenuBackdrop : MonoBehaviour
     {
-        [SerializeField, Tooltip("Where the camera stands for the title card")]
-        Transform m_TitleShot;
+        [SerializeField, Tooltip("Where the camera stands to show the whole apron")]
+        Transform m_WideShot;
 
-        [SerializeField, Tooltip("Where the camera stands for every other panel")]
-        Transform m_PanelShot;
+        [SerializeField, Tooltip("Where the camera stands to face the shut cart")]
+        Transform m_CartShot;
 
-        [SerializeField, Tooltip("Where the camera stands for the lobby")]
-        Transform m_LobbyShot;
+        [SerializeField, Tooltip("Where the camera stands once the cart has opened")]
+        Transform m_InsideShot;
 
-        [SerializeField, Tooltip("Crew standing at the cart, one per filled slot")]
+        [SerializeField, Tooltip("Crew standing behind the cart, one per filled slot")]
         List<GameObject> m_LobbyCrew = new List<GameObject>();
 
-        public Transform TitleShot => m_TitleShot;
+        [SerializeField, Tooltip("The staged cart's doors, slid open for the lobby")]
+        MenuCartDoors m_CartDoors;
 
-        public Transform PanelShot => m_PanelShot;
+        [SerializeField, Tooltip("How far above a crew member's feet their nameplate floats")]
+        float m_PlateHeightMetres = 2.05f;
 
-        public Transform LobbyShot => m_LobbyShot;
+        public Transform WideShot => m_WideShot;
+
+        public Transform CartShot => m_CartShot;
+
+        public Transform InsideShot => m_InsideShot;
+
+        public MenuCartDoors CartDoors => m_CartDoors;
+
+        public int CrewCount => m_LobbyCrew.Count;
+
+        public Transform StandingAt(MenuStation station)
+            => station switch
+            {
+                MenuStation.Wide => m_WideShot,
+                MenuStation.Inside => m_InsideShot,
+                _ => m_CartShot
+            };
+
+        public Vector3 PlateOver(int crew)
+        {
+            if (crew < 0 || crew >= m_LobbyCrew.Count || m_LobbyCrew[crew] == null)
+            {
+                throw MisbuiltException.For(this, $"has no crew figure {crew} to float a nameplate over");
+            }
+
+            return m_LobbyCrew[crew].transform.position + (Vector3.up * m_PlateHeightMetres);
+        }
 
         public void ShowThisManyCrew(int howMany)
         {

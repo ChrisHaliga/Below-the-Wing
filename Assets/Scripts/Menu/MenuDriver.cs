@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BelowTheWing.Net;
 using BelowTheWing.Wiring;
 using Unity.Netcode;
@@ -25,6 +26,8 @@ namespace BelowTheWing.Menu
         [SerializeField] MenuBackdrop m_Backdrop;
 
         readonly MenuFlow m_Flow = new MenuFlow();
+
+        readonly List<CrewOnStage> m_OnStage = new List<CrewOnStage>();
 
         MenuChrome m_Chrome;
         LobbyRoster m_Roster;
@@ -137,17 +140,16 @@ namespace BelowTheWing.Menu
         {
             m_Chrome.Show(screen);
 
-            if (screen == MenuScreen.None)
+            var staging = MenuStaging.For(screen);
+
+            if (!staging.Staged)
             {
                 return;
             }
 
-            var shot = screen switch
-            {
-                MenuScreen.Title => m_Backdrop.TitleShot,
-                MenuScreen.Lobby => m_Backdrop.LobbyShot,
-                _ => m_Backdrop.PanelShot
-            };
+            m_Backdrop.CartDoors.Open(staging.DoorsOpen);
+
+            var shot = m_Backdrop.StandingAt(staging.Station);
 
             if (screen == MenuScreen.Title)
             {
@@ -155,7 +157,7 @@ namespace BelowTheWing.Menu
                 return;
             }
 
-            m_Camera.TravelTo(shot);
+            m_Camera.TravelTo(shot, staging.TravelSeconds);
         }
 
         void Host()
@@ -222,15 +224,36 @@ namespace BelowTheWing.Menu
         {
             m_Roster ??= FindAnyObjectByType<LobbyRoster>();
 
-            if (m_Roster != null && m_Roster.IsSpawned)
+            var spawned = m_Roster != null && m_Roster.IsSpawned;
+
+            m_Chrome.ShowTheLobby(
+                spawned ? m_Roster.AmIReady : m_Chrome.AloneAndReady,
+                spawned ? m_Roster.CanStart : m_Chrome.AloneAndReady);
+
+            StandTheCrewUp(spawned);
+
+            m_Backdrop.ShowThisManyCrew(m_OnStage.Count);
+            m_Chrome.ShowCrewOnStage(m_OnStage, m_Camera.Eye);
+        }
+
+        void StandTheCrewUp(bool spawned)
+        {
+            m_OnStage.Clear();
+
+            if (!spawned)
             {
-                m_Chrome.ShowTheSeats(m_Roster.Seats, m_Roster.AmIReady, m_Roster.CanStart);
-                m_Backdrop.ShowThisManyCrew(m_Roster.Filled);
+                m_OnStage.Add(new CrewOnStage("You", m_Chrome.AloneAndReady, m_Backdrop.PlateOver(0)));
                 return;
             }
 
-            m_Chrome.ShowOneSeatWaitingOnTheService();
-            m_Backdrop.ShowThisManyCrew(1);
+            var seats = m_Roster.Seats;
+            var room = Mathf.Min(seats.Count, m_Backdrop.CrewCount);
+
+            for (var seat = 0; seat < room; seat++)
+            {
+                m_OnStage.Add(new CrewOnStage(
+                    seats[seat].Called.ToString(), seats[seat].Ready, m_Backdrop.PlateOver(seat)));
+            }
         }
 
         void StartTheShift()

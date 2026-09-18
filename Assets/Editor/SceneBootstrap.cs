@@ -744,46 +744,76 @@ namespace BelowTheWing.EditorTools
 
             Dress(aircraft, plan.Aircraft, holder.transform);
 
-            foreach (var train in plan.Trains)
-            {
-                Dress(tractor, train.Tractor, holder.transform);
+            var train = plan.Trains[0];
 
-                foreach (var parked in train.Carts)
-                {
-                    Dress(cart, parked, holder.transform);
-                }
+            Dress(tractor, train.Tractor, holder.transform);
+
+            var staged = (GameObject)null;
+
+            foreach (var parked in train.Carts)
+            {
+                var placed = Dress(cart, parked, holder.transform);
+
+                staged ??= placed;
             }
 
-            var stage = plan.Trains[0].Carts[0];
+            var stage = train.Carts[0];
             var facing = stage.Rotation * Vector3.right;
-            var lineUp = stage.Position + (facing * 2.2f);
+            var behindTheCart = stage.Position - (facing * 2.9f);
+            var alongTheCart = stage.Rotation * Vector3.forward;
 
             var standing = new List<GameObject>(Shift.MostCrew);
 
             for (var i = 0; i < Shift.MostCrew; i++)
             {
-                var at = lineUp + (stage.Rotation * Vector3.forward * ((i - 2f) * 0.9f));
-                var figure = Dress(crew, new Placement($"Crew {i + 1}", at, Quaternion.LookRotation(-facing), Vector3.one), holder.transform);
+                var at = behindTheCart + (alongTheCart * ((i - 2f) * 0.85f));
+                var figure = Dress(
+                    crew,
+                    new Placement($"Crew {i + 1}", at, Quaternion.LookRotation(facing), Vector3.one),
+                    holder.transform);
 
                 figure.SetActive(false);
                 standing.Add(figure);
             }
 
             var nose = plan.Aircraft.Position;
-            var tug = plan.Trains[0].Tractor.Position;
+            var tug = train.Tractor.Position;
+            var eyeHeight = crewProfile.heightMetres * 0.92f;
 
-            Set(backdrop, "m_TitleShot", Shot("Title shot", holder.transform,
-                tug + new Vector3(9.5f, 2.1f, -7.5f), nose + new Vector3(2f, 3.4f, 4f)));
+            Set(backdrop, "m_WideShot", Shot("Wide shot", holder.transform,
+                tug + new Vector3(19f, 7.5f, -13f), Vector3.Lerp(nose, tug, 0.55f) + (Vector3.up * 2.5f)));
 
-            Set(backdrop, "m_PanelShot", Shot("Panel shot", holder.transform,
-                tug + new Vector3(6.5f, 2.6f, -3.5f), tug + new Vector3(-1.5f, 1.2f, 3.5f)));
+            Set(backdrop, "m_CartShot", Shot("Cart shot", holder.transform,
+                stage.Position + (facing * 6.4f) + new Vector3(0f, eyeHeight, 0f),
+                stage.Position + new Vector3(0f, 1.05f, 0f)));
 
-            Set(backdrop, "m_LobbyShot", Shot("Lobby shot", holder.transform,
-                lineUp + (facing * 5.2f) + new Vector3(0f, 1.55f, 0.6f), lineUp + Vector3.up * 1.05f));
+            Set(backdrop, "m_InsideShot", Shot("Inside shot", holder.transform,
+                stage.Position + (facing * 3.1f) + new Vector3(0f, eyeHeight, 0f),
+                behindTheCart + new Vector3(0f, 1.15f, 0f)));
 
             SetList(backdrop, "m_LobbyCrew", standing);
+            Set(backdrop, "m_PlateHeightMetres", crewProfile.heightMetres + 0.35f);
+            Set(backdrop, "m_CartDoors", DoorsOf(staged));
 
             return backdrop;
+        }
+
+        static MenuCartDoors DoorsOf(GameObject staged)
+        {
+            var doors = staged.AddComponent<MenuCartDoors>();
+            var leaves = new List<SkinnedMeshRenderer>();
+
+            foreach (var skin in staged.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (skin.sharedMesh != null && skin.sharedMesh.blendShapeCount > 0)
+                {
+                    leaves.Add(skin);
+                }
+            }
+
+            SetList(doors, "m_Leaves", leaves);
+
+            return doors;
         }
 
         static Transform Shot(string name, Transform under, Vector3 from, Vector3 at)
@@ -932,7 +962,7 @@ namespace BelowTheWing.EditorTools
             EditorBuildSettings.scenes = scenes.ToArray();
         }
 
-        static void SetList(UnityEngine.Object target, string field, IReadOnlyList<GameObject> values)
+        static void SetList(UnityEngine.Object target, string field, IReadOnlyList<UnityEngine.Object> values)
         {
             var serialized = new SerializedObject(target);
             var property = serialized.FindProperty(field);
@@ -944,6 +974,21 @@ namespace BelowTheWing.EditorTools
                 property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
             }
 
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        static void Set(UnityEngine.Object target, string field, float value)
+        {
+            var serialized = new SerializedObject(target);
+            var property = serialized.FindProperty(field);
+
+            if (property == null)
+            {
+                Debug.LogError($"{target.GetType().Name} has no serialized field called '{field}'.");
+                return;
+            }
+
+            property.floatValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

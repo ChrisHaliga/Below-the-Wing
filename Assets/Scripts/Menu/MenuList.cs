@@ -69,6 +69,16 @@ namespace BelowTheWing.Menu
             }
         }
 
+        public void Rename(int index, string text)
+        {
+            if (index < 0 || index >= m_Rows.Count)
+            {
+                return;
+            }
+
+            m_Rows[index].Text.text = text.ToUpperInvariant();
+        }
+
         public void Available(int index, bool available)
         {
             if (index < 0 || index >= m_Rows.Count)

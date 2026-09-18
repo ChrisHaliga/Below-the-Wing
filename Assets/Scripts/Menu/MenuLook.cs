@@ -59,6 +59,17 @@ namespace BelowTheWing.Menu
             return scrim;
         }
 
+        public static VisualElement Dim(float darkest)
+        {
+            var dim = new VisualElement { pickingMode = PickingMode.Ignore };
+
+            Fill(dim);
+
+            dim.style.backgroundColor = new Color(Dark.r, Dark.g, Dark.b, darkest);
+
+            return dim;
+        }
+
         public static VisualElement FloorShadow()
         {
             var shadow = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -161,6 +172,12 @@ namespace BelowTheWing.Menu
 
             label.style.color = colour;
             label.style.fontSize = size;
+            label.style.textShadow = new TextShadow
+            {
+                offset = new Vector2(0f, 2f),
+                blurRadius = 12f,
+                color = new Color(0f, 0f, 0f, 0.9f)
+            };
 
             if (face != null)
             {
