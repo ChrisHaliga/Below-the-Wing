@@ -1,3 +1,4 @@
+using BelowTheWing.Apron;
 using BelowTheWing.Cargo;
 using BelowTheWing.Wiring;
 using UnityEngine;
@@ -31,17 +32,9 @@ namespace BelowTheWing.Crew
 
         Transform ASphere(string called, Color colour)
         {
-            var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            var sphere = GreyboxShape.AttachSphere(transform, RadiusMetres * 2f, colour);
             sphere.name = called;
-            sphere.transform.localScale = Vector3.one * (RadiusMetres * 2f);
-
-            Destroy(sphere.GetComponent<Collider>());
-
-            var paint = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            paint.color = colour;
-            sphere.GetComponent<MeshRenderer>().sharedMaterial = paint;
-
-            return sphere.transform;
+            return sphere;
         }
 
         void LateUpdate()

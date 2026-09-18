@@ -21,6 +21,13 @@ namespace BelowTheWing.Apron
             return shape;
         }
 
+        public static Transform AttachSphere(Transform target, float diameterMetres, Color colour)
+        {
+            var shape = Build(target, PrimitiveType.Sphere, colour);
+            shape.localScale = Vector3.one * diameterMetres;
+            return shape;
+        }
+
         public static Transform AttachLyingCapsule(Transform target, float lengthMetres, float diameterMetres, Color colour)
         {
             var shape = AttachCapsule(target, lengthMetres, diameterMetres, colour);
@@ -35,7 +42,8 @@ namespace BelowTheWing.Apron
 
             Discard.Now(primitive.GetComponent<Collider>());
 
-            primitive.GetComponent<MeshRenderer>().material.color = colour;
+            var renderer = primitive.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = new Material(renderer.sharedMaterial) { color = colour, name = $"{type} {colour}" };
             primitive.transform.SetParent(target, worldPositionStays: false);
 
             return primitive.transform;
