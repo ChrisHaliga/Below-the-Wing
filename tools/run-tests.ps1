@@ -1,20 +1,23 @@
 # Runs the Below the Wing test suites against a mirror of the project.
 #
-# The editor normally has the real project open, and Unity refuses to run a second
-# instance against a locked project. So this copies the three folders that actually
-# define the project -- Assets, Packages, ProjectSettings -- into a sibling directory
-# and runs there. The mirror keeps its own Library, so the first run pays for an asset
-# import and later runs do not.
+# The editor normally has the real project open, and Unity refuses to run a second instance
+# against a locked project. So this copies the three folders that actually define the project,
+# Assets, Packages and ProjectSettings, into a sibling directory and runs there. The mirror keeps
+# its own Library, so the first run pays for an asset import and later runs do not.
 #
-#   .\run-tests.ps1                 both suites
+#   .\run-tests.ps1                     both suites
 #   .\run-tests.ps1 -Platform EditMode
+#   .\run-tests.ps1 -Platform Compile   compile and quit, about a minute
 #   .\run-tests.ps1 -Filter BelowTheWing.Tests.Vehicles
 
 param(
-    [ValidateSet("EditMode", "PlayMode", "Both", "None")]
+    # Compile mirrors the project and asks Unity to compile it and quit. It finishes in about a
+    # minute and exits non-zero on a compile error, where a test run with a compile error in it
+    # sits waiting for a test runner that never starts.
+    [ValidateSet("EditMode", "PlayMode", "Both", "Compile", "None")]
     [string]$Platform = "Both",
     # Netcode is listed as a testable package so its multi-client harness compiles, and that also
-    # brings its own ~7000 tests into every run -- fifteen minutes, and a handful that fail for
+    # brings its own ~7000 tests into every run: fifteen minutes, and a handful that fail for
     # reasons of their own in a mirrored project. Ours are the ones under test here.
     [string]$Filter = "BelowTheWing",
     [switch]$SkipMirror,
@@ -32,74 +35,95 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$Unity   = if ($env:BTW_UNITY) { $env:BTW_UNITY }
-           else { "C:\Program Files\Unity\Hub\Editor\6000.5.10f1\Editor\Unity.exe" }
-$Source  = Split-Path -Parent $PSScriptRoot
-$Mirror  = Join-Path ([IO.Path]::GetTempPath()) "below-the-wing\$MirrorName"
-$Results = Join-Path ([IO.Path]::GetTempPath()) "below-the-wing\results-$MirrorName"
+. (Join-Path $PSScriptRoot "mirror.ps1")
 
-New-Item -ItemType Directory -Force -Path $Mirror, $Results | Out-Null
+$Paths = Get-MirrorPaths $MirrorName
 
 if (-not $SkipMirror) {
-    foreach ($folder in @("Assets", "Packages", "ProjectSettings")) {
-        # /MIR so deletions in the real project propagate; /NJH /NJS /NFL /NDL to keep it quiet.
-        robocopy "$Source\$folder" "$Mirror\$folder" /MIR /NJH /NJS /NFL /NDL /R:2 /W:1 | Out-Null
-        if ($LASTEXITCODE -ge 8) { throw "robocopy failed for $folder (exit $LASTEXITCODE)" }
-    }
-    "mirrored Assets, Packages, ProjectSettings"
+    Sync-Mirror $Paths
 }
 
 if ($Bootstrap) {
-    $log = Join-Path $Results "bootstrap.log"
-    Remove-Item $log -ErrorAction SilentlyContinue
+    $log = Join-Path $Paths.Results "bootstrap.log"
+    if (Test-Path $log) { Remove-Item $log -Force }
     "=== bootstrap content ==="
-    $args = @(
+    $code = Invoke-Unity @(
         "-batchmode", "-quit", "-nographics",
-        "-projectPath", $Mirror,
+        "-projectPath", $Paths.Mirror,
         "-executeMethod", "BelowTheWing.EditorTools.ContentBootstrap.CreateMissingContent",
         "-logFile", $log
     )
-    $proc = Start-Process -FilePath $Unity -ArgumentList $args -Wait -PassThru -NoNewWindow
-    if ($proc.ExitCode -ne 0) {
-        "  bootstrap failed (exit $($proc.ExitCode)). Tail of the editor log:"
+    if ($code -ne 0) {
+        "  bootstrap failed (exit $code). Tail of the editor log:"
         if (Test-Path $log) { Get-Content $log -Tail 40 | ForEach-Object { "    $_" } }
         throw "bootstrap failed"
     }
 
-    if (Test-Path "$Mirror\Assets\Content") {
-        robocopy "$Mirror\Assets\Content" "$Source\Assets\Content" /E /NJH /NJS /NFL /NDL /R:2 /W:1 | Out-Null
+    if (Test-Path "$($Paths.Mirror)\Assets\Content") {
+        robocopy "$($Paths.Mirror)\Assets\Content" "$($Paths.Source)\Assets\Content" /E /NJH /NJS /NFL /NDL /R:2 /W:1 | Out-Null
         if ($LASTEXITCODE -ge 8) { throw "copying generated content back failed (exit $LASTEXITCODE)" }
         "  generated content copied back into the project"
-        Get-ChildItem "$Source\Assets\Content" -Recurse -Filter *.asset | ForEach-Object { "    $($_.FullName.Replace($Source, ''))" }
+        Get-ChildItem "$($Paths.Source)\Assets\Content" -Recurse -Filter *.asset | ForEach-Object { "    $($_.FullName.Replace($Paths.Source, ''))" }
     }
 }
 
-if ($Platform -eq "None") { return }
+if ($Platform -eq "None") { exit 0 }
+
+if ($Platform -eq "Compile") {
+    $log = Join-Path $Paths.Results "compile.log"
+    if (Test-Path $log) { Remove-Item $log -Force }
+
+    "=== compile ==="
+    $code = Invoke-Unity @("-batchmode", "-quit", "-nographics", "-projectPath", $Paths.Mirror, "-logFile", $log)
+
+    $ours = Get-ProjectCompileErrors $log
+    if ($ours.Count -gt 0) {
+        "  FAILED, $($ours.Count) distinct compile errors in the project:"
+        $ours | Select-Object -First 40 | ForEach-Object { "    $_" }
+        exit 1
+    }
+
+    if ($code -ne 0) {
+        $packages = Get-PackageCompileErrorCount $log
+        "  FAILED (Unity exit $code) with no errors in Assets and $packages in Library\PackageCache."
+        "  That is the mirror, not the code. Delete $($Paths.Mirror)\Library and run again."
+        exit 1
+    }
+
+    "  compiled clean"
+    exit 0
+}
 
 $platforms = if ($Platform -eq "Both") { @("EditMode", "PlayMode") } else { @($Platform) }
 $failed = $false
 
 foreach ($p in $platforms) {
-    $xml = Join-Path $Results "$p.xml"
-    $log = Join-Path $Results "$p.log"
-    Remove-Item $xml, $log -ErrorAction SilentlyContinue
+    $xml = Join-Path $Paths.Results "$p.xml"
+    $log = Join-Path $Paths.Results "$p.log"
+    foreach ($f in @($xml, $log)) { if (Test-Path $f) { Remove-Item $f -Force } }
 
-    $args = @(
+    $unityArgs = @(
         "-runTests", "-batchmode", "-nographics",
-        "-projectPath", $Mirror,
+        "-projectPath", $Paths.Mirror,
         "-testPlatform", $p,
         "-testResults", $xml,
         "-logFile", $log
     )
-    if ($Filter) { $args += @("-testFilter", $Filter) }
+    if ($Filter) { $unityArgs += @("-testFilter", $Filter) }
 
     "=== $p ==="
-    $proc = Start-Process -FilePath $Unity -ArgumentList $args -Wait -PassThru -NoNewWindow
-    $code = $proc.ExitCode
+    $code = Invoke-Unity $unityArgs
 
     if (-not (Test-Path $xml)) {
-        "  NO RESULTS FILE. Unity exit code $code. Tail of the editor log:"
-        if (Test-Path $log) { Get-Content $log -Tail 40 | ForEach-Object { "    $_" } }
+        $ours = Get-ProjectCompileErrors $log
+        if ($ours.Count -gt 0) {
+            "  NO RESULTS FILE: the project did not compile. $($ours.Count) distinct errors:"
+            $ours | Select-Object -First 40 | ForEach-Object { "    $_" }
+        }
+        else {
+            "  NO RESULTS FILE. Unity exit code $code. Tail of the editor log:"
+            if (Test-Path $log) { Get-Content $log -Tail 40 | ForEach-Object { "    $_" } }
+        }
         $failed = $true
         continue
     }

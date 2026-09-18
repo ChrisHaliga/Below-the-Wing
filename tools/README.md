@@ -1,6 +1,6 @@
 # Tools
 
-Three PowerShell scripts and four Unity menu items. Nothing here is needed to open the project and
+Three PowerShell scripts, one shared helper they dot-source, and four Unity menu items. Nothing here is needed to open the project and
 press Play; everything here exists because the Unity editor takes an exclusive lock on a project,
 so a second Unity cannot be driven at it from a script while the editor is open.
 
@@ -14,6 +14,7 @@ it says it copies results back.
 | `rebuild-scene.ps1` | here | after changing `SceneBootstrap`, or after adding a serialized field the apron scene or the prefabs need |
 | Below the Wing → Rebuild apron scene and prefabs | Unity menu bar | same as above, when the editor is the thing you are sitting in front of |
 | `layout-menu-scene.ps1` | here | starting the menu scene over from nothing |
+| `mirror.ps1` | here | never run directly; the other three dot-source it for mirroring, running Unity and copying results back |
 | Below the Wing → Lay out the menu scene | Unity menu bar | same as above, from the editor |
 | Below the Wing → Create missing content | Unity menu bar | on a fresh clone, if the `.asset` profiles are missing |
 | Below the Wing → Give the apron scene's objects their identities | Unity menu bar | repairing scene object ids |
@@ -27,7 +28,12 @@ needed.
 pwsh -File tools/run-tests.ps1 -Platform EditMode
 pwsh -File tools/run-tests.ps1 -Platform PlayMode
 pwsh -File tools/run-tests.ps1                     # both
+pwsh -File tools/run-tests.ps1 -Platform Compile   # compile only, about a minute
 ```
+
+`Compile` is the one to run first after a patch. A test run with a compile error in it does not
+fail; Unity sits waiting for a test runner that never starts, and the script's timeout is what
+ends it. `Compile` exits non-zero in about a minute and lists the errors.
 
 EditMode takes about a minute of Unity start-up and under a second of tests. PlayMode takes about
 ten minutes, because it steps real physics.
@@ -85,6 +91,23 @@ UI document the menu draws into. Everything moved in the editor since the last r
 it to start over rather than to pick up a change.
 
 The same caveat about the editor not noticing applies. Reopen `Assets/Scenes/Menu.unity` afterwards.
+
+## When a mirror stops compiling with no errors in Assets
+
+A Unity killed or crashed while extracting packages leaves `Library\PackageCache` holding a
+package with its source files but none of its `.asmdef` files. Later runs trust that folder,
+every source in it is ignored as being in an immutable folder with no assembly definition, and
+everything referencing that assembly fails with types not found. The log shows hundreds of
+`error CS` lines under `Library\PackageCache` and none under `Assets`.
+
+`Sync-Mirror` in `mirror.ps1` checks for this on every run and clears the cache when it finds it,
+so the next extraction is a fresh one. If it ever slips through, delete the mirror's `Library`
+folder by hand; the run after pays for one import and is then healthy.
+
+The scripts wait on the Unity process itself rather than with `Start-Process -Wait`. `-Wait`
+also waits for every descendant, and a Unity that had to spawn its own `Unity.Licensing.Client`
+leaves that child running after it exits, so a run that finished in a minute did not return for
+ten.
 
 ## The Unity the scripts use
 
