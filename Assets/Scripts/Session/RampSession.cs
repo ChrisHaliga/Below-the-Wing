@@ -64,6 +64,18 @@ namespace BelowTheWing.Session
 
         public IReadOnlyList<VehicleController> Vehicles => m_OnTheApron;
 
+        public ApronLayoutSettings Layout => m_Layout;
+
+        public AircraftProfile AircraftProfile => m_AircraftProfile;
+
+        public CrewProfile CrewProfile => m_CrewProfile;
+
+        public GameObject TractorPrefab => m_TractorPrefab != null ? m_TractorPrefab.gameObject : null;
+
+        public GameObject CartPrefab => m_CartPrefab != null ? m_CartPrefab.gameObject : null;
+
+        public GameObject AircraftPrefab => m_AircraftPrefab != null ? m_AircraftPrefab.gameObject : null;
+
         void Awake() => m_Trains = new TrainRegistry(m_Coupling);
 
         public void HoldTheCrewBack() => m_HeldBack = true;

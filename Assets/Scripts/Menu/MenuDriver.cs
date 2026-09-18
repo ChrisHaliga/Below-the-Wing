@@ -15,21 +15,11 @@ namespace BelowTheWing.Menu
     [RequireComponent(typeof(UIDocument))]
     public sealed class MenuDriver : MonoBehaviour
     {
-        [SerializeField, Tooltip("Where everything stands on the menu apron")]
-        ApronLayoutSettings m_Layout = ApronLayoutSettings.Default;
-
         [Header("Wiring")]
         [SerializeField] SessionGateway m_Gateway;
         [SerializeField] RampSession m_Session;
         [SerializeField] MenuCamera m_Camera;
         [SerializeField] Camera m_PlayingCamera;
-
-        [Header("What the background is made of")]
-        [SerializeField] AircraftProfile m_AircraftProfile;
-        [SerializeField] CrewProfile m_CrewProfile;
-        [SerializeField] GameObject m_TractorPrefab;
-        [SerializeField] GameObject m_CartPrefab;
-        [SerializeField] GameObject m_AircraftPrefab;
 
         readonly MenuFlow m_Flow = new MenuFlow();
         readonly List<Transform> m_Standing = new List<Transform>();
@@ -40,15 +30,11 @@ namespace BelowTheWing.Menu
 
         void Awake()
         {
-            if (m_Gateway == null || m_Session == null || m_Camera == null)
-            {
-                throw MisbuiltException.Refuse(
-                    this, "has no gateway, session or menu camera, so the menu can drive nothing");
-            }
+            FindWhatIsAlreadyInTheScene();
 
             m_Apron = new MenuApron(
-                m_Layout, m_AircraftProfile, m_CrewProfile,
-                m_TractorPrefab, m_CartPrefab, m_AircraftPrefab);
+                m_Session.Layout, m_Session.AircraftProfile, m_Session.CrewProfile,
+                m_Session.TractorPrefab, m_Session.CartPrefab, m_Session.AircraftPrefab);
 
             m_Chrome = new MenuChrome(GetComponent<UIDocument>().rootVisualElement);
 
@@ -67,6 +53,27 @@ namespace BelowTheWing.Menu
             m_Session.HoldTheCrewBack();
 
             WentTo(MenuScreen.Title);
+        }
+
+        void FindWhatIsAlreadyInTheScene()
+        {
+            m_Gateway = m_Gateway != null ? m_Gateway : FindAnyObjectByType<SessionGateway>();
+            m_Session = m_Session != null ? m_Session : FindAnyObjectByType<RampSession>();
+            m_Camera = m_Camera != null ? m_Camera : FindAnyObjectByType<MenuCamera>();
+
+            if (m_PlayingCamera == null)
+            {
+                var follow = FindAnyObjectByType<FollowCamera>(FindObjectsInactive.Include);
+                m_PlayingCamera = follow != null ? follow.GetComponent<Camera>() : null;
+            }
+
+            if (m_Gateway == null || m_Session == null || m_Camera == null)
+            {
+                throw MisbuiltException.Refuse(
+                    this,
+                    "cannot find a SessionGateway, a RampSession and a MenuCamera in the scene, and " +
+                    "the menu drives all three");
+            }
         }
 
         void Update()
@@ -162,7 +169,7 @@ namespace BelowTheWing.Menu
         {
             m_Standing.Clear();
 
-            foreach (var crew in FindObjectsByType<CrewCharacter>(FindObjectsSortMode.None))
+            foreach (var crew in FindObjectsByType<CrewCharacter>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             {
                 m_Standing.Add(crew.transform);
             }

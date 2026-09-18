@@ -667,7 +667,7 @@ namespace BelowTheWing.EditorTools
             Set(session, "m_Camera", camera);
             Set(session, "m_Readout", readout);
 
-            BuildMenu(gateway, session, aircraftProfile, crewProfile, tractor, cart, aircraft, camera);
+            BuildMenu(gateway, session, camera);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             GiveTheSceneObjectsTheirIdentities();
@@ -675,14 +675,7 @@ namespace BelowTheWing.EditorTools
         }
 
         static void BuildMenu(
-            SessionGateway gateway,
-            RampSession session,
-            AircraftProfile aircraftProfile,
-            CrewProfile crewProfile,
-            GameObject tractor,
-            GameObject cart,
-            GameObject aircraft,
-            FollowCamera playingCamera)
+            SessionGateway gateway, RampSession session, FollowCamera playingCamera)
         {
             var eye = new GameObject("Menu Camera");
             eye.AddComponent<Camera>();
@@ -701,11 +694,6 @@ namespace BelowTheWing.EditorTools
             Set(driver, "m_Session", session);
             Set(driver, "m_Camera", menuCamera);
             Set(driver, "m_PlayingCamera", playingCamera.GetComponent<Camera>());
-            Set(driver, "m_AircraftProfile", aircraftProfile);
-            Set(driver, "m_CrewProfile", crewProfile);
-            Set(driver, "m_TractorPrefab", tractor);
-            Set(driver, "m_CartPrefab", cart);
-            Set(driver, "m_AircraftPrefab", aircraft);
         }
 
         static PanelSettings MenuPanel()
