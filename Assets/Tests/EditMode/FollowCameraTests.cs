@@ -92,14 +92,13 @@ namespace BelowTheWing.Tests.EditMode
             m_Camera.Look(new Vector2(10f, 0f));
             var atOne = Mathf.Abs(Mathf.DeltaAngle(0f, m_Camera.YawDegrees));
 
-            SetUp();
+            StartOver();
             CrewSettings.LookSensitivity = 2f;
             m_Camera.Look(new Vector2(10f, 0f));
             var atTwo = Mathf.Abs(Mathf.DeltaAngle(0f, m_Camera.YawDegrees));
 
             Assert.That(atTwo, Is.EqualTo(atOne * 2f).Within(1e-3f),
-                "the settings page has a sensitivity dial, and until now the in-game camera read " +
-                "a serialized 0.15 and never looked at it");
+                "the settings page has a sensitivity dial, and the in-game camera is what it dials");
         }
 
         [Test]
@@ -111,7 +110,7 @@ namespace BelowTheWing.Tests.EditMode
             m_Camera.Look(new Vector2(0f, 10f));
             var normal = m_Camera.PitchDegrees - before;
 
-            SetUp();
+            StartOver();
             CrewSettings.InvertLookY = true;
             m_Camera.Look(new Vector2(0f, 10f));
             var inverted = m_Camera.PitchDegrees - before;
@@ -122,14 +121,14 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void TheFieldOfViewSettingReachesTheLens()
         {
-            var lens = m_Object.AddComponent<Camera>();
+            var lens = m_Object.GetComponent<Camera>();
             CrewSettings.FieldOfViewDegrees = 90f;
 
             m_Camera.Subject = ASubjectAt(Vector3.zero);
             m_Camera.Place();
 
             Assert.That(lens.fieldOfView, Is.EqualTo(90f).Within(1e-3f),
-                "the menu camera honours this setting; the one the player actually plays through did not");
+                "the camera the player plays through honours the same setting the menu camera does");
         }
 
         [Test]
@@ -194,6 +193,12 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(CameraFraming.For(driving: true, eyeMetresAboveOrigin: 0.75f), Is.EqualTo(CameraFraming.Driving));
         }
     
+        void StartOver()
+        {
+            TearDown();
+            SetUp();
+        }
+
         Transform ASubjectAt(Vector3 position)
         {
             var subject = new GameObject("Subject").transform;

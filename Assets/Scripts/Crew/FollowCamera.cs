@@ -1,9 +1,11 @@
 using BelowTheWing.Settings;
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Crew
 {
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(Camera))]
     public sealed class FollowCamera : MonoBehaviour
     {
         [SerializeField, Tooltip("How the camera sits on its subject")]
@@ -43,15 +45,7 @@ namespace BelowTheWing.Crew
 
         public void Place()
         {
-            if (m_Lens == null)
-            {
-                m_Lens = GetComponent<Camera>();
-            }
-
-            if (m_Lens != null)
-            {
-                m_Lens.fieldOfView = CrewSettings.FieldOfViewDegrees;
-            }
+            Lens.fieldOfView = CrewSettings.FieldOfViewDegrees;
 
             if (Subject == null)
             {
@@ -64,6 +58,20 @@ namespace BelowTheWing.Crew
             transform.SetPositionAndRotation(
                 lookingAt - (orbit * Vector3.forward * m_Framing.DistanceMetres),
                 orbit);
+        }
+
+        Camera Lens
+        {
+            get
+            {
+                if (m_Lens == null)
+                {
+                    m_Lens = GetComponent<Camera>()
+                             ?? throw MisbuiltException.Refuse(this, "has no Camera to look through");
+                }
+
+                return m_Lens;
+            }
         }
     }
 }
