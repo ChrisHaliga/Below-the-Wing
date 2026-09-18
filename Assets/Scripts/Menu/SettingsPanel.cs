@@ -34,18 +34,17 @@ namespace BelowTheWing.Menu
         public SettingsPanel(Action back)
         {
             Root = MenuLook.Screen("settings");
-            Root.style.justifyContent = Justify.Center;
-            Root.style.alignItems = Align.FlexStart;
+            Root.Add(MenuLook.Shade(0.55f));
 
             var card = MenuLook.Card(430);
-            card.Add(MenuLook.Heading("SETTINGS", 22));
+            card.Add(MenuLook.Eyebrow("SETTINGS"));
 
             m_Mode = Choice(card, "Window");
             m_Monitor = Choice(card, "Monitor");
             m_Resolution = Choice(card, "Resolution");
 
             m_Note = MenuLook.Quiet("");
-            m_Note.style.marginTop = 2;
+            m_Note.style.marginTop = 6;
             m_Note.style.marginBottom = 10;
             card.Add(m_Note);
 
@@ -65,6 +64,7 @@ namespace BelowTheWing.Menu
             m_Master.RegisterValueChangedCallback(e => Write(() => CrewSettings.MasterVolume = e.newValue));
             m_Effects.RegisterValueChangedCallback(e => Write(() => CrewSettings.EffectsVolume = e.newValue));
 
+            card.Add(MenuLook.Rule());
             card.Add(MenuLook.Press("Reset to defaults", () =>
             {
                 CrewSettings.ResetToDefaults();
@@ -154,6 +154,7 @@ namespace BelowTheWing.Menu
             var field = new DropdownField(label);
 
             field.style.marginTop = 6;
+            field.style.fontSize = 12;
             field.labelElement.style.color = MenuLook.InkSoft;
             field.labelElement.style.minWidth = 140;
             card.Add(field);
@@ -166,6 +167,7 @@ namespace BelowTheWing.Menu
             var toggle = new Toggle(label);
 
             toggle.style.marginTop = 6;
+            toggle.style.fontSize = 12;
             toggle.labelElement.style.color = MenuLook.InkSoft;
             toggle.labelElement.style.minWidth = 140;
             card.Add(toggle);
@@ -178,6 +180,7 @@ namespace BelowTheWing.Menu
             var slider = new Slider(label, least, most) { showInputField = true };
 
             slider.style.marginTop = 6;
+            slider.style.fontSize = 12;
             slider.labelElement.style.color = MenuLook.InkSoft;
             slider.labelElement.style.minWidth = 140;
             card.Add(slider);

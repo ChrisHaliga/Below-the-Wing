@@ -54,4 +54,13 @@ foreach ($folder in @("Assets\Scenes", "Assets\Content\Prefabs", "Assets\UI")) {
     }
 }
 
+# The rebuild decides which scenes are in the build and in what order, and that lives in
+# ProjectSettings rather than in Assets. Without this a scene it created exists on disk and
+# SceneManager.LoadScene cannot find it.
+$buildSettings = "ProjectSettings\EditorBuildSettings.asset"
+if (Test-Path (Join-Path $Mirror $buildSettings)) {
+    Copy-Item (Join-Path $Mirror $buildSettings) (Join-Path $Source $buildSettings) -Force
+    "  copied back $buildSettings"
+}
+
 "rebuilt"

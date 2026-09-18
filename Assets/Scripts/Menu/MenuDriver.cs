@@ -1,12 +1,9 @@
-using System.Collections.Generic;
-using BelowTheWing.Apron;
-using BelowTheWing.Crew;
 using BelowTheWing.Net;
-using BelowTheWing.Session;
 using BelowTheWing.Wiring;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 namespace BelowTheWing.Menu
@@ -15,26 +12,22 @@ namespace BelowTheWing.Menu
     [RequireComponent(typeof(UIDocument))]
     public sealed class MenuDriver : MonoBehaviour
     {
+        public const string ShiftScene = "Apron";
+
         [Header("Wiring")]
         [SerializeField] SessionGateway m_Gateway;
-        [SerializeField] RampSession m_Session;
         [SerializeField] MenuCamera m_Camera;
-        [SerializeField] Camera m_PlayingCamera;
+        [SerializeField] MenuBackdrop m_Backdrop;
 
         readonly MenuFlow m_Flow = new MenuFlow();
-        readonly List<Transform> m_Standing = new List<Transform>();
 
         MenuChrome m_Chrome;
-        MenuApron m_Apron;
         LobbyRoster m_Roster;
+        bool m_Hosting;
 
         void Awake()
         {
             FindWhatIsAlreadyInTheScene();
-
-            m_Apron = new MenuApron(
-                m_Session.Layout, m_Session.AircraftProfile, m_Session.CrewProfile,
-                m_Session.TractorPrefab, m_Session.CartPrefab, m_Session.AircraftPrefab);
 
             m_Chrome = new MenuChrome(GetComponent<UIDocument>().rootVisualElement);
 
@@ -44,13 +37,11 @@ namespace BelowTheWing.Menu
             m_Chrome.SettingsOpened += () => m_Flow.Show(MenuScreen.Settings);
             m_Chrome.Quit += Leave;
             m_Chrome.Backed += m_Flow.Back;
-            m_Chrome.ReadyToggled += () => m_Roster?.ReadyUp(!m_Roster.AmIReady);
+            m_Chrome.ReadyToggled += ReadyUp;
             m_Chrome.ShiftStarted += StartTheShift;
 
             m_Flow.Changed += WentTo;
             m_Flow.LeftTheSession += LeaveTheSession;
-
-            m_Session.HoldTheCrewBack();
 
             WentTo(MenuScreen.Title);
         }
@@ -58,21 +49,15 @@ namespace BelowTheWing.Menu
         void FindWhatIsAlreadyInTheScene()
         {
             m_Gateway = m_Gateway != null ? m_Gateway : FindAnyObjectByType<SessionGateway>();
-            m_Session = m_Session != null ? m_Session : FindAnyObjectByType<RampSession>();
             m_Camera = m_Camera != null ? m_Camera : FindAnyObjectByType<MenuCamera>();
+            m_Backdrop = m_Backdrop != null ? m_Backdrop : FindAnyObjectByType<MenuBackdrop>();
 
-            if (m_PlayingCamera == null)
-            {
-                var follow = FindAnyObjectByType<FollowCamera>(FindObjectsInactive.Include);
-                m_PlayingCamera = follow != null ? follow.GetComponent<Camera>() : null;
-            }
-
-            if (m_Gateway == null || m_Session == null || m_Camera == null)
+            if (m_Gateway == null || m_Camera == null || m_Backdrop == null)
             {
                 throw MisbuiltException.Refuse(
                     this,
-                    "cannot find a SessionGateway, a RampSession and a MenuCamera in the scene, and " +
-                    "the menu drives all three");
+                    "cannot find a SessionGateway, a MenuCamera and a MenuBackdrop in the scene, " +
+                    "and the menu drives all three");
             }
         }
 
@@ -110,9 +95,9 @@ namespace BelowTheWing.Menu
 
             var shot = screen switch
             {
-                MenuScreen.Title => MenuSubjects.WholeApron(m_Apron.Plan),
-                MenuScreen.Lobby => MenuSubjects.Crew(m_Apron.Plan, CrewStandingAbout()),
-                _ => MenuSubjects.Airliner(m_Apron.Plan)
+                MenuScreen.Title => m_Backdrop.TitleShot,
+                MenuScreen.Lobby => m_Backdrop.LobbyShot,
+                _ => m_Backdrop.PanelShot
             };
 
             if (screen == MenuScreen.Title)
@@ -124,28 +109,45 @@ namespace BelowTheWing.Menu
             m_Camera.TravelTo(shot);
         }
 
-        async void Host()
+        void Host()
+        {
+            if (m_Hosting)
+            {
+                return;
+            }
+
+            m_Hosting = true;
+
+            m_Chrome.SayTheCodeIs("");
+            m_Flow.Show(MenuScreen.Lobby);
+
+            OpenTheSession();
+        }
+
+        async void OpenTheSession()
         {
             await m_Gateway.HostAsync();
 
-            AfterConnecting();
+            m_Hosting = false;
+
+            if (m_Gateway.Phase == SessionPhase.InSession)
+            {
+                m_Chrome.SayTheCodeIs(m_Gateway.JoinCode);
+                return;
+            }
+
+            m_Chrome.SayTheCodeIs(Why("no code"));
         }
 
         async void JoinWith(string code)
         {
+            m_Chrome.SayTheJoinFailed("Joining...");
+
             await m_Gateway.JoinAsync(code);
 
-            AfterConnecting();
-        }
-
-        void AfterConnecting()
-        {
             if (m_Gateway.Phase != SessionPhase.InSession)
             {
-                m_Chrome.SayTheJoinFailed(
-                    string.IsNullOrEmpty(m_Gateway.FailureReason)
-                        ? "That did not work. Check the code and try again."
-                        : m_Gateway.FailureReason);
+                m_Chrome.SayTheJoinFailed(Why("That did not work. Check the code and try again."));
                 return;
             }
 
@@ -153,61 +155,72 @@ namespace BelowTheWing.Menu
             m_Flow.Show(MenuScreen.Lobby);
         }
 
+        string Why(string otherwise)
+            => string.IsNullOrEmpty(m_Gateway.FailureReason) ? otherwise : m_Gateway.FailureReason;
+
+        void ReadyUp()
+        {
+            if (m_Roster != null && m_Roster.IsSpawned)
+            {
+                m_Roster.ReadyUp(!m_Roster.AmIReady);
+                return;
+            }
+
+            m_Chrome.ReadyOnYourOwn(!m_Chrome.AloneAndReady);
+        }
+
         void PaintTheLobby()
         {
             m_Roster ??= FindAnyObjectByType<LobbyRoster>();
 
-            if (m_Roster == null)
+            if (m_Roster != null && m_Roster.IsSpawned)
             {
+                m_Chrome.ShowTheSeats(m_Roster.Seats, m_Roster.AmIReady, m_Roster.CanStart);
+                m_Backdrop.ShowThisManyCrew(m_Roster.Filled);
                 return;
             }
 
-            m_Chrome.ShowTheSeats(m_Roster.Seats, m_Roster.AmIReady, m_Roster.CanStart);
-        }
-
-        IReadOnlyList<Transform> CrewStandingAbout()
-        {
-            m_Standing.Clear();
-
-            foreach (var crew in FindObjectsByType<CrewCharacter>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
-            {
-                m_Standing.Add(crew.transform);
-            }
-
-            return m_Standing;
+            m_Chrome.ShowOneSeatWaitingOnTheService();
+            m_Backdrop.ShowThisManyCrew(1);
         }
 
         void StartTheShift()
         {
-            if (m_Roster == null || !m_Roster.CanStart)
+            if (m_Roster != null && m_Roster.IsSpawned && !m_Roster.CanStart)
             {
                 return;
             }
 
-            m_Session.StartTheShift();
-
-            m_Apron.TakeItDown();
-            m_Flow.ShiftStarted();
-
-            if (m_PlayingCamera != null)
+            if (m_Roster == null && !m_Chrome.AloneAndReady)
             {
-                m_PlayingCamera.enabled = true;
+                return;
             }
 
-            m_Camera.gameObject.SetActive(false);
+            m_Flow.ShiftStarted();
             GetComponent<UIDocument>().rootVisualElement.style.display = DisplayStyle.None;
+
+            var netcode = NetworkManager.Singleton;
+
+            if (netcode != null && netcode.IsListening && netcode.SceneManager != null)
+            {
+                netcode.SceneManager.LoadScene(ShiftScene, LoadSceneMode.Single);
+                return;
+            }
+
+            SceneManager.LoadScene(ShiftScene, LoadSceneMode.Single);
         }
 
         async void LeaveTheSession()
         {
+            m_Roster = null;
+            m_Chrome.ReadyOnYourOwn(false);
+
             await m_Gateway.LeaveAsync();
 
             if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
             {
                 NetworkManager.Singleton.Shutdown();
             }
-
-            m_Roster = null;
         }
 
         void Leave()

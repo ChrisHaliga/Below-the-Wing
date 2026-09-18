@@ -9,6 +9,7 @@ using BelowTheWing.Menu;
 using BelowTheWing.Net;
 using BelowTheWing.Session;
 using BelowTheWing.Vehicles;
+using BelowTheWing.Wiring;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 using Unity.Netcode.Transports.UTP;
@@ -23,6 +24,7 @@ namespace BelowTheWing.EditorTools
     {
         const string PrefabFolder = "Assets/Content/Prefabs";
         const string ScenePath = "Assets/Scenes/Apron.unity";
+        const string MenuScenePath = "Assets/Scenes/Menu.unity";
         const string ApronMaterialPath = "Assets/Content/ApronConcrete.mat";
         const string ThemePath = "Assets/UI/MenuTheme.tss";
         const string PanelSettingsPath = "Assets/UI/MenuPanelSettings.asset";
@@ -640,16 +642,11 @@ namespace BelowTheWing.EditorTools
             BuildLighting();
 
             var camera = BuildCamera();
-            var manager = BuildNetworkManager();
-            var gateway = manager.gameObject.AddComponent<SessionGateway>();
-            var broker = manager.gameObject.AddComponent<NetworkOwnershipBroker>();
-
             var readout = new GameObject("Ramp Readout").AddComponent<RampReadout>();
 
             var sessionObject = new GameObject("Ramp Session");
             sessionObject.AddComponent<NetworkObject>();
             var session = sessionObject.AddComponent<RampSession>();
-            sessionObject.AddComponent<LobbyRoster>();
 
             Set(session, "m_AircraftProfile", aircraftProfile);
             Set(session, "m_CrewProfile", crewProfile);
@@ -663,25 +660,46 @@ namespace BelowTheWing.EditorTools
             {
                 Set(session, "m_BagPrefab", bag.GetComponent<NetworkObject>());
             }
-            Set(session, "m_Broker", broker);
             Set(session, "m_Camera", camera);
             Set(session, "m_Readout", readout);
 
-            BuildMenu(gateway, session, camera);
-
             EditorSceneManager.SaveScene(scene, ScenePath);
             GiveTheSceneObjectsTheirIdentities();
-            AddToBuildSettings();
+
+            BuildMenuScene(aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
+
+            AddToBuildSettings(MenuScenePath, first: true);
+            AddToBuildSettings(ScenePath, first: false);
         }
 
-        static void BuildMenu(
-            SessionGateway gateway, RampSession session, FollowCamera playingCamera)
+        static void BuildMenuScene(
+            AircraftProfile aircraftProfile,
+            CrewProfile crewProfile,
+            GameObject tractor,
+            GameObject cart,
+            GameObject aircraft,
+            GameObject crew)
         {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            BuildApronFloor();
+            BuildLighting();
+
+            var manager = BuildNetworkManager();
+            var gateway = manager.gameObject.AddComponent<SessionGateway>();
+            manager.gameObject.AddComponent<NetworkOwnershipBroker>();
+
+            var lobby = new GameObject("Lobby Roster");
+            lobby.AddComponent<NetworkObject>();
+            lobby.AddComponent<LobbyRoster>();
+
             var eye = new GameObject("Menu Camera");
             eye.AddComponent<Camera>();
+            eye.AddComponent<AudioListener>();
             var menuCamera = eye.AddComponent<MenuCamera>();
 
-            playingCamera.GetComponent<Camera>().enabled = false;
+            var backdrop = BuildBackdrop(
+                aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
 
             var menu = new GameObject("Menu");
             var document = menu.AddComponent<UIDocument>();
@@ -691,9 +709,106 @@ namespace BelowTheWing.EditorTools
             var driver = menu.AddComponent<MenuDriver>();
 
             Set(driver, "m_Gateway", gateway);
-            Set(driver, "m_Session", session);
             Set(driver, "m_Camera", menuCamera);
-            Set(driver, "m_PlayingCamera", playingCamera.GetComponent<Camera>());
+            Set(driver, "m_Backdrop", backdrop);
+
+            EditorSceneManager.SaveScene(scene, MenuScenePath);
+        }
+
+        static MenuBackdrop BuildBackdrop(
+            AircraftProfile aircraftProfile,
+            CrewProfile crewProfile,
+            GameObject tractor,
+            GameObject cart,
+            GameObject aircraft,
+            GameObject crew)
+        {
+            var holder = new GameObject("Backdrop");
+            var backdrop = holder.AddComponent<MenuBackdrop>();
+
+            var layout = ApronLayoutSettings.Default;
+            var plan = ApronLayout.Build(
+                layout,
+                tractor.GetComponent<VehicleShape>().Footprint,
+                cart.GetComponent<VehicleShape>().Footprint,
+                aircraftProfile,
+                new Vector3(
+                    crewProfile.radiusMetres * 2f, crewProfile.heightMetres, crewProfile.radiusMetres * 2f));
+
+            Dress(aircraft, plan.Aircraft, holder.transform);
+
+            foreach (var train in plan.Trains)
+            {
+                Dress(tractor, train.Tractor, holder.transform);
+
+                foreach (var parked in train.Carts)
+                {
+                    Dress(cart, parked, holder.transform);
+                }
+            }
+
+            var stage = plan.Trains[0].Carts[0];
+            var facing = stage.Rotation * Vector3.right;
+            var lineUp = stage.Position + (facing * 2.2f);
+
+            var standing = new List<GameObject>(Shift.MostCrew);
+
+            for (var i = 0; i < Shift.MostCrew; i++)
+            {
+                var at = lineUp + (stage.Rotation * Vector3.forward * ((i - 2f) * 0.9f));
+                var figure = Dress(crew, new Placement($"Crew {i + 1}", at, Quaternion.LookRotation(-facing), Vector3.one), holder.transform);
+
+                figure.SetActive(false);
+                standing.Add(figure);
+            }
+
+            Set(backdrop, "m_TitleShot", Shot("Title shot", holder.transform,
+                plan.Aircraft.Position + new Vector3(34f, 11f, 42f), plan.Aircraft.Position + Vector3.up * 3f));
+
+            Set(backdrop, "m_PanelShot", Shot("Panel shot", holder.transform,
+                plan.Aircraft.Position + new Vector3(14f, 5f, 21f), plan.Aircraft.Position + Vector3.up * 2f));
+
+            Set(backdrop, "m_LobbyShot", Shot("Lobby shot", holder.transform,
+                lineUp + (facing * 6.4f) + new Vector3(0f, 2.3f, 0f), lineUp + Vector3.up * 1.1f));
+
+            SetList(backdrop, "m_LobbyCrew", standing);
+
+            return backdrop;
+        }
+
+        static Transform Shot(string name, Transform under, Vector3 from, Vector3 at)
+        {
+            var shot = new GameObject(name).transform;
+
+            shot.SetParent(under, worldPositionStays: true);
+            shot.SetPositionAndRotation(from, Quaternion.LookRotation(at - from, Vector3.up));
+
+            return shot;
+        }
+
+        static GameObject Dress(GameObject prefab, Placement where, Transform under)
+        {
+            var placed = (GameObject)PrefabUtility.InstantiatePrefab(prefab, under);
+
+            placed.transform.SetPositionAndRotation(where.Position, where.Rotation);
+            placed.name = where.Name;
+
+            foreach (var body in placed.GetComponentsInChildren<Rigidbody>(true))
+            {
+                body.isKinematic = true;
+            }
+
+            foreach (var behaviour in placed.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                behaviour.enabled = false;
+            }
+
+            foreach (var networked in placed.GetComponentsInChildren<NetworkObject>(true))
+            {
+                UnityEngine.Object.DestroyImmediate(networked, allowDestroyingAssets: false);
+            }
+
+            return placed;
         }
 
         static PanelSettings MenuPanel()
@@ -789,16 +904,37 @@ namespace BelowTheWing.EditorTools
             return manager;
         }
 
-        static void AddToBuildSettings()
+        static void AddToBuildSettings(string path, bool first)
         {
             var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
-            if (scenes.Exists(s => s.path == ScenePath))
+
+            scenes.RemoveAll(s => s.path == path);
+
+            if (first)
             {
-                return;
+                scenes.Insert(0, new EditorBuildSettingsScene(path, true));
+            }
+            else
+            {
+                scenes.Add(new EditorBuildSettingsScene(path, true));
             }
 
-            scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
+        }
+
+        static void SetList(UnityEngine.Object target, string field, IReadOnlyList<GameObject> values)
+        {
+            var serialized = new SerializedObject(target);
+            var property = serialized.FindProperty(field);
+
+            property.arraySize = values.Count;
+
+            for (var i = 0; i < values.Count; i++)
+            {
+                property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         static void Set(UnityEngine.Object target, string field, UnityEngine.Object value)

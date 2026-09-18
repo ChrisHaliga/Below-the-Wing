@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BelowTheWing.Apron;
 using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
@@ -19,21 +20,48 @@ namespace BelowTheWing.Tests.EditMode
         const string PrefabFolder = ShippedContent.PrefabFolder;
 
         Scene m_Apron;
+        Scene m_Menu;
 
         [SetUp]
-        public void OpenTheApron() => m_Apron = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+        public void OpenBothScenes()
+        {
+            m_Menu = EditorSceneManager.OpenScene(ShippedContent.MenuScenePath, OpenSceneMode.Additive);
+            m_Apron = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+        }
 
         [TearDown]
-        public void CloseTheApron() => EditorSceneManager.CloseScene(m_Apron, removeScene: true);
+        public void CloseBothScenes()
+        {
+            EditorSceneManager.CloseScene(m_Apron, removeScene: true);
+            EditorSceneManager.CloseScene(m_Menu, removeScene: true);
+        }
 
         static T Find<T>() where T : Component
         {
             var found = Object.FindAnyObjectByType<T>();
-            Assert.That(found, Is.Not.Null, $"the apron scene has no {typeof(T).Name}");
+            Assert.That(found, Is.Not.Null,
+                $"neither shipped scene has a {typeof(T).Name}. The menu scene carries the netcode " +
+                "and the apron carries the game, and the NetworkManager crosses between them by " +
+                "marking itself DontDestroyOnLoad");
             return found;
         }
 
         static GameObject Prefab(string name) => ShippedContent.PrefabNamed(name);
+
+        List<T> InTheApron<T>() where T : Component
+        {
+            var here = new List<T>();
+
+            foreach (var found in Object.FindObjectsByType<T>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+            {
+                if (found.gameObject.scene == m_Apron)
+                {
+                    here.Add(found);
+                }
+            }
+
+            return here;
+        }
 
         [Test]
         public void TheNetworkManagerKnowsWhichPrefabsCanBeSpawned()
@@ -78,11 +106,15 @@ namespace BelowTheWing.Tests.EditMode
         {
             var session = new SerializedObject(Find<RampSession>());
 
+            Assert.That(session.FindProperty("m_Broker").objectReferenceValue, Is.Null,
+                "the broker lives with the NetworkManager in the menu scene, so the session cannot " +
+                "hold a reference to it and finds it at runtime instead");
+
             foreach (var field in new[]
                      {
                          "m_AircraftProfile", "m_CrewProfile",
                          "m_TractorPrefab", "m_CartPrefab", "m_AircraftPrefab", "m_CrewPrefab", "m_BagPrefab",
-                         "m_Broker", "m_Camera", "m_Readout"
+                         "m_Camera", "m_Readout"
                      })
             {
                 var property = session.FindProperty(field);
@@ -106,11 +138,13 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void TheApronItselfHoldsNoEquipment()
         {
-            Assert.That(Object.FindObjectsByType<VehicleController>(FindObjectsInactive.Exclude), Is.Empty,
+            Assert.That(InTheApron<VehicleController>(), Is.Empty,
                 "vehicles are placed at runtime from one description of the layout. A vehicle sitting " +
-                "in the scene as well is a second description that nothing keeps in agreement");
-            Assert.That(Object.FindObjectsByType<CrewCharacter>(FindObjectsInactive.Exclude), Is.Empty,
-                "a character in the scene belongs to nobody and is simulated by everybody");
+                "in the apron scene as well is a second description that nothing keeps in agreement. " +
+                "The menu scene's backdrop is not this: it is scenery, nothing on it simulates, and " +
+                "it is gone by the time a shift starts");
+            Assert.That(InTheApron<CrewCharacter>(), Is.Empty,
+                "a character in the apron scene belongs to nobody and is simulated by everybody");
         }
 
         [Test]

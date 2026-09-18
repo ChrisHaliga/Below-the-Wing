@@ -89,11 +89,14 @@ namespace BelowTheWing.Session
 
         public override void OnNetworkSpawn()
         {
+            m_Broker = m_Broker != null ? m_Broker : FindAnyObjectByType<NetworkOwnershipBroker>();
+
             if (m_Broker == null)
             {
                 throw MisbuiltException.Refuse(
                     this,
-                    "has no ownership broker, so nothing would decide which machine holds which train");
+                    "cannot find an ownership broker, so nothing would decide which machine holds " +
+                    "which train");
             }
 
             if (NetworkManager.LocalClient.IsSessionOwner)
@@ -222,7 +225,7 @@ namespace BelowTheWing.Session
                 m_AircraftProfile,
                 CrewSize());
 
-            var mine = FirstFreeArrival(plan.CrewSpawnPoints);
+            var mine = MyArrival(plan.CrewSpawnPoints);
 
             var crew = Instantiate(m_CrewPrefab, mine.Position, mine.Rotation);
             crew.GetComponent<ApronIdentity>().Called($"Player {NetworkManager.LocalClientId}");
@@ -246,22 +249,22 @@ namespace BelowTheWing.Session
             m_LocalPlayer = new LocalPlayerRig(m_OwnCrew, m_Camera, m_Broker, () => Vehicles, this);
         }
 
-        static Placement FirstFreeArrival(IReadOnlyList<Placement> arrivals)
+        Placement MyArrival(IReadOnlyList<Placement> arrivals)
+            => arrivals[ArrivalFor(NetworkManager.LocalClientId, NetworkManager.ConnectedClientsIds, arrivals.Count)];
+
+        public static int ArrivalFor(ulong me, IReadOnlyList<ulong> connected, int points)
         {
-            foreach (var arrival in arrivals)
+            var place = 0;
+
+            foreach (var other in connected)
             {
-                if (!Physics.CheckBox(
-                        arrival.Position, arrival.SizeMetres * 0.5f, arrival.Rotation, ~0,
-                        QueryTriggerInteraction.Ignore))
+                if (other < me)
                 {
-                    return arrival;
+                    place++;
                 }
             }
 
-            throw new MisbuiltException(
-                $"Every one of the {arrivals.Count} arrival points is occupied, so this player has " +
-                "nowhere to stand. The session admits Shift.MostCrew players and the apron lays out " +
-                "that many points, so the two have come apart.");
+            return place % Mathf.Max(points, 1);
         }
 
         Vector3 CrewSize()

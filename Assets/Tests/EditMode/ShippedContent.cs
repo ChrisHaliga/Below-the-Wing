@@ -21,6 +21,7 @@ namespace BelowTheWing.Tests.EditMode
         public const string CrewProfilePath = "Assets/Content/Crew/RampWorker.asset";
 
         public const string ScenePath = "Assets/Scenes/Apron.unity";
+        public const string MenuScenePath = "Assets/Scenes/Menu.unity";
 
         public static T Load<T>(string path) where T : Object
         {

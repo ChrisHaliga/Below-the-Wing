@@ -2,7 +2,6 @@ using System.Collections;
 using System.Reflection;
 using BelowTheWing.Menu;
 using BelowTheWing.Tests.Support;
-using BelowTheWing.Session;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -17,13 +16,13 @@ namespace BelowTheWing.Tests.PlayMode
 
         static readonly string[] SceneReferences =
         {
-            "m_Gateway", "m_Session", "m_Camera", "m_PlayingCamera"
+            "m_Gateway", "m_Camera", "m_Backdrop"
         };
 
         [UnityTest]
         public IEnumerator TheMenuFindsWhatItDrivesEvenWithNothingWiredInTheInspector()
         {
-            yield return LoadedScene.Open("Apron");
+            yield return LoadedScene.Open("Menu");
 
             var driver = Object.FindAnyObjectByType<MenuDriver>();
             Assert.That(driver, Is.Not.Null, "precondition: the scene has a MenuDriver");
@@ -35,9 +34,6 @@ namespace BelowTheWing.Tests.PlayMode
             document.panelSettings = driver.GetComponent<UIDocument>().panelSettings;
 
             var unwired = fresh.AddComponent<MenuDriver>();
-
-            Assert.That(Object.FindAnyObjectByType<RampSession>(), Is.Not.Null,
-                "precondition: the session the menu takes its content from is in the scene");
 
             foreach (var name in SceneReferences)
             {

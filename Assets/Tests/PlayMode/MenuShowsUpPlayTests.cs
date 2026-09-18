@@ -14,9 +14,9 @@ namespace BelowTheWing.Tests.PlayMode
         public IEnumerator TearDown() => LoadedScene.Close();
 
         [UnityTest]
-        public IEnumerator TheApronSceneOpensOnATitleCardWithSomethingOnIt()
+        public IEnumerator TheMenuSceneOpensOnATitleCardWithSomethingOnIt()
         {
-            yield return LoadedScene.Open("Apron");
+            yield return LoadedScene.Open("Menu");
 
             var driver = Object.FindAnyObjectByType<MenuDriver>();
             Assert.That(driver, Is.Not.Null, "the scene has no MenuDriver in it at all");
@@ -54,9 +54,9 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator TheApronSceneHasACameraLookingAtSomething()
+        public IEnumerator TheMenuSceneHasACameraLookingAtSomething()
         {
-            yield return LoadedScene.Open("Apron");
+            yield return LoadedScene.Open("Menu");
 
             var on = 0;
 

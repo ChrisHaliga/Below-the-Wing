@@ -6,33 +6,51 @@ namespace BelowTheWing.Menu
     [RequireComponent(typeof(Camera))]
     public sealed class MenuCamera : MonoBehaviour
     {
-        public const float TravelSeconds = 1.6f;
+        public const float TravelSeconds = 1.4f;
 
         Camera m_Eye;
-        CameraShot m_From;
-        CameraShot m_To;
+        Pose m_From;
+        Pose m_To;
         float m_TravelledFor = TravelSeconds;
-        float m_Angle;
 
-        public CameraShot Showing => CameraShot.Between(m_From, m_To, m_TravelledFor / TravelSeconds);
+        public Pose Showing => Between(m_From, m_To, m_TravelledFor / TravelSeconds);
 
         public bool Travelling => m_TravelledFor < TravelSeconds;
 
-        public void StartOn(CameraShot shot)
+        public void StartOn(Transform shot)
         {
-            m_From = shot;
-            m_To = shot;
+            m_From = At(shot);
+            m_To = m_From;
             m_TravelledFor = TravelSeconds;
 
             Place();
         }
 
-        public void TravelTo(CameraShot shot)
+        public void TravelTo(Transform shot)
         {
             m_From = Showing;
-            m_To = shot;
+            m_To = At(shot);
             m_TravelledFor = 0f;
         }
+
+        public static Pose Between(Pose from, Pose to, float howFar)
+        {
+            var eased = Eased(Mathf.Clamp01(howFar));
+
+            return new Pose(
+                Vector3.Lerp(from.position, to.position, eased),
+                Quaternion.Slerp(from.rotation, to.rotation, eased));
+        }
+
+        static float Eased(float howFar)
+            => howFar < 0.5f
+                ? 2f * howFar * howFar
+                : 1f - (Mathf.Pow((-2f * howFar) + 2f, 2f) * 0.5f);
+
+        static Pose At(Transform shot)
+            => shot != null
+                ? new Pose(shot.position, shot.rotation)
+                : new Pose(Vector3.up * 2f, Quaternion.identity);
 
         void Awake() => m_Eye = GetComponent<Camera>();
 
@@ -43,17 +61,14 @@ namespace BelowTheWing.Menu
                 m_TravelledFor = Mathf.Min(m_TravelledFor + Time.unscaledDeltaTime, TravelSeconds);
             }
 
-            var shot = Showing;
-            m_Angle = shot.AngleAfter(m_Angle, Time.unscaledDeltaTime);
-
             Place();
         }
 
         void Place()
         {
-            var shot = Showing;
+            var pose = Showing;
 
-            transform.SetPositionAndRotation(shot.PlacedAt(m_Angle), shot.FacingFrom(m_Angle));
+            transform.SetPositionAndRotation(pose.position, pose.rotation);
 
             if (m_Eye != null)
             {
