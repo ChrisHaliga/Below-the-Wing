@@ -17,6 +17,9 @@ namespace BelowTheWing.Menu
 
         static readonly string[] ModeNames = { "Fullscreen", "Borderless", "Windowed" };
 
+        const int LabelWidth = 190;
+        const int ControlWidth = 300;
+
         readonly DropdownField m_Mode;
         readonly DropdownField m_Monitor;
         readonly DropdownField m_Resolution;
@@ -28,52 +31,95 @@ namespace BelowTheWing.Menu
         readonly Slider m_Effects;
         readonly Slider m_FieldOfView;
 
+        readonly Label m_LookReads;
+        readonly Label m_FieldOfViewReads;
+        readonly Label m_MasterReads;
+        readonly Label m_EffectsReads;
+
         List<Vector2Int> m_Sizes = new List<Vector2Int>();
         bool m_Painting;
 
         public SettingsPanel(Action back)
         {
             Root = MenuLook.Screen("settings");
-            Root.Add(MenuLook.Shade(0.55f));
+            Root.Add(MenuLook.Scrim(0.9f, 0.9f));
 
-            var card = MenuLook.Card(430);
-            card.Add(MenuLook.Eyebrow("SETTINGS"));
+            var column = new VisualElement();
+            column.style.position = Position.Absolute;
+            column.style.left = MenuLook.Gutter;
+            column.style.top = MenuLook.Gutter;
+            column.style.bottom = MenuLook.Gutter;
+            column.style.width = 560;
 
-            m_Mode = Choice(card, "Window");
-            m_Monitor = Choice(card, "Monitor");
-            m_Resolution = Choice(card, "Resolution");
+            var eyebrow = MenuLook.Eyebrow("SETTINGS", MenuLook.HiVis);
+            eyebrow.style.marginBottom = 10;
 
-            m_Note = MenuLook.Quiet("");
+            var heading = MenuLook.Display("SETTINGS", 40);
+            heading.style.marginBottom = 10;
+
+            column.Add(eyebrow);
+            column.Add(heading);
+            column.Add(MenuLook.Rule(ControlWidth + LabelWidth, MenuLook.InkFaint));
+
+            column.Add(Section("DISPLAY"));
+
+            m_Mode = Choice(column, "Window");
+            m_Monitor = Choice(column, "Monitor");
+            m_Resolution = Choice(column, "Resolution");
+
+            m_Note = MenuLook.Quiet("", 12);
             m_Note.style.marginTop = 6;
-            m_Note.style.marginBottom = 10;
-            card.Add(m_Note);
+            m_Note.style.marginLeft = LabelWidth;
+            m_Note.style.maxWidth = ControlWidth;
+            column.Add(m_Note);
 
-            m_Look = Dial(card, "Look sensitivity", CrewSettings.LeastSensitive, CrewSettings.MostSensitive);
-            m_Invert = Switch(card, "Invert look Y");
-            m_FieldOfView = Dial(card, "Field of view", CrewSettings.NarrowestFieldOfView, CrewSettings.WidestFieldOfView);
-            m_Master = Dial(card, "Master volume", 0f, 1f);
-            m_Effects = Dial(card, "Effects volume", 0f, 1f);
+            column.Add(Section("LOOKING AROUND"));
+
+            m_Look = Dial(column, "Sensitivity", CrewSettings.LeastSensitive, CrewSettings.MostSensitive, out m_LookReads);
+            m_FieldOfView = Dial(column, "Field of view", CrewSettings.NarrowestFieldOfView, CrewSettings.WidestFieldOfView, out m_FieldOfViewReads);
+            m_Invert = Switch(column, "Invert Y");
+
+            column.Add(Section("SOUND"));
+
+            m_Master = Dial(column, "Master", 0f, 1f, out m_MasterReads);
+            m_Effects = Dial(column, "Effects", 0f, 1f, out m_EffectsReads);
 
             m_Mode.RegisterValueChangedCallback(_ => Apply(() => CrewSettings.Mode = Modes[Mathf.Clamp(m_Mode.index, 0, Modes.Length - 1)]));
             m_Monitor.RegisterValueChangedCallback(_ => Apply(() => CrewSettings.Monitor = m_Monitor.index));
             m_Resolution.RegisterValueChangedCallback(_ => Apply(() => CrewSettings.Resolution = Chosen()));
 
-            m_Look.RegisterValueChangedCallback(e => Write(() => CrewSettings.LookSensitivity = e.newValue));
+            m_Look.RegisterValueChangedCallback(e => Write(() =>
+            {
+                CrewSettings.LookSensitivity = e.newValue;
+                m_LookReads.text = $"{CrewSettings.LookSensitivity:0.00}";
+            }));
+            m_FieldOfView.RegisterValueChangedCallback(e => Write(() =>
+            {
+                CrewSettings.FieldOfViewDegrees = e.newValue;
+                m_FieldOfViewReads.text = $"{CrewSettings.FieldOfViewDegrees:0} DEG";
+            }));
+            m_Master.RegisterValueChangedCallback(e => Write(() =>
+            {
+                CrewSettings.MasterVolume = e.newValue;
+                m_MasterReads.text = $"{CrewSettings.MasterVolume * 100f:0}%";
+            }));
+            m_Effects.RegisterValueChangedCallback(e => Write(() =>
+            {
+                CrewSettings.EffectsVolume = e.newValue;
+                m_EffectsReads.text = $"{CrewSettings.EffectsVolume * 100f:0}%";
+            }));
             m_Invert.RegisterValueChangedCallback(e => Write(() => CrewSettings.InvertLookY = e.newValue));
-            m_FieldOfView.RegisterValueChangedCallback(e => Write(() => CrewSettings.FieldOfViewDegrees = e.newValue));
-            m_Master.RegisterValueChangedCallback(e => Write(() => CrewSettings.MasterVolume = e.newValue));
-            m_Effects.RegisterValueChangedCallback(e => Write(() => CrewSettings.EffectsVolume = e.newValue));
 
-            card.Add(MenuLook.Rule());
-            card.Add(MenuLook.Press("Reset to defaults", () =>
+            var list = new MenuList();
+            list.Add("Reset to defaults", () =>
             {
                 CrewSettings.ResetToDefaults();
                 Refresh();
-            }));
+            });
+            list.Add("Back", () => back?.Invoke());
 
-            card.Add(MenuLook.Press("Back", () => back?.Invoke()));
-
-            Root.Add(card);
+            column.Add(list.Root);
+            Root.Add(column);
         }
 
         public VisualElement Root { get; }
@@ -122,6 +168,11 @@ namespace BelowTheWing.Menu
             m_Master.value = CrewSettings.MasterVolume;
             m_Effects.value = CrewSettings.EffectsVolume;
 
+            m_LookReads.text = $"{CrewSettings.LookSensitivity:0.00}";
+            m_FieldOfViewReads.text = $"{CrewSettings.FieldOfViewDegrees:0} DEG";
+            m_MasterReads.text = $"{CrewSettings.MasterVolume * 100f:0}%";
+            m_EffectsReads.text = $"{CrewSettings.EffectsVolume * 100f:0}%";
+
             m_Painting = false;
         }
 
@@ -149,41 +200,72 @@ namespace BelowTheWing.Menu
             DisplayOptions.Apply();
         }
 
-        static DropdownField Choice(VisualElement card, string label)
+        static VisualElement Section(string name)
         {
-            var field = new DropdownField(label);
+            var eyebrow = MenuLook.Eyebrow(name, MenuLook.HiVis);
 
-            field.style.marginTop = 6;
-            field.style.fontSize = 12;
-            field.labelElement.style.color = MenuLook.InkSoft;
-            field.labelElement.style.minWidth = 140;
-            card.Add(field);
+            eyebrow.style.marginTop = 26;
+            eyebrow.style.marginBottom = 8;
+
+            return eyebrow;
+        }
+
+        static VisualElement Line(VisualElement column, string label)
+        {
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+            row.style.height = 34;
+
+            var name = MenuLook.Text(label, 14, MenuLook.InkSoft, MenuLook.Typeface.Body);
+            name.style.width = LabelWidth;
+
+            row.Add(name);
+            column.Add(row);
+
+            return row;
+        }
+
+        static DropdownField Choice(VisualElement column, string label)
+        {
+            var field = new DropdownField();
+
+            field.style.width = ControlWidth;
+            field.style.height = 28;
+            field.style.fontSize = 13;
+            field.style.marginLeft = 0;
+
+            Line(column, label).Add(field);
 
             return field;
         }
 
-        static Toggle Switch(VisualElement card, string label)
+        static Toggle Switch(VisualElement column, string label)
         {
-            var toggle = new Toggle(label);
+            var toggle = new Toggle();
 
-            toggle.style.marginTop = 6;
-            toggle.style.fontSize = 12;
-            toggle.labelElement.style.color = MenuLook.InkSoft;
-            toggle.labelElement.style.minWidth = 140;
-            card.Add(toggle);
+            toggle.style.marginLeft = 0;
+
+            Line(column, label).Add(toggle);
 
             return toggle;
         }
 
-        static Slider Dial(VisualElement card, string label, float least, float most)
+        static Slider Dial(VisualElement column, string label, float least, float most, out Label reads)
         {
-            var slider = new Slider(label, least, most) { showInputField = true };
+            var slider = new Slider(least, most);
 
-            slider.style.marginTop = 6;
-            slider.style.fontSize = 12;
-            slider.labelElement.style.color = MenuLook.InkSoft;
-            slider.labelElement.style.minWidth = 140;
-            card.Add(slider);
+            slider.style.width = ControlWidth - 76;
+            slider.style.marginLeft = 0;
+            slider.style.marginRight = 14;
+
+            reads = MenuLook.Data("", 13, MenuLook.HiVis);
+            reads.style.width = 62;
+            reads.style.unityTextAlign = TextAnchor.MiddleRight;
+
+            var row = Line(column, label);
+            row.Add(slider);
+            row.Add(reads);
 
             return slider;
         }

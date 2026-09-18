@@ -14,6 +14,11 @@ namespace BelowTheWing.Menu
     {
         public const string ShiftScene = "Apron";
 
+        [Header("Typefaces")]
+        [SerializeField] Font m_Display;
+        [SerializeField] Font m_Body;
+        [SerializeField] Font m_Data;
+
         [Header("Wiring")]
         [SerializeField] SessionGateway m_Gateway;
         [SerializeField] MenuCamera m_Camera;
@@ -28,6 +33,13 @@ namespace BelowTheWing.Menu
         void Awake()
         {
             FindWhatIsAlreadyInTheScene();
+
+            MenuLook.Typeface = new MenuTypeface
+            {
+                Display = m_Display,
+                Body = m_Body,
+                Data = m_Data
+            };
 
             m_Chrome = new MenuChrome(GetComponent<UIDocument>().rootVisualElement);
 
@@ -68,14 +80,51 @@ namespace BelowTheWing.Menu
                 return;
             }
 
-            if (m_Flow.Showing == MenuScreen.Title && SomethingWasPressed())
+            if (m_Flow.Showing == MenuScreen.Title)
             {
-                m_Flow.AnyButtonPressed();
+                if (SomethingWasPressed())
+                {
+                    m_Flow.AnyButtonPressed();
+                }
+
+                return;
             }
+
+            Steer();
 
             if (m_Flow.Showing == MenuScreen.Lobby)
             {
                 PaintTheLobby();
+            }
+        }
+
+        void Steer()
+        {
+            var keys = Keyboard.current;
+
+            if (keys == null)
+            {
+                return;
+            }
+
+            if (keys.downArrowKey.wasPressedThisFrame || keys.sKey.wasPressedThisFrame)
+            {
+                m_Chrome.Moved(1);
+            }
+
+            if (keys.upArrowKey.wasPressedThisFrame || keys.wKey.wasPressedThisFrame)
+            {
+                m_Chrome.Moved(-1);
+            }
+
+            if (keys.enterKey.wasPressedThisFrame || keys.numpadEnterKey.wasPressedThisFrame)
+            {
+                m_Chrome.Chose();
+            }
+
+            if (keys.escapeKey.wasPressedThisFrame)
+            {
+                m_Flow.Back();
             }
         }
 

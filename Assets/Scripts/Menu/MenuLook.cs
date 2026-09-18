@@ -1,35 +1,38 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace BelowTheWing.Menu
 {
+    public struct MenuTypeface
+    {
+        public Font Display;
+        public Font Body;
+        public Font Data;
+    }
+
     public static class MenuLook
     {
-        public static readonly Color Ink = new Color(0.93f, 0.95f, 0.95f);
-        public static readonly Color InkSoft = new Color(0.62f, 0.68f, 0.69f);
-        public static readonly Color InkFaint = new Color(0.44f, 0.50f, 0.51f);
+        public static readonly Color Ink = new Color(0.96f, 0.97f, 0.97f);
+        public static readonly Color InkSoft = new Color(0.66f, 0.71f, 0.72f);
+        public static readonly Color InkFaint = new Color(0.40f, 0.46f, 0.47f);
 
-        public static readonly Color Panel = new Color(0.055f, 0.070f, 0.078f, 0.96f);
-        public static readonly Color Sunk = new Color(0.02f, 0.03f, 0.035f, 0.85f);
-        public static readonly Color Edge = new Color(1f, 1f, 1f, 0.09f);
-        public static readonly Color Hairline = new Color(1f, 1f, 1f, 0.16f);
+        public static readonly Color HiVis = new Color(0.99f, 0.78f, 0.13f);
+        public static readonly Color Good = new Color(0.44f, 0.82f, 0.53f);
+        public static readonly Color Bad = new Color(0.93f, 0.44f, 0.36f);
+        public static readonly Color Dark = new Color(0.035f, 0.045f, 0.052f);
 
-        public static readonly Color HiVis = new Color(0.98f, 0.76f, 0.16f);
-        public static readonly Color Rest = new Color(1f, 1f, 1f, 0.05f);
-        public static readonly Color Hover = new Color(1f, 1f, 1f, 0.12f);
-        public static readonly Color Bad = new Color(0.91f, 0.48f, 0.40f);
-        public static readonly Color Good = new Color(0.47f, 0.80f, 0.55f);
+        public const int Gutter = 96;
+        public const float TypeSettleSeconds = 0.35f;
 
-        public const int Gutter = 64;
+        public static MenuTypeface Typeface;
 
         public static VisualElement Screen(string name)
         {
             var screen = new VisualElement { name = name };
 
             Fill(screen);
-            screen.style.flexDirection = FlexDirection.Row;
-            screen.style.alignItems = Align.Center;
 
             return screen;
         }
@@ -43,132 +46,140 @@ namespace BelowTheWing.Menu
             element.style.bottom = 0;
         }
 
-        public static VisualElement Shade(float opacity)
+        public static VisualElement Scrim(float acrossFraction, float darkest)
         {
-            var shade = new VisualElement { pickingMode = PickingMode.Ignore };
+            var scrim = new VisualElement { pickingMode = PickingMode.Ignore };
 
-            Fill(shade);
-            shade.style.backgroundColor = new Color(0.02f, 0.03f, 0.04f, opacity);
+            Fill(scrim);
 
-            return shade;
+            scrim.style.backgroundImage = Background.FromTexture2D(SideToSide(acrossFraction, darkest));
+            scrim.style.backgroundRepeat = new BackgroundRepeat(Repeat.Repeat, Repeat.Repeat);
+            scrim.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
+
+            return scrim;
         }
 
-        public static VisualElement Card(float widthPixels)
+        public static VisualElement FloorShadow()
         {
-            var card = new VisualElement();
+            var shadow = new VisualElement { pickingMode = PickingMode.Ignore };
 
-            card.style.width = widthPixels;
-            card.style.marginLeft = Gutter;
-            card.style.paddingLeft = 26;
-            card.style.paddingRight = 26;
-            card.style.paddingTop = 22;
-            card.style.paddingBottom = 22;
-            card.style.backgroundColor = Panel;
+            shadow.style.position = Position.Absolute;
+            shadow.style.left = 0;
+            shadow.style.right = 0;
+            shadow.style.bottom = 0;
+            shadow.style.height = Length.Percent(38);
 
-            Edges(card, Edge, 1);
-            card.style.borderTopWidth = 2;
-            card.style.borderTopColor = HiVis;
+            shadow.style.backgroundImage = Background.FromTexture2D(TopToBottom());
+            shadow.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
 
-            return card;
+            return shadow;
         }
 
-        public static Label Eyebrow(string text)
+        static Texture2D SideToSide(float acrossFraction, float darkest)
         {
-            var label = Text(text, 10, InkFaint);
+            var wide = new Texture2D(256, 1, TextureFormat.RGBA32, mipChain: false)
+            {
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
 
-            label.style.letterSpacing = 2.4f;
+            for (var x = 0; x < wide.width; x++)
+            {
+                var across = x / (wide.width - 1f);
+                var falloff = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(across / Mathf.Max(acrossFraction, 0.01f)));
+
+                wide.SetPixel(x, 0, new Color(Dark.r, Dark.g, Dark.b, darkest * falloff));
+            }
+
+            wide.Apply();
+
+            return wide;
+        }
+
+        static Texture2D TopToBottom()
+        {
+            var tall = new Texture2D(1, 128, TextureFormat.RGBA32, mipChain: false)
+            {
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+
+            for (var y = 0; y < tall.height; y++)
+            {
+                var up = y / (tall.height - 1f);
+
+                tall.SetPixel(0, y, new Color(Dark.r, Dark.g, Dark.b, Mathf.SmoothStep(0.72f, 0f, up)));
+            }
+
+            tall.Apply();
+
+            return tall;
+        }
+
+        public static Label Display(string text, int size)
+        {
+            var label = Text(text, size, Ink, Typeface.Display);
+
             label.style.unityFontStyleAndWeight = FontStyle.Bold;
-            label.style.marginBottom = 10;
+            label.style.letterSpacing = size * 0.045f;
 
             return label;
         }
 
-        public static Label Heading(string text, int size)
+        public static Label Eyebrow(string text, Color colour)
         {
-            var label = Text(text, size, Ink);
+            var label = Text(text, 11, colour, Typeface.Data);
 
+            label.style.letterSpacing = 4.5f;
             label.style.unityFontStyleAndWeight = FontStyle.Bold;
-            label.style.letterSpacing = size * 0.04f;
 
             return label;
         }
 
-        public static Label Quiet(string text, int size = 13)
+        public static Label Quiet(string text, int size = 14)
         {
-            var label = Text(text, size, InkSoft);
+            var label = Text(text, size, InkSoft, Typeface.Body);
 
             label.style.whiteSpace = WhiteSpace.Normal;
 
             return label;
         }
 
-        public static Label Text(string text, int size, Color colour)
+        public static Label Data(string text, int size, Color colour)
+        {
+            var label = Text(text, size, colour, Typeface.Data);
+
+            label.style.letterSpacing = 2f;
+            label.style.unityFontStyleAndWeight = FontStyle.Bold;
+
+            return label;
+        }
+
+        public static Label Text(string text, int size, Color colour, Font face)
         {
             var label = new Label(text);
 
             label.style.color = colour;
             label.style.fontSize = size;
 
+            if (face != null)
+            {
+                label.style.unityFont = face;
+                label.style.unityFontDefinition = new StyleFontDefinition(FontDefinition.FromFont(face));
+            }
+
             return label;
         }
 
-        public static VisualElement Rule()
+        public static VisualElement Rule(float widthPixels, Color colour, float thickness = 1f)
         {
-            var rule = new VisualElement();
+            var rule = new VisualElement { pickingMode = PickingMode.Ignore };
 
-            rule.style.height = 1;
-            rule.style.backgroundColor = Edge;
-            rule.style.marginTop = 14;
-            rule.style.marginBottom = 14;
+            rule.style.width = widthPixels;
+            rule.style.height = thickness;
+            rule.style.backgroundColor = colour;
 
             return rule;
-        }
-
-        public static Button Press(string text, Action clicked, bool leading = false)
-        {
-            var button = new Button(clicked) { text = text };
-
-            button.style.height = 40;
-            button.style.marginLeft = 0;
-            button.style.marginRight = 0;
-            button.style.marginTop = 0;
-            button.style.marginBottom = 6;
-            button.style.paddingLeft = 14;
-            button.style.fontSize = 14;
-            button.style.color = leading ? HiVis : Ink;
-            button.style.backgroundColor = Rest;
-            button.style.unityTextAlign = TextAnchor.MiddleLeft;
-            button.style.unityFontStyleAndWeight = leading ? FontStyle.Bold : FontStyle.Normal;
-            button.style.letterSpacing = 0.6f;
-
-            Edges(button, Edge, 1);
-            button.style.borderLeftWidth = 2;
-            button.style.borderLeftColor = leading ? HiVis : Edge;
-
-            button.RegisterCallback<MouseEnterEvent>(_ =>
-            {
-                button.style.backgroundColor = Hover;
-                button.style.borderLeftColor = HiVis;
-            });
-
-            button.RegisterCallback<MouseLeaveEvent>(_ =>
-            {
-                button.style.backgroundColor = Rest;
-                button.style.borderLeftColor = leading ? HiVis : Edge;
-            });
-
-            return button;
-        }
-
-        public static VisualElement Row()
-        {
-            var row = new VisualElement();
-
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.alignItems = Align.Center;
-            row.style.justifyContent = Justify.SpaceBetween;
-
-            return row;
         }
 
         public static void Edges(VisualElement element, Color colour, float width)
@@ -182,6 +193,25 @@ namespace BelowTheWing.Menu
             element.style.borderRightWidth = width;
             element.style.borderBottomWidth = width;
             element.style.borderLeftWidth = width;
+        }
+
+        public static void SettleIn(VisualElement element, float delaySeconds)
+        {
+            element.style.opacity = 0f;
+            element.style.translate = new Translate(-14, 0);
+
+            element.schedule.Execute(() =>
+            {
+                element.style.transitionProperty = new StyleList<StylePropertyName>(
+                    new List<StylePropertyName> { "opacity", "translate" });
+                element.style.transitionDuration = new StyleList<TimeValue>(
+                    new List<TimeValue> { TypeSettleSeconds, TypeSettleSeconds });
+                element.style.transitionTimingFunction = new StyleList<EasingFunction>(
+                    new List<EasingFunction> { EasingMode.EaseOutCubic });
+
+                element.style.opacity = 1f;
+                element.style.translate = new Translate(0, 0);
+            }).StartingIn((long)(delaySeconds * 1000f));
         }
     }
 }

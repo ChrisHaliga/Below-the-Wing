@@ -9,14 +9,17 @@ namespace BelowTheWing.Menu
     public sealed class MenuChrome
     {
         readonly Dictionary<MenuScreen, VisualElement> m_Screens = new Dictionary<MenuScreen, VisualElement>();
+        readonly Dictionary<MenuScreen, MenuList> m_Lists = new Dictionary<MenuScreen, MenuList>();
 
         readonly Label m_JoinCode;
         readonly Label m_Trouble;
         readonly TextField m_TypedCode;
-        readonly Button m_Start;
-        readonly Button m_Ready;
         readonly VisualElement m_Slots;
         readonly SettingsPanel m_Settings;
+
+        MenuScreen m_Showing = MenuScreen.Title;
+        int m_ReadyOn;
+        int m_StartOn;
 
         public MenuChrome(VisualElement root)
         {
@@ -25,7 +28,7 @@ namespace BelowTheWing.Menu
             Add(MenuScreen.Title, Title());
             Add(MenuScreen.Main, Main());
             Add(MenuScreen.Join, Join(out m_TypedCode, out m_Trouble));
-            Add(MenuScreen.Lobby, Lobby(out m_JoinCode, out m_Slots, out m_Ready, out m_Start));
+            Add(MenuScreen.Lobby, Lobby(out m_JoinCode, out m_Slots));
 
             m_Settings = new SettingsPanel(() => Backed?.Invoke());
             Add(MenuScreen.Settings, m_Settings.Root);
@@ -51,8 +54,26 @@ namespace BelowTheWing.Menu
 
         public void ReadyOnYourOwn(bool ready) => AloneAndReady = ready;
 
+        public void Moved(int by)
+        {
+            if (m_Lists.TryGetValue(m_Showing, out var list))
+            {
+                list.Move(by);
+            }
+        }
+
+        public void Chose()
+        {
+            if (m_Lists.TryGetValue(m_Showing, out var list))
+            {
+                list.ChooseWhatIsOn();
+            }
+        }
+
         public void Show(MenuScreen screen)
         {
+            m_Showing = screen;
+
             foreach (var pair in m_Screens)
             {
                 pair.Value.style.display = pair.Key == screen ? DisplayStyle.Flex : DisplayStyle.None;
@@ -67,14 +88,16 @@ namespace BelowTheWing.Menu
             {
                 m_TypedCode.value = "";
                 m_Trouble.text = "";
-                m_TypedCode.Focus();
+                m_TypedCode.schedule.Execute(() => m_TypedCode.Focus()).StartingIn(60);
             }
         }
 
         public void SayTheCodeIs(string code)
         {
-            m_JoinCode.text = string.IsNullOrEmpty(code) ? "opening..." : code;
-            m_JoinCode.style.color = string.IsNullOrEmpty(code) ? MenuLook.InkFaint : MenuLook.HiVis;
+            var waiting = string.IsNullOrEmpty(code);
+
+            m_JoinCode.text = waiting ? "OPENING" : code;
+            m_JoinCode.style.color = waiting ? MenuLook.InkFaint : MenuLook.HiVis;
         }
 
         public void SayTheJoinFailed(string why)
@@ -84,63 +107,68 @@ namespace BelowTheWing.Menu
         }
 
         public void ShowOneSeatWaitingOnTheService()
-        {
-            m_Slots.Clear();
-            m_Slots.Add(Seat(0, "You", AloneAndReady, filled: true));
-
-            for (var slot = 1; slot < Shift.MostCrew; slot++)
-            {
-                m_Slots.Add(Seat(slot, null, false, filled: false));
-            }
-
-            m_Ready.text = AloneAndReady ? "Stand down" : "Ready";
-            m_Start.SetEnabled(AloneAndReady);
-        }
+            => PaintSeats(new[] { ("You", AloneAndReady) }, AloneAndReady, AloneAndReady);
 
         public void ShowTheSeats(IReadOnlyList<SeatedCrew> seated, bool amIReady, bool canStart)
+        {
+            var crew = new (string, bool)[seated.Count];
+
+            for (var seat = 0; seat < seated.Count; seat++)
+            {
+                crew[seat] = (seated[seat].Called.ToString(), seated[seat].Ready);
+            }
+
+            PaintSeats(crew, amIReady, canStart);
+        }
+
+        void PaintSeats(IReadOnlyList<(string Called, bool Ready)> crew, bool amIReady, bool canStart)
         {
             m_Slots.Clear();
 
             for (var slot = 0; slot < Shift.MostCrew; slot++)
             {
-                var filled = slot < seated.Count;
-
-                m_Slots.Add(Seat(
-                    slot,
-                    filled ? seated[slot].Called.ToString() : null,
-                    filled && seated[slot].Ready,
-                    filled));
+                m_Slots.Add(slot < crew.Count
+                    ? Seat(slot, crew[slot].Called, crew[slot].Ready)
+                    : Seat(slot, null, false));
             }
 
-            m_Ready.text = amIReady ? "Stand down" : "Ready";
-            m_Start.SetEnabled(canStart);
+            var list = m_Lists[MenuScreen.Lobby];
+            list.Available(m_StartOn, canStart);
+
+            m_ReadyLabel.text = amIReady ? "STAND DOWN" : "READY";
         }
 
-        static VisualElement Seat(int slot, string called, bool ready, bool filled)
+        Label m_ReadyLabel;
+
+        static VisualElement Seat(int slot, string called, bool ready)
         {
-            var row = MenuLook.Row();
+            var filled = called != null;
 
-            row.style.height = 36;
-            row.style.paddingLeft = 12;
-            row.style.paddingRight = 12;
-            row.style.marginBottom = 4;
-            row.style.backgroundColor = filled ? MenuLook.Rest : MenuLook.Sunk;
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+            row.style.height = 34;
 
-            MenuLook.Edges(row, MenuLook.Edge, 1);
-            row.style.borderLeftWidth = 2;
-            row.style.borderLeftColor = ready ? MenuLook.Good : filled ? MenuLook.Hairline : MenuLook.Edge;
+            var pip = new VisualElement();
+            pip.style.width = 7;
+            pip.style.height = 7;
+            pip.style.marginRight = 14;
+            pip.style.backgroundColor = ready ? MenuLook.Good : filled ? MenuLook.InkSoft : Color.clear;
+            MenuLook.Edges(pip, filled ? Color.clear : MenuLook.InkFaint, 1);
 
             var name = MenuLook.Text(
-                filled ? called : $"{slot + 1}", 13, filled ? MenuLook.Ink : MenuLook.InkFaint);
+                filled ? called.ToUpperInvariant() : $"SLOT {slot + 1}",
+                15,
+                filled ? MenuLook.Ink : MenuLook.InkFaint,
+                MenuLook.Typeface.Body);
+            name.style.flexGrow = 1;
+            name.style.letterSpacing = 1.4f;
 
-            var state = MenuLook.Text(
-                filled ? (ready ? "READY" : "waiting") : "open",
-                10,
+            var state = MenuLook.Eyebrow(
+                filled ? (ready ? "READY" : "STANDING BY") : "OPEN",
                 ready ? MenuLook.Good : MenuLook.InkFaint);
 
-            state.style.letterSpacing = 1.2f;
-            state.style.unityFontStyleAndWeight = FontStyle.Bold;
-
+            row.Add(pip);
             row.Add(name);
             row.Add(state);
 
@@ -149,37 +177,48 @@ namespace BelowTheWing.Menu
 
         void Add(MenuScreen screen, VisualElement element) => m_Screens[screen] = element;
 
+        static VisualElement Stage(VisualElement screen, float scrimAcross, float scrimDark)
+        {
+            screen.Add(MenuLook.Scrim(scrimAcross, scrimDark));
+            screen.Add(MenuLook.FloorShadow());
+
+            var column = new VisualElement();
+
+            column.style.position = Position.Absolute;
+            column.style.left = MenuLook.Gutter;
+            column.style.bottom = MenuLook.Gutter;
+            column.style.width = 520;
+
+            screen.Add(column);
+
+            return column;
+        }
+
         static VisualElement Title()
         {
             var screen = MenuLook.Screen("title");
+            var column = Stage(screen, 0.62f, 0.86f);
 
-            screen.Add(MenuLook.Shade(0.45f));
+            var bar = MenuLook.Rule(64, MenuLook.HiVis, 4);
+            bar.style.marginBottom = 26;
 
-            var stack = new VisualElement();
-            stack.style.marginLeft = MenuLook.Gutter;
+            var name = MenuLook.Display("BELOW THE WING", 86);
+            name.style.marginBottom = 10;
 
-            var bar = new VisualElement();
-            bar.style.width = 54;
-            bar.style.height = 3;
-            bar.style.backgroundColor = MenuLook.HiVis;
-            bar.style.marginBottom = 18;
+            var what = MenuLook.Eyebrow("RAMP OPERATIONS", MenuLook.InkSoft);
+            what.style.marginBottom = 52;
 
-            var name = MenuLook.Heading("BELOW THE WING", 62);
-            name.style.marginBottom = 6;
+            var prompt = MenuLook.Eyebrow("PRESS ANY BUTTON", MenuLook.HiVis);
 
-            var what = MenuLook.Quiet("Ramp operations, one shift at a time", 16);
-            what.style.marginBottom = 34;
+            column.Add(bar);
+            column.Add(name);
+            column.Add(what);
+            column.Add(prompt);
 
-            var prompt = MenuLook.Text("PRESS ANY BUTTON", 13, MenuLook.HiVis);
-            prompt.style.letterSpacing = 3.4f;
-            prompt.style.unityFontStyleAndWeight = FontStyle.Bold;
-
-            stack.Add(bar);
-            stack.Add(name);
-            stack.Add(what);
-            stack.Add(prompt);
-
-            screen.Add(stack);
+            MenuLook.SettleIn(bar, 0.05f);
+            MenuLook.SettleIn(name, 0.12f);
+            MenuLook.SettleIn(what, 0.24f);
+            MenuLook.SettleIn(prompt, 0.5f);
 
             return screen;
         }
@@ -187,19 +226,18 @@ namespace BelowTheWing.Menu
         VisualElement Main()
         {
             var screen = MenuLook.Screen("main");
+            var column = Stage(screen, 0.52f, 0.84f);
 
-            screen.Add(MenuLook.Shade(0.35f));
+            column.Add(Header("BELOW THE WING", "MAIN MENU"));
 
-            var card = MenuLook.Card(300);
-            card.Add(MenuLook.Eyebrow("BELOW THE WING"));
+            var list = new MenuList();
+            list.Add("Host a shift", () => Hosted?.Invoke());
+            list.Add("Join a shift", () => Joining?.Invoke());
+            list.Add("Settings", () => SettingsOpened?.Invoke());
+            list.Add("Quit", () => Quit?.Invoke());
 
-            card.Add(MenuLook.Press("Host a shift", () => Hosted?.Invoke(), leading: true));
-            card.Add(MenuLook.Press("Join a shift", () => Joining?.Invoke()));
-            card.Add(MenuLook.Rule());
-            card.Add(MenuLook.Press("Settings", () => SettingsOpened?.Invoke()));
-            card.Add(MenuLook.Press("Quit", () => Quit?.Invoke()));
-
-            screen.Add(card);
+            m_Lists[MenuScreen.Main] = list;
+            column.Add(list.Root);
 
             return screen;
         }
@@ -207,79 +245,109 @@ namespace BelowTheWing.Menu
         VisualElement Join(out TextField typed, out Label trouble)
         {
             var screen = MenuLook.Screen("join");
+            var column = Stage(screen, 0.52f, 0.84f);
 
-            screen.Add(MenuLook.Shade(0.35f));
-
-            var card = MenuLook.Card(300);
-            card.Add(MenuLook.Eyebrow("JOIN A SHIFT"));
-            card.Add(MenuLook.Quiet("Enter the code the host gave you."));
+            column.Add(Header("JOIN A SHIFT", "ENTER THE HOST'S CODE"));
 
             typed = new TextField { maxLength = 12 };
-            typed.style.marginTop = 12;
-            typed.style.marginBottom = 4;
-            typed.style.height = 40;
-            typed.style.fontSize = 20;
-            typed.style.letterSpacing = 4;
+            typed.style.marginTop = 14;
+            typed.style.marginBottom = 6;
+            typed.style.width = 300;
+            typed.style.height = 52;
+            typed.style.fontSize = 26;
+            typed.style.letterSpacing = 8;
+            typed.style.color = MenuLook.HiVis;
+            typed.style.backgroundColor = new Color(0f, 0f, 0f, 0.45f);
             typed.style.unityTextAlign = TextAnchor.MiddleCenter;
+            typed.style.unityFont = MenuLook.Typeface.Data;
+            typed.style.unityFontDefinition =
+                new StyleFontDefinition(FontDefinition.FromFont(MenuLook.Typeface.Data));
+            MenuLook.Edges(typed, MenuLook.InkFaint, 1);
 
-            trouble = MenuLook.Quiet("", 12);
-            trouble.style.minHeight = 30;
+            trouble = MenuLook.Quiet("", 13);
+            trouble.style.minHeight = 26;
 
             var field = typed;
 
-            card.Add(typed);
-            card.Add(trouble);
-            card.Add(MenuLook.Press("Join", () => JoinedWith?.Invoke(field.value), leading: true));
-            card.Add(MenuLook.Press("Back", () => Backed?.Invoke()));
+            var list = new MenuList();
+            list.Add("Join", () => JoinedWith?.Invoke(field.value));
+            list.Add("Back", () => Backed?.Invoke());
 
-            screen.Add(card);
+            m_Lists[MenuScreen.Join] = list;
+
+            column.Add(typed);
+            column.Add(trouble);
+            column.Add(list.Root);
 
             return screen;
         }
 
-        VisualElement Lobby(out Label code, out VisualElement slots, out Button ready, out Button start)
+        VisualElement Lobby(out Label code, out VisualElement slots)
         {
             var screen = MenuLook.Screen("lobby");
+            var column = Stage(screen, 0.54f, 0.84f);
 
-            screen.Add(MenuLook.Shade(0.3f));
-
-            var card = MenuLook.Card(330);
-            card.Add(MenuLook.Eyebrow("CREW"));
+            column.Add(Header("CREW", "WHO IS ON THIS SHIFT"));
 
             slots = new VisualElement();
-            slots.style.marginBottom = 12;
-            card.Add(slots);
+            slots.style.marginTop = 6;
+            slots.style.marginBottom = 18;
+            column.Add(slots);
 
-            var codeRow = MenuLook.Row();
-            codeRow.style.height = 34;
-            codeRow.style.paddingLeft = 12;
-            codeRow.style.paddingRight = 12;
-            codeRow.style.marginBottom = 12;
-            codeRow.style.backgroundColor = MenuLook.Sunk;
-            MenuLook.Edges(codeRow, MenuLook.Edge, 1);
+            var codeRow = new VisualElement();
+            codeRow.style.flexDirection = FlexDirection.Row;
+            codeRow.style.alignItems = Align.Center;
+            codeRow.style.marginBottom = 10;
 
-            var codeLabel = MenuLook.Text("JOIN CODE", 10, MenuLook.InkFaint);
-            codeLabel.style.letterSpacing = 1.6f;
-            codeLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            var label = MenuLook.Eyebrow("JOIN CODE", MenuLook.InkFaint);
+            label.style.marginRight = 18;
 
-            code = MenuLook.Text("opening...", 16, MenuLook.InkFaint);
-            code.style.unityFontStyleAndWeight = FontStyle.Bold;
-            code.style.letterSpacing = 3;
+            code = MenuLook.Data("OPENING", 24, MenuLook.InkFaint);
 
-            codeRow.Add(codeLabel);
+            codeRow.Add(label);
             codeRow.Add(code);
-            card.Add(codeRow);
+            column.Add(codeRow);
+            column.Add(MenuLook.Rule(300, MenuLook.InkFaint));
 
-            ready = MenuLook.Press("Ready", () => ReadyToggled?.Invoke());
-            start = MenuLook.Press("Start shift", () => ShiftStarted?.Invoke(), leading: true);
+            var list = new MenuList();
+            m_ReadyOn = list.Count;
+            list.Add("Ready", () => ReadyToggled?.Invoke());
+            m_StartOn = list.Count;
+            list.Add("Start shift", () => ShiftStarted?.Invoke());
+            list.Add("Leave", () => Backed?.Invoke());
+            list.Available(m_StartOn, false);
 
-            card.Add(ready);
-            card.Add(start);
-            card.Add(MenuLook.Press("Leave", () => Backed?.Invoke()));
+            m_Lists[MenuScreen.Lobby] = list;
+            column.Add(list.Root);
 
-            screen.Add(card);
+            m_ReadyLabel = ReadyLabelOf(list);
 
             return screen;
+        }
+
+        static Label ReadyLabelOf(MenuList list) => list.Root[0].Q<Label>();
+
+        static VisualElement Header(string heading, string eyebrow)
+        {
+            var stack = new VisualElement();
+
+            var top = MenuLook.Eyebrow(eyebrow, MenuLook.HiVis);
+            top.style.marginBottom = 10;
+
+            var name = MenuLook.Display(heading, 40);
+            name.style.marginBottom = 10;
+
+            var rule = MenuLook.Rule(300, MenuLook.InkFaint);
+            rule.style.marginBottom = 16;
+
+            stack.Add(top);
+            stack.Add(name);
+            stack.Add(rule);
+
+            MenuLook.SettleIn(top, 0.02f);
+            MenuLook.SettleIn(name, 0.07f);
+
+            return stack;
         }
     }
 }

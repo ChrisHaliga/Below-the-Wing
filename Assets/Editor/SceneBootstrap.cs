@@ -27,6 +27,9 @@ namespace BelowTheWing.EditorTools
         const string MenuScenePath = "Assets/Scenes/Menu.unity";
         const string ApronMaterialPath = "Assets/Content/ApronConcrete.mat";
         const string ThemePath = "Assets/UI/MenuTheme.tss";
+        const string DisplayFontPath = "Assets/UI/Fonts/Inter-SemiBold.ttf";
+        const string BodyFontPath = "Assets/UI/Fonts/Inter-Regular.ttf";
+        const string DataFontPath = "Assets/UI/Fonts/RobotoMono-Bold.ttf";
         const string PanelSettingsPath = "Assets/UI/MenuPanelSettings.asset";
 
         const string DefaultPrefabListPath = "Assets/DefaultNetworkPrefabs.asset";
@@ -712,6 +715,10 @@ namespace BelowTheWing.EditorTools
             Set(driver, "m_Camera", menuCamera);
             Set(driver, "m_Backdrop", backdrop);
 
+            Set(driver, "m_Display", AssetDatabase.LoadAssetAtPath<Font>(DisplayFontPath));
+            Set(driver, "m_Body", AssetDatabase.LoadAssetAtPath<Font>(BodyFontPath));
+            Set(driver, "m_Data", AssetDatabase.LoadAssetAtPath<Font>(DataFontPath));
+
             EditorSceneManager.SaveScene(scene, MenuScenePath);
         }
 
@@ -762,14 +769,17 @@ namespace BelowTheWing.EditorTools
                 standing.Add(figure);
             }
 
+            var nose = plan.Aircraft.Position;
+            var tug = plan.Trains[0].Tractor.Position;
+
             Set(backdrop, "m_TitleShot", Shot("Title shot", holder.transform,
-                plan.Aircraft.Position + new Vector3(34f, 11f, 42f), plan.Aircraft.Position + Vector3.up * 3f));
+                tug + new Vector3(9.5f, 2.1f, -7.5f), nose + new Vector3(2f, 3.4f, 4f)));
 
             Set(backdrop, "m_PanelShot", Shot("Panel shot", holder.transform,
-                plan.Aircraft.Position + new Vector3(14f, 5f, 21f), plan.Aircraft.Position + Vector3.up * 2f));
+                tug + new Vector3(6.5f, 2.6f, -3.5f), tug + new Vector3(-1.5f, 1.2f, 3.5f)));
 
             Set(backdrop, "m_LobbyShot", Shot("Lobby shot", holder.transform,
-                lineUp + (facing * 6.4f) + new Vector3(0f, 2.3f, 0f), lineUp + Vector3.up * 1.1f));
+                lineUp + (facing * 5.2f) + new Vector3(0f, 1.55f, 0.6f), lineUp + Vector3.up * 1.05f));
 
             SetList(backdrop, "m_LobbyCrew", standing);
 
