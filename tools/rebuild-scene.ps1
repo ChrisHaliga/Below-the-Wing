@@ -26,17 +26,8 @@ $code = Invoke-Unity @(
 )
 
 if ($code -ne 0) {
-    "  rebuild failed (exit $code)."
-    $ours = Get-ProjectCompileErrors $log
-    if ($ours.Count -gt 0) {
-        $ours | Select-Object -First 25 | ForEach-Object { "    $_" }
-    }
-    elseif (Test-Path $log) {
-        Get-Content $log | Select-String -Pattern 'Exception|ArgumentNull|MissingReference' |
-            Select-Object -First 25 | ForEach-Object { "    $_" }
-        "  --- tail ---"
-        Get-Content $log -Tail 25 | ForEach-Object { "    $_" }
-    }
+    "  rebuild failed."
+    Explain-Failure $log $Paths $code | Out-Host
     throw "rebuild failed"
 }
 

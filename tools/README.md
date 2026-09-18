@@ -100,9 +100,11 @@ every source in it is ignored as being in an immutable folder with no assembly d
 everything referencing that assembly fails with types not found. The log shows hundreds of
 `error CS` lines under `Library\PackageCache` and none under `Assets`.
 
-`Sync-Mirror` in `mirror.ps1` checks for this on every run and clears the cache when it finds it,
-so the next extraction is a fresh one. If it ever slips through, delete the mirror's `Library`
-folder by hand; the run after pays for one import and is then healthy.
+`Sync-Mirror` in `mirror.ps1` checks for a package with sources and no asmdef on every run and
+clears the cache when it finds one. A stale `Library\Bee` build graph fails the same way with the
+cache intact, so when any run fails with errors only under `Library\PackageCache`, the script
+deletes the mirror's whole `Library` itself and says so. The run after pays for one import and is
+then healthy.
 
 The scripts wait on the Unity process itself rather than with `Start-Process -Wait`. `-Wait`
 also waits for every descendant, and a Unity that had to spawn its own `Unity.Licensing.Client`

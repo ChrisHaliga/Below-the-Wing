@@ -76,17 +76,9 @@ if ($Platform -eq "Compile") {
     "=== compile ==="
     $code = Invoke-Unity @("-batchmode", "-quit", "-nographics", "-projectPath", $Paths.Mirror, "-logFile", $log)
 
-    $ours = Get-ProjectCompileErrors $log
-    if ($ours.Count -gt 0) {
-        "  FAILED, $($ours.Count) distinct compile errors in the project:"
-        $ours | Select-Object -First 40 | ForEach-Object { "    $_" }
-        exit 1
-    }
-
-    if ($code -ne 0) {
-        $packages = Get-PackageCompileErrorCount $log
-        "  FAILED (Unity exit $code) with no errors in Assets and $packages in Library\PackageCache."
-        "  That is the mirror, not the code. Delete $($Paths.Mirror)\Library and run again."
+    if ($code -ne 0 -or (Get-ProjectCompileErrors $log).Count -gt 0) {
+        "  FAILED"
+        Explain-Failure $log $Paths $code | Out-Host
         exit 1
     }
 
@@ -115,15 +107,8 @@ foreach ($p in $platforms) {
     $code = Invoke-Unity $unityArgs
 
     if (-not (Test-Path $xml)) {
-        $ours = Get-ProjectCompileErrors $log
-        if ($ours.Count -gt 0) {
-            "  NO RESULTS FILE: the project did not compile. $($ours.Count) distinct errors:"
-            $ours | Select-Object -First 40 | ForEach-Object { "    $_" }
-        }
-        else {
-            "  NO RESULTS FILE. Unity exit code $code. Tail of the editor log:"
-            if (Test-Path $log) { Get-Content $log -Tail 40 | ForEach-Object { "    $_" } }
-        }
+        "  NO RESULTS FILE."
+        Explain-Failure $log $Paths $code | Out-Host
         $failed = $true
         continue
     }

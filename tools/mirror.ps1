@@ -75,6 +75,35 @@ function Get-PackageCompileErrorCount([string]$Log) {
     return @(Select-String -Path $Log -Pattern 'error CS' -SimpleMatch | Where-Object { $_.Line -match 'PackageCache' }).Count
 }
 
+# Prints why a Unity run failed. Compile errors in the project are the code's fault and are
+# listed. Compile errors only in Library\PackageCache, with none in Assets, are the mirror's fault:
+# a build graph or package cache left half-written by a killed or crashed Unity, which later runs
+# trust. The one cure that has worked every time is a fresh Library, so this deletes it and says
+# so; the next run pays for one import and is then healthy.
+function Explain-Failure([string]$Log, [hashtable]$Paths, [int]$ExitCode) {
+    $ours = Get-ProjectCompileErrors $Log
+    if ($ours.Count -gt 0) {
+        "  $($ours.Count) distinct compile errors in the project:"
+        $ours | Select-Object -First 40 | ForEach-Object { "    $_" }
+        return
+    }
+
+    $packages = Get-PackageCompileErrorCount $Log
+    if ($packages -gt 0) {
+        "  Unity exit $ExitCode with no errors in Assets and $packages in Library\PackageCache."
+        "  That is the mirror's Library, not the code. Deleting $($Paths.Mirror)\Library; run again."
+        Remove-Item (Join-Path $Paths.Mirror "Library") -Recurse -Force -ErrorAction SilentlyContinue
+        return
+    }
+
+    "  Unity exit $ExitCode. Tail of the log:"
+    if (Test-Path $Log) {
+        Get-Content $Log | Select-String -Pattern 'Exception|ArgumentNull|MissingReference' |
+            Select-Object -First 25 | ForEach-Object { "    $_" }
+        Get-Content $Log -Tail 25 | ForEach-Object { "    $_" }
+    }
+}
+
 # A script imported for the first time in the mirror gets its guid there, and a scene written in
 # that run records it. Importing the same script elsewhere assigns a different guid, and every
 # component the scene placed then reads as a missing script with nothing logged. Taking the mirror's
