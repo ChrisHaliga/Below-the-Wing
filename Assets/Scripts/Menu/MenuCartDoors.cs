@@ -87,7 +87,7 @@ namespace BelowTheWing.Menu
 
         void RaiseTheRig()
         {
-            SlidingDoors.Build(m_Cart, m_Cart.GetComponent<VehicleShape>(), null);
+            SlidingDoors.Build(m_Cart, m_Cart.GetComponent<VehicleShape>(), null, Rail);
 
             m_Poles.Clear();
             m_Near.Clear();
@@ -98,8 +98,6 @@ namespace BelowTheWing.Menu
                 pole.enabled = true;
 
                 pole.GetComponent<Rigidbody>().isKinematic = false;
-
-                LetItRun(pole.GetComponent<ConfigurableJoint>());
 
                 m_Poles.Add(pole);
                 (NearTheCamera(pole.transform.localPosition.x) ? m_Near : m_Far).Add(pole);
@@ -118,18 +116,18 @@ namespace BelowTheWing.Menu
             }
         }
 
-        // The game's rail is tuned for a hand pushing a door: heavy drag, and a dead stop at each
-        // end so nothing springs back at the player. A menu wants the opposite of both.
-        void LetItRun(ConfigurableJoint rail)
+        DoorRailSettings Rail
         {
-            var limit = rail.linearLimit;
-            limit.bounciness = Mathf.Clamp01(m_BounceOffTheEnd);
-            rail.linearLimit = limit;
+            get
+            {
+                var rail = DoorRailSettings.Default;
 
-            var drive = rail.zDrive;
-            drive.positionSpring = Mathf.Max(m_SettlesAtNewtonsPerMetre, 0f);
-            drive.positionDamper = Mathf.Max(m_RailDragNewtonsPerMetrePerSecond, 0f);
-            rail.zDrive = drive;
+                rail.dragNewtonsPerMetrePerSecond = m_RailDragNewtonsPerMetrePerSecond;
+                rail.bounceOffTheEnd = m_BounceOffTheEnd;
+                rail.settlesAtNewtonsPerMetre = m_SettlesAtNewtonsPerMetre;
+
+                return rail;
+            }
         }
 
         // A drive pulls toward the negative of its target, and the rail's own zero sits halfway

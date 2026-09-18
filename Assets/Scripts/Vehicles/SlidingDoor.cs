@@ -4,7 +4,9 @@ namespace BelowTheWing.Vehicles
 {
     public static class SlidingDoor
     {
-        public static float ShapeWeight(float openness) => Mathf.Clamp01(openness) * 100f;
+        public const float FullyOpenWeight = 100f;
+
+        public static float ShapeWeight(float openness) => Mathf.Clamp01(openness) * FullyOpenWeight;
 
         public static float OpennessAt(float travelledMetres, float travelMetres)
             => travelMetres <= 0f ? 0f : Mathf.Clamp01(travelledMetres / travelMetres);

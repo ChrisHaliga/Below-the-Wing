@@ -167,7 +167,7 @@ namespace BelowTheWing.Vehicles
             DiscardBodywork();
             m_Bodywork = VehicleBody.Build(gameObject, Shape, profile.bounciness);
 
-            SlidingDoors.Build(gameObject, Shape, m_Bodywork);
+            SlidingDoors.Build(gameObject, Shape, m_Bodywork, DoorRailSettings.Default);
 
             if (!profile.driveable)
             {

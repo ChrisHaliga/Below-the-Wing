@@ -236,14 +236,43 @@ namespace BelowTheWing.EditorTools
 
         static Bounds TheSpaceTheDoorsCloseOver(GameObject cart, Transform model)
         {
-            var doors = MeshBoxLocal(cart, model, "Door1");
+            var doors = new Bounds();
+            var any = false;
 
-            foreach (var door in new[] { "Door2", "Door3", "Door4" })
+            for (var i = 1; HasAPart(model, SlidingDoors.PanelName(i)); i++)
             {
-                doors.Encapsulate(MeshBoxLocal(cart, model, door));
+                var box = MeshBoxLocal(cart, model, SlidingDoors.PanelName(i));
+
+                if (any)
+                {
+                    doors.Encapsulate(box);
+                }
+                else
+                {
+                    doors = box;
+                    any = true;
+                }
+            }
+
+            if (!any)
+            {
+                throw Unmeasurable(cart, "its model has no doors to take a load space from");
             }
 
             return doors;
+        }
+
+        static bool HasAPart(Transform model, string name)
+        {
+            foreach (var candidate in model.GetComponentsInChildren<Transform>(true))
+            {
+                if (candidate != model && candidate.name == name)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         static bool IsCouplingHardware(string name)

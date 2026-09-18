@@ -72,7 +72,7 @@ namespace BelowTheWing.Tests.PlayMode
             panel.transform.localPosition = new Vector3(-0.83464f, 1.20934f, 0f);
             panel.sharedMesh = ADoorMesh();
 
-            SlidingDoors.Build(cart.gameObject, cart.Shape, null);
+            SlidingDoors.Build(cart.gameObject, cart.Shape, null, DoorRailSettings.Default);
 
             var pole = cart.GetComponentInChildren<SlidingDoorPole>(true);
             Assert.That(pole, Is.Not.Null, "no pole was raised, so there is nothing to slide");

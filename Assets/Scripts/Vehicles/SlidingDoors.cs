@@ -8,11 +8,11 @@ namespace BelowTheWing.Vehicles
     {
         public const string PolesName = "Doors";
 
-        const float PoleKg = 6f;
-        const float RailDragNewtonsPerMetrePerSecond = 40f;
-        const float RailHoldsAtNewtons = 1500f;
+        public static string PanelName(int door) => $"Door{door}";
 
-        public static void Build(GameObject vehicle, VehicleShape shape, PhysicsMaterial bodywork)
+        public static string FabricName(int door) => $"Door_Fabric{door}";
+
+        public static void Build(GameObject vehicle, VehicleShape shape, PhysicsMaterial bodywork, DoorRailSettings rail)
         {
             if (vehicle.transform.Find(PolesName) != null || shape == null)
             {
@@ -21,18 +21,22 @@ namespace BelowTheWing.Vehicles
 
             Transform poles = null;
 
-            for (var i = 1; i <= 4; i++)
+            for (var i = 1; ; i++)
             {
-                var panel = Find(vehicle.transform, $"Door{i}");
+                var panel = Find(vehicle.transform, PanelName(i));
 
-                if (panel == null || panel.sharedMesh == null
-                    || panel.sharedMesh.blendShapeCount == 0)
+                if (panel == null)
+                {
+                    return;
+                }
+
+                if (panel.sharedMesh == null || panel.sharedMesh.blendShapeCount == 0)
                 {
                     continue;
                 }
 
                 poles ??= Container(vehicle);
-                Raise(vehicle, poles, panel, Find(vehicle.transform, $"Door_Fabric{i}"), bodywork);
+                Raise(vehicle, poles, panel, Find(vehicle.transform, FabricName(i)), bodywork, rail);
             }
         }
 
@@ -59,10 +63,10 @@ namespace BelowTheWing.Vehicles
 
         static void Raise(
             GameObject vehicle, Transform poles, SkinnedMeshRenderer panel,
-            SkinnedMeshRenderer fabric, PhysicsMaterial bodywork)
+            SkinnedMeshRenderer fabric, PhysicsMaterial bodywork, DoorRailSettings rail)
         {
             var shut = InCartSpace(panel, vehicle.transform, 0f);
-            var open = InCartSpace(panel, vehicle.transform, 100f);
+            var open = InCartSpace(panel, vehicle.transform, SlidingDoor.FullyOpenWeight);
 
             var towardsTheEnd = Mathf.Sign(shut.center.z);
             var radius = shut.size.x * 0.5f;
@@ -82,13 +86,13 @@ namespace BelowTheWing.Vehicles
             grab.sharedMaterial = bodywork;
 
             var body = pole.AddComponent<Rigidbody>();
-            body.mass = PoleKg;
+            body.mass = rail.poleKg;
             body.useGravity = false;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
             pole.AddComponent<HandUse>().As = HandUse.Category.HoldOnto;
 
-            OnItsTrack(pole, vehicle.GetComponent<Rigidbody>(), shutAt, openAt);
+            OnItsTrack(pole, vehicle.GetComponent<Rigidbody>(), shutAt, openAt, rail);
 
             var cover = new GameObject($"{panel.name} cover").transform;
             cover.SetParent(poles, worldPositionStays: false);
@@ -152,46 +156,46 @@ namespace BelowTheWing.Vehicles
             }
         }
 
-        static void OnItsTrack(GameObject pole, Rigidbody cart, float shutAt, float openAt)
+        static void OnItsTrack(GameObject pole, Rigidbody cart, float shutAt, float openAt, DoorRailSettings rail)
         {
-            var rail = pole.AddComponent<ConfigurableJoint>();
-            rail.connectedBody = cart;
-            rail.autoConfigureConnectedAnchor = false;
-            rail.anchor = Vector3.zero;
-            rail.connectedAnchor = new Vector3(
+            var track = pole.AddComponent<ConfigurableJoint>();
+            track.connectedBody = cart;
+            track.autoConfigureConnectedAnchor = false;
+            track.anchor = Vector3.zero;
+            track.connectedAnchor = new Vector3(
                 pole.transform.localPosition.x,
                 pole.transform.localPosition.y,
                 (shutAt + openAt) * 0.5f);
 
-            rail.axis = Vector3.right;
-            rail.secondaryAxis = Vector3.up;
+            track.axis = Vector3.right;
+            track.secondaryAxis = Vector3.up;
 
-            rail.xMotion = ConfigurableJointMotion.Locked;
-            rail.yMotion = ConfigurableJointMotion.Locked;
-            rail.zMotion = ConfigurableJointMotion.Limited;
+            track.xMotion = ConfigurableJointMotion.Locked;
+            track.yMotion = ConfigurableJointMotion.Locked;
+            track.zMotion = ConfigurableJointMotion.Limited;
 
-            rail.angularXMotion = ConfigurableJointMotion.Locked;
-            rail.angularYMotion = ConfigurableJointMotion.Locked;
-            rail.angularZMotion = ConfigurableJointMotion.Locked;
+            track.angularXMotion = ConfigurableJointMotion.Locked;
+            track.angularYMotion = ConfigurableJointMotion.Locked;
+            track.angularZMotion = ConfigurableJointMotion.Locked;
 
-            rail.linearLimit = new SoftJointLimit
+            track.linearLimit = new SoftJointLimit
             {
                 limit = Mathf.Abs(openAt - shutAt) * 0.5f,
-                bounciness = 0f
+                bounciness = Mathf.Clamp01(rail.bounceOffTheEnd)
             };
 
-            rail.zDrive = new JointDrive
+            track.zDrive = new JointDrive
             {
-                positionSpring = 0f,
-                positionDamper = RailDragNewtonsPerMetrePerSecond,
-                maximumForce = RailHoldsAtNewtons
+                positionSpring = Mathf.Max(rail.settlesAtNewtonsPerMetre, 0f),
+                positionDamper = Mathf.Max(rail.dragNewtonsPerMetrePerSecond, 0f),
+                maximumForce = rail.holdsAtNewtons
             };
 
-            rail.projectionMode = JointProjectionMode.PositionAndRotation;
-            rail.projectionDistance = 0.005f;
-            rail.projectionAngle = 0.5f;
+            track.projectionMode = JointProjectionMode.PositionAndRotation;
+            track.projectionDistance = rail.projectionDistanceMetres;
+            track.projectionAngle = rail.projectionAngleDegrees;
 
-            rail.enablePreprocessing = false;
+            track.enablePreprocessing = false;
         }
     }
 }
