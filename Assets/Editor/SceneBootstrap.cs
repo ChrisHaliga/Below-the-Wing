@@ -793,14 +793,17 @@ namespace BelowTheWing.EditorTools
 
             SetList(backdrop, "m_LobbyCrew", standing);
             Set(backdrop, "m_PlateHeightMetres", crewProfile.heightMetres + 0.35f);
-            Set(backdrop, "m_CartDoors", DoorsOf(staged));
+            Set(backdrop, "m_CartDoors", DoorsOf(holder, staged));
 
             return backdrop;
         }
 
-        static MenuCartDoors DoorsOf(GameObject staged)
+        // The driver goes on the backdrop rather than on the cart. A component added to a prefab
+        // instance is an override, and reimporting the prefab rebuilds the instance and drops it.
+        // This rebuild writes BaggageCart.prefab and Menu.unity in the same pass.
+        static MenuCartDoors DoorsOf(GameObject holder, GameObject staged)
         {
-            var doors = staged.AddComponent<MenuCartDoors>();
+            var doors = holder.AddComponent<MenuCartDoors>();
             var leaves = new List<SkinnedMeshRenderer>();
 
             foreach (var skin in staged.GetComponentsInChildren<SkinnedMeshRenderer>(true))

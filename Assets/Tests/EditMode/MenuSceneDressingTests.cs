@@ -66,6 +66,17 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void TheDoorDriverDoesNotRideOnACartPrefabInstance()
+        {
+            var doors = Only<MenuCartDoors>();
+
+            Assert.That(UnityEditor.PrefabUtility.IsPartOfPrefabInstance(doors.gameObject), Is.False,
+                "a component added to a prefab instance is an override, and reimporting the prefab " +
+                "rebuilds the instance and drops it. The rebuild writes BaggageCart.prefab and " +
+                "Menu.unity in the same pass, so that reimport happens every time");
+        }
+
+        [Test]
         public void TheBackdropHoldsAFigureForEveryCrewSlot()
             => Assert.That(Only<MenuBackdrop>().CrewCount, Is.EqualTo(Wiring.Shift.MostCrew));
 

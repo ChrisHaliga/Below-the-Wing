@@ -35,7 +35,10 @@ namespace BelowTheWing.Menu
         {
             get
             {
-                m_CartDoors = m_CartDoors != null ? m_CartDoors : FindAnyObjectByType<MenuCartDoors>();
+                m_CartDoors = m_CartDoors != null ? m_CartDoors : GetComponent<MenuCartDoors>();
+                m_CartDoors = m_CartDoors != null
+                    ? m_CartDoors
+                    : FindAnyObjectByType<MenuCartDoors>(FindObjectsInactive.Include);
 
                 if (m_CartDoors == null)
                 {
