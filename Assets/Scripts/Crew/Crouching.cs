@@ -65,7 +65,9 @@ namespace BelowTheWing.Crew
             }
         }
 
-        static readonly Collider[] s_Overhead = new Collider[8];
+        const int MostOverhead = 8;
+
+        static readonly Collider[] s_Overhead = new Collider[MostOverhead];
 
         public void Want(bool crouched) => m_WantsToCrouch = crouched;
 

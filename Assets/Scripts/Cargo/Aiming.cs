@@ -1,18 +1,19 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace BelowTheWing.Cargo
 {
     public static class Aiming
     {
-        static readonly List<Collider> Nearby = new List<Collider>();
+        const int MostWithinReach = 32;
+
+        static readonly Collider[] Nearby = new Collider[MostWithinReach];
 
         public static Collider At(
             Ray aim, Vector3 reachingFrom, float reachMetres, float looksMetres, float coneDegrees,
             Func<Collider, bool> worthIt)
         {
-            if (Physics.Raycast(aim, out var looked, looksMetres, ~0, QueryTriggerInteraction.Ignore)
+            if (Physics.Raycast(aim, out var looked, looksMetres, Physics.AllLayers, QueryTriggerInteraction.Ignore)
                 && worthIt(looked.collider))
             {
                 return looked.collider;
@@ -21,12 +22,13 @@ namespace BelowTheWing.Cargo
             Collider best = null;
             var narrowest = coneDegrees;
 
-            Nearby.Clear();
-            Nearby.AddRange(Physics.OverlapSphere(
-                reachingFrom, reachMetres, ~0, QueryTriggerInteraction.Ignore));
+            var found = Physics.OverlapSphereNonAlloc(
+                reachingFrom, reachMetres, Nearby, Physics.AllLayers, QueryTriggerInteraction.Ignore);
 
-            foreach (var candidate in Nearby)
+            for (var i = 0; i < found; i++)
             {
+                var candidate = Nearby[i];
+
                 if (!worthIt(candidate))
                 {
                     continue;

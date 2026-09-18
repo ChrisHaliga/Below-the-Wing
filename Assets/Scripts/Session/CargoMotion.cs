@@ -30,7 +30,9 @@ namespace BelowTheWing.Session
         float m_StillSpinBelow = 0.05f;
 
         readonly List<Joint> m_Joints = new List<Joint>();
-        readonly RaycastHit[] m_Below = new RaycastHit[8];
+        const int MostBeneath = 8;
+
+        readonly RaycastHit[] m_Below = new RaycastHit[MostBeneath];
 
         Bag m_Bag;
         Collider m_Box;
@@ -143,7 +145,7 @@ namespace BelowTheWing.Session
         {
             var touching = m_Box.bounds.extents.y + m_UndersideReachMetres;
             var found = Physics.RaycastNonAlloc(
-                Body.position, Vector3.down, m_Below, m_StackReachMetres, ~0, QueryTriggerInteraction.Ignore);
+                Body.position, Vector3.down, m_Below, m_StackReachMetres, Physics.AllLayers, QueryTriggerInteraction.Ignore);
 
             var nearest = float.MaxValue;
             RaycastHit? beneath = null;

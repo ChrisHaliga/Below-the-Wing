@@ -5,7 +5,7 @@ namespace BelowTheWing.Vehicles
 {
     public static class Coupling
     {
-        public const float ReachMetres = 6f;
+        public const float OffersWithinMetres = 6f;
 
         public static (Vector3 Position, Quaternion Rotation)? WhereToStand(
             VehicleController behind, VehicleController cart)
@@ -47,7 +47,7 @@ namespace BelowTheWing.Vehicles
                 }
 
                 var away = Vector3.Distance(candidate.transform.position, from);
-                if (away < nearestDistance && away <= ReachMetres)
+                if (away < nearestDistance && away <= OffersWithinMetres)
                 {
                     nearest = candidate;
                     nearestDistance = away;
