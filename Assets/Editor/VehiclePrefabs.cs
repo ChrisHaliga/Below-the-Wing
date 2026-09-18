@@ -81,22 +81,9 @@ namespace BelowTheWing.EditorTools
             model.transform.SetParent(vehicle.transform, worldPositionStays: false);
             model.transform.localRotation = Quaternion.Euler(0f, 180f, 0f) * model.transform.localRotation;
 
-            DiscardAnythingThatLightsOrLooks(model);
+            ModelMeasure.DiscardAnythingThatLightsOrLooks(model);
 
             return model.transform;
-        }
-
-        internal static void DiscardAnythingThatLightsOrLooks(GameObject model)
-        {
-            foreach (var camera in model.GetComponentsInChildren<Camera>(true))
-            {
-                UnityEngine.Object.DestroyImmediate(camera.gameObject);
-            }
-
-            foreach (var light in model.GetComponentsInChildren<Light>(true))
-            {
-                UnityEngine.Object.DestroyImmediate(light.gameObject);
-            }
         }
 
         internal static GameObject BuildAircraft(AircraftProfile profile)

@@ -343,6 +343,19 @@ namespace BelowTheWing.EditorTools
             return found ?? throw Unmeasurable(vehicle, $"its model has no '{name}' anywhere inside it");
         }
 
+        internal static void DiscardAnythingThatLightsOrLooks(GameObject model)
+        {
+            foreach (var camera in model.GetComponentsInChildren<Camera>(true))
+            {
+                UnityEngine.Object.DestroyImmediate(camera.gameObject);
+            }
+
+            foreach (var light in model.GetComponentsInChildren<Light>(true))
+            {
+                UnityEngine.Object.DestroyImmediate(light.gameObject);
+            }
+        }
+
         internal static Mesh MeshOn(Transform part)
         {
             var filter = part.GetComponent<MeshFilter>();

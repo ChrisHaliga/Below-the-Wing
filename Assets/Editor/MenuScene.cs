@@ -193,6 +193,7 @@ namespace BelowTheWing.EditorTools
 
             var drawn = (GameObject)PrefabUtility.InstantiatePrefab(model, loader.transform);
             drawn.transform.localPosition = Vector3.zero;
+            ModelMeasure.DiscardAnythingThatLightsOrLooks(drawn);
 
             loader.transform.position =
                 crewLine - (facing * (ReachesForward(loader, facing) + LoaderSitsBackMetres));
@@ -223,11 +224,7 @@ namespace BelowTheWing.EditorTools
 
             var drawn = (GameObject)PrefabUtility.InstantiatePrefab(model, jet.transform);
             drawn.transform.localPosition = Vector3.zero;
-
-            foreach (var behaviour in jet.GetComponentsInChildren<MonoBehaviour>(true))
-            {
-                behaviour.enabled = false;
-            }
+            ModelMeasure.DiscardAnythingThatLightsOrLooks(drawn);
 
             return jet;
         }

@@ -20,6 +20,31 @@ namespace BelowTheWing.Tests.EditMode
         public void CloseTheMenuScene() => EditorSceneManager.CloseScene(m_Menu, removeScene: true);
 
         [Test]
+        public void TheMenuSceneRendersThroughOneCameraUnderOneSun()
+        {
+            var cameras = 0;
+            var lights = 0;
+
+            foreach (var thing in Everything())
+            {
+                foreach (var camera in thing.GetComponents<Camera>())
+                {
+                    cameras += camera.enabled ? 1 : 0;
+                }
+
+                foreach (var light in thing.GetComponents<Light>())
+                {
+                    lights += light.enabled && light.type == LightType.Directional ? 1 : 0;
+                }
+            }
+
+            Assert.That(cameras, Is.EqualTo(1),
+                $"{cameras} cameras are enabled. A model exported from Blender carries the camera " +
+                "and light it was authored with, and a raw model parked in the scene brings them along");
+            Assert.That(lights, Is.EqualTo(1), $"{lights} directional lights are enabled");
+        }
+
+        [Test]
         public void TheBackdropHasAStationForEveryPlaceTheCameraStands()
         {
             var backdrop = Only<MenuBackdrop>();
