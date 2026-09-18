@@ -32,8 +32,7 @@ namespace BelowTheWing.Tests.EditMode
         public void FullyOpenIsOneWeightEverywhere()
         {
             Assert.That(SlidingDoor.ShapeWeight(1f), Is.EqualTo(SlidingDoor.FullyOpenWeight).Within(1e-4f),
-                "the rig, the menu and the generator's measuring all bake the door at this weight, " +
-                "and each used to write 100 for itself");
+                "the rig, the menu and the generator's measuring all bake the door at this one weight");
         }
 
         [Test]
@@ -44,7 +43,27 @@ namespace BelowTheWing.Tests.EditMode
             SlidingDoors.Build(cart, cart.GetComponent<VehicleShape>(), null, DoorRailSettings.Default);
 
             Assert.That(cart.GetComponentsInChildren<SlidingDoorPole>(true).Length, Is.EqualTo(6),
-                "discovery stopped at Door4 because a loop was written to four");
+                "every panel named Door followed by a number gets a rail");
+        }
+
+        [Test]
+        public void AGapInTheDoorNumberingDoesNotLoseTheDoorsAfterIt()
+        {
+            var cart = ACartWithDoors(1, 2, 4);
+
+            SlidingDoors.Build(cart, cart.GetComponent<VehicleShape>(), null, DoorRailSettings.Default);
+
+            Assert.That(cart.GetComponentsInChildren<SlidingDoorPole>(true).Length, Is.EqualTo(3),
+                "Door4 is a door whether or not a Door3 exists");
+        }
+
+        [Test]
+        public void OnlyNamesOfTheFormDoorNumberAreDoors()
+        {
+            Assert.That(SlidingDoors.IsAPanel("Door3", out var door), Is.True);
+            Assert.That(door, Is.EqualTo(3));
+            Assert.That(SlidingDoors.IsAPanel("Door_Fabric3", out _), Is.False);
+            Assert.That(SlidingDoors.IsAPanel("Doorframe", out _), Is.False);
         }
 
         [Test]
@@ -66,7 +85,7 @@ namespace BelowTheWing.Tests.EditMode
                 Assert.That(joint.zDrive.positionDamper, Is.EqualTo(20f).Within(1e-4f));
                 Assert.That(joint.linearLimit.bounciness, Is.EqualTo(0.25f).Within(1e-4f));
                 Assert.That(joint.zDrive.positionSpring, Is.EqualTo(30f).Within(1e-4f),
-                    "the menu used to reach into each joint after the rig was raised and rewrite these");
+                    "the rail is built to the settings it is given, with no second pass over the joints");
             }
         }
 
@@ -84,13 +103,25 @@ namespace BelowTheWing.Tests.EditMode
 
         GameObject ACartWithDoors(int count)
         {
+            var doors = new int[count];
+
+            for (var i = 0; i < count; i++)
+            {
+                doors[i] = i + 1;
+            }
+
+            return ACartWithDoors(doors);
+        }
+
+        GameObject ACartWithDoors(params int[] doors)
+        {
             var cart = new GameObject("Cart");
             m_Built.Add(cart);
 
             cart.AddComponent<Rigidbody>().isKinematic = true;
             TestShapes.On(cart, TestShapes.Cart());
 
-            for (var i = 1; i <= count; i++)
+            foreach (var i in doors)
             {
                 var side = i % 2 == 0 ? -0.83f : 0.83f;
                 var along = ((i - 1) / 2) * 0.4f;

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using BelowTheWing.Cargo;
 using BelowTheWing.Wiring;
 using UnityEngine;
@@ -8,9 +10,20 @@ namespace BelowTheWing.Vehicles
     {
         public const string PolesName = "Doors";
 
+        static readonly Regex PanelPattern = new Regex(@"^Door(\d+)$", RegexOptions.Compiled);
+
         public static string PanelName(int door) => $"Door{door}";
 
         public static string FabricName(int door) => $"Door_Fabric{door}";
+
+        public static bool IsAPanel(string name, out int door)
+        {
+            var match = PanelPattern.Match(name);
+
+            door = match.Success ? int.Parse(match.Groups[1].Value) : 0;
+
+            return match.Success;
+        }
 
         public static void Build(GameObject vehicle, VehicleShape shape, PhysicsMaterial bodywork, DoorRailSettings rail)
         {
@@ -21,23 +34,33 @@ namespace BelowTheWing.Vehicles
 
             Transform poles = null;
 
-            for (var i = 1; ; i++)
+            foreach (var (door, panel) in Panels(vehicle.transform))
             {
-                var panel = Find(vehicle.transform, PanelName(i));
-
-                if (panel == null)
-                {
-                    return;
-                }
-
                 if (panel.sharedMesh == null || panel.sharedMesh.blendShapeCount == 0)
                 {
                     continue;
                 }
 
                 poles ??= Container(vehicle);
-                Raise(vehicle, poles, panel, Find(vehicle.transform, FabricName(i)), bodywork, rail);
+                Raise(vehicle, poles, panel, Find(vehicle.transform, FabricName(door)), bodywork, rail);
             }
+        }
+
+        public static IReadOnlyList<(int Door, SkinnedMeshRenderer Panel)> Panels(Transform under)
+        {
+            var panels = new List<(int, SkinnedMeshRenderer)>();
+
+            foreach (var candidate in under.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (IsAPanel(candidate.name, out var door))
+                {
+                    panels.Add((door, candidate));
+                }
+            }
+
+            panels.Sort((a, b) => a.Item1.CompareTo(b.Item1));
+
+            return panels;
         }
 
         static Transform Container(GameObject vehicle)
@@ -96,7 +119,7 @@ namespace BelowTheWing.Vehicles
 
             var cover = new GameObject($"{panel.name} cover").transform;
             cover.SetParent(poles, worldPositionStays: false);
-            cover.localScale = new Vector3(radius * 2f, shut.size.y, 0.001f);
+            cover.localScale = new Vector3(radius * 2f, shut.size.y, CoverThicknessMetres);
 
             var sheet = cover.gameObject.AddComponent<BoxCollider>();
             sheet.size = Vector3.one;
@@ -111,6 +134,8 @@ namespace BelowTheWing.Vehicles
 
             LeaveTheCartAlone(grab, vehicle);
         }
+
+        const float CoverThicknessMetres = 0.001f;
 
         static float NearestTheMiddle(Bounds box, float towardsTheEnd)
             => towardsTheEnd > 0f ? box.min.z : box.max.z;
@@ -134,7 +159,7 @@ namespace BelowTheWing.Vehicles
                 box.Encapsulate(At(cart, panel.transform, vertex));
             }
 
-            Wiring.Discard.Now(baked);
+            Discard.Now(baked);
             panel.SetBlendShapeWeight(0, was);
 
             return box;
