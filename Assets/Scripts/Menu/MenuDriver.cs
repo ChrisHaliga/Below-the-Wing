@@ -30,6 +30,7 @@ namespace BelowTheWing.Menu
         [SerializeField] MenuBackdrop m_Backdrop;
 
         readonly MenuFlow m_Flow = new MenuFlow();
+        readonly ReadyIntent m_Ready = new ReadyIntent();
 
         static readonly CrewOnStage[] NobodyYet = new CrewOnStage[0];
 
@@ -246,16 +247,7 @@ namespace BelowTheWing.Menu
         string Why(string otherwise)
             => string.IsNullOrEmpty(m_Gateway.FailureReason) ? otherwise : m_Gateway.FailureReason;
 
-        void ReadyUp()
-        {
-            if (m_Roster != null && m_Roster.IsSpawned)
-            {
-                m_Roster.ReadyUp(!m_Roster.AmIReady);
-                return;
-            }
-
-            m_Chrome.ReadyOnYourOwn(!m_Chrome.AloneAndReady);
-        }
+        void ReadyUp() => m_Ready.Toggle();
 
         void PaintTheLobby()
         {
@@ -263,9 +255,16 @@ namespace BelowTheWing.Menu
 
             var spawned = m_Roster != null && m_Roster.IsSpawned;
 
-            m_Chrome.ShowTheLobby(
-                spawned ? m_Roster.AmIReady : m_Chrome.AloneAndReady,
-                spawned ? m_Roster.CanStart : m_Chrome.AloneAndReady);
+            // Readiness is the player's, not the roster's. The lobby opens before the service
+            // answers, so somebody can ready up with nothing to tell yet; the roster hears it when
+            // it arrives, and the shift cannot start until it has.
+            if (m_Ready.NeedsTelling(spawned))
+            {
+                m_Roster.ReadyUp(m_Ready.Want);
+                m_Ready.Told();
+            }
+
+            m_Chrome.ShowTheLobby(m_Ready.Want, spawned && m_Roster.CanStart);
 
             StandTheCrewUp(spawned);
 
@@ -284,7 +283,7 @@ namespace BelowTheWing.Menu
 
             if (!spawned)
             {
-                m_OnStage.Add(new CrewOnStage("You", m_Chrome.AloneAndReady, m_Backdrop.PlateOver(0)));
+                m_OnStage.Add(new CrewOnStage("You", m_Ready.Want, m_Backdrop.PlateOver(0)));
                 return;
             }
 
@@ -300,12 +299,7 @@ namespace BelowTheWing.Menu
 
         void StartTheShift()
         {
-            if (m_Roster != null && m_Roster.IsSpawned && !m_Roster.CanStart)
-            {
-                return;
-            }
-
-            if (m_Roster == null && !m_Chrome.AloneAndReady)
+            if (m_Roster == null || !m_Roster.IsSpawned || !m_Roster.CanStart)
             {
                 return;
             }
@@ -327,7 +321,7 @@ namespace BelowTheWing.Menu
         async void LeaveTheSession()
         {
             m_Roster = null;
-            m_Chrome.ReadyOnYourOwn(false);
+            m_Ready.Forget();
 
             await m_Gateway.LeaveAsync();
 

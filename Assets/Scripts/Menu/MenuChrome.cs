@@ -50,13 +50,9 @@ namespace BelowTheWing.Menu
         public event Action ReadyToggled;
         public event Action ShiftStarted;
 
-        public bool AloneAndReady { get; private set; }
-
         public bool TypingACode
             => m_TypedCode.panel != null
                && ReferenceEquals(m_TypedCode.panel.focusController?.focusedElement, m_TypedCode);
-
-        public void ReadyOnYourOwn(bool ready) => AloneAndReady = ready;
 
         public void Moved(int by)
         {

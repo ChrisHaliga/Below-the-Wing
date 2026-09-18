@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using BelowTheWing.Wiring;
 using Unity.Netcode;
@@ -31,6 +32,7 @@ namespace BelowTheWing.Net
         string m_SessionType = "below-the-wing";
 
         ISession m_Session;
+        Task m_SigningIn;
 
         readonly ServiceLeave m_Leave = new ServiceLeave();
 
@@ -60,7 +62,7 @@ namespace BelowTheWing.Net
             }
             catch (Exception e)
             {
-                Debug.LogWarning(
+                UnityEngine.Debug.LogWarning(
                     $"Could not tell the service this player had left: {e.Message}. The session " +
                     "record stays until the service times it out.", this);
             }
@@ -81,7 +83,21 @@ namespace BelowTheWing.Net
 
         async void Start()
         {
-            await SignInAsync();
+            await SignedIn();
+        }
+
+        // Signing in starts as the menu opens and takes a round trip to the service. Host used to
+        // read the phase while that was still in flight, see something other than Ready, and give
+        // up without saying anything, which left the lobby waiting on a code that was never asked
+        // for. One task is shared instead, and a second caller waits on the first.
+        Task SignedIn()
+        {
+            if (m_SigningIn == null || (m_SigningIn.IsCompleted && Phase != SessionPhase.Ready))
+            {
+                m_SigningIn = SignInAsync();
+            }
+
+            return m_SigningIn;
         }
 
         public void PlayAlone()
@@ -139,6 +155,8 @@ namespace BelowTheWing.Net
         {
             Move(SessionPhase.SigningIn);
 
+            var clock = Stopwatch.StartNew();
+
             try
             {
                 if (UnityServices.State != ServicesInitializationState.Initialized)
@@ -152,6 +170,8 @@ namespace BelowTheWing.Net
                 }
 
                 Move(SessionPhase.Ready);
+
+                UnityEngine.Debug.Log($"Signed in to the multiplayer service in {clock.ElapsedMilliseconds} ms.", this);
             }
             catch (Exception e)
             {
@@ -161,10 +181,7 @@ namespace BelowTheWing.Net
 
         async Task<bool> ReadyToConnectAsync()
         {
-            if (Phase == SessionPhase.Failed || Phase == SessionPhase.Offline)
-            {
-                await SignInAsync();
-            }
+            await SignedIn();
 
             return Phase == SessionPhase.Ready;
         }
@@ -173,10 +190,14 @@ namespace BelowTheWing.Net
         {
             Move(SessionPhase.Connecting);
 
+            var clock = Stopwatch.StartNew();
+
             try
             {
                 await connect();
                 Move(SessionPhase.InSession);
+
+                UnityEngine.Debug.Log($"Session open in {clock.ElapsedMilliseconds} ms.", this);
             }
             catch (Exception e)
             {
