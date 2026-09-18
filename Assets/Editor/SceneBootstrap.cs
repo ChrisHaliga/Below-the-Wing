@@ -24,6 +24,10 @@ namespace BelowTheWing.EditorTools
     {
         const string PrefabFolder = "Assets/Content/Prefabs";
         const string BeltLoaderModelPath = "Assets/Content/Vehicles/belt_loader.fbx";
+        const string RegionalJetModelPath = "Assets/Content/Vehicles/crj_200.fbx";
+
+        const float JetAheadOfTheWideShotMetres = 48f;
+        const float JetRightOfTheWideShotMetres = 26f;
 
         const float CrewStandBackMetres = 4.15f;
         const float CrewSpacingMetres = 1.2f;
@@ -797,8 +801,11 @@ namespace BelowTheWing.EditorTools
             var eyeHeight = crewProfile.heightMetres * 0.92f;
             var doorwayHeight = DoorwayHeightOf(staged);
 
-            Set(backdrop, "m_WideShot", Shot("Wide shot", holder.transform,
-                tug + new Vector3(19f, 7.5f, -13f), Vector3.Lerp(nose, tug, 0.55f) + (Vector3.up * 2.5f)));
+            var wide = Shot("Wide shot", holder.transform,
+                tug + new Vector3(19f, 7.5f, -13f), Vector3.Lerp(nose, tug, 0.55f) + (Vector3.up * 2.5f));
+
+            Set(backdrop, "m_WideShot", wide);
+            Set(backdrop, "m_Airliner", ParkTheJet(holder.transform, wide).transform);
 
             Set(backdrop, "m_CartShot", Shot("Cart shot", holder.transform,
                 stage.Position + (facing * 2.3f) + new Vector3(0f, eyeHeight, 0f),
@@ -846,6 +853,40 @@ namespace BelowTheWing.EditorTools
                 crewLine - (facing * (ReachesForward(loader, facing) + LoaderSitsBackMetres));
 
             return loader;
+        }
+
+        // Placed against the shot that has to hold it rather than at a spot on the apron, so the
+        // frame keeps its balance if that shot ever moves. Broadside to the camera fills width.
+        static GameObject ParkTheJet(Transform under, Transform wide)
+        {
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(RegionalJetModelPath);
+
+            if (model == null)
+            {
+                throw new InvalidOperationException($"There is no regional jet model at {RegionalJetModelPath}.");
+            }
+
+            var jet = new GameObject("Regional jet");
+            jet.transform.SetParent(under, worldPositionStays: false);
+
+            var broadside = Vector3.ProjectOnPlane(wide.right, Vector3.up).normalized;
+            var at = wide.position
+                     + (wide.forward * JetAheadOfTheWideShotMetres)
+                     + (broadside * JetRightOfTheWideShotMetres);
+
+            jet.transform.SetPositionAndRotation(
+                new Vector3(at.x, 0f, at.z),
+                Quaternion.LookRotation(broadside));
+
+            var drawn = (GameObject)PrefabUtility.InstantiatePrefab(model, jet.transform);
+            drawn.transform.localPosition = Vector3.zero;
+
+            foreach (var behaviour in jet.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                behaviour.enabled = false;
+            }
+
+            return jet;
         }
 
         static float ReachesForward(GameObject thing, Vector3 facing)

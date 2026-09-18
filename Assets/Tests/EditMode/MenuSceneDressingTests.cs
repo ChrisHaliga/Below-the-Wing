@@ -114,6 +114,27 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void AParkedJetFillsTheFarSideOfTheWideShot()
+        {
+            var backdrop = Only<MenuBackdrop>();
+
+            Assert.That(backdrop.Airliner, Is.Not.Null);
+
+            var box = DrawnBounds(backdrop.Airliner.gameObject);
+            var shot = backdrop.WideShot;
+            var toTheJet = box.center - shot.position;
+
+            Assert.That(Vector3.Dot(toTheJet, shot.right), Is.GreaterThan(0f),
+                "the jet is there to fill the side of the title frame the cart leaves empty");
+
+            Assert.That(Vector3.Dot(toTheJet, shot.forward), Is.GreaterThan(0f),
+                "a jet behind the camera fills nothing");
+
+            Assert.That(box.min.y, Is.GreaterThanOrEqualTo(0f).And.LessThan(2f),
+                $"the jet's lowest point is at {box.min.y:0.00} m, so it is buried or flying");
+        }
+
+        [Test]
         public void ANameplateHangsJustClearOfTheTopOfACrewMembersHead()
         {
             var backdrop = Only<MenuBackdrop>();
