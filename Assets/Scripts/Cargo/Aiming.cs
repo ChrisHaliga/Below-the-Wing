@@ -5,7 +5,7 @@ namespace BelowTheWing.Cargo
 {
     public static class Aiming
     {
-        const int MostWithinReach = 32;
+        const int MostWithinReach = 128;
 
         static readonly Collider[] Nearby = new Collider[MostWithinReach];
 
@@ -24,6 +24,20 @@ namespace BelowTheWing.Cargo
 
             var found = Physics.OverlapSphereNonAlloc(
                 reachingFrom, reachMetres, Nearby, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+
+            if (found == Nearby.Length)
+            {
+                throw new InvalidOperationException(
+                    $"More than {MostWithinReach} colliders within {reachMetres} m of a hand. Whatever is " +
+                    "under the aim may not be among the ones returned, so nothing here can be trusted.");
+            }
+
+            if (found == Nearby.Length)
+            {
+                throw new InvalidOperationException(
+                    $"More than {MostWithinReach} colliders within {reachMetres} m of a hand. Whatever is " +
+                    "under the aim may not be among the ones returned, so nothing here can be trusted.");
+            }
 
             for (var i = 0; i < found; i++)
             {
