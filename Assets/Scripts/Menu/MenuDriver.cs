@@ -110,6 +110,23 @@ namespace BelowTheWing.Menu
                 return;
             }
 
+            // A join code is typed into a field on the same screen as the buttons, and every letter
+            // in one is also a movement key.
+            if (m_Chrome.TypingACode)
+            {
+                if (keys.enterKey.wasPressedThisFrame || keys.numpadEnterKey.wasPressedThisFrame)
+                {
+                    m_Chrome.Chose();
+                }
+
+                if (keys.escapeKey.wasPressedThisFrame)
+                {
+                    m_Flow.Back();
+                }
+
+                return;
+            }
+
             if (keys.downArrowKey.wasPressedThisFrame || keys.sKey.wasPressedThisFrame)
             {
                 m_Chrome.Moved(1);
@@ -118,6 +135,16 @@ namespace BelowTheWing.Menu
             if (keys.upArrowKey.wasPressedThisFrame || keys.wKey.wasPressedThisFrame)
             {
                 m_Chrome.Moved(-1);
+            }
+
+            if (keys.rightArrowKey.wasPressedThisFrame || keys.dKey.wasPressedThisFrame)
+            {
+                m_Chrome.Nudged(1);
+            }
+
+            if (keys.leftArrowKey.wasPressedThisFrame || keys.aKey.wasPressedThisFrame)
+            {
+                m_Chrome.Nudged(-1);
             }
 
             if (keys.enterKey.wasPressedThisFrame || keys.numpadEnterKey.wasPressedThisFrame)

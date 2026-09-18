@@ -790,7 +790,7 @@ namespace BelowTheWing.EditorTools
                 standing.Add(figure);
             }
 
-            var loader = ParkTheBeltLoader(holder.transform, crewLine, facing);
+            var loader = ParkTheBeltLoader(holder.transform, crewLine, facing, stage.Rotation);
 
             var nose = plan.Aircraft.Position;
             var tug = train.Tractor.Position;
@@ -811,9 +811,9 @@ namespace BelowTheWing.EditorTools
                 crewLine + new Vector3(0f, crewProfile.heightMetres * 0.62f, 0f)));
 
             SetList(backdrop, "m_LobbyCrew", standing);
-            // A figure's origin sits at half its height, and the plate belongs two thirds of the
-            // way up from its feet.
-            Set(backdrop, "m_PlateHeightMetres", crewProfile.heightMetres / 6f);
+            // A figure's origin sits at half its height, and the plate hangs from just above the
+            // top of its head.
+            Set(backdrop, "m_PlateHeightMetres", crewProfile.heightMetres * 0.56f);
             Set(backdrop, "m_BeltLoader", loader.transform);
             Set(backdrop, "m_CartDoors", DoorsOf(holder, staged));
 
@@ -823,7 +823,8 @@ namespace BelowTheWing.EditorTools
         // The importer puts its own rotation and scale on an FBX root, and every vehicle model here
         // carries euler (270, 0, 0) at scale 100 from Blender's Z up. Rotating that root throws the
         // model onto its nose, so the holder turns and the model keeps what the importer gave it.
-        static GameObject ParkTheBeltLoader(Transform under, Vector3 crewLine, Vector3 facing)
+        static GameObject ParkTheBeltLoader(
+            Transform under, Vector3 crewLine, Vector3 facing, Quaternion asTheTrainSits)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(BeltLoaderModelPath);
 
@@ -834,7 +835,9 @@ namespace BelowTheWing.EditorTools
 
             var loader = new GameObject("Belt loader");
             loader.transform.SetParent(under, worldPositionStays: false);
-            loader.transform.SetPositionAndRotation(crewLine, Quaternion.LookRotation(-facing));
+            // Square to the train rather than nose on to the camera, so its length lies across the
+            // shot and the crew stand along it.
+            loader.transform.SetPositionAndRotation(crewLine, asTheTrainSits);
 
             var drawn = (GameObject)PrefabUtility.InstantiatePrefab(model, loader.transform);
             drawn.transform.localPosition = Vector3.zero;

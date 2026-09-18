@@ -114,7 +114,7 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void ANameplateSitsAThirdOfTheWayDownACrewMember()
+        public void ANameplateHangsJustClearOfTheTopOfACrewMembersHead()
         {
             var backdrop = Only<MenuBackdrop>();
             var tall = ShippedContent.Load<CrewProfile>(ShippedContent.CrewProfilePath).heightMetres;
@@ -122,8 +122,9 @@ namespace BelowTheWing.Tests.EditMode
             var feet = backdrop.FigureFor(0).transform.position.y - (tall * 0.5f);
             var plate = backdrop.PlateOver(0).y - feet;
 
-            Assert.That(plate, Is.EqualTo(tall * (2f / 3f)).Within(0.02f),
-                $"the plate floats {plate:0.00} m up a {tall:0.00} m figure");
+            Assert.That(plate, Is.InRange(tall, tall * 1.15f),
+                $"the plate floats {plate:0.00} m up a {tall:0.00} m figure. Below the crown it " +
+                "lands on the body, and far above it stops reading as that person's plate");
         }
 
         static Bounds DrawnBounds(GameObject thing)

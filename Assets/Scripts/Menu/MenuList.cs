@@ -41,6 +41,8 @@ namespace BelowTheWing.Menu
 
         public int Count => m_Rows.Count;
 
+        public bool AcrossTheScreen => m_AcrossTheScreen;
+
         sealed class Row
         {
             public VisualElement Element;

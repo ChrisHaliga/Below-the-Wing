@@ -24,8 +24,17 @@ namespace BelowTheWing.Menu
         public static readonly Color Dark = new Color(0.035f, 0.045f, 0.052f);
 
         public const int Gutter = 96;
-        public const int Nudge = Gutter * 2;
         public const int ColumnWidth = 520;
+
+        public const int TitleSize = 42;
+        public const int SectionSize = 22;
+        public const int RowSize = 20;
+        public const int ButtonSize = 20;
+        public const int HintSize = 15;
+
+        public static readonly Color PanelInk = new Color(0.10f, 0.11f, 0.12f, 0.88f);
+        public static readonly Color PanelEdge = new Color(0.42f, 0.46f, 0.48f, 0.65f);
+        public static readonly Color KeyCap = new Color(1f, 1f, 1f, 0.14f);
         public const float TypeSettleSeconds = 0.35f;
 
         public static MenuTypeface Typeface;
@@ -94,7 +103,7 @@ namespace BelowTheWing.Menu
             return shadow;
         }
 
-        const float ScrimHoldsUntil = 0.66f;
+        const float ScrimHoldsUntil = 0.55f;
 
         static Texture2D SideToSide(float darkest)
         {
@@ -149,9 +158,98 @@ namespace BelowTheWing.Menu
             return label;
         }
 
+        public static VisualElement Panel()
+        {
+            var panel = new VisualElement();
+
+            panel.style.backgroundColor = PanelInk;
+            panel.style.paddingLeft = 26;
+            panel.style.paddingRight = 26;
+            panel.style.paddingTop = 18;
+            panel.style.paddingBottom = 18;
+
+            Edges(panel, PanelEdge, 1);
+
+            return panel;
+        }
+
+        public static VisualElement SectionRule(string text)
+        {
+            var row = new VisualElement();
+
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+            row.style.marginTop = 16;
+            row.style.marginBottom = 8;
+
+            var name = Text(text, SectionSize, Ink, Typeface.Display);
+            name.style.marginLeft = 20;
+            name.style.marginRight = 20;
+
+            row.Add(Reaching());
+            row.Add(name);
+            row.Add(Reaching());
+
+            return row;
+        }
+
+        static VisualElement Reaching()
+        {
+            var line = Rule(0, PanelEdge);
+
+            line.style.flexGrow = 1;
+
+            return line;
+        }
+
+        public static VisualElement Hints(params (string Key, string What)[] hints)
+        {
+            var strip = new VisualElement { pickingMode = PickingMode.Ignore };
+
+            strip.style.position = Position.Absolute;
+            strip.style.left = 0;
+            strip.style.right = 0;
+            strip.style.bottom = 26;
+            strip.style.flexDirection = FlexDirection.Row;
+            strip.style.justifyContent = Justify.Center;
+            strip.style.alignItems = Align.Center;
+
+            foreach (var hint in hints)
+            {
+                strip.Add(Hint(hint.Key, hint.What));
+            }
+
+            return strip;
+        }
+
+        static VisualElement Hint(string key, string what)
+        {
+            var row = new VisualElement { pickingMode = PickingMode.Ignore };
+
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+            row.style.marginLeft = 14;
+            row.style.marginRight = 14;
+
+            var cap = Text(key, HintSize - 1, Ink, Typeface.Data);
+            cap.style.backgroundColor = KeyCap;
+            cap.style.paddingLeft = 8;
+            cap.style.paddingRight = 8;
+            cap.style.paddingTop = 3;
+            cap.style.paddingBottom = 3;
+            cap.style.marginRight = 8;
+            cap.style.unityTextAlign = TextAnchor.MiddleCenter;
+            Edges(cap, PanelEdge, 1);
+
+            row.Add(cap);
+            row.Add(Text(what, HintSize, InkSoft, Typeface.Body));
+
+            return row;
+        }
+
         public static Label Eyebrow(string text, Color colour)
         {
-            var label = Text(text, 11, colour, Typeface.Data);
+            var label = Text(text, 14, colour, Typeface.Data);
 
             label.style.letterSpacing = 4.5f;
             label.style.unityFontStyleAndWeight = FontStyle.Bold;

@@ -36,6 +36,21 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator TheDoorsStayShutWhileNobodyHasAskedForTheLobby()
+        {
+            yield return LoadedScene.Open("Menu");
+
+            var doors = Object.FindAnyObjectByType<MenuCartDoors>();
+
+            yield return Settle(1.5f);
+
+            Assert.That(doors.Openness, Is.LessThan(0.05f),
+                $"the doors drifted to {doors.Openness:0.00} open with nothing asking them to. The " +
+                "settle pull holds a pole at whatever the rail is aimed at, and an unaimed rail " +
+                "aims at its own zero, which is halfway between shut and open");
+        }
+
+        [UnityTest]
         public IEnumerator AShovedDoorSlidesOpenAndStaysOpen()
         {
             yield return LoadedScene.Open("Menu");

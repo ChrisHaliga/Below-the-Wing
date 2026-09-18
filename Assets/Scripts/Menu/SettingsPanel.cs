@@ -17,257 +17,365 @@ namespace BelowTheWing.Menu
 
         static readonly string[] ModeNames = { "Fullscreen", "Borderless", "Windowed" };
 
-        const int LabelWidth = 190;
-        const int ControlWidth = 300;
+        const int RailWidth = 230;
+        const int LabelWidth = 340;
+        const int ValueWidth = 320;
+        const int RowHeight = 46;
+        const int DialSteps = 20;
 
-        readonly DropdownField m_Mode;
-        readonly DropdownField m_Monitor;
-        readonly DropdownField m_Resolution;
+        readonly List<Category> m_Categories = new List<Category>();
+        readonly List<Row> m_Rows = new List<Row>();
+        readonly VisualElement m_Sheet;
         readonly Label m_Note;
 
-        readonly Slider m_Look;
-        readonly Toggle m_Invert;
-        readonly Slider m_Master;
-        readonly Slider m_Effects;
-        readonly Slider m_FieldOfView;
-
-        readonly Label m_LookReads;
-        readonly Label m_FieldOfViewReads;
-        readonly Label m_MasterReads;
-        readonly Label m_EffectsReads;
-
         List<Vector2Int> m_Sizes = new List<Vector2Int>();
-        bool m_Painting;
+        int m_OnCategory;
+        int m_OnRow;
 
         public SettingsPanel(Action back)
         {
             Root = MenuLook.Screen("settings");
-            Root.Add(MenuLook.Scrim(0.9f, 0.9f));
+            Root.Add(MenuLook.Dim(0.72f));
 
-            var column = new VisualElement();
-            column.style.position = Position.Absolute;
-            column.style.left = MenuLook.Gutter + MenuLook.Nudge;
-            column.style.top = MenuLook.Gutter;
-            column.style.bottom = MenuLook.Gutter;
-            column.style.width = 560;
+            var rail = new VisualElement();
+            rail.style.position = Position.Absolute;
+            rail.style.left = MenuLook.Gutter;
+            rail.style.top = MenuLook.Gutter + 60;
+            rail.style.width = RailWidth;
 
-            var eyebrow = MenuLook.Eyebrow("SETTINGS", MenuLook.HiVis);
-            eyebrow.style.marginBottom = 10;
+            var panel = MenuLook.Panel();
+            panel.style.position = Position.Absolute;
+            panel.style.left = MenuLook.Gutter + RailWidth + 28;
+            panel.style.right = MenuLook.Gutter;
+            panel.style.top = MenuLook.Gutter + 60;
+            panel.style.bottom = MenuLook.Gutter + 20;
 
-            var heading = MenuLook.Display("SETTINGS", 40);
-            heading.style.marginBottom = 10;
+            m_Sheet = new VisualElement();
+            m_Sheet.style.flexGrow = 1;
 
-            column.Add(eyebrow);
-            column.Add(heading);
-            column.Add(MenuLook.Rule(ControlWidth + LabelWidth, MenuLook.InkFaint));
-
-            column.Add(Section("DISPLAY"));
-
-            m_Mode = Choice(column, "Window");
-            m_Monitor = Choice(column, "Monitor");
-            m_Resolution = Choice(column, "Resolution");
-
-            m_Note = MenuLook.Quiet("", 12);
-            m_Note.style.marginTop = 6;
+            m_Note = MenuLook.Quiet("", MenuLook.HintSize);
+            m_Note.style.marginTop = 10;
             m_Note.style.marginLeft = LabelWidth;
-            m_Note.style.maxWidth = ControlWidth;
-            column.Add(m_Note);
 
-            column.Add(Section("LOOKING AROUND"));
+            panel.Add(m_Sheet);
+            panel.Add(m_Note);
 
-            m_Look = Dial(column, "Sensitivity", CrewSettings.LeastSensitive, CrewSettings.MostSensitive, out m_LookReads);
-            m_FieldOfView = Dial(column, "Field of view", CrewSettings.NarrowestFieldOfView, CrewSettings.WidestFieldOfView, out m_FieldOfViewReads);
-            m_Invert = Switch(column, "Invert Y");
+            var heading = MenuLook.Display("SETTINGS", MenuLook.TitleSize);
+            heading.style.position = Position.Absolute;
+            heading.style.left = MenuLook.Gutter;
+            heading.style.top = MenuLook.Gutter - 10;
 
-            column.Add(Section("SOUND"));
+            Root.Add(heading);
+            Root.Add(rail);
+            Root.Add(panel);
 
-            m_Master = Dial(column, "Master", 0f, 1f, out m_MasterReads);
-            m_Effects = Dial(column, "Effects", 0f, 1f, out m_EffectsReads);
+            AddCategory(rail, "Video");
+            AddCategory(rail, "Audio");
+            AddCategory(rail, "Control");
 
-            m_Mode.RegisterValueChangedCallback(_ => Apply(() => CrewSettings.Mode = Modes[Mathf.Clamp(m_Mode.index, 0, Modes.Length - 1)]));
-            m_Monitor.RegisterValueChangedCallback(_ => Apply(() => CrewSettings.Monitor = m_Monitor.index));
-            m_Resolution.RegisterValueChangedCallback(_ => Apply(() => CrewSettings.Resolution = Chosen()));
+            var leaving = new VisualElement();
+            leaving.style.position = Position.Absolute;
+            leaving.style.left = MenuLook.Gutter;
+            leaving.style.bottom = MenuLook.Gutter;
+            leaving.Add(Leaving(back));
 
-            m_Look.RegisterValueChangedCallback(e => Write(() =>
-            {
-                CrewSettings.LookSensitivity = e.newValue;
-                m_LookReads.text = $"{CrewSettings.LookSensitivity:0.00}";
-            }));
-            m_FieldOfView.RegisterValueChangedCallback(e => Write(() =>
-            {
-                CrewSettings.FieldOfViewDegrees = e.newValue;
-                m_FieldOfViewReads.text = $"{CrewSettings.FieldOfViewDegrees:0} DEG";
-            }));
-            m_Master.RegisterValueChangedCallback(e => Write(() =>
-            {
-                CrewSettings.MasterVolume = e.newValue;
-                m_MasterReads.text = $"{CrewSettings.MasterVolume * 100f:0}%";
-            }));
-            m_Effects.RegisterValueChangedCallback(e => Write(() =>
-            {
-                CrewSettings.EffectsVolume = e.newValue;
-                m_EffectsReads.text = $"{CrewSettings.EffectsVolume * 100f:0}%";
-            }));
-            m_Invert.RegisterValueChangedCallback(e => Write(() => CrewSettings.InvertLookY = e.newValue));
+            Root.Add(leaving);
 
-            var list = new MenuList();
-            list.Add("Reset to defaults", () =>
-            {
-                CrewSettings.ResetToDefaults();
-                Refresh();
-            });
-            list.Add("Back", () => back?.Invoke());
+            Root.Add(MenuLook.Hints(
+                ("W / S", "Navigate"),
+                ("A / D", "Change"),
+                ("Enter", "Select"),
+                ("Esc", "Back")));
 
-            column.Add(list.Root);
-            Root.Add(column);
+            OpenCategory(0);
         }
 
         public VisualElement Root { get; }
 
+        static Button Leaving(Action back)
+        {
+            var chip = new Button(() => back?.Invoke()) { text = "BACK" };
+
+            chip.style.marginLeft = 0;
+            chip.style.height = 42;
+            chip.style.paddingLeft = 24;
+            chip.style.paddingRight = 24;
+            chip.style.fontSize = MenuLook.HintSize;
+            chip.style.letterSpacing = 2f;
+            chip.style.color = MenuLook.Ink;
+            chip.style.backgroundColor = MenuLook.KeyCap;
+            MenuLook.Edges(chip, MenuLook.PanelEdge, 1);
+
+            return chip;
+        }
+
+        sealed class Category
+        {
+            public VisualElement Element;
+            public Label Name;
+            public VisualElement Marker;
+        }
+
+        sealed class Row
+        {
+            public VisualElement Element;
+            public Label Value;
+            public Action<int> Change;
+            public Func<string> Reads;
+        }
+
+        public void Move(int by)
+        {
+            if (m_Rows.Count == 0)
+            {
+                return;
+            }
+
+            m_OnRow = Stepping.Next(m_OnRow, m_Rows.Count, by);
+
+            PaintRows();
+        }
+
+        public void Nudge(int by)
+        {
+            if (m_OnRow < 0 || m_OnRow >= m_Rows.Count)
+            {
+                return;
+            }
+
+            m_Rows[m_OnRow].Change(by);
+
+            DisplayOptions.Apply();
+            Refresh();
+        }
+
         public void Refresh()
         {
-            m_Painting = true;
-
-            m_Mode.choices = new List<string>(ModeNames);
-            m_Mode.index = Mathf.Max(0, Array.IndexOf(Modes, CrewSettings.Mode));
-
-            var monitors = DisplayOptions.Monitors();
-            var names = new List<string>(monitors.Count);
-
-            for (var i = 0; i < monitors.Count; i++)
-            {
-                names.Add(DisplayOptions.Describe(i, monitors[i]));
-            }
-
-            if (names.Count == 0)
-            {
-                names.Add("Display 1");
-            }
-
-            m_Monitor.choices = names;
-            m_Monitor.index = Mathf.Clamp(CrewSettings.Monitor, 0, names.Count - 1);
-
             m_Sizes = DisplayOptions.Resolutions();
-            var sizes = new List<string>(m_Sizes.Count + 1) { "As the display is" };
 
-            foreach (var size in m_Sizes)
+            foreach (var row in m_Rows)
             {
-                sizes.Add($"{size.x} x {size.y}");
+                row.Value.text = row.Reads();
             }
-
-            m_Resolution.choices = sizes;
-            m_Resolution.index = Mathf.Max(0, m_Sizes.IndexOf(CrewSettings.Resolution) + 1);
 
             m_Note.text = DisplayOptions.CanApply
                 ? ""
                 : "The editor ignores window settings. They are stored and apply to a build.";
 
-            m_Look.value = CrewSettings.LookSensitivity;
-            m_Invert.value = CrewSettings.InvertLookY;
-            m_FieldOfView.value = CrewSettings.FieldOfViewDegrees;
-            m_Master.value = CrewSettings.MasterVolume;
-            m_Effects.value = CrewSettings.EffectsVolume;
-
-            m_LookReads.text = $"{CrewSettings.LookSensitivity:0.00}";
-            m_FieldOfViewReads.text = $"{CrewSettings.FieldOfViewDegrees:0} DEG";
-            m_MasterReads.text = $"{CrewSettings.MasterVolume * 100f:0}%";
-            m_EffectsReads.text = $"{CrewSettings.EffectsVolume * 100f:0}%";
-
-            m_Painting = false;
+            PaintRows();
         }
 
-        Vector2Int Chosen()
-            => m_Resolution.index <= 0 || m_Resolution.index > m_Sizes.Count
-                ? Vector2Int.zero
-                : m_Sizes[m_Resolution.index - 1];
-
-        void Write(Action change)
+        void AddCategory(VisualElement rail, string name)
         {
-            if (!m_Painting)
+            var mine = m_Categories.Count;
+
+            var category = new Category
             {
-                change();
-            }
+                Element = new VisualElement(),
+                Marker = new VisualElement(),
+                Name = MenuLook.Text(name, MenuLook.SectionSize, MenuLook.InkSoft, MenuLook.Typeface.Body)
+            };
+
+            category.Element.style.flexDirection = FlexDirection.Row;
+            category.Element.style.alignItems = Align.Center;
+            category.Element.style.height = 54;
+            category.Element.style.marginBottom = 8;
+            category.Element.style.backgroundColor = new Color(1f, 1f, 1f, 0.06f);
+
+            category.Marker.style.width = 5;
+            category.Marker.style.height = Length.Percent(100);
+            category.Marker.style.marginRight = 20;
+            category.Marker.style.backgroundColor = Color.clear;
+
+            category.Name.style.letterSpacing = 1.2f;
+
+            category.Element.Add(category.Marker);
+            category.Element.Add(category.Name);
+            category.Element.RegisterCallback<MouseDownEvent>(_ => OpenCategory(mine));
+
+            m_Categories.Add(category);
+            rail.Add(category.Element);
         }
 
-        void Apply(Action change)
+        void OpenCategory(int which)
         {
-            if (m_Painting)
+            m_OnCategory = which;
+            m_OnRow = 0;
+
+            for (var category = 0; category < m_Categories.Count; category++)
             {
-                return;
+                var on = category == which;
+
+                m_Categories[category].Marker.style.backgroundColor = on ? MenuLook.HiVis : Color.clear;
+                m_Categories[category].Name.style.color = on ? MenuLook.Ink : MenuLook.InkSoft;
+                m_Categories[category].Element.style.backgroundColor =
+                    new Color(1f, 1f, 1f, on ? 0.12f : 0.06f);
             }
 
-            change();
-            DisplayOptions.Apply();
+            m_Rows.Clear();
+            m_Sheet.Clear();
+
+            switch (which)
+            {
+                case 0:
+                    BuildVideo();
+                    break;
+
+                case 1:
+                    BuildAudio();
+                    break;
+
+                default:
+                    BuildControl();
+                    break;
+            }
+
+            Refresh();
         }
 
-        static VisualElement Section(string name)
+        void BuildVideo()
         {
-            var eyebrow = MenuLook.Eyebrow(name, MenuLook.HiVis);
+            m_Sheet.Add(MenuLook.SectionRule("Basic Settings"));
 
-            eyebrow.style.marginTop = 26;
-            eyebrow.style.marginBottom = 8;
+            AddRow("Windowed Mode",
+                by => CrewSettings.Mode = Modes[Stepping.Next(Array.IndexOf(Modes, CrewSettings.Mode), Modes.Length, by)],
+                () => ModeNames[Mathf.Max(Array.IndexOf(Modes, CrewSettings.Mode), 0)]);
 
-            return eyebrow;
+            AddRow("Resolution", StepResolution, ReadResolution);
+
+            AddRow("Monitor",
+                by => CrewSettings.Monitor = Stepping.Next(CrewSettings.Monitor, Mathf.Max(DisplayOptions.Monitors().Count, 1), by),
+                () => $"Display {CrewSettings.Monitor + 1}");
+
+            m_Sheet.Add(MenuLook.SectionRule("Advanced Settings"));
+
+            AddRow("Field of View",
+                by => CrewSettings.FieldOfViewDegrees = Stepping.Nudge(
+                    CrewSettings.FieldOfViewDegrees,
+                    CrewSettings.NarrowestFieldOfView,
+                    CrewSettings.WidestFieldOfView,
+                    by,
+                    DialSteps),
+                () => $"{CrewSettings.FieldOfViewDegrees:0}");
         }
 
-        static VisualElement Line(VisualElement column, string label)
+        void BuildAudio()
         {
-            var row = new VisualElement();
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.alignItems = Align.Center;
-            row.style.height = 34;
+            m_Sheet.Add(MenuLook.SectionRule("Levels"));
 
-            var name = MenuLook.Text(label, 14, MenuLook.InkSoft, MenuLook.Typeface.Body);
+            AddRow("Master",
+                by => CrewSettings.MasterVolume = Stepping.Nudge(CrewSettings.MasterVolume, 0f, 1f, by, DialSteps),
+                () => $"{CrewSettings.MasterVolume * 100f:0}%");
+
+            AddRow("Effects",
+                by => CrewSettings.EffectsVolume = Stepping.Nudge(CrewSettings.EffectsVolume, 0f, 1f, by, DialSteps),
+                () => $"{CrewSettings.EffectsVolume * 100f:0}%");
+        }
+
+        void BuildControl()
+        {
+            m_Sheet.Add(MenuLook.SectionRule("Looking Around"));
+
+            AddRow("Sensitivity",
+                by => CrewSettings.LookSensitivity = Stepping.Nudge(
+                    CrewSettings.LookSensitivity,
+                    CrewSettings.LeastSensitive,
+                    CrewSettings.MostSensitive,
+                    by,
+                    DialSteps),
+                () => $"{CrewSettings.LookSensitivity:0.00}");
+
+            AddRow("Invert Y",
+                _ => CrewSettings.InvertLookY = !CrewSettings.InvertLookY,
+                () => CrewSettings.InvertLookY ? "On" : "Off");
+
+            m_Sheet.Add(MenuLook.SectionRule("Everything"));
+
+            AddRow("Reset to Defaults", _ => CrewSettings.ResetToDefaults(), () => "Press A or D");
+        }
+
+        void StepResolution(int by)
+        {
+            var at = m_Sizes.IndexOf(CrewSettings.Resolution) + 1;
+
+            at = Stepping.Next(at, m_Sizes.Count + 1, by);
+
+            CrewSettings.Resolution = at == 0 ? Vector2Int.zero : m_Sizes[at - 1];
+        }
+
+        string ReadResolution()
+            => CrewSettings.Resolution == Vector2Int.zero
+                ? "As the display is"
+                : $"{CrewSettings.Resolution.x} x {CrewSettings.Resolution.y}";
+
+        void AddRow(string label, Action<int> change, Func<string> reads)
+        {
+            var mine = m_Rows.Count;
+
+            var row = new Row { Change = change, Reads = reads };
+
+            row.Element = new VisualElement();
+            row.Element.style.flexDirection = FlexDirection.Row;
+            row.Element.style.alignItems = Align.Center;
+            row.Element.style.height = RowHeight;
+
+            var name = MenuLook.Text(label, MenuLook.RowSize, MenuLook.Ink, MenuLook.Typeface.Body);
             name.style.width = LabelWidth;
+            name.style.flexGrow = 1;
 
-            row.Add(name);
-            column.Add(row);
+            row.Value = MenuLook.Text("", MenuLook.RowSize, MenuLook.Ink, MenuLook.Typeface.Body);
+            row.Value.style.width = ValueWidth;
+            row.Value.style.unityTextAlign = TextAnchor.MiddleCenter;
+            row.Value.style.paddingTop = 4;
+            row.Value.style.paddingBottom = 4;
 
-            return row;
+            row.Element.Add(name);
+            row.Element.Add(Arrow("<", () => Pick(mine, -1)));
+            row.Element.Add(row.Value);
+            row.Element.Add(Arrow(">", () => Pick(mine, 1)));
+
+            row.Element.RegisterCallback<MouseEnterEvent>(_ =>
+            {
+                m_OnRow = mine;
+                PaintRows();
+            });
+
+            m_Rows.Add(row);
+            m_Sheet.Add(row.Element);
         }
 
-        static DropdownField Choice(VisualElement column, string label)
+        void Pick(int row, int by)
         {
-            var field = new DropdownField();
+            m_OnRow = row;
 
-            field.style.width = ControlWidth;
-            field.style.height = 28;
-            field.style.fontSize = 13;
-            field.style.marginLeft = 0;
-
-            Line(column, label).Add(field);
-
-            return field;
+            Nudge(by);
         }
 
-        static Toggle Switch(VisualElement column, string label)
+        static VisualElement Arrow(string glyph, Action pressed)
         {
-            var toggle = new Toggle();
+            var arrow = new Button(pressed) { text = glyph };
 
-            toggle.style.marginLeft = 0;
+            arrow.style.width = 44;
+            arrow.style.height = 34;
+            arrow.style.marginLeft = 0;
+            arrow.style.marginRight = 0;
+            arrow.style.fontSize = MenuLook.RowSize;
+            arrow.style.color = MenuLook.Ink;
+            arrow.style.backgroundColor = MenuLook.KeyCap;
+            MenuLook.Edges(arrow, MenuLook.PanelEdge, 1);
 
-            Line(column, label).Add(toggle);
-
-            return toggle;
+            return arrow;
         }
 
-        static Slider Dial(VisualElement column, string label, float least, float most, out Label reads)
+        void PaintRows()
         {
-            var slider = new Slider(least, most);
+            for (var row = 0; row < m_Rows.Count; row++)
+            {
+                var on = row == m_OnRow;
 
-            slider.style.width = ControlWidth - 76;
-            slider.style.marginLeft = 0;
-            slider.style.marginRight = 14;
-
-            reads = MenuLook.Data("", 13, MenuLook.HiVis);
-            reads.style.width = 62;
-            reads.style.unityTextAlign = TextAnchor.MiddleRight;
-
-            var row = Line(column, label);
-            row.Add(slider);
-            row.Add(reads);
-
-            return slider;
+                m_Rows[row].Value.style.backgroundColor = on ? MenuLook.HiVis : Color.clear;
+                m_Rows[row].Value.style.color = on ? MenuLook.Dark : MenuLook.Ink;
+            }
         }
     }
 }

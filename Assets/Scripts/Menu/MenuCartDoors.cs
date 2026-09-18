@@ -15,7 +15,7 @@ namespace BelowTheWing.Menu
         float m_ShoveNewtonSeconds = 50f;
 
         [SerializeField, Tooltip("How long the far doors wait after the near ones are shoved, seconds")]
-        float m_SecondSetWaitsSeconds = 0.35f;
+        float m_SecondSetWaitsSeconds = 5f;
 
         [SerializeField, Tooltip("Rail drag, newtons per metre per second. Lower coasts further")]
         float m_RailDragNewtonsPerMetrePerSecond = 20f;
@@ -112,6 +112,13 @@ namespace BelowTheWing.Menu
             if (m_Poles.Count == 0)
             {
                 throw MisbuiltException.Refuse(this, "raised no door poles on its cart");
+            }
+
+            // The settle pull holds a pole wherever it is aimed, and an unaimed drive aims at the
+            // rail's own zero, which is halfway open. Every door starts shut.
+            foreach (var pole in m_Poles)
+            {
+                AimAt(pole, open: false);
             }
         }
 
