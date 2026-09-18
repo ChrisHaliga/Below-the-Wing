@@ -39,9 +39,6 @@ namespace BelowTheWing.Session
         [SerializeField, Tooltip("Bag prefab")]
         NetworkObject m_BagPrefab;
 
-        [SerializeField, Tooltip("Bags spawned per train")]
-        int m_BagsPerTrain = 4;
-
         [Header("Wiring")]
         [SerializeField] NetworkOwnershipBroker m_Broker;
         [SerializeField] FollowCamera m_Camera;
@@ -102,7 +99,7 @@ namespace BelowTheWing.Session
             if (NetworkManager.LocalClient.IsSessionOwner)
             {
                 ApronBuilder.Build(m_Layout, m_AircraftProfile, m_CrewProfile,
-                    m_TractorPrefab, m_CartPrefab, m_AircraftPrefab, m_BagPrefab, m_BagsPerTrain);
+                    m_TractorPrefab, m_CartPrefab, m_AircraftPrefab, m_BagPrefab);
             }
 
             NetworkManager.OnConnectionEvent += OnSomebodyCameOrWent;

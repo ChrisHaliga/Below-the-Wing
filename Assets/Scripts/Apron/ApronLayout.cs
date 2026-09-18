@@ -82,6 +82,21 @@ namespace BelowTheWing.Apron
         [Tooltip("Clear space between arrivals, m")]
         public float crewSpacingMetres;
 
+        [Tooltip("How far ahead of the tractors the arrival line stands, m")]
+        public float crewArriveAheadOfTheTractorsMetres;
+
+        [Tooltip("How far left of the first tractor the arrival line starts, m")]
+        public float crewLineStartsLeftOfTheTractorsMetres;
+
+        [Tooltip("Bags dropped beside each train's first cart")]
+        public int bagsPerTrain;
+
+        [Tooltip("Clear space between a bag and the cart's side, m")]
+        public float bagClearanceFromTheCartMetres;
+
+        [Tooltip("Spacing between bags along the cart, m")]
+        public float bagPitchMetres;
+
         public static ApronLayoutSettings Default => new ApronLayoutSettings
         {
             trainCount = 2,
@@ -89,12 +104,48 @@ namespace BelowTheWing.Apron
             trainSpacingMetres = 6f,
             firstTractorPosition = new Vector3(-18f, 0f, -22f),
             crewSpawnPoints = Shift.MostCrew,
-            crewSpacingMetres = 2f
+            crewSpacingMetres = 2f,
+            crewArriveAheadOfTheTractorsMetres = 6f,
+            crewLineStartsLeftOfTheTractorsMetres = 2f,
+            bagsPerTrain = 4,
+            bagClearanceFromTheCartMetres = 0.6f,
+            bagPitchMetres = 0.9f
         };
     }
 
     public static class ApronLayout
     {
+        const float BagDropMetres = 0.15f;
+
+        public static IReadOnlyList<Placement> BagsBeside(
+            TrainPlan train, VehicleFootprint cart, Vector3 bagSizeMetres, ApronLayoutSettings settings)
+        {
+            var bags = new List<Placement>(Mathf.Max(settings.bagsPerTrain, 0));
+
+            if (train.Carts.Count == 0)
+            {
+                return bags;
+            }
+
+            var beside = train.Carts[0];
+
+            var clearOfTheSide = (cart.EnvelopeSizeMetres.x * 0.5f)
+                                 + settings.bagClearanceFromTheCartMetres
+                                 + (bagSizeMetres.x * 0.5f);
+
+            var offTheGround = (bagSizeMetres.y * 0.5f) + BagDropMetres;
+
+            for (var i = 0; i < settings.bagsPerTrain; i++)
+            {
+                var at = beside.Position
+                         + (beside.Rotation * new Vector3(clearOfTheSide, offTheGround, -(i * settings.bagPitchMetres)));
+
+                bags.Add(new Placement($"Bag {i + 1}", at, beside.Rotation, bagSizeMetres));
+            }
+
+            return bags;
+        }
+
         static IReadOnlyList<Placement> ArrivalPoints(
             ApronLayoutSettings settings,
             Vector3 crewSizeMetres,
@@ -102,13 +153,15 @@ namespace BelowTheWing.Apron
         {
             var standingHeight = crewSizeMetres.y * 0.5f;
 
-            var alongZ = settings.firstTractorPosition.z + 6f;
+            var alongZ = settings.firstTractorPosition.z + settings.crewArriveAheadOfTheTractorsMetres;
             var points = new List<Placement>(settings.crewSpawnPoints);
 
             for (var i = 0; i < settings.crewSpawnPoints; i++)
             {
                 var at = new Vector3(
-                    settings.firstTractorPosition.x - 2f + (i * settings.crewSpacingMetres),
+                    settings.firstTractorPosition.x
+                    - settings.crewLineStartsLeftOfTheTractorsMetres
+                    + (i * settings.crewSpacingMetres),
                     standingHeight,
                     alongZ);
 

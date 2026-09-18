@@ -1,4 +1,5 @@
 using BelowTheWing.Apron;
+using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Vehicles;
 using Unity.Netcode;
@@ -15,13 +16,15 @@ namespace BelowTheWing.Session
             NetworkObject tractorPrefab,
             NetworkObject cartPrefab,
             NetworkObject aircraftPrefab,
-            NetworkObject bagPrefab,
-            int bagsPerTrain)
+            NetworkObject bagPrefab)
         {
+            var cartFootprint = cartPrefab.GetComponent<VehicleShape>().Footprint;
+            var bagSize = bagPrefab.GetComponent<Bag>().Profile.sizeMetres;
+
             var plan = ApronLayout.Build(
                 layout,
                 tractorPrefab.GetComponent<VehicleShape>().Footprint,
-                cartPrefab.GetComponent<VehicleShape>().Footprint,
+                cartFootprint,
                 aircraftProfile,
                 crewProfile.SizeMetres);
 
@@ -38,31 +41,10 @@ namespace BelowTheWing.Session
                     Place(cartPrefab, train.Carts[c], t, placeInTrain: c + 1);
                 }
 
-                Scatter(bagPrefab, train, bagsPerTrain);
-            }
-        }
-
-        static void Scatter(NetworkObject bagPrefab, TrainPlan train, int howMany)
-        {
-            if (bagPrefab == null || howMany <= 0 || train.Carts.Count == 0)
-            {
-                return;
-            }
-
-            var beside = train.Carts[0];
-
-            for (var i = 0; i < howMany; i++)
-            {
-                var where = beside.Position
-                            + (Vector3.right * 2.5f)
-                            + (Vector3.back * (i * 0.9f))
-                            + (Vector3.up * 0.4f);
-
-                var bag = Object.Instantiate(bagPrefab, where, Quaternion.identity);
-                bag.GetComponent<ApronIdentity>()?.Called($"Bag {i + 1}");
-                bag.Spawn();
-
-                OnlyByAsking(bag);
+                foreach (var bag in ApronLayout.BagsBeside(train, cartFootprint, bagSize, layout))
+                {
+                    Place(bagPrefab, bag);
+                }
             }
         }
 

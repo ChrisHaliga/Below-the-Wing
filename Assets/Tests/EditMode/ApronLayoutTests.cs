@@ -155,6 +155,62 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void TheCrewLineStandsWhereTheSettingsSayRelativeToTheTractors()
+        {
+            var settings = ApronLayoutSettings.Default;
+            settings.firstTractorPosition = new Vector3(-18f, 0f, -22f);
+            settings.crewArriveAheadOfTheTractorsMetres = 9f;
+            settings.crewLineStartsLeftOfTheTractorsMetres = 4f;
+
+            var plan = Plan(settings);
+
+            Assert.That(plan.CrewSpawnPoints[0].Position.z, Is.EqualTo(-13f).Within(1e-3f),
+                "the arrival line used to sit a literal 6 m ahead of the tractors whatever the settings said");
+            Assert.That(plan.CrewSpawnPoints[0].Position.x, Is.EqualTo(-22f).Within(1e-3f));
+        }
+
+        [Test]
+        public void BagsArePlacedClearOfTheCartTheyBelongTo()
+        {
+            var settings = ApronLayoutSettings.Default;
+            settings.bagsPerTrain = 4;
+
+            var plan = Plan(settings);
+            var train = plan.Trains[0];
+            var bags = ApronLayout.BagsBeside(train, m_Cart, new Vector3(0.4f, 0.25f, 0.6f), settings);
+
+            Assert.That(bags.Count, Is.EqualTo(4));
+
+            foreach (var bag in bags)
+            {
+                Assert.That(bag.Bounds.Intersects(train.Carts[0].Bounds), Is.False,
+                    $"'{bag.Name}' is inside the cart. The old placement was a literal 2.5 m out, which " +
+                    "a wider cart swallows");
+                Assert.That(bag.Position.y, Is.GreaterThan(0.125f), "a bag starts above the ground, not in it");
+            }
+
+            var pitch = Vector3.Distance(bags[1].Position, bags[0].Position);
+            Assert.That(Vector3.Distance(bags[2].Position, bags[1].Position), Is.EqualTo(pitch).Within(1e-3f));
+        }
+
+        [Test]
+        public void AWiderCartPushesItsBagsFurtherOut()
+        {
+            var settings = ApronLayoutSettings.Default;
+            var plan = Plan(settings);
+            var train = plan.Trains[0];
+
+            var narrow = new VehicleFootprint(new Vector3(1.6f, 2f, 3.8f), m_Cart.FrontReachMetres, m_Cart.RearReachMetres);
+            var wide = new VehicleFootprint(new Vector3(3.2f, 2f, 3.8f), m_Cart.FrontReachMetres, m_Cart.RearReachMetres);
+
+            var besideNarrow = ApronLayout.BagsBeside(train, narrow, Vector3.one * 0.3f, settings)[0].Position.x;
+            var besideWide = ApronLayout.BagsBeside(train, wide, Vector3.one * 0.3f, settings)[0].Position.x;
+
+            Assert.That(besideWide - besideNarrow, Is.EqualTo(0.8f).Within(1e-3f),
+                "half the extra width, because the bags stand off the cart's side, not its centre");
+        }
+
+        [Test]
         public void EveryPlacementIsTheRealSizeOfWhatItStandsFor()
         {
             var plan = Plan(ApronLayoutSettings.Default);
