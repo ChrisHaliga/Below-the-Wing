@@ -3493,9 +3493,14 @@ MonoBehaviour:
   m_Cart: {fileID: 372299814}
   m_ShoveNewtonSeconds: 38
   m_SecondSetWaitsSeconds: 2.8
-  m_RailDragNewtonsPerMetrePerSecond: 20
-  m_BounceOffTheEnd: 0.25
-  m_SettlesAtNewtonsPerMetre: 30
+  m_Rail:
+    poleKg: 6
+    dragNewtonsPerMetrePerSecond: 20
+    holdsAtNewtons: 1500
+    bounceOffTheEnd: 0.25
+    settlesAtNewtonsPerMetre: 30
+    projectionDistanceMetres: 0.005
+    projectionAngleDegrees: 0.5
 --- !u!1 &2065546110
 GameObject:
   m_ObjectHideFlags: 0

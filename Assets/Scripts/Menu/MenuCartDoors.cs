@@ -17,14 +17,8 @@ namespace BelowTheWing.Menu
         [SerializeField, Tooltip("How long the far doors wait after the near ones are shoved, seconds")]
         float m_SecondSetWaitsSeconds = 3.3f;
 
-        [SerializeField, Tooltip("Rail drag, newtons per metre per second. Lower coasts further")]
-        float m_RailDragNewtonsPerMetrePerSecond = 20f;
-
-        [SerializeField, Tooltip("How much of its speed a door keeps off the end stop, 0 to 1")]
-        float m_BounceOffTheEnd = 0.25f;
-
-        [SerializeField, Tooltip("Pull that walks a bounced door back to its end, newtons per metre")]
-        float m_SettlesAtNewtonsPerMetre = 30f;
+        [SerializeField, Tooltip("The rail the menu builds the doors on. The game uses DoorRailSettings.Default")]
+        DoorRailSettings m_Rail = MenuRail;
 
         readonly List<SlidingDoorPole> m_Near = new List<SlidingDoorPole>();
         readonly List<SlidingDoorPole> m_Far = new List<SlidingDoorPole>();
@@ -87,7 +81,7 @@ namespace BelowTheWing.Menu
 
         void RaiseTheRig()
         {
-            SlidingDoors.Build(m_Cart, m_Cart.GetComponent<VehicleShape>(), null, Rail);
+            SlidingDoors.Build(m_Cart, m_Cart.GetComponent<VehicleShape>(), null, m_Rail);
 
             m_Poles.Clear();
             m_Near.Clear();
@@ -114,15 +108,15 @@ namespace BelowTheWing.Menu
             }
         }
 
-        DoorRailSettings Rail
+        static DoorRailSettings MenuRail
         {
             get
             {
                 var rail = DoorRailSettings.Default;
 
-                rail.dragNewtonsPerMetrePerSecond = m_RailDragNewtonsPerMetrePerSecond;
-                rail.bounceOffTheEnd = m_BounceOffTheEnd;
-                rail.settlesAtNewtonsPerMetre = m_SettlesAtNewtonsPerMetre;
+                rail.dragNewtonsPerMetrePerSecond = 20f;
+                rail.bounceOffTheEnd = 0.25f;
+                rail.settlesAtNewtonsPerMetre = 30f;
 
                 return rail;
             }
