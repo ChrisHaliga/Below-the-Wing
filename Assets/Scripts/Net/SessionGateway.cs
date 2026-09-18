@@ -86,10 +86,6 @@ namespace BelowTheWing.Net
             await SignedIn();
         }
 
-        // Signing in starts as the menu opens and takes a round trip to the service. Host used to
-        // read the phase while that was still in flight, see something other than Ready, and give
-        // up without saying anything, which left the lobby waiting on a code that was never asked
-        // for. One task is shared instead, and a second caller waits on the first.
         Task SignedIn()
         {
             if (m_SigningIn == null || (m_SigningIn.IsCompleted && Phase != SessionPhase.Ready))

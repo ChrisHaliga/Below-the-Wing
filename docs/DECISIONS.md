@@ -579,3 +579,30 @@ What follows from it: meta files for a new script come back from the same mirror
 scene referencing them, or they do not come back at all and the scene is rebuilt after the metas
 exist. Copying from two mirrors in one change is what broke this.
 
+## 2026-09-18 — A joint drive is aimed at the negative of where it should settle
+
+The sliding doors in the menu are thrown open by an impulse and then held at whichever end they
+were sent to by a weak spring on the rail's drive. The first attempt aimed that drive at the open
+end and the door settled shut. Unity's configurable joint pulls its drive toward the negative of
+`targetPosition`, and the rail's zero sits halfway between shut and open, so each end is aimed as
+minus half the travel in the direction of travel. That sign is not documented anywhere the code
+can point at, which is why the reason is recorded here rather than left to be rediscovered.
+
+A second consequence: a drive with a spring on it pulls toward wherever it is aimed from the moment
+it exists, and an unaimed drive is aimed at zero. Doors that were meant to start shut drifted to
+half open on load until every pole was aimed shut as the rig was raised.
+
+## 2026-09-18 — Nothing the menu adds to a cart may live on the cart
+
+The menu's door driver was first added to the staged cart in the menu scene. That cart is an
+instance of the cart prefab, so the added component was recorded as an override on the instance.
+Reimporting the prefab rebuilds every instance and an added component is one of the things that
+does not survive it; the scene file kept its reference, a fresh import of the project resolved it,
+and an editor that had been open across the rebuild found nothing there and logged nothing. The
+rebuild writes the cart prefab and the menu scene in the same pass, so the reimport happened every
+time. The driver lives on a plain scene object and holds a reference to the cart instead, and a test
+fails the build if it is ever put back on a prefab instance.
+
+Turned down: unpacking the prefab instance in the scene. That would sever it from the prefab, and
+the menu cart would then stop following changes to the real one.
+

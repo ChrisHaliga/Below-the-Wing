@@ -23,8 +23,6 @@ namespace BelowTheWing.Menu
     {
         public static MenuIcons Icons;
 
-
-
         public const int Gutter = 96;
         public const int ColumnWidth = 520;
 
@@ -56,8 +54,6 @@ namespace BelowTheWing.Menu
             element.style.bottom = 0;
         }
 
-        // A panel standing from the top of the screen to the bottom, holding whatever the screen
-        // puts on it, with its trailing edge faded out so it does not cut the scene in half.
         public static VisualElement Scrim(float widthFraction, float darkest)
         {
             var scrim = new VisualElement { pickingMode = PickingMode.Ignore };

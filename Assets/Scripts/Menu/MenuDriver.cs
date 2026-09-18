@@ -123,8 +123,6 @@ namespace BelowTheWing.Menu
                 return;
             }
 
-            // A join code is typed into a field on the same screen as the buttons, and every letter
-            // in one is also a movement key.
             if (m_Chrome.TypingACode)
             {
                 if (keys.enterKey.wasPressedThisFrame || keys.numpadEnterKey.wasPressedThisFrame)
@@ -255,9 +253,6 @@ namespace BelowTheWing.Menu
 
             var spawned = m_Roster != null && m_Roster.IsSpawned;
 
-            // Readiness is the player's, not the roster's. The lobby opens before the service
-            // answers, so somebody can ready up with nothing to tell yet; the roster hears it when
-            // it arrives, and the shift cannot start until it has.
             if (m_Ready.NeedsTelling(spawned))
             {
                 m_Roster.ReadyUp(m_Ready.Want);
@@ -270,8 +265,6 @@ namespace BelowTheWing.Menu
 
             m_Backdrop.ShowThisManyCrew(m_OnStage.Count);
 
-            // A nameplate over somebody the doors have not uncovered yet reads as a label floating
-            // on the outside of the cart, so they wait for the second set of doors to be thrown.
             m_Chrome.ShowCrewOnStage(
                 m_Backdrop.CartDoors.BothSetsAreMoving ? m_OnStage : NobodyYet,
                 m_Camera.Eye);

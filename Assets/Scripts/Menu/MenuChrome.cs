@@ -302,8 +302,6 @@ namespace BelowTheWing.Menu
             return chip;
         }
 
-        // The lobby shows the crew standing in the scene, so it carries no panel of its own. Four
-        // things float over it: leave, the two shift buttons, and the code other people join on.
         VisualElement Lobby(out Label code)
         {
             var screen = MenuLook.Screen("lobby");

@@ -108,8 +108,6 @@ namespace BelowTheWing.Menu
                 throw MisbuiltException.Refuse(this, "raised no door poles on its cart");
             }
 
-            // The settle pull holds a pole wherever it is aimed, and an unaimed drive aims at the
-            // rail's own zero, which is halfway open. Every door starts shut.
             foreach (var pole in m_Poles)
             {
                 AimAt(pole, open: false);
@@ -130,8 +128,6 @@ namespace BelowTheWing.Menu
             }
         }
 
-        // A drive pulls toward the negative of its target, and the rail's own zero sits halfway
-        // between shut and open, so each end is half the travel either side of it.
         static void AimAt(SlidingDoorPole pole, bool open)
         {
             var rail = pole.GetComponent<ConfigurableJoint>();
@@ -164,9 +160,6 @@ namespace BelowTheWing.Menu
             }
         }
 
-        // A pole is aimed at its new end only as it is shoved. Aiming the far pair at the same time
-        // as the near one hands them to the settle pull five seconds early, and they creep open
-        // instead of waiting and then being thrown open like the first pair.
         void Shove(IReadOnlyList<SlidingDoorPole> poles)
         {
             var shove = ShoveFor(m_Open, m_ShoveNewtonSeconds);

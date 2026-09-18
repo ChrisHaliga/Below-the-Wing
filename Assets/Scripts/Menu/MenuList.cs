@@ -185,9 +185,6 @@ namespace BelowTheWing.Menu
                     : on ? Palette.Ink
                     : Palette.InkSoft;
 
-                // A button keeps its border width and its place in the row. Changing either moves
-                // it against the buttons beside it, and a selected button sitting higher than its
-                // neighbour reads as a mistake rather than as selection.
                 m_Rows[row].Element.style.translate = m_AcrossTheScreen
                     ? new Translate(0, 0)
                     : new Translate(on && available ? 8 : 0, 0);
