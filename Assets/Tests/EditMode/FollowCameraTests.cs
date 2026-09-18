@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BelowTheWing.Crew;
+using BelowTheWing.Settings;
 using BelowTheWing.Tests.Support;
 using NUnit.Framework;
 using UnityEngine;
@@ -16,6 +17,8 @@ namespace BelowTheWing.Tests.EditMode
         [SetUp]
         public void SetUp()
         {
+            CrewSettings.Use(new MemorySettingsStore());
+
             m_Object = new GameObject("Camera");
             m_Camera = m_Object.AddComponent<FollowCamera>();
         }
@@ -80,6 +83,53 @@ namespace BelowTheWing.Tests.EditMode
             var larger = Mathf.Abs(Mathf.DeltaAngle(0f, m_Camera.YawDegrees));
 
             Assert.That(larger, Is.GreaterThan(small));
+        }
+
+        [Test]
+        public void TheSensitivitySettingScalesHowFarTheCameraTurns()
+        {
+            CrewSettings.LookSensitivity = 1f;
+            m_Camera.Look(new Vector2(10f, 0f));
+            var atOne = Mathf.Abs(Mathf.DeltaAngle(0f, m_Camera.YawDegrees));
+
+            SetUp();
+            CrewSettings.LookSensitivity = 2f;
+            m_Camera.Look(new Vector2(10f, 0f));
+            var atTwo = Mathf.Abs(Mathf.DeltaAngle(0f, m_Camera.YawDegrees));
+
+            Assert.That(atTwo, Is.EqualTo(atOne * 2f).Within(1e-3f),
+                "the settings page has a sensitivity dial, and until now the in-game camera read " +
+                "a serialized 0.15 and never looked at it");
+        }
+
+        [Test]
+        public void InvertingYFlipsWhichWayTheMouseTilts()
+        {
+            var before = m_Camera.PitchDegrees;
+
+            CrewSettings.InvertLookY = false;
+            m_Camera.Look(new Vector2(0f, 10f));
+            var normal = m_Camera.PitchDegrees - before;
+
+            SetUp();
+            CrewSettings.InvertLookY = true;
+            m_Camera.Look(new Vector2(0f, 10f));
+            var inverted = m_Camera.PitchDegrees - before;
+
+            Assert.That(inverted, Is.EqualTo(-normal).Within(1e-3f));
+        }
+
+        [Test]
+        public void TheFieldOfViewSettingReachesTheLens()
+        {
+            var lens = m_Object.AddComponent<Camera>();
+            CrewSettings.FieldOfViewDegrees = 90f;
+
+            m_Camera.Subject = ASubjectAt(Vector3.zero);
+            m_Camera.Place();
+
+            Assert.That(lens.fieldOfView, Is.EqualTo(90f).Within(1e-3f),
+                "the menu camera honours this setting; the one the player actually plays through did not");
         }
 
         [Test]

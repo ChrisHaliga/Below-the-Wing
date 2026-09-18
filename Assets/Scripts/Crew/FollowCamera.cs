@@ -1,3 +1,4 @@
+using BelowTheWing.Settings;
 using UnityEngine;
 
 namespace BelowTheWing.Crew
@@ -8,11 +9,14 @@ namespace BelowTheWing.Crew
         [SerializeField, Tooltip("How the camera sits on its subject")]
         CameraFraming m_Framing = CameraFraming.Driving;
 
-        [SerializeField, Tooltip("Degrees turned per unit of mouse movement")]
-        float m_LookSensitivity = 0.15f;
+        [SerializeField, Tooltip("Degrees turned per unit of mouse movement at a sensitivity of 1")]
+        float m_DegreesPerCount = 0.15f;
 
+        const float StartingPitchDegrees = 15f;
+
+        Camera m_Lens;
         float m_YawDegrees;
-        float m_PitchDegrees = 15f;
+        float m_PitchDegrees = StartingPitchDegrees;
 
         public Transform Subject { get; set; }
 
@@ -28,9 +32,9 @@ namespace BelowTheWing.Crew
 
         public void Look(Vector2 delta)
         {
-            m_YawDegrees += delta.x * m_LookSensitivity;
+            m_YawDegrees += delta.x * m_DegreesPerCount * CrewSettings.LookSensitivity;
             m_PitchDegrees = Mathf.Clamp(
-                m_PitchDegrees - (delta.y * m_LookSensitivity),
+                m_PitchDegrees - (delta.y * m_DegreesPerCount * CrewSettings.LookYMultiplier),
                 m_Framing.MinPitchDegrees,
                 m_Framing.MaxPitchDegrees);
         }
@@ -39,6 +43,16 @@ namespace BelowTheWing.Crew
 
         public void Place()
         {
+            if (m_Lens == null)
+            {
+                m_Lens = GetComponent<Camera>();
+            }
+
+            if (m_Lens != null)
+            {
+                m_Lens.fieldOfView = CrewSettings.FieldOfViewDegrees;
+            }
+
             if (Subject == null)
             {
                 return;

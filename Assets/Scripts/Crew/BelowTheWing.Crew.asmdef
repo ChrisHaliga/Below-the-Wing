@@ -3,6 +3,7 @@
     "rootNamespace": "BelowTheWing.Crew",
     "references": [
         "BelowTheWing.Wiring",
+        "BelowTheWing.Settings",
         "BelowTheWing.Cargo",
         "BelowTheWing.Vehicles",
         "Unity.InputSystem"
