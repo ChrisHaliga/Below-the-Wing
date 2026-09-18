@@ -1,27 +1,23 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using BelowTheWing.Apron;
 using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
-using BelowTheWing.Diagnostics;
-using BelowTheWing.Menu;
-using BelowTheWing.Net;
 using BelowTheWing.Session;
 using BelowTheWing.Vehicles;
 using BelowTheWing.Wiring;
 using Unity.Netcode;
 using Unity.Netcode.Components;
-using Unity.Netcode.Transports.UTP;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace BelowTheWing.EditorTools
 {
     internal static class VehiclePrefabs
     {
+        const float VehicleLabelAboveTheEnvelopeFraction = 0.6f;
+        const float BagLabelAboveTheBagFraction = 1.2f;
+        const float CrewLabelUpTheBodyFraction = 0.7f;
+
         internal static GameObject BuildTractor(VehicleProfile profile)
         {
             var go = NewVehicle("BaggageTractor", profile, ContentPaths.TractorModelPath, ModelMeasure.MeasureTheTractor);
@@ -38,7 +34,7 @@ namespace BelowTheWing.EditorTools
             return SaveAndDiscard(go, $"{ContentPaths.PrefabFolder}/BaggageCart.prefab");
         }
 
-        internal static GameObject NewVehicle(
+        static GameObject NewVehicle(
             string name, VehicleProfile profile, string modelPath, Func<GameObject, Transform, MeasuredVehicle> measure)
         {
             var go = new GameObject(name);
@@ -60,13 +56,13 @@ namespace BelowTheWing.EditorTools
             go.AddComponent<HandUse>().As = HandUse.Category.HoldOnto;
 
             go.AddComponent<ApronAppearance>().DescribeAsModelled(
-                shape.EnvelopeCentreLocal.y + (shape.EnvelopeSizeMetres.y * 0.6f));
+                shape.EnvelopeCentreLocal.y + (shape.EnvelopeSizeMetres.y * VehicleLabelAboveTheEnvelopeFraction));
             go.AddComponent<ApronIdentity>();
 
             return go;
         }
 
-        internal static Transform AddModel(GameObject vehicle, string path)
+        static Transform AddModel(GameObject vehicle, string path)
         {
             var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (asset == null)
@@ -77,11 +73,9 @@ namespace BelowTheWing.EditorTools
             }
 
             var model = (GameObject)PrefabUtility.InstantiatePrefab(asset);
-            model.name = ApronAppearance.LookName;
+            model.name = GreyboxShape.LookName;
             model.transform.SetParent(vehicle.transform, worldPositionStays: false);
             model.transform.localRotation = Quaternion.Euler(0f, 180f, 0f) * model.transform.localRotation;
-
-            ModelMeasure.DiscardAnythingThatLightsOrLooks(model);
 
             return model.transform;
         }
@@ -109,7 +103,7 @@ namespace BelowTheWing.EditorTools
 
         internal static GameObject BuildBag()
         {
-            var profile = SceneBootstrap.Needed<BagProfile>(ContentPaths.BagProfilePath);
+            var profile = ContentPaths.Needed<BagProfile>(ContentPaths.BagProfilePath);
 
             var go = new GameObject("Bag");
             go.AddComponent<Rigidbody>();
@@ -121,7 +115,7 @@ namespace BelowTheWing.EditorTools
 
             AddNetworking(go, outlivesItsOwner: true);
 
-            Dress(go, ApronAppearance.Shape.Box, profile.sizeMetres, Palette.BagCanvas, profile.sizeMetres.y * 1.2f);
+            Dress(go, ApronAppearance.Shape.Box, profile.sizeMetres, Palette.BagCanvas, profile.sizeMetres.y * BagLabelAboveTheBagFraction);
 
             return SaveAndDiscard(go, $"{ContentPaths.PrefabFolder}/Bag.prefab");
         }
@@ -139,19 +133,19 @@ namespace BelowTheWing.EditorTools
 
             AddNetworking(go, outlivesItsOwner: false);
 
-            Dress(go, ApronAppearance.Shape.UprightCapsule, profile.SizeMetres, Palette.HiVis, profile.heightMetres * 0.7f);
+            Dress(go, ApronAppearance.Shape.UprightCapsule, profile.SizeMetres, Palette.HiVis, profile.heightMetres * CrewLabelUpTheBodyFraction);
 
             return SaveAndDiscard(go, $"{ContentPaths.PrefabFolder}/RampWorker.prefab");
         }
 
-        internal static void HandAnchor(GameObject character, string name, Vector3 local)
+        static void HandAnchor(GameObject character, string name, Vector3 local)
         {
             var anchor = new GameObject(name);
             anchor.transform.SetParent(character.transform, worldPositionStays: false);
             anchor.transform.localPosition = local;
         }
 
-        internal static void Dress(
+        static void Dress(
             GameObject go,
             ApronAppearance.Shape shape,
             Vector3 sizeMetres,
@@ -164,7 +158,7 @@ namespace BelowTheWing.EditorTools
             go.AddComponent<ApronIdentity>();
         }
 
-        internal static void AddNetworking(GameObject go, bool outlivesItsOwner)
+        static void AddNetworking(GameObject go, bool outlivesItsOwner)
         {
             var networked = go.AddComponent<NetworkObject>();
             networked.DontDestroyWithOwner = outlivesItsOwner;
@@ -187,7 +181,7 @@ namespace BelowTheWing.EditorTools
             }
         }
 
-        internal static GameObject SaveAndDiscard(GameObject go, string path)
+        static GameObject SaveAndDiscard(GameObject go, string path)
         {
             var saved = PrefabUtility.SaveAsPrefabAsset(go, path);
             UnityEngine.Object.DestroyImmediate(go);

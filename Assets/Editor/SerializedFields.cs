@@ -1,22 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using BelowTheWing.Apron;
-using BelowTheWing.Cargo;
-using BelowTheWing.Crew;
-using BelowTheWing.Diagnostics;
-using BelowTheWing.Menu;
-using BelowTheWing.Net;
-using BelowTheWing.Session;
-using BelowTheWing.Vehicles;
-using BelowTheWing.Wiring;
-using Unity.Netcode;
-using Unity.Netcode.Components;
-using Unity.Netcode.Transports.UTP;
 using UnityEditor;
-using UnityEditor.SceneManagement;
-using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace BelowTheWing.EditorTools
 {

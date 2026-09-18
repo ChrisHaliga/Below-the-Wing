@@ -6,7 +6,6 @@
         "BelowTheWing.Settings",
         "BelowTheWing.Cargo",
         "BelowTheWing.Vehicles",
-        "BelowTheWing.Apron",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],

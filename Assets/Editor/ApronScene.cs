@@ -1,22 +1,11 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
 using BelowTheWing.Apron;
-using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Diagnostics;
-using BelowTheWing.Menu;
-using BelowTheWing.Net;
 using BelowTheWing.Session;
-using BelowTheWing.Vehicles;
-using BelowTheWing.Wiring;
 using Unity.Netcode;
-using Unity.Netcode.Components;
-using Unity.Netcode.Transports.UTP;
-using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace BelowTheWing.EditorTools
 {
@@ -28,14 +17,9 @@ namespace BelowTheWing.EditorTools
             GameObject tractor,
             GameObject cart,
             GameObject aircraft,
-            GameObject crew)
+            GameObject crew,
+            GameObject bag)
         {
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-            {
-                Debug.Log("Apron rebuild cancelled.");
-                return;
-            }
-
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             Scenery.BuildApronFloor();
@@ -55,10 +39,7 @@ namespace BelowTheWing.EditorTools
             SerializedFields.Set(session, "m_AircraftPrefab", aircraft.GetComponent<NetworkObject>());
             SerializedFields.Set(session, "m_CrewPrefab", crew.GetComponent<NetworkObject>());
 
-            SerializedFields.Set(
-                session,
-                "m_BagPrefab",
-                SceneBootstrap.Needed<GameObject>($"{ContentPaths.PrefabFolder}/Bag.prefab").GetComponent<NetworkObject>());
+            SerializedFields.Set(session, "m_BagPrefab", bag.GetComponent<NetworkObject>());
             SerializedFields.Set(session, "m_Camera", camera);
             SerializedFields.Set(session, "m_Readout", readout);
 
@@ -81,7 +62,7 @@ namespace BelowTheWing.EditorTools
             EditorSceneManager.SaveScene(saved, ContentPaths.ScenePath);
         }
 
-        internal static FollowCamera BuildCamera()
+        static FollowCamera BuildCamera()
         {
             var go = new GameObject("Main Camera");
             go.tag = "MainCamera";

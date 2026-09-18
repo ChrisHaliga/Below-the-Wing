@@ -1,22 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using BelowTheWing.Apron;
-using BelowTheWing.Cargo;
-using BelowTheWing.Crew;
-using BelowTheWing.Diagnostics;
-using BelowTheWing.Menu;
-using BelowTheWing.Net;
-using BelowTheWing.Session;
 using BelowTheWing.Vehicles;
-using BelowTheWing.Wiring;
-using Unity.Netcode;
-using Unity.Netcode.Components;
-using Unity.Netcode.Transports.UTP;
-using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace BelowTheWing.EditorTools
 {
@@ -70,7 +55,7 @@ namespace BelowTheWing.EditorTools
                 measured.Visible);
         }
 
-        internal static List<VehicleShape.SolidPart> SolidPieces(
+        static List<VehicleShape.SolidPart> SolidPieces(
             GameObject vehicle, Transform model, IReadOnlyList<string> paths)
         {
             var parts = new List<VehicleShape.SolidPart>(paths.Count);
@@ -159,14 +144,19 @@ namespace BelowTheWing.EditorTools
                 measured.Visible);
         }
 
-        internal static Bounds TheSpaceTheDoorsCloseOver(GameObject cart, Transform model)
+        static Bounds TheSpaceTheDoorsCloseOver(GameObject cart, Transform model)
         {
             var doors = new Bounds();
             var any = false;
 
-            for (var i = 1; HasAPart(model, SlidingDoors.PanelName(i)); i++)
+            foreach (var part in model.GetComponentsInChildren<Transform>(true))
             {
-                var box = MeshBoxLocal(cart, model, SlidingDoors.PanelName(i));
+                if (part == model || !SlidingDoors.IsAPanel(part.name, out _) || MeshOn(part) == null)
+                {
+                    continue;
+                }
+
+                var box = MeshBoxLocal(cart, part);
 
                 if (any)
                 {
@@ -187,23 +177,10 @@ namespace BelowTheWing.EditorTools
             return doors;
         }
 
-        internal static bool HasAPart(Transform model, string name)
-        {
-            foreach (var candidate in model.GetComponentsInChildren<Transform>(true))
-            {
-                if (candidate != model && candidate.name == name)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        internal static bool IsCouplingHardware(string name)
+        static bool IsCouplingHardware(string name)
             => name.StartsWith("Hitch", StringComparison.OrdinalIgnoreCase);
 
-        internal static Bounds EverythingItIsMadeOf(GameObject vehicle, Transform model)
+        static Bounds EverythingItIsMadeOf(GameObject vehicle, Transform model)
         {
             var all = new Bounds();
             var anything = false;
@@ -242,7 +219,7 @@ namespace BelowTheWing.EditorTools
             return all;
         }
 
-        internal static (List<VehicleShape.WheelPlacement> Placements, List<Transform> Visible) Wheels(
+        static (List<VehicleShape.WheelPlacement> Placements, List<Transform> Visible) Wheels(
             GameObject vehicle, Transform model, IReadOnlyList<string> paths)
         {
             var placements = new List<VehicleShape.WheelPlacement>();
@@ -263,7 +240,7 @@ namespace BelowTheWing.EditorTools
             return (placements, visible);
         }
 
-        internal static Vector3 MarkerLocal(GameObject vehicle, Transform model, string name)
+        static Vector3 MarkerLocal(GameObject vehicle, Transform model, string name)
         {
             var found = Named(vehicle, model, name);
 
@@ -277,7 +254,7 @@ namespace BelowTheWing.EditorTools
             return vehicle.transform.InverseTransformPoint(found.position);
         }
 
-        internal static Transform PartOfTheModel(GameObject vehicle, Transform model, string name)
+        static Transform PartOfTheModel(GameObject vehicle, Transform model, string name)
         {
             var found = Named(vehicle, model, name);
 
@@ -289,7 +266,7 @@ namespace BelowTheWing.EditorTools
             return found;
         }
 
-        internal static Transform Named(GameObject vehicle, Transform model, string name)
+        static Transform Named(GameObject vehicle, Transform model, string name)
         {
             var byPath = model.Find(name);
             if (byPath != null)
@@ -343,20 +320,7 @@ namespace BelowTheWing.EditorTools
             return found ?? throw Unmeasurable(vehicle, $"its model has no '{name}' anywhere inside it");
         }
 
-        internal static void DiscardAnythingThatLightsOrLooks(GameObject model)
-        {
-            foreach (var camera in model.GetComponentsInChildren<Camera>(true))
-            {
-                UnityEngine.Object.DestroyImmediate(camera.gameObject);
-            }
-
-            foreach (var light in model.GetComponentsInChildren<Light>(true))
-            {
-                UnityEngine.Object.DestroyImmediate(light.gameObject);
-            }
-        }
-
-        internal static Mesh MeshOn(Transform part)
+        static Mesh MeshOn(Transform part)
         {
             var filter = part.GetComponent<MeshFilter>();
             if (filter != null)
@@ -368,14 +332,14 @@ namespace BelowTheWing.EditorTools
             return skinned != null ? skinned.sharedMesh : null;
         }
 
-        internal static InvalidOperationException Unmeasurable(GameObject vehicle, string why)
+        static InvalidOperationException Unmeasurable(GameObject vehicle, string why)
             => new InvalidOperationException(
                 $"'{vehicle.name}' cannot be measured and so cannot be built: {why}.");
 
-        internal static Bounds MeshBoxLocal(GameObject vehicle, Transform model, string path)
+        static Bounds MeshBoxLocal(GameObject vehicle, Transform model, string path)
             => MeshBoxLocal(vehicle, PartOfTheModel(vehicle, model, path));
 
-        internal static VehicleShape.SolidPart SolidAsModelled(GameObject vehicle, Transform model, string path)
+        static VehicleShape.SolidPart SolidAsModelled(GameObject vehicle, Transform model, string path)
         {
             var part = PartOfTheModel(vehicle, model, path);
             var mesh = MeshOn(part);
@@ -395,7 +359,7 @@ namespace BelowTheWing.EditorTools
                 onTheVehicle.lossyScale);
         }
 
-        internal static Bounds MeshBoxLocal(GameObject vehicle, Transform part)
+        static Bounds MeshBoxLocal(GameObject vehicle, Transform part)
         {
             var mesh = MeshOn(part);
             var least = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);

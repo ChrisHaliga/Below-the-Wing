@@ -1,22 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using BelowTheWing.Apron;
-using BelowTheWing.Cargo;
-using BelowTheWing.Crew;
-using BelowTheWing.Diagnostics;
-using BelowTheWing.Menu;
-using BelowTheWing.Net;
-using BelowTheWing.Session;
-using BelowTheWing.Vehicles;
-using BelowTheWing.Wiring;
-using Unity.Netcode;
-using Unity.Netcode.Components;
-using Unity.Netcode.Transports.UTP;
 using UnityEditor;
-using UnityEditor.SceneManagement;
-using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace BelowTheWing.EditorTools
 {
@@ -63,5 +46,19 @@ namespace BelowTheWing.EditorTools
         internal const string CartModelPath = "Assets/Content/Vehicles/baggage_cart.fbx";
 
         internal const string TractorModelPath = "Assets/Content/Vehicles/baggage_tractor.fbx";
+
+        internal static T Needed<T>(string path) where T : UnityEngine.Object
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+
+            if (asset == null)
+            {
+                throw new InvalidOperationException(
+                    $"There is no {typeof(T).Name} at {path}. Run Below the Wing/Rebuild apron scene " +
+                    "and prefabs first, which is what writes the prefabs the menu scene is dressed with.");
+            }
+
+            return asset;
+        }
     }
 }

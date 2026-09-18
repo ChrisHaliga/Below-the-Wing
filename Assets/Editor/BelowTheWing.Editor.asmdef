@@ -3,7 +3,6 @@
     "rootNamespace": "BelowTheWing.EditorTools",
     "references": [
         "BelowTheWing.Wiring",
-        "BelowTheWing.Settings",
         "BelowTheWing.Cargo",
         "BelowTheWing.Vehicles",
         "BelowTheWing.Crew",
@@ -13,8 +12,7 @@
         "BelowTheWing.Diagnostics",
         "BelowTheWing.Menu",
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Components",
-        "Unity.InputSystem"
+        "Unity.Netcode.Components"
     ],
     "includePlatforms": [
         "Editor"

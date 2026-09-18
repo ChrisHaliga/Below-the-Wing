@@ -1,5 +1,6 @@
 using System.Collections;
 using BelowTheWing.Apron;
+using BelowTheWing.Wiring;
 using BelowTheWing.Tests.Support;
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
@@ -55,7 +56,7 @@ namespace BelowTheWing.Tests.PlayMode
                 body.gameObject.AddComponent<Mover>().OursToMove = sayItIsOurs;
             }
 
-            var look = new GameObject(ApronAppearance.LookName).transform;
+            var look = new GameObject(GreyboxShape.LookName).transform;
             look.SetParent(body, worldPositionStays: false);
 
             return (body, look.gameObject.AddComponent<SmoothedLook>());
@@ -252,7 +253,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var vehicle = m_Apron.AddVehicle(m_TractorProfile, "Tug 1", Vector3.zero, Quaternion.identity);
 
-            var model = new GameObject(ApronAppearance.LookName);
+            var model = new GameObject(GreyboxShape.LookName);
             model.transform.SetParent(vehicle.transform, worldPositionStays: false);
 
             var appearance = vehicle.gameObject.AddComponent<ApronAppearance>();

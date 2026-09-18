@@ -2,17 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using BelowTheWing.Apron;
-using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
-using BelowTheWing.Diagnostics;
 using BelowTheWing.Menu;
 using BelowTheWing.Net;
-using BelowTheWing.Session;
 using BelowTheWing.Vehicles;
 using BelowTheWing.Wiring;
 using Unity.Netcode;
-using Unity.Netcode.Components;
-using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -22,15 +17,25 @@ namespace BelowTheWing.EditorTools
 {
     internal static class MenuScene
     {
-        internal const float JetAheadOfTheWideShotMetres = 48f;
+        const float JetAheadOfTheWideShotMetres = 48f;
 
-        internal const float JetRightOfTheWideShotMetres = 26f;
+        const float JetRightOfTheWideShotMetres = 26f;
 
-        internal const float CrewStandBackMetres = 4.15f;
+        const float CrewStandBackMetres = 4.15f;
 
-        internal const float CrewSpacingMetres = 1.2f;
+        const float CrewSpacingMetres = 1.2f;
 
-        internal const float LoaderSitsBackMetres = 1.4f;
+        const float LoaderSitsBackMetres = 1.4f;
+
+        const float EyeHeightFractionOfTheCrew = 0.92f;
+        const float InsideShotLooksAtCrewHeightFraction = 0.62f;
+        const float PlateHangsAtCrewHeightFraction = 0.56f;
+        const float CartShotStandsOffMetres = 2.3f;
+        const float InsideShotPastTheCentreMetres = 0.25f;
+        const float OpeningLooksTowardTheNoseFraction = 0.55f;
+        const float OpeningLooksAtHeightMetres = 2.5f;
+        static readonly Vector3 OpeningStandsOffTheTug = new Vector3(19f, 7.5f, -13f);
+        static readonly Vector2Int MenuReferenceResolution = new Vector2Int(1920, 1080);
 
         internal static void BuildMenuScene(
             AircraftProfile aircraftProfile,
@@ -76,13 +81,13 @@ namespace BelowTheWing.EditorTools
             SerializedFields.Set(driver, "m_Body", AssetDatabase.LoadAssetAtPath<Font>(ContentPaths.BodyFontPath));
             SerializedFields.Set(driver, "m_Data", AssetDatabase.LoadAssetAtPath<Font>(ContentPaths.DataFontPath));
 
-            SerializedFields.Set(driver, "m_ReadyIcon", SceneBootstrap.Needed<Texture2D>(ContentPaths.ReadyIconPath));
-            SerializedFields.Set(driver, "m_UnreadyIcon", SceneBootstrap.Needed<Texture2D>(ContentPaths.UnreadyIconPath));
+            SerializedFields.Set(driver, "m_ReadyIcon", ContentPaths.Needed<Texture2D>(ContentPaths.ReadyIconPath));
+            SerializedFields.Set(driver, "m_UnreadyIcon", ContentPaths.Needed<Texture2D>(ContentPaths.UnreadyIconPath));
 
             EditorSceneManager.SaveScene(scene, ContentPaths.MenuScenePath);
         }
 
-        internal static MenuBackdrop BuildBackdrop(
+        static MenuBackdrop BuildBackdrop(
             Transform eye,
             AircraftProfile aircraftProfile,
             CrewProfile crewProfile,
@@ -102,17 +107,17 @@ namespace BelowTheWing.EditorTools
                 aircraftProfile,
                 crewProfile.SizeMetres);
 
-            Dress(aircraft, plan.Aircraft, holder.transform);
+            Stage(aircraft, plan.Aircraft, holder.transform);
 
             var train = plan.Trains[0];
 
-            Dress(tractor, train.Tractor, holder.transform);
+            Stage(tractor, train.Tractor, holder.transform);
 
             var staged = (GameObject)null;
 
             foreach (var parked in train.Carts)
             {
-                var placed = Dress(cart, parked, holder.transform);
+                var placed = Stage(cart, parked, holder.transform);
 
                 staged ??= placed;
             }
@@ -130,7 +135,7 @@ namespace BelowTheWing.EditorTools
                          + (alongTheCart * ((i - ((Shift.MostCrew - 1) * 0.5f)) * CrewSpacingMetres))
                          + (Vector3.up * (crewProfile.heightMetres * 0.5f));
 
-                var figure = Dress(
+                var figure = Stage(
                     crew,
                     new Placement($"Crew {i + 1}", at, Quaternion.LookRotation(facing), Vector3.one),
                     holder.transform);
@@ -149,35 +154,36 @@ namespace BelowTheWing.EditorTools
 
             var nose = plan.Aircraft.Position;
             var tug = train.Tractor.Position;
-            var eyeHeight = crewProfile.heightMetres * 0.92f;
+            var eyeHeight = crewProfile.heightMetres * EyeHeightFractionOfTheCrew;
             var doorwayHeight = DoorwayHeightOf(staged);
 
-            var opening = tug + new Vector3(19f, 7.5f, -13f);
+            var opening = tug + OpeningStandsOffTheTug;
 
             eye.SetPositionAndRotation(
                 opening,
                 Quaternion.LookRotation(
-                    (Vector3.Lerp(nose, tug, 0.55f) + (Vector3.up * 2.5f)) - opening, Vector3.up));
+                    (Vector3.Lerp(nose, tug, OpeningLooksTowardTheNoseFraction) + (Vector3.up * OpeningLooksAtHeightMetres)) - opening,
+                    Vector3.up));
 
             SerializedFields.Set(backdrop, "m_Airliner", ParkTheJet(holder.transform, eye).transform);
 
             SerializedFields.Set(backdrop, "m_CartShot", Shot("Cart shot", holder.transform,
-                stage.Position + (facing * 2.3f) + new Vector3(0f, eyeHeight, 0f),
+                stage.Position + (facing * CartShotStandsOffMetres) + new Vector3(0f, eyeHeight, 0f),
                 stage.Position + new Vector3(0f, doorwayHeight, 0f)));
 
             SerializedFields.Set(backdrop, "m_InsideShot", Shot("Inside shot", holder.transform,
-                stage.Position - (facing * 0.25f) + new Vector3(0f, doorwayHeight, 0f),
-                crewLine + new Vector3(0f, crewProfile.heightMetres * 0.62f, 0f)));
+                stage.Position - (facing * InsideShotPastTheCentreMetres) + new Vector3(0f, doorwayHeight, 0f),
+                crewLine + new Vector3(0f, crewProfile.heightMetres * InsideShotLooksAtCrewHeightFraction, 0f)));
 
             SerializedFields.SetList(backdrop, "m_LobbyCrew", standing);
-            SerializedFields.Set(backdrop, "m_PlateHeightMetres", crewProfile.heightMetres * 0.56f);
+            SerializedFields.Set(backdrop, "m_PlateHeightMetres", crewProfile.heightMetres * PlateHangsAtCrewHeightFraction);
             SerializedFields.Set(backdrop, "m_BeltLoader", loader.transform);
             SerializedFields.Set(backdrop, "m_CartDoors", DoorsOf(holder, staged));
 
             return backdrop;
         }
 
-        internal static GameObject ParkTheBeltLoader(
+        static GameObject ParkTheBeltLoader(
             Transform under, Vector3 crewLine, Vector3 facing, Quaternion asTheTrainSits)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(ContentPaths.BeltLoaderModelPath);
@@ -193,7 +199,6 @@ namespace BelowTheWing.EditorTools
 
             var drawn = (GameObject)PrefabUtility.InstantiatePrefab(model, loader.transform);
             drawn.transform.localPosition = Vector3.zero;
-            ModelMeasure.DiscardAnythingThatLightsOrLooks(drawn);
 
             loader.transform.position =
                 crewLine - (facing * (ReachesForward(loader, facing) + LoaderSitsBackMetres));
@@ -201,7 +206,7 @@ namespace BelowTheWing.EditorTools
             return loader;
         }
 
-        internal static GameObject ParkTheJet(Transform under, Transform wide)
+        static GameObject ParkTheJet(Transform under, Transform wide)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(ContentPaths.RegionalJetModelPath);
 
@@ -224,12 +229,11 @@ namespace BelowTheWing.EditorTools
 
             var drawn = (GameObject)PrefabUtility.InstantiatePrefab(model, jet.transform);
             drawn.transform.localPosition = Vector3.zero;
-            ModelMeasure.DiscardAnythingThatLightsOrLooks(drawn);
 
             return jet;
         }
 
-        internal static float ReachesForward(GameObject thing, Vector3 facing)
+        static float ReachesForward(GameObject thing, Vector3 facing)
         {
             var from = thing.transform.position;
             var most = 0f;
@@ -243,7 +247,7 @@ namespace BelowTheWing.EditorTools
             return most;
         }
 
-        internal static float DoorwayHeightOf(GameObject staged)
+        static float DoorwayHeightOf(GameObject staged)
         {
             foreach (var skin in staged.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
@@ -256,7 +260,7 @@ namespace BelowTheWing.EditorTools
             throw new InvalidOperationException($"{staged.name} has no door to measure a doorway from.");
         }
 
-        internal static MenuCartDoors DoorsOf(GameObject holder, GameObject staged)
+        static MenuCartDoors DoorsOf(GameObject holder, GameObject staged)
         {
             var doors = holder.AddComponent<MenuCartDoors>();
 
@@ -265,7 +269,7 @@ namespace BelowTheWing.EditorTools
             return doors;
         }
 
-        internal static Transform Shot(string name, Transform under, Vector3 from, Vector3 at)
+        static Transform Shot(string name, Transform under, Vector3 from, Vector3 at)
         {
             var shot = new GameObject(name).transform;
 
@@ -275,7 +279,7 @@ namespace BelowTheWing.EditorTools
             return shot;
         }
 
-        internal static GameObject Dress(GameObject prefab, Placement where, Transform under)
+        static GameObject Stage(GameObject prefab, Placement where, Transform under)
         {
             var placed = (GameObject)PrefabUtility.InstantiatePrefab(prefab, under);
 
@@ -300,9 +304,9 @@ namespace BelowTheWing.EditorTools
             return placed;
         }
 
-        internal static PanelSettings MenuPanel()
+        static PanelSettings MenuPanel()
         {
-            Directory.CreateDirectory("Assets/UI");
+            Directory.CreateDirectory(Path.GetDirectoryName(ContentPaths.PanelSettingsPath) ?? "Assets/UI");
 
             AssetDatabase.DeleteAsset(ContentPaths.PanelSettingsPath);
 
@@ -310,7 +314,7 @@ namespace BelowTheWing.EditorTools
             settings.name = "Menu panel";
             settings.themeStyleSheet = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>(ContentPaths.ThemePath);
             settings.scaleMode = PanelScaleMode.ScaleWithScreenSize;
-            settings.referenceResolution = new Vector2Int(1920, 1080);
+            settings.referenceResolution = MenuReferenceResolution;
 
             AssetDatabase.CreateAsset(settings, ContentPaths.PanelSettingsPath);
 

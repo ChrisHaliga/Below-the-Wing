@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BelowTheWing.Apron;
+using BelowTheWing.Wiring;
 using BelowTheWing.Cargo;
 using BelowTheWing.Crew;
 using BelowTheWing.Session;
@@ -235,7 +236,7 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(cartShape.InteriorLocal.size.y, Is.GreaterThan(1f),
                 "BaggageCart: with no interior there is nowhere for a bag to be inside the cart");
 
-            Assert.That(cart.transform.Find(ApronAppearance.LookName), Is.Not.Null,
+            Assert.That(cart.transform.Find(GreyboxShape.LookName), Is.Not.Null,
                 "BaggageCart: nothing to look at. The model is what a player sees, and a cart " +
                 "drawn as nothing is a cart that appears to be a floating label");
             Assert.That(cart.GetComponentInChildren<WheelLook>(), Is.Not.Null,
@@ -272,7 +273,7 @@ namespace BelowTheWing.Tests.EditMode
                 "BaggageTractor: nothing says where its wheels and couplings are, so its suspension " +
                 "has nowhere to hang from and it falls through the apron");
 
-            Assert.That(tractor.transform.Find(ApronAppearance.LookName), Is.Not.Null,
+            Assert.That(tractor.transform.Find(GreyboxShape.LookName), Is.Not.Null,
                 "BaggageTractor: nothing to look at");
             Assert.That(tractor.GetComponentInChildren<WheelLook>(), Is.Not.Null,
                 "BaggageTractor: with nothing driving the visible wheels they neither turn nor stay " +
@@ -347,7 +348,7 @@ namespace BelowTheWing.Tests.EditMode
                 "the apron is laid out from that room and a player steps clear of it when they get " +
                 "off. Solid outside it and vehicles collide before they look like they have");
 
-            var headlights = tractor.transform.Find($"{ApronAppearance.LookName}/Headlights");
+            var headlights = tractor.transform.Find($"{GreyboxShape.LookName}/Headlights");
             Assert.That(headlights, Is.Not.Null,
                 "BaggageTractor: the model has no Headlights, so there is nothing here that can tell " +
                 "which way round it ended up");
@@ -435,7 +436,7 @@ namespace BelowTheWing.Tests.EditMode
                     $"{name} would draw a stand-in box on top of the model it already has, and a " +
                     "player would see a grey crate with a tractor inside it");
 
-                var look = prefab.transform.Find(ApronAppearance.LookName);
+                var look = prefab.transform.Find(GreyboxShape.LookName);
                 Assert.That(look, Is.Not.Null, $"{name}: nothing to look at");
                 Assert.That(look.GetComponentsInChildren<MeshRenderer>(), Is.Not.Empty,
                     $"{name} says it is already modelled and then draws nothing at all, which on the " +

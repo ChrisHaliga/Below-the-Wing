@@ -1,27 +1,19 @@
-using System;
 using System.Collections.Generic;
-using System.IO;
-using BelowTheWing.Apron;
-using BelowTheWing.Cargo;
-using BelowTheWing.Crew;
-using BelowTheWing.Diagnostics;
-using BelowTheWing.Menu;
-using BelowTheWing.Net;
-using BelowTheWing.Session;
-using BelowTheWing.Vehicles;
 using BelowTheWing.Wiring;
 using Unity.Netcode;
-using Unity.Netcode.Components;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace BelowTheWing.EditorTools
 {
     internal static class Scenery
     {
+        const float ApronSideMetres = 400f;
+        const float UnityPlaneSideMetres = 10f;
+        const float SunIntensity = 1.1f;
+        static readonly Vector3 SunAnglesDegrees = new Vector3(48f, 30f, 0f);
+
         internal static void BuildApronFloor()
         {
             AssetDatabase.DeleteAsset(ContentPaths.ApronMaterialPath);
@@ -29,7 +21,7 @@ namespace BelowTheWing.EditorTools
             var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
             floor.name = "Apron";
 
-            floor.transform.localScale = new Vector3(40f, 1f, 40f);
+            floor.transform.localScale = new Vector3(ApronSideMetres / UnityPlaneSideMetres, 1f, ApronSideMetres / UnityPlaneSideMetres);
 
             var concrete = new Material(floor.GetComponent<MeshRenderer>().sharedMaterial)
             {
@@ -45,9 +37,9 @@ namespace BelowTheWing.EditorTools
         {
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.intensity = 1.1f;
+            sun.intensity = SunIntensity;
             sun.shadows = LightShadows.Soft;
-            sun.transform.rotation = Quaternion.Euler(48f, 30f, 0f);
+            sun.transform.rotation = Quaternion.Euler(SunAnglesDegrees);
         }
 
         internal static NetworkManager BuildNetworkManager()
@@ -67,7 +59,7 @@ namespace BelowTheWing.EditorTools
             };
 
             manager.NetworkConfig.Prefabs.NetworkPrefabsLists.Add(
-                SceneBootstrap.Needed<NetworkPrefabsList>(ContentPaths.DefaultPrefabListPath));
+                ContentPaths.Needed<NetworkPrefabsList>(ContentPaths.DefaultPrefabListPath));
 
             return manager;
         }

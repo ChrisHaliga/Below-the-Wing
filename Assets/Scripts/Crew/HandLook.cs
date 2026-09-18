@@ -1,4 +1,3 @@
-using BelowTheWing.Apron;
 using BelowTheWing.Cargo;
 using BelowTheWing.Wiring;
 using UnityEngine;
@@ -77,12 +76,7 @@ namespace BelowTheWing.Crew
                 return;
             }
 
-            var renderer = look.GetComponent<MeshRenderer>();
-            if (renderer != null && renderer.sharedMaterial != null)
-            {
-                Destroy(renderer.sharedMaterial);
-            }
-
+            GreyboxShape.DiscardThePaintOn(look);
             Destroy(look.gameObject);
         }
     }

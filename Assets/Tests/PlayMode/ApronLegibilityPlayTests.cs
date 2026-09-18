@@ -4,6 +4,7 @@ using BelowTheWing.Apron;
 using BelowTheWing.Diagnostics;
 using BelowTheWing.Tests.Support;
 using BelowTheWing.Vehicles;
+using BelowTheWing.Wiring;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;

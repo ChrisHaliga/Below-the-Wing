@@ -1,3 +1,4 @@
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Apron
@@ -15,8 +16,6 @@ namespace BelowTheWing.Apron
 
             AlreadyModelled
         }
-
-        public const string LookName = "Look";
 
         [SerializeField, Tooltip("Stand-in shape to draw")]
         Shape m_Shape = Shape.Box;
@@ -47,11 +46,11 @@ namespace BelowTheWing.Apron
             m_DisplayName = displayName;
             name = displayName;
 
-            var look = transform.Find(LookName);
+            var look = transform.Find(GreyboxShape.LookName);
             if (look == null)
             {
                 Draw();
-                look = transform.Find(LookName);
+                look = transform.Find(GreyboxShape.LookName);
 
                 if (look != null)
                 {
@@ -67,6 +66,14 @@ namespace BelowTheWing.Apron
             if (GetComponentInChildren<WorldLabel>() == null)
             {
                 WorldLabel.Attach(transform, displayName, m_LabelHeightMetres);
+            }
+        }
+
+        void OnDestroy()
+        {
+            if (m_Shape != Shape.AlreadyModelled)
+            {
+                GreyboxShape.DiscardThePaintOn(transform.Find(GreyboxShape.LookName));
             }
         }
 

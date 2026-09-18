@@ -1,10 +1,11 @@
-using BelowTheWing.Wiring;
 using UnityEngine;
 
-namespace BelowTheWing.Apron
+namespace BelowTheWing.Wiring
 {
     public static class GreyboxShape
     {
+        public const string LookName = "Look";
+
         const float CapsuleHeightUnits = 2f;
 
         public static Transform AttachBox(Transform target, Vector3 sizeMetres, Color colour)
@@ -35,10 +36,20 @@ namespace BelowTheWing.Apron
             return shape;
         }
 
+        public static void DiscardThePaintOn(Transform shape)
+        {
+            var renderer = shape != null ? shape.GetComponent<MeshRenderer>() : null;
+
+            if (renderer != null && renderer.sharedMaterial != null)
+            {
+                Discard.Now(renderer.sharedMaterial);
+            }
+        }
+
         static Transform Build(Transform target, PrimitiveType type, Color colour)
         {
             var primitive = GameObject.CreatePrimitive(type);
-            primitive.name = ApronAppearance.LookName;
+            primitive.name = LookName;
 
             Discard.Now(primitive.GetComponent<Collider>());
 
