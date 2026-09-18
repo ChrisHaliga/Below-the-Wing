@@ -96,6 +96,11 @@ namespace BelowTheWing.Session
                     "which train");
             }
 
+            if (m_BagPrefab == null)
+            {
+                throw MisbuiltException.Refuse(this, "has no bag prefab, so the apron would be built with nothing to carry");
+            }
+
             if (NetworkManager.LocalClient.IsSessionOwner)
             {
                 ApronBuilder.Build(m_Layout, m_AircraftProfile, m_CrewProfile,
