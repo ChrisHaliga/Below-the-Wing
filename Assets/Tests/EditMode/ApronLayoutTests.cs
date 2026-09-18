@@ -165,7 +165,7 @@ namespace BelowTheWing.Tests.EditMode
             var plan = Plan(settings);
 
             Assert.That(plan.CrewSpawnPoints[0].Position.z, Is.EqualTo(-13f).Within(1e-3f),
-                "the arrival line used to sit a literal 6 m ahead of the tractors whatever the settings said");
+                "the arrival line stands where the settings put it relative to the tractors");
             Assert.That(plan.CrewSpawnPoints[0].Position.x, Is.EqualTo(-22f).Within(1e-3f));
         }
 
@@ -184,8 +184,7 @@ namespace BelowTheWing.Tests.EditMode
             foreach (var bag in bags)
             {
                 Assert.That(bag.Bounds.Intersects(train.Carts[0].Bounds), Is.False,
-                    $"'{bag.Name}' is inside the cart. The old placement was a literal 2.5 m out, which " +
-                    "a wider cart swallows");
+                    $"'{bag.Name}' is inside the cart; bags stand off the cart's own side, whatever its width");
                 Assert.That(bag.Position.y, Is.GreaterThan(0.125f), "a bag starts above the ground, not in it");
             }
 

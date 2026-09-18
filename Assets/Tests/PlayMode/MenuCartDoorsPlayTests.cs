@@ -105,9 +105,8 @@ namespace BelowTheWing.Tests.PlayMode
                 "the near doors should be thrown open well inside a second and a half");
 
             Assert.That(Widest(doors, near: false), Is.LessThan(0.05f),
-                $"the far doors are {Widest(doors, near: false):0.00} open with four seconds still " +
-                "to wait. A pole aimed at its far end before it is shoved is handed to the settle " +
-                "pull early, and creeps rather than waiting");
+                $"the far doors are {Widest(doors, near: false):0.00} open with time still to wait; " +
+                "a door that has not been shoved stays where it is");
         }
 
         static float Widest(MenuCartDoors doors, bool near)

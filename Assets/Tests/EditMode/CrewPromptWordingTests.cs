@@ -11,7 +11,7 @@ namespace BelowTheWing.Tests.EditMode
         {
             Assert.That(CrewPromptView.Wording(CrewPrompt.Offer, "Tug 1", Key.E), Is.EqualTo("Press E to drive Tug 1"));
             Assert.That(CrewPromptView.Wording(CrewPrompt.Offer, "Tug 1", Key.F), Is.EqualTo("Press F to drive Tug 1"),
-                "the domain used to spell out Press E itself, so rebinding the key made the prompt lie");
+                "the prompt names whichever key is bound, so rebinding it cannot make the prompt lie");
         }
 
         [Test]

@@ -23,8 +23,7 @@ namespace BelowTheWing.Tests.EditMode
 
             var refused = Assert.Throws<InvalidOperationException>(
                 () => SerializedFields.Set(target, "m_Nope", 1.5f),
-                "logging and carrying on ships a scene with a null reference in it, and the first " +
-                "anybody hears of the misspelling is a NullReferenceException on Play");
+                "a misspelt field has to stop the build, or the scene ships with an empty reference");
 
             Assert.That(refused.Message, Does.Contain("MenuBackdrop").And.Contain("m_Nope"));
         }

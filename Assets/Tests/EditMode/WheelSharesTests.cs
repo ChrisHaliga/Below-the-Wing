@@ -44,8 +44,7 @@ namespace BelowTheWing.Tests.EditMode
             }
 
             Assert.That(drive, Is.EqualTo(1f).Within(1e-4f),
-                "the old formula was 2 over the wheel count per rear wheel, which hands a six " +
-                "wheeler four sixths of its engine and nobody notices until one is built");
+                "the drive is shared out fully over the rear wheels however many there are");
             Assert.That(roles[2].DriveShare, Is.EqualTo(0.25f).Within(1e-4f));
         }
 
