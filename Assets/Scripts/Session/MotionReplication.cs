@@ -1,4 +1,5 @@
 using BelowTheWing.Vehicles;
+using BelowTheWing.Wiring;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -48,7 +49,7 @@ namespace BelowTheWing.Session
         CorrectionSettings m_Correction = CorrectionSettings.Default;
 
         [SerializeField, Tooltip("Reports per second")]
-        float m_ReportsPerSecond = 20f;
+        float m_ReportsPerSecond = NetworkClock.ReportsPerSecond;
 
         readonly NetworkVariable<ReportedMotion> m_Reported =
             new NetworkVariable<ReportedMotion>(default, NetworkVariableReadPermission.Everyone,

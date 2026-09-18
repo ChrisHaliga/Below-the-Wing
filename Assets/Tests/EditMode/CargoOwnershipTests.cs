@@ -1,4 +1,5 @@
 using BelowTheWing.Cargo;
+using BelowTheWing.Wiring;
 using NUnit.Framework;
 
 namespace BelowTheWing.Tests.EditMode
@@ -13,7 +14,7 @@ namespace BelowTheWing.Tests.EditMode
         public void WhoeverTakesHoldOfABagOwnsIt()
         {
             Assert.That(CargoOwnership.WhoShouldOwn(owner: Server, thisMachine: Us, heldHere: true,
-                    restingOnVehicleOwnedBy: CargoOwnership.Nobody),
+                    restingOnVehicleOwnedBy: Shift.Nobody),
                 Is.EqualTo(Us));
         }
 
@@ -21,7 +22,7 @@ namespace BelowTheWing.Tests.EditMode
         public void ABagKeepsItsOwnerThroughAThrowAndWhereverItLands()
         {
             Assert.That(CargoOwnership.WhoShouldOwn(owner: Us, thisMachine: Us, heldHere: false,
-                    restingOnVehicleOwnedBy: CargoOwnership.Nobody),
+                    restingOnVehicleOwnedBy: Shift.Nobody),
                 Is.EqualTo(Us),
                 "lying on the tarmac, or on another player, is nobody else's business");
         }

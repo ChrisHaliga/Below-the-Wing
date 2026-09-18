@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using BelowTheWing.Cargo;
 using BelowTheWing.Vehicles;
+using BelowTheWing.Wiring;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -97,7 +98,7 @@ namespace BelowTheWing.Session
             var us = NetworkManager.LocalClientId;
 
             var shouldBe = CargoOwnership.WhoShouldOwn(
-                OwnerClientId, us, HeldHere(), ours ? RestingOnSomethingOwnedBy() : CargoOwnership.Nobody);
+                OwnerClientId, us, HeldHere(), ours ? RestingOnSomethingOwnedBy() : Shift.Nobody);
 
             if (ours)
             {
@@ -161,11 +162,11 @@ namespace BelowTheWing.Session
             if (nearest > touching || beneath == null || beneath.Value.rigidbody == null
                 || !beneath.Value.rigidbody.TryGetComponent<VehicleMotion>(out var vehicle))
             {
-                return CargoOwnership.Nobody;
+                return Shift.Nobody;
             }
 
             var relative = Body.linearVelocity - beneath.Value.rigidbody.GetPointVelocity(beneath.Value.point);
-            return relative.magnitude > m_AtRestBelow ? CargoOwnership.Nobody : vehicle.OwnerClientId;
+            return relative.magnitude > m_AtRestBelow ? Shift.Nobody : vehicle.OwnerClientId;
         }
 
         void SayWhereItIs()

@@ -1,4 +1,5 @@
 using BelowTheWing.Cargo;
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Crew
@@ -12,9 +13,6 @@ namespace BelowTheWing.Crew
 
         public const float RadiusMetres = 0.06f;
 
-        static readonly Color Left = new Color(0.85f, 0.15f, 0.15f);
-        static readonly Color Right = new Color(0.15f, 0.8f, 0.25f);
-
         Hands m_Hands;
         Transform m_LeftAnchor;
         Transform m_RightAnchor;
@@ -27,8 +25,8 @@ namespace BelowTheWing.Crew
             m_LeftAnchor = leftAnchor;
             m_RightAnchor = rightAnchor;
 
-            m_LeftLook = ASphere(LeftLookName, Left);
-            m_RightLook = ASphere(RightLookName, Right);
+            m_LeftLook = ASphere(LeftLookName, Palette.LeftHand);
+            m_RightLook = ASphere(RightLookName, Palette.RightHand);
         }
 
         Transform ASphere(string called, Color colour)

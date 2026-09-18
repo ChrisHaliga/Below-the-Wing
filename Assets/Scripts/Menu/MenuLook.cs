@@ -1,4 +1,5 @@
 using System;
+using BelowTheWing.Wiring;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -22,14 +23,7 @@ namespace BelowTheWing.Menu
     {
         public static MenuIcons Icons;
 
-        public static readonly Color Ink = new Color(0.96f, 0.97f, 0.97f);
-        public static readonly Color InkSoft = new Color(0.66f, 0.71f, 0.72f);
-        public static readonly Color InkFaint = new Color(0.40f, 0.46f, 0.47f);
 
-        public static readonly Color HiVis = new Color(0.99f, 0.78f, 0.13f);
-        public static readonly Color Good = new Color(0.44f, 0.82f, 0.53f);
-        public static readonly Color Bad = new Color(0.93f, 0.44f, 0.36f);
-        public static readonly Color Dark = new Color(0.035f, 0.045f, 0.052f);
 
         public const int Gutter = 96;
         public const int ColumnWidth = 520;
@@ -40,10 +34,6 @@ namespace BelowTheWing.Menu
         public const int ButtonSize = 20;
         public const int HintSize = 15;
 
-        public static readonly Color PanelInk = new Color(0.10f, 0.11f, 0.12f, 0.88f);
-        public static readonly Color PanelEdge = new Color(0.42f, 0.46f, 0.48f, 0.65f);
-        public static readonly Color KeyCap = new Color(1f, 1f, 1f, 0.14f);
-        public static readonly Color ButtonFill = new Color(0f, 0f, 0f, 0.55f);
         public const float TypeSettleSeconds = 0.35f;
 
         public static MenuTypeface Typeface;
@@ -91,7 +81,7 @@ namespace BelowTheWing.Menu
 
             Fill(dim);
 
-            dim.style.backgroundColor = new Color(Dark.r, Dark.g, Dark.b, darkest);
+            dim.style.backgroundColor = new Color(Palette.Dark.r, Palette.Dark.g, Palette.Dark.b, darkest);
 
             return dim;
         }
@@ -113,7 +103,7 @@ namespace BelowTheWing.Menu
                     ? 1f
                     : 1f - Mathf.SmoothStep(0f, 1f, (across - ScrimHoldsUntil) / (1f - ScrimHoldsUntil));
 
-                wide.SetPixel(x, 0, new Color(Dark.r, Dark.g, Dark.b, darkest * falloff));
+                wide.SetPixel(x, 0, new Color(Palette.Dark.r, Palette.Dark.g, Palette.Dark.b, darkest * falloff));
             }
 
             wide.Apply();
@@ -123,7 +113,7 @@ namespace BelowTheWing.Menu
 
         public static Label Display(string text, int size)
         {
-            var label = Text(text, size, Ink, Typeface.Display);
+            var label = Text(text, size, Palette.Ink, Typeface.Display);
 
             label.style.unityFontStyleAndWeight = FontStyle.Bold;
             label.style.letterSpacing = size * 0.045f;
@@ -135,13 +125,13 @@ namespace BelowTheWing.Menu
         {
             var panel = new VisualElement();
 
-            panel.style.backgroundColor = PanelInk;
+            panel.style.backgroundColor = Palette.PanelInk;
             panel.style.paddingLeft = 26;
             panel.style.paddingRight = 26;
             panel.style.paddingTop = 18;
             panel.style.paddingBottom = 18;
 
-            Edges(panel, PanelEdge, 1);
+            Edges(panel, Palette.PanelEdge, 1);
 
             return panel;
         }
@@ -155,7 +145,7 @@ namespace BelowTheWing.Menu
             row.style.marginTop = 16;
             row.style.marginBottom = 8;
 
-            var name = Text(text, SectionSize, Ink, Typeface.Display);
+            var name = Text(text, SectionSize, Palette.Ink, Typeface.Display);
             name.style.marginLeft = 20;
             name.style.marginRight = 20;
 
@@ -168,7 +158,7 @@ namespace BelowTheWing.Menu
 
         static VisualElement Reaching()
         {
-            var line = Rule(0, PanelEdge);
+            var line = Rule(0, Palette.PanelEdge);
 
             line.style.flexGrow = 1;
 
@@ -204,18 +194,18 @@ namespace BelowTheWing.Menu
             row.style.marginLeft = 14;
             row.style.marginRight = 14;
 
-            var cap = Text(key, HintSize - 1, Ink, Typeface.Data);
-            cap.style.backgroundColor = KeyCap;
+            var cap = Text(key, HintSize - 1, Palette.Ink, Typeface.Data);
+            cap.style.backgroundColor = Palette.KeyCap;
             cap.style.paddingLeft = 8;
             cap.style.paddingRight = 8;
             cap.style.paddingTop = 3;
             cap.style.paddingBottom = 3;
             cap.style.marginRight = 8;
             cap.style.unityTextAlign = TextAnchor.MiddleCenter;
-            Edges(cap, PanelEdge, 1);
+            Edges(cap, Palette.PanelEdge, 1);
 
             row.Add(cap);
-            row.Add(Text(what, HintSize, InkSoft, Typeface.Body));
+            row.Add(Text(what, HintSize, Palette.InkSoft, Typeface.Body));
 
             return row;
         }
@@ -232,7 +222,7 @@ namespace BelowTheWing.Menu
 
         public static Label Quiet(string text, int size = 14)
         {
-            var label = Text(text, size, InkSoft, Typeface.Body);
+            var label = Text(text, size, Palette.InkSoft, Typeface.Body);
 
             label.style.whiteSpace = WhiteSpace.Normal;
 

@@ -1,7 +1,8 @@
-using System;
 using System.Collections.Generic;
-using UnityEngine;
+using System;
+using BelowTheWing.Wiring;
 using UnityEngine.UIElements;
+using UnityEngine;
 
 namespace BelowTheWing.Menu
 {
@@ -70,7 +71,7 @@ namespace BelowTheWing.Menu
             row.Marker.style.marginRight = m_AcrossTheScreen ? 0 : 16;
 
             row.Text = MenuLook.Display(text.ToUpperInvariant(), m_AcrossTheScreen ? ButtonSize : ItemSize);
-            row.Text.style.color = MenuLook.InkSoft;
+            row.Text.style.color = Palette.InkSoft;
 
             if (m_AcrossTheScreen)
             {
@@ -80,9 +81,9 @@ namespace BelowTheWing.Menu
                 row.Element.style.marginRight = ButtonGap;
                 row.Element.style.paddingLeft = 22;
                 row.Element.style.paddingRight = 22;
-                row.Element.style.backgroundColor = MenuLook.ButtonFill;
+                row.Element.style.backgroundColor = Palette.ButtonFill;
 
-                MenuLook.Edges(row.Element, MenuLook.InkFaint, SelectedEdge);
+                MenuLook.Edges(row.Element, Palette.InkFaint, SelectedEdge);
             }
 
             row.Element.Add(row.Marker);
@@ -177,12 +178,12 @@ namespace BelowTheWing.Menu
                 var available = m_Rows[row].Available;
 
                 m_Rows[row].Marker.style.backgroundColor =
-                    on && available ? MenuLook.HiVis : Color.clear;
+                    on && available ? Palette.HiVis : Color.clear;
 
                 m_Rows[row].Text.style.color =
-                    !available ? MenuLook.InkFaint
-                    : on ? MenuLook.Ink
-                    : MenuLook.InkSoft;
+                    !available ? Palette.InkFaint
+                    : on ? Palette.Ink
+                    : Palette.InkSoft;
 
                 // A button keeps its border width and its place in the row. Changing either moves
                 // it against the buttons beside it, and a selected button sitting higher than its
@@ -195,7 +196,7 @@ namespace BelowTheWing.Menu
                 {
                     MenuLook.Edges(
                         m_Rows[row].Element,
-                        !available ? MenuLook.InkFaint : on ? MenuLook.HiVis : MenuLook.InkSoft,
+                        !available ? Palette.InkFaint : on ? Palette.HiVis : Palette.InkSoft,
                         SelectedEdge);
                 }
             }

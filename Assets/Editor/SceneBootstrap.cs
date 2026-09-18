@@ -53,9 +53,6 @@ namespace BelowTheWing.EditorTools
         const string CartModelPath = "Assets/Content/Vehicles/baggage_cart.fbx";
         const string TractorModelPath = "Assets/Content/Vehicles/baggage_tractor.fbx";
 
-        static readonly Color HiVisYellow = new Color(0.95f, 0.75f, 0.15f);
-        static readonly Color BagCanvas = new Color(0.45f, 0.38f, 0.32f);
-        static readonly Color FuselageWhite = new Color(0.82f, 0.82f, 0.85f);
 
         [MenuItem("Below the Wing/Rebuild apron scene and prefabs")]
         public static void Rebuild()
@@ -534,7 +531,7 @@ namespace BelowTheWing.EditorTools
 
             Dress(go, ApronAppearance.Shape.LyingCapsule,
                 new Vector3(profile.fuselageDiameterMetres, profile.lengthMetres, profile.fuselageDiameterMetres),
-                FuselageWhite,
+                Palette.FuselageWhite,
                 profile.fuselageDiameterMetres);
 
             return SaveAndDiscard(go, $"{PrefabFolder}/NarrowbodyAirliner.prefab");
@@ -559,7 +556,7 @@ namespace BelowTheWing.EditorTools
 
             AddNetworking(go, outlivesItsOwner: true);
 
-            Dress(go, ApronAppearance.Shape.Box, profile.sizeMetres, BagCanvas, profile.sizeMetres.y * 1.2f);
+            Dress(go, ApronAppearance.Shape.Box, profile.sizeMetres, Palette.BagCanvas, profile.sizeMetres.y * 1.2f);
 
             return SaveAndDiscard(go, $"{PrefabFolder}/Bag.prefab");
         }
@@ -580,7 +577,7 @@ namespace BelowTheWing.EditorTools
 
             Dress(go, ApronAppearance.Shape.UprightCapsule,
                 new Vector3(profile.radiusMetres * 2f, profile.heightMetres, profile.radiusMetres * 2f),
-                HiVisYellow,
+                Palette.HiVis,
                 profile.heightMetres * 0.7f);
 
             return SaveAndDiscard(go, $"{PrefabFolder}/RampWorker.prefab");
@@ -833,7 +830,7 @@ namespace BelowTheWing.EditorTools
                     figure.transform,
                     crewProfile.heightMetres,
                     crewProfile.radiusMetres * 2f,
-                    HiVisYellow);
+                    Palette.HiVis);
 
                 figure.SetActive(false);
                 standing.Add(figure);
@@ -1050,7 +1047,7 @@ namespace BelowTheWing.EditorTools
             var concrete = new Material(floor.GetComponent<MeshRenderer>().sharedMaterial)
             {
                 name = "Apron concrete",
-                color = new Color(0.32f, 0.33f, 0.34f)
+                color = Palette.ApronConcrete
             };
 
             AssetDatabase.CreateAsset(concrete, ApronMaterialPath);
@@ -1088,7 +1085,7 @@ namespace BelowTheWing.EditorTools
                 NetworkTopology = NetworkTopologyTypes.DistributedAuthority,
 
                 PlayerPrefab = null,
-                TickRate = 20
+                TickRate = NetworkClock.TicksPerSecond
             };
 
             var known = AssetDatabase.LoadAssetAtPath<NetworkPrefabsList>(DefaultPrefabListPath);

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
-using UnityEngine;
+using BelowTheWing.Wiring;
 using UnityEngine.UIElements;
+using UnityEngine;
 
 namespace BelowTheWing.Menu
 {
@@ -69,7 +70,7 @@ namespace BelowTheWing.Menu
             {
                 Element = new VisualElement { pickingMode = PickingMode.Ignore },
                 Badge = new VisualElement { pickingMode = PickingMode.Ignore },
-                Called = MenuLook.Text("", 18, MenuLook.Ink, MenuLook.Typeface.Body)
+                Called = MenuLook.Text("", 18, Palette.Ink, MenuLook.Typeface.Body)
             };
 
             plate.Element.style.position = Position.Absolute;

@@ -1,7 +1,8 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Collections;
+using System;
 using BelowTheWing.Vehicles;
+using BelowTheWing.Wiring;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -10,13 +11,11 @@ namespace BelowTheWing.Net
     [DisallowMultipleComponent]
     public sealed class NetworkOwnershipBroker : MonoBehaviour, IOwnershipBroker
     {
-        public const ulong Nobody = ulong.MaxValue;
-
         const float AnswerDeadlineSeconds = 5f;
 
         NetworkManager Manager => NetworkManager.Singleton;
 
-        public ulong LocalClientId => Manager != null && Manager.IsListening ? Manager.LocalClientId : Nobody;
+        public ulong LocalClientId => Manager != null && Manager.IsListening ? Manager.LocalClientId : Shift.Nobody;
 
         public ulong OwnerOf(VehicleController vehicle)
         {
@@ -24,7 +23,7 @@ namespace BelowTheWing.Net
 
             if (networked == null || !networked.IsSpawned)
             {
-                return Nobody;
+                return Shift.Nobody;
             }
 
             return networked.OwnerClientId;
@@ -72,7 +71,7 @@ namespace BelowTheWing.Net
             }
         }
 
-        ulong SessionOwner => Manager != null ? Manager.CurrentSessionOwner : Nobody;
+        ulong SessionOwner => Manager != null ? Manager.CurrentSessionOwner : Shift.Nobody;
 
         bool StillHere(ulong client)
         {
@@ -95,7 +94,7 @@ namespace BelowTheWing.Net
         public bool OwnedByUs(VehicleController vehicle)
         {
             var us = LocalClientId;
-            return us != Nobody && OwnerOf(vehicle) == us;
+            return us != Shift.Nobody && OwnerOf(vehicle) == us;
         }
 
         public void HandBack(IReadOnlyList<VehicleController> vehicles)

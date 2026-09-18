@@ -72,7 +72,7 @@ namespace BelowTheWing.Menu
                 NetworkManager.OnConnectionEvent += OnSomebodyCameOrWent;
             }
 
-            TakeASeatRpc(NetworkManager.LocalClientId, $"Player {NetworkManager.LocalClientId}");
+            TakeASeatRpc(NetworkManager.LocalClientId, Shift.NameFor(NetworkManager.LocalClientId));
         }
 
         public override void OnNetworkDespawn()

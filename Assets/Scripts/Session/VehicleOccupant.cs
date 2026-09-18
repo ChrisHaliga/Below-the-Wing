@@ -1,5 +1,6 @@
 using BelowTheWing.Net;
 using BelowTheWing.Vehicles;
+using BelowTheWing.Wiring;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ namespace BelowTheWing.Session
     public sealed class VehicleOccupant : NetworkBehaviour
     {
         readonly NetworkVariable<ulong> m_Driver = new NetworkVariable<ulong>(
-            NetworkOwnershipBroker.Nobody, writePerm: NetworkVariableWritePermission.Owner);
+            Shift.Nobody, writePerm: NetworkVariableWritePermission.Owner);
 
         VehicleController m_Vehicle;
 
@@ -44,7 +45,7 @@ namespace BelowTheWing.Session
 
             if (m_Driver.Value != NetworkManager.LocalClientId)
             {
-                m_Driver.Value = NetworkOwnershipBroker.Nobody;
+                m_Driver.Value = Shift.Nobody;
             }
         }
 
@@ -55,11 +56,11 @@ namespace BelowTheWing.Session
                 return;
             }
 
-            m_Driver.Value = occupied ? NetworkManager.LocalClientId : NetworkOwnershipBroker.Nobody;
+            m_Driver.Value = occupied ? NetworkManager.LocalClientId : Shift.Nobody;
         }
 
         void OnDriverChanged(ulong previous, ulong current) => ApplyToVehicle();
 
-        void ApplyToVehicle() => m_Vehicle.Occupied = m_Driver.Value != NetworkOwnershipBroker.Nobody;
+        void ApplyToVehicle() => m_Vehicle.Occupied = m_Driver.Value != Shift.Nobody;
     }
 }

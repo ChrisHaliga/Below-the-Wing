@@ -123,7 +123,7 @@ namespace BelowTheWing.Net
                 var options = new SessionOptions
                 {
                     Type = m_SessionType,
-                    Name = $"Below the Wing {DateTime.Now:HH:mm}",
+                    Name = $"{Shift.Title} {DateTime.Now:HH:mm}",
                     MaxPlayers = Shift.MostCrew
                 }.WithDistributedAuthorityNetwork();
 

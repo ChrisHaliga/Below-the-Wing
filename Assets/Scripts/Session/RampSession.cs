@@ -228,7 +228,7 @@ namespace BelowTheWing.Session
             var mine = MyArrival(plan.CrewSpawnPoints);
 
             var crew = Instantiate(m_CrewPrefab, mine.Position, mine.Rotation);
-            crew.GetComponent<ApronIdentity>().Called($"Player {NetworkManager.LocalClientId}");
+            crew.GetComponent<ApronIdentity>().Called(Shift.NameFor(NetworkManager.LocalClientId));
             crew.Spawn();
 
             m_OwnCrew = crew.GetComponent<CrewCharacter>();

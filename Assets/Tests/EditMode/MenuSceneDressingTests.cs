@@ -1,9 +1,10 @@
 using System.Collections.Generic;
 using BelowTheWing.Menu;
+using BelowTheWing.Wiring;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
-using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine;
 
 namespace BelowTheWing.Tests.EditMode
 {

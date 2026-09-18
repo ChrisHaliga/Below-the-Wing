@@ -1,8 +1,9 @@
-using System;
 using System.Collections.Generic;
+using System;
 using BelowTheWing.Settings;
-using UnityEngine;
+using BelowTheWing.Wiring;
 using UnityEngine.UIElements;
+using UnityEngine;
 
 namespace BelowTheWing.Menu
 {
@@ -102,9 +103,9 @@ namespace BelowTheWing.Menu
             chip.style.paddingRight = 24;
             chip.style.fontSize = MenuLook.HintSize;
             chip.style.letterSpacing = 2f;
-            chip.style.color = MenuLook.Ink;
-            chip.style.backgroundColor = MenuLook.ButtonFill;
-            MenuLook.Edges(chip, MenuLook.InkFaint, 1);
+            chip.style.color = Palette.Ink;
+            chip.style.backgroundColor = Palette.ButtonFill;
+            MenuLook.Edges(chip, Palette.InkFaint, 1);
 
             return chip;
         }
@@ -173,7 +174,7 @@ namespace BelowTheWing.Menu
             {
                 Element = new VisualElement(),
                 Marker = new VisualElement(),
-                Name = MenuLook.Text(name, MenuLook.SectionSize, MenuLook.InkSoft, MenuLook.Typeface.Body)
+                Name = MenuLook.Text(name, MenuLook.SectionSize, Palette.InkSoft, MenuLook.Typeface.Body)
             };
 
             category.Element.style.flexDirection = FlexDirection.Row;
@@ -206,8 +207,8 @@ namespace BelowTheWing.Menu
             {
                 var on = category == which;
 
-                m_Categories[category].Marker.style.backgroundColor = on ? MenuLook.HiVis : Color.clear;
-                m_Categories[category].Name.style.color = on ? MenuLook.Ink : MenuLook.InkSoft;
+                m_Categories[category].Marker.style.backgroundColor = on ? Palette.HiVis : Color.clear;
+                m_Categories[category].Name.style.color = on ? Palette.Ink : Palette.InkSoft;
                 m_Categories[category].Element.style.backgroundColor =
                     new Color(1f, 1f, 1f, on ? 0.12f : 0.06f);
             }
@@ -319,11 +320,11 @@ namespace BelowTheWing.Menu
             row.Element.style.alignItems = Align.Center;
             row.Element.style.height = RowHeight;
 
-            var name = MenuLook.Text(label, MenuLook.RowSize, MenuLook.Ink, MenuLook.Typeface.Body);
+            var name = MenuLook.Text(label, MenuLook.RowSize, Palette.Ink, MenuLook.Typeface.Body);
             name.style.width = LabelWidth;
             name.style.flexGrow = 1;
 
-            row.Value = MenuLook.Text("", MenuLook.RowSize, MenuLook.Ink, MenuLook.Typeface.Body);
+            row.Value = MenuLook.Text("", MenuLook.RowSize, Palette.Ink, MenuLook.Typeface.Body);
             row.Value.style.width = ValueWidth;
             row.Value.style.unityTextAlign = TextAnchor.MiddleCenter;
             row.Value.style.paddingTop = 4;
@@ -360,9 +361,9 @@ namespace BelowTheWing.Menu
             arrow.style.marginLeft = 0;
             arrow.style.marginRight = 0;
             arrow.style.fontSize = MenuLook.RowSize;
-            arrow.style.color = MenuLook.Ink;
-            arrow.style.backgroundColor = MenuLook.KeyCap;
-            MenuLook.Edges(arrow, MenuLook.PanelEdge, 1);
+            arrow.style.color = Palette.Ink;
+            arrow.style.backgroundColor = Palette.KeyCap;
+            MenuLook.Edges(arrow, Palette.PanelEdge, 1);
 
             return arrow;
         }
@@ -373,8 +374,8 @@ namespace BelowTheWing.Menu
             {
                 var on = row == m_OnRow;
 
-                m_Rows[row].Value.style.backgroundColor = on ? MenuLook.HiVis : Color.clear;
-                m_Rows[row].Value.style.color = on ? MenuLook.Dark : MenuLook.Ink;
+                m_Rows[row].Value.style.backgroundColor = on ? Palette.HiVis : Color.clear;
+                m_Rows[row].Value.style.color = on ? Palette.Dark : Palette.Ink;
             }
         }
     }

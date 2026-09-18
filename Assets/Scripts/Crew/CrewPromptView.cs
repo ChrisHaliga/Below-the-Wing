@@ -1,3 +1,4 @@
+using BelowTheWing.Wiring;
 using UnityEngine;
 
 namespace BelowTheWing.Crew
@@ -41,7 +42,7 @@ namespace BelowTheWing.Crew
             };
 
             style.normal.textColor = showing.Prompt == CrewPrompt.Refused
-                ? new Color(1f, 0.6f, 0.45f)
+                ? Palette.Bad
                 : Color.white;
 
             const float width = 520f;

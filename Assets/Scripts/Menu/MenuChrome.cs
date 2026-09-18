@@ -1,7 +1,8 @@
-using System;
 using System.Collections.Generic;
-using UnityEngine;
+using System;
+using BelowTheWing.Wiring;
 using UnityEngine.UIElements;
+using UnityEngine;
 
 namespace BelowTheWing.Menu
 {
@@ -118,13 +119,13 @@ namespace BelowTheWing.Menu
 
             m_Code = waiting ? "" : code;
             m_JoinCode.text = waiting ? "OPENING" : code;
-            m_JoinCode.style.color = waiting ? MenuLook.InkFaint : MenuLook.HiVis;
+            m_JoinCode.style.color = waiting ? Palette.InkFaint : Palette.HiVis;
         }
 
         public void SayTheJoinFailed(string why)
         {
             m_Trouble.text = why;
-            m_Trouble.style.color = why.EndsWith("...") ? MenuLook.InkSoft : MenuLook.Bad;
+            m_Trouble.style.color = why.EndsWith("...") ? Palette.InkSoft : Palette.Bad;
         }
 
         public void ShowTheLobby(bool amIReady, bool canStart)
@@ -178,7 +179,7 @@ namespace BelowTheWing.Menu
             name.style.marginBottom = 46;
 
             var prompt = MenuLook.Display("PRESS ANY BUTTON", 34);
-            prompt.style.color = MenuLook.HiVis;
+            prompt.style.color = Palette.HiVis;
             prompt.style.unityTextAlign = TextAnchor.MiddleCenter;
 
             middle.Add(name);
@@ -228,7 +229,7 @@ namespace BelowTheWing.Menu
             name.style.marginBottom = 6;
             name.style.unityTextAlign = TextAnchor.MiddleCenter;
 
-            var rule = MenuLook.Rule(0, MenuLook.PanelEdge);
+            var rule = MenuLook.Rule(0, Palette.PanelEdge);
             rule.style.width = Length.Percent(100);
             rule.style.marginBottom = 24;
 
@@ -237,13 +238,13 @@ namespace BelowTheWing.Menu
             typed.style.height = 58;
             typed.style.fontSize = 28;
             typed.style.letterSpacing = 8;
-            typed.style.color = MenuLook.HiVis;
+            typed.style.color = Palette.HiVis;
             typed.style.backgroundColor = new Color(0f, 0f, 0f, 0.45f);
             typed.style.unityTextAlign = TextAnchor.MiddleCenter;
             typed.style.unityFont = MenuLook.Typeface.Data;
             typed.style.unityFontDefinition =
                 new StyleFontDefinition(FontDefinition.FromFont(MenuLook.Typeface.Data));
-            MenuLook.Edges(typed, MenuLook.PanelEdge, 1);
+            MenuLook.Edges(typed, Palette.PanelEdge, 1);
 
             var field = typed;
 
@@ -294,9 +295,9 @@ namespace BelowTheWing.Menu
             chip.style.paddingRight = 20;
             chip.style.fontSize = MenuLook.HintSize;
             chip.style.letterSpacing = 2f;
-            chip.style.color = MenuLook.Ink;
-            chip.style.backgroundColor = MenuLook.ButtonFill;
-            MenuLook.Edges(chip, MenuLook.InkFaint, 1);
+            chip.style.color = Palette.Ink;
+            chip.style.backgroundColor = Palette.ButtonFill;
+            MenuLook.Edges(chip, Palette.InkFaint, 1);
 
             return chip;
         }
@@ -369,10 +370,10 @@ namespace BelowTheWing.Menu
             card.style.right = MenuLook.Gutter;
             card.style.top = MenuLook.Gutter;
 
-            var label = MenuLook.Eyebrow("JOIN CODE", MenuLook.InkFaint);
+            var label = MenuLook.Eyebrow("JOIN CODE", Palette.InkFaint);
             label.style.marginBottom = 8;
 
-            code = MenuLook.Data("OPENING", 30, MenuLook.InkFaint);
+            code = MenuLook.Data("OPENING", 30, Palette.InkFaint);
 
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;
@@ -402,7 +403,7 @@ namespace BelowTheWing.Menu
             var name = MenuLook.Display(heading, MenuLook.TitleSize);
             name.style.marginBottom = 10;
 
-            var rule = MenuLook.Rule(300, MenuLook.PanelEdge);
+            var rule = MenuLook.Rule(300, Palette.PanelEdge);
             rule.style.marginBottom = 16;
 
             stack.Add(name);
