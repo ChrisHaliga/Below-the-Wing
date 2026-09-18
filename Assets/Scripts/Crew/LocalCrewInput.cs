@@ -36,34 +36,33 @@ namespace BelowTheWing.Crew
             }
 
             var move = new Vector2(
-                Held(keyboard, Key.D) - Held(keyboard, Key.A),
-                Held(keyboard, Key.W) - Held(keyboard, Key.S));
+                Held(keyboard, CrewKeys.Right) - Held(keyboard, CrewKeys.Left),
+                Held(keyboard, CrewKeys.Forward) - Held(keyboard, CrewKeys.Back));
 
             m_Jump.ForgetOnceAStepHasSeenIt(Time.fixedTimeAsDouble);
-            if (keyboard.spaceKey.wasPressedThisFrame)
+            if (keyboard[CrewKeys.Jump].wasPressedThisFrame)
             {
                 m_Jump.Ask(Time.fixedTimeAsDouble);
             }
 
+            var holdingOn = keyboard[CrewKeys.Jump].isPressed;
+
             Current = new CrewIntent(
                 move,
-                sprint: keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed,
-                brake: keyboard.spaceKey.isPressed ? 1f : 0f,
-
+                sprint: keyboard[CrewKeys.Sprint].isPressed || keyboard[CrewKeys.SprintToo].isPressed,
+                brake: holdingOn ? 1f : 0f,
                 jump: m_Jump.Asked,
-
-                crouch: keyboard.cKey.isPressed,
-
-                hoist: keyboard.spaceKey.isPressed);
+                crouch: keyboard[CrewKeys.Crouch].isPressed,
+                hoist: holdingOn);
 
             Look();
 
-            if (keyboard.eKey.wasPressedThisFrame && !ParkedWhateverTheyAreLookingAt())
+            if (keyboard[CrewKeys.Drive].wasPressedThisFrame && !ParkedWhateverTheyAreLookingAt())
             {
                 m_Character.Seat?.Toggle(m_Character);
             }
 
-            if (keyboard.qKey.wasPressedThisFrame)
+            if (keyboard[CrewKeys.Hitch].wasPressedThisFrame)
             {
                 m_Character.Hitching?.Act();
             }

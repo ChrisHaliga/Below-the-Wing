@@ -1,5 +1,6 @@
 using BelowTheWing.Wiring;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace BelowTheWing.Crew
 {
@@ -17,7 +18,7 @@ namespace BelowTheWing.Crew
             {
                 foreach (var offer in m_Offers)
                 {
-                    if (offer != null && !string.IsNullOrEmpty(offer.Message))
+                    if (offer != null && offer.Prompt != CrewPrompt.None)
                     {
                         return offer;
                     }
@@ -41,15 +42,22 @@ namespace BelowTheWing.Crew
                 fontSize = 18
             };
 
-            style.normal.textColor = showing.Prompt == CrewPrompt.Refused
-                ? Palette.Bad
-                : Color.white;
+            style.normal.textColor = showing.Prompt == CrewPrompt.Offer ? Palette.Ink : Palette.Bad;
 
             const float width = 520f;
             const float height = 30f;
             var box = new Rect((Screen.width - width) * 0.5f, Screen.height * 0.72f, width, height);
 
-            GUI.Label(box, showing.Message, style);
+            GUI.Label(box, Wording(showing.Prompt, showing.Subject, CrewKeys.Drive), style);
         }
+
+        public static string Wording(CrewPrompt prompt, string subject, Key drive)
+            => prompt switch
+            {
+                CrewPrompt.Offer => $"Press {drive} to drive {subject}",
+                CrewPrompt.NoAnswer => $"{subject} did not answer. Try again.",
+                CrewPrompt.BeingDriven => $"{subject} is being driven",
+                _ => ""
+            };
     }
 }

@@ -6,13 +6,15 @@ namespace BelowTheWing.Crew
 
         Offer,
 
-        Refused
+        NoAnswer,
+
+        BeingDriven
     }
 
     public interface IOfferSomething
     {
         CrewPrompt Prompt { get; }
 
-        string Message { get; }
+        string Subject { get; }
     }
 }

@@ -39,11 +39,11 @@ namespace BelowTheWing.Crew
 
         public VehicleController Driving => m_Driving;
 
-        public Transform Subject => m_Driving != null ? m_Driving.transform : m_Crew;
+        public Transform Focus => m_Driving != null ? m_Driving.transform : m_Crew;
 
         public CrewPrompt Prompt { get; private set; } = CrewPrompt.None;
 
-        public string Message { get; private set; } = "";
+        public string Subject { get; private set; } = "";
 
         public bool IsDriving => m_Driving != null;
 
@@ -79,13 +79,11 @@ namespace BelowTheWing.Crew
 
             if (ReferenceEquals(Offer, m_Refused))
             {
-                Say(CrewPrompt.Refused, Offer.AcceptsDriver
-                    ? $"{Offer.DisplayName} did not answer. Try again."
-                    : $"{Offer.DisplayName} is being driven");
+                Say(WhyItWasRefused(Offer), Offer.DisplayName);
                 return;
             }
 
-            Say(CrewPrompt.Offer, $"Press E to drive {Offer.DisplayName}");
+            Say(CrewPrompt.Offer, Offer.DisplayName);
         }
 
         VehicleController WhatTheyAreLookingAt()
@@ -131,9 +129,7 @@ namespace BelowTheWing.Crew
                 if (stillWanted)
                 {
                     m_Refused = wanted;
-                    Say(CrewPrompt.Refused, wanted.AcceptsDriver
-                        ? $"{wanted.DisplayName} did not answer. Try again."
-                        : $"{wanted.DisplayName} is being driven");
+                    Say(WhyItWasRefused(wanted), wanted.DisplayName);
                 }
 
                 return;
@@ -175,10 +171,13 @@ namespace BelowTheWing.Crew
             Say(CrewPrompt.None, "");
         }
 
-        void Say(CrewPrompt prompt, string message)
+        static CrewPrompt WhyItWasRefused(VehicleController vehicle)
+            => vehicle.AcceptsDriver ? CrewPrompt.NoAnswer : CrewPrompt.BeingDriven;
+
+        void Say(CrewPrompt prompt, string subject)
         {
             Prompt = prompt;
-            Message = message;
+            Subject = subject;
         }
     }
 }

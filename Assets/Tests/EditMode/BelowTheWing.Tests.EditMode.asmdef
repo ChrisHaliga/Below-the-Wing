@@ -12,6 +12,7 @@
         "BelowTheWing.Net",
         "BelowTheWing.Session",
         "Unity.Netcode.Runtime",
+        "Unity.InputSystem",
         "BelowTheWing.Diagnostics",
         "BelowTheWing.Tests.Support",
         "UnityEngine.TestRunner",

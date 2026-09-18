@@ -60,8 +60,8 @@ namespace BelowTheWing.Tests.EditMode
 
             Assert.That(seat.Prompt, Is.EqualTo(CrewPrompt.Offer));
             Assert.That(seat.Offer, Is.SameAs(m_Train.Leader));
-            Assert.That(seat.Message, Does.Contain(m_Train.Leader.DisplayName),
-                "the offer must say which vehicle it is offering");
+            Assert.That(seat.Subject, Is.EqualTo(m_Train.Leader.DisplayName),
+                "the offer must say which vehicle it is offering; how to say it is the view's business");
         }
 
         [Test]
@@ -129,7 +129,7 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(seat.Driving, Is.SameAs(m_Train.Leader));
             Assert.That(m_Train.Leader.IntentSource, Is.SameAs(driver),
                 "the vehicle takes its steering and throttle from the player who got in");
-            Assert.That(seat.Subject, Is.SameAs(m_Train.Leader.transform),
+            Assert.That(seat.Focus, Is.SameAs(m_Train.Leader.transform),
                 "the camera follows the vehicle once the player is in it");
         }
 
@@ -146,8 +146,8 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(seat.Driving, Is.Null);
             Assert.That(m_Train.Leader.IntentSource, Is.Null,
                 "a vehicle somebody else owns must not start reading this player's controls");
-            Assert.That(seat.Subject, Is.SameAs(m_Crew), "and the camera stays on the character");
-            Assert.That(seat.Prompt, Is.EqualTo(CrewPrompt.Refused));
+            Assert.That(seat.Focus, Is.SameAs(m_Crew), "and the camera stays on the character");
+            Assert.That(seat.Prompt, Is.EqualTo(CrewPrompt.NoAnswer));
         }
 
         [Test]
@@ -176,7 +176,7 @@ namespace BelowTheWing.Tests.EditMode
 
             Assert.That(seat.IsDriving, Is.False);
             Assert.That(tractor.IntentSource, Is.Null, "the vehicle stops taking orders from somebody who left");
-            Assert.That(seat.Subject, Is.SameAs(m_Crew));
+            Assert.That(seat.Focus, Is.SameAs(m_Crew));
             Assert.That(tractor.AcceptsDriver, Is.True, "and it is available again");
         }
 
