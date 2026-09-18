@@ -223,7 +223,7 @@ namespace BelowTheWing.Session
                 m_TractorPrefab.GetComponent<VehicleShape>().Footprint,
                 m_CartPrefab.GetComponent<VehicleShape>().Footprint,
                 m_AircraftProfile,
-                CrewSize());
+                m_CrewProfile.SizeMetres);
 
             var mine = MyArrival(plan.CrewSpawnPoints);
 
@@ -266,9 +266,6 @@ namespace BelowTheWing.Session
 
             return place % Mathf.Max(points, 1);
         }
-
-        Vector3 CrewSize()
-            => new Vector3(m_CrewProfile.radiusMetres * 2f, m_CrewProfile.heightMetres, m_CrewProfile.radiusMetres * 2f);
 
         void FixedUpdate()
         {

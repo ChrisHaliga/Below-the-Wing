@@ -39,8 +39,17 @@ namespace BelowTheWing.Crew
         [Tooltip("Standing jump height, m")]
         public float jumpHeightMetres = 1.4f;
 
+        [Header("Reaching")]
+        [Tooltip("Reach for vehicles, couplings and brakes, m")]
+        public float reachMetres = 3f;
+
+        [Tooltip("Half angle of the cone something has to be in to be looked at, degrees")]
+        public float lookConeDegrees = 40f;
+
         [Header("Hands")]
         [Tooltip("Hand settings")]
         public HandSettings hands = HandSettings.Default;
+
+        public Vector3 SizeMetres => new Vector3(radiusMetres * 2f, heightMetres, radiusMetres * 2f);
     }
 }

@@ -18,15 +18,12 @@ namespace BelowTheWing.Session
             NetworkObject bagPrefab,
             int bagsPerTrain)
         {
-            var crewSize = new Vector3(
-                crewProfile.radiusMetres * 2f, crewProfile.heightMetres, crewProfile.radiusMetres * 2f);
-
             var plan = ApronLayout.Build(
                 layout,
                 tractorPrefab.GetComponent<VehicleShape>().Footprint,
                 cartPrefab.GetComponent<VehicleShape>().Footprint,
                 aircraftProfile,
-                crewSize);
+                crewProfile.SizeMetres);
 
             Place(aircraftPrefab, plan.Aircraft);
 

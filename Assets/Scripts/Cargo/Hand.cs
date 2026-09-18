@@ -43,6 +43,21 @@ namespace BelowTheWing.Cargo
         [Tooltip("Speed of a full throw, m/s")]
         public float hardestSpeed;
 
+        [Tooltip("How far past the body's radius the hand anchors sit, m")]
+        public float anchorsForwardOfTheBodyMetres;
+
+        [Tooltip("Half the distance between the two hand anchors, m")]
+        public float anchorHalfSpanMetres;
+
+        [Tooltip("Hand anchors above the body's centre, m")]
+        public float anchorHeightMetres;
+
+        public Vector3 AnchorLocal(float bodyRadiusMetres, bool left)
+            => new Vector3(
+                left ? -anchorHalfSpanMetres : anchorHalfSpanMetres,
+                anchorHeightMetres,
+                bodyRadiusMetres + anchorsForwardOfTheBodyMetres);
+
         public static HandSettings Default => new HandSettings
         {
             reachMetres = 1.2f,
@@ -57,7 +72,11 @@ namespace BelowTheWing.Cargo
             minimumChargeSeconds = 0.15f,
             fullChargeSeconds = 1.2f,
             gentleSpeed = 2f,
-            hardestSpeed = 12f
+            hardestSpeed = 12f,
+
+            anchorsForwardOfTheBodyMetres = 0.45f,
+            anchorHalfSpanMetres = 0.3f,
+            anchorHeightMetres = 0.2f
         };
     }
 

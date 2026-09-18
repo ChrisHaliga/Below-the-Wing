@@ -40,6 +40,21 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void HowFarAWorkerReachesComesFromTheirProfileNotTheComponent()
+        {
+            m_Profile.reachMetres = 3.5f;
+            m_Profile.lookConeDegrees = 33f;
+
+            var character = m_Object.AddComponent<CrewCharacter>();
+            character.ConfigureBody(m_Profile);
+
+            Assert.That(character.ReachMetres, Is.EqualTo(3.5f).Within(1e-4f),
+                "a reach typed on the component with a default nothing ever set is a number that " +
+                "ships by accident; the profile is the one asset that describes a ramp worker");
+            Assert.That(character.ConeDegrees, Is.EqualTo(33f).Within(1e-4f));
+        }
+
+        [Test]
         public void ThePersonDoesNotBounceOffABouncyVehicle()
         {
             m_Object.AddComponent<CrewCharacter>().ConfigureBody(m_Profile);

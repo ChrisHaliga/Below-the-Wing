@@ -15,12 +15,6 @@ namespace BelowTheWing.Crew
         [SerializeField, Tooltip("Profile this runs on")]
         CrewProfile m_Profile;
 
-        [SerializeField, Tooltip("Reach for vehicles, couplings and brakes, m")]
-        float m_ReachMetres = 3f;
-
-        [SerializeField, Tooltip("Half angle of the cone something has to be in to be looked at, degrees")]
-        float m_ConeDegrees = 40f;
-
         [SerializeField, Tooltip("Layers that count as something to stand on")]
         LayerMask m_StandsOn = ~0;
 
@@ -122,13 +116,13 @@ namespace BelowTheWing.Crew
             }
         }
 
-        public float ReachMetres => m_ReachMetres;
+        public float ReachMetres => m_Profile.reachMetres;
 
-        public float ConeDegrees => m_ConeDegrees;
+        public float ConeDegrees => m_Profile.lookConeDegrees;
 
         public void TakeTheSeat(IOwnershipBroker broker)
         {
-            Seat = new VehicleOccupancy(transform, broker, LookingAlong, m_ReachMetres, m_ConeDegrees);
+            Seat = new VehicleOccupancy(transform, broker, LookingAlong, ReachMetres, ConeDegrees);
         }
 
         public bool OursToMove { get; set; } = true;
@@ -216,9 +210,16 @@ namespace BelowTheWing.Crew
 
         public bool Grounded => StandingOn(out _);
 
-        Vector3 Feet => transform.position - (Vector3.up * ((m_Profile.heightMetres * 0.5f) - 0.05f));
+        const float SolesAboveTheCapsuleEndMetres = 0.05f;
+        const float GroundProbeReachMetres = 0.2f;
+
+        Vector3 Feet
+            => transform.position - (Vector3.up * ((m_Profile.heightMetres * 0.5f) - SolesAboveTheCapsuleEndMetres));
 
         bool m_PushedOff;
+
+        bool OnTheGround(out Collider what)
+            => Jumping.StandingOnSomething(Feet, GroundProbeReachMetres, m_StandsOn, out what);
 
         bool StandingOn(out Collider what)
         {
@@ -228,7 +229,7 @@ namespace BelowTheWing.Crew
                 return false;
             }
 
-            return Jumping.StandingOnSomething(Feet, 0.2f, m_StandsOn, out what);
+            return OnTheGround(out what);
         }
 
         void NoticeTheyHaveLanded()
@@ -238,7 +239,7 @@ namespace BelowTheWing.Crew
                 return;
             }
 
-            m_PushedOff = !Jumping.StandingOnSomething(Feet, 0.2f, m_StandsOn, out _);
+            m_PushedOff = !OnTheGround(out _);
         }
 
         static Vector3 MovingAt(Collider underfoot, Vector3 feet)

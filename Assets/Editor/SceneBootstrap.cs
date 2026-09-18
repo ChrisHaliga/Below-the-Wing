@@ -569,16 +569,12 @@ namespace BelowTheWing.EditorTools
 
             Set(go.AddComponent<CrewCharacter>(), "m_Profile", profile);
 
-            var reach = profile.radiusMetres + 0.45f;
-            HandAnchor(go, Hands.LeftAnchorName, new Vector3(-0.3f, 0.2f, reach));
-            HandAnchor(go, Hands.RightAnchorName, new Vector3(0.3f, 0.2f, reach));
+            HandAnchor(go, Hands.LeftAnchorName, profile.hands.AnchorLocal(profile.radiusMetres, left: true));
+            HandAnchor(go, Hands.RightAnchorName, profile.hands.AnchorLocal(profile.radiusMetres, left: false));
 
             AddNetworking(go, outlivesItsOwner: false);
 
-            Dress(go, ApronAppearance.Shape.UprightCapsule,
-                new Vector3(profile.radiusMetres * 2f, profile.heightMetres, profile.radiusMetres * 2f),
-                Palette.HiVis,
-                profile.heightMetres * 0.7f);
+            Dress(go, ApronAppearance.Shape.UprightCapsule, profile.SizeMetres, Palette.HiVis, profile.heightMetres * 0.7f);
 
             return SaveAndDiscard(go, $"{PrefabFolder}/RampWorker.prefab");
         }
@@ -790,8 +786,7 @@ namespace BelowTheWing.EditorTools
                 tractor.GetComponent<VehicleShape>().Footprint,
                 cart.GetComponent<VehicleShape>().Footprint,
                 aircraftProfile,
-                new Vector3(
-                    crewProfile.radiusMetres * 2f, crewProfile.heightMetres, crewProfile.radiusMetres * 2f));
+                crewProfile.SizeMetres);
 
             Dress(aircraft, plan.Aircraft, holder.transform);
 

@@ -32,10 +32,7 @@ namespace BelowTheWing.Tests.EditMode
             Object.DestroyImmediate(m_Crew);
         }
 
-        Vector3 CrewSize()
-            => new Vector3(m_Crew.radiusMetres * 2f, m_Crew.heightMetres, m_Crew.radiusMetres * 2f);
-
-        ApronPlan Plan(ApronLayoutSettings settings) => ApronLayout.Build(settings, m_Tractor, m_Cart, m_Aircraft, CrewSize());
+        ApronPlan Plan(ApronLayoutSettings settings) => ApronLayout.Build(settings, m_Tractor, m_Cart, m_Aircraft, m_Crew.SizeMetres);
 
         [Test]
         public void TheApronHoldsOneAircraftTwoTractorsAndEightCarts()
