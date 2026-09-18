@@ -27,10 +27,19 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void TheShippedIconsAreThereForTheMenuToLoad()
+        public void TheShippedIconsKeepTheShapeTheyWereDrawnIn()
         {
-            Assert.That(ShippedContent.Load<Texture2D>("Assets/UI/Icons/Ready.png"), Is.Not.Null);
-            Assert.That(ShippedContent.Load<Texture2D>("Assets/UI/Icons/Unready.png"), Is.Not.Null);
+            foreach (var path in new[] { "Assets/UI/Icons/Ready.png", "Assets/UI/Icons/Unready.png" })
+            {
+                var icon = ShippedContent.Load<Texture2D>(path);
+                var shape = icon.width / (float)icon.height;
+
+                Assert.That(shape, Is.EqualTo(1f).Within(0.12f),
+                    $"{path} imports at {icon.width} x {icon.height}. Both badges are drawn very " +
+                    "nearly square, so an aspect far from 1 means the importer resized it. " +
+                    "nPOTScale rounds each side of a non power of two texture separately, and a " +
+                    "94 by 97 image rounds to 64 by 128");
+            }
         }
 
         [Test]

@@ -3435,7 +3435,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a35cf2aca3d7e14ba7ae23620b68254, type: 3}
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Menu::BelowTheWing.Menu.MenuBackdrop
-  m_WideShot: {fileID: 1666613709}
   m_CartShot: {fileID: 880757108}
   m_InsideShot: {fileID: 232571142}
   m_LobbyCrew:
@@ -3493,7 +3492,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: BelowTheWing.Menu::BelowTheWing.Menu.MenuCartDoors
   m_Cart: {fileID: 372299814}
   m_ShoveNewtonSeconds: 38
-  m_SecondSetWaitsSeconds: 3
+  m_SecondSetWaitsSeconds: 2.8
   m_RailDragNewtonsPerMetrePerSecond: 20
   m_BounceOffTheEnd: 0.25
   m_SettlesAtNewtonsPerMetre: 30
