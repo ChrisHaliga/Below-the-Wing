@@ -54,9 +54,27 @@ foreach ($folder in @("Assets\Scenes", "Assets\Content\Prefabs", "Assets\UI")) {
     }
 }
 
+# A script that has never been imported has no .meta, so the mirror generates one and the scene
+# built there references that guid. Importing the same script in another copy of the project
+# generates a different guid, and every component the scene placed then reads as a missing script
+# with nothing logged. Taking the mirror's metas for scripts that had none keeps the one guid.
+$adopted = 0
+foreach ($script in Get-ChildItem "$Source\Assets" -Recurse -Filter *.cs) {
+    $meta = "$($script.FullName).meta"
+    if (Test-Path $meta) { continue }
+
+    $fromMirror = $meta.Replace($Source, $Mirror)
+    if (Test-Path $fromMirror) {
+        Copy-Item $fromMirror $meta -Force
+        $adopted++
+    }
+}
+if ($adopted -gt 0) { "  copied back $adopted script .meta files the mirror generated" }
+
 # The rebuild decides which scenes are in the build and in what order, and that lives in
 # ProjectSettings rather than in Assets. Without this a scene it created exists on disk and
 # SceneManager.LoadScene cannot find it.
+
 $buildSettings = "ProjectSettings\EditorBuildSettings.asset"
 if (Test-Path (Join-Path $Mirror $buildSettings)) {
     Copy-Item (Join-Path $Mirror $buildSettings) (Join-Path $Source $buildSettings) -Force
