@@ -12,10 +12,19 @@ namespace BelowTheWing.Menu
         GameObject m_Cart;
 
         [SerializeField, Tooltip("Shove given to each door pole, newton-seconds. Higher slams harder")]
-        float m_ShoveNewtonSeconds = 55f;
+        float m_ShoveNewtonSeconds = 50f;
 
         [SerializeField, Tooltip("How long the far doors wait after the near ones are shoved, seconds")]
         float m_SecondSetWaitsSeconds = 0.35f;
+
+        [SerializeField, Tooltip("Rail drag, newtons per metre per second. Lower coasts further")]
+        float m_RailDragNewtonsPerMetrePerSecond = 20f;
+
+        [SerializeField, Tooltip("How much of its speed a door keeps off the end stop, 0 to 1")]
+        float m_BounceOffTheEnd = 0.25f;
+
+        [SerializeField, Tooltip("Pull that walks a bounced door back to its end, newtons per metre")]
+        float m_SettlesAtNewtonsPerMetre = 30f;
 
         readonly List<Rigidbody> m_Near = new List<Rigidbody>();
         readonly List<Rigidbody> m_Far = new List<Rigidbody>();
@@ -62,6 +71,11 @@ namespace BelowTheWing.Menu
             m_Since = 0f;
             m_NearShoved = false;
             m_FarShoved = false;
+
+            foreach (var pole in m_Poles)
+            {
+                AimAt(pole, open);
+            }
         }
 
         void OnEnable()
@@ -89,6 +103,8 @@ namespace BelowTheWing.Menu
                 var body = pole.GetComponent<Rigidbody>();
                 body.isKinematic = false;
 
+                LetItRun(pole.GetComponent<ConfigurableJoint>());
+
                 m_Poles.Add(pole);
                 (NearTheCamera(pole.transform.localPosition.x) ? m_Near : m_Far).Add(body);
             }
@@ -97,6 +113,32 @@ namespace BelowTheWing.Menu
             {
                 throw MisbuiltException.Refuse(this, "raised no door poles on its cart");
             }
+        }
+
+        // The game's rail is tuned for a hand pushing a door: heavy drag, and a dead stop at each
+        // end so nothing springs back at the player. A menu wants the opposite of both.
+        void LetItRun(ConfigurableJoint rail)
+        {
+            var limit = rail.linearLimit;
+            limit.bounciness = Mathf.Clamp01(m_BounceOffTheEnd);
+            rail.linearLimit = limit;
+
+            var drive = rail.zDrive;
+            drive.positionSpring = Mathf.Max(m_SettlesAtNewtonsPerMetre, 0f);
+            drive.positionDamper = Mathf.Max(m_RailDragNewtonsPerMetrePerSecond, 0f);
+            rail.zDrive = drive;
+        }
+
+        // A drive pulls toward the negative of its target, and the rail's own zero sits halfway
+        // between shut and open, so each end is half the travel either side of it.
+        static void AimAt(SlidingDoorPole pole, bool open)
+        {
+            var rail = pole.GetComponent<ConfigurableJoint>();
+
+            rail.targetPosition = new Vector3(
+                0f,
+                0f,
+                (open ? -1f : 1f) * pole.AlongTheRail.z * pole.TravelMetres * 0.5f);
         }
 
         void Update()

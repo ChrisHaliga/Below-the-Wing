@@ -24,6 +24,8 @@ namespace BelowTheWing.Menu
         public static readonly Color Dark = new Color(0.035f, 0.045f, 0.052f);
 
         public const int Gutter = 96;
+        public const int Nudge = Gutter * 2;
+        public const int ColumnWidth = 520;
         public const float TypeSettleSeconds = 0.35f;
 
         public static MenuTypeface Typeface;
@@ -46,13 +48,19 @@ namespace BelowTheWing.Menu
             element.style.bottom = 0;
         }
 
-        public static VisualElement Scrim(float acrossFraction, float darkest)
+        // A panel standing from the top of the screen to the bottom, holding whatever the screen
+        // puts on it, with its trailing edge faded out so it does not cut the scene in half.
+        public static VisualElement Scrim(float widthFraction, float darkest)
         {
             var scrim = new VisualElement { pickingMode = PickingMode.Ignore };
 
-            Fill(scrim);
+            scrim.style.position = Position.Absolute;
+            scrim.style.left = 0;
+            scrim.style.top = 0;
+            scrim.style.bottom = 0;
+            scrim.style.width = Length.Percent(Mathf.Clamp01(widthFraction) * 100f);
 
-            scrim.style.backgroundImage = Background.FromTexture2D(SideToSide(acrossFraction, darkest));
+            scrim.style.backgroundImage = Background.FromTexture2D(SideToSide(darkest));
             scrim.style.backgroundRepeat = new BackgroundRepeat(Repeat.Repeat, Repeat.Repeat);
             scrim.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
 
@@ -86,7 +94,9 @@ namespace BelowTheWing.Menu
             return shadow;
         }
 
-        static Texture2D SideToSide(float acrossFraction, float darkest)
+        const float ScrimHoldsUntil = 0.66f;
+
+        static Texture2D SideToSide(float darkest)
         {
             var wide = new Texture2D(256, 1, TextureFormat.RGBA32, mipChain: false)
             {
@@ -97,7 +107,9 @@ namespace BelowTheWing.Menu
             for (var x = 0; x < wide.width; x++)
             {
                 var across = x / (wide.width - 1f);
-                var falloff = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(across / Mathf.Max(acrossFraction, 0.01f)));
+                var falloff = across <= ScrimHoldsUntil
+                    ? 1f
+                    : 1f - Mathf.SmoothStep(0f, 1f, (across - ScrimHoldsUntil) / (1f - ScrimHoldsUntil));
 
                 wide.SetPixel(x, 0, new Color(Dark.r, Dark.g, Dark.b, darkest * falloff));
             }

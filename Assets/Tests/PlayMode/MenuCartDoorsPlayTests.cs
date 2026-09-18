@@ -46,11 +46,31 @@ namespace BelowTheWing.Tests.PlayMode
 
             doors.Open(true);
 
-            yield return Settle(2f);
+            yield return Settle(3f);
 
             Assert.That(doors.Openness, Is.GreaterThan(0.9f),
                 $"a shove of the configured size left the doors at {doors.Openness:0.00} open. " +
                 "Below about 40 newton-seconds the rail drag stops the pole short of the end");
+        }
+
+        [UnityTest]
+        public IEnumerator ADoorShovedShutComesAllTheWayBack()
+        {
+            yield return LoadedScene.Open("Menu");
+
+            var doors = Object.FindAnyObjectByType<MenuCartDoors>();
+
+            doors.Open(true);
+
+            yield return Settle(3f);
+
+            doors.Open(false);
+
+            yield return Settle(3f);
+
+            Assert.That(doors.Openness, Is.LessThan(0.08f),
+                $"the doors settled at {doors.Openness:0.00} open. Leaving the lobby has to put the " +
+                "cart back the way the main menu shows it");
         }
 
         [UnityTest]

@@ -46,7 +46,7 @@ namespace BelowTheWing.Menu
 
             var column = new VisualElement();
             column.style.position = Position.Absolute;
-            column.style.left = MenuLook.Gutter;
+            column.style.left = MenuLook.Gutter + MenuLook.Nudge;
             column.style.top = MenuLook.Gutter;
             column.style.bottom = MenuLook.Gutter;
             column.style.width = 560;

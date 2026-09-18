@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BelowTheWing.Crew;
 using BelowTheWing.Menu;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
@@ -95,6 +96,50 @@ namespace BelowTheWing.Tests.EditMode
                     "own; ApronAppearance builds one at run time, and every behaviour on a dressed " +
                     "figure is switched off");
             }
+        }
+
+        [Test]
+        public void TheBeltLoaderStandsOnItsWheelsRatherThanOnItsNose()
+        {
+            var box = DrawnBounds(Only<MenuBackdrop>().BeltLoader.gameObject);
+
+            Assert.That(box.min.y, Is.EqualTo(0f).Within(0.05f),
+                $"the loader's lowest point is at {box.min.y:0.00} m, so it is sunk into the apron " +
+                "or hanging over it");
+
+            Assert.That(box.size.y, Is.LessThan(2f),
+                $"the loader stands {box.size.y:0.00} m tall. belt_loader.fbx is 0.79 m tall and " +
+                "4.68 m long, so a tall box means it has been tipped onto an end. Its root carries " +
+                "the importer's own rotation, and overwriting that rotation is what tips it");
+        }
+
+        [Test]
+        public void ANameplateSitsAThirdOfTheWayDownACrewMember()
+        {
+            var backdrop = Only<MenuBackdrop>();
+            var tall = ShippedContent.Load<CrewProfile>(ShippedContent.CrewProfilePath).heightMetres;
+
+            var feet = backdrop.FigureFor(0).transform.position.y - (tall * 0.5f);
+            var plate = backdrop.PlateOver(0).y - feet;
+
+            Assert.That(plate, Is.EqualTo(tall * (2f / 3f)).Within(0.02f),
+                $"the plate floats {plate:0.00} m up a {tall:0.00} m figure");
+        }
+
+        static Bounds DrawnBounds(GameObject thing)
+        {
+            var drawn = thing.GetComponentsInChildren<Renderer>(true);
+
+            Assert.That(drawn.Length, Is.GreaterThan(0), $"{thing.name} draws nothing");
+
+            var box = drawn[0].bounds;
+
+            foreach (var one in drawn)
+            {
+                box.Encapsulate(one.bounds);
+            }
+
+            return box;
         }
 
         [Test]

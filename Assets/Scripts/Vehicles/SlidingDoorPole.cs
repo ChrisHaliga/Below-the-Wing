@@ -15,6 +15,10 @@ namespace BelowTheWing.Vehicles
 
         public float Openness { get; private set; }
 
+        public float TravelMetres => m_TravelMetres;
+
+        public Vector3 AlongTheRail => m_Along;
+
         public Vector3 OpensToward
             => transform.parent != null
                 ? transform.parent.TransformDirection(m_Along)

@@ -7,17 +7,19 @@ namespace BelowTheWing.Tests.EditMode
     public sealed class CrewPlateTests
     {
         [Test]
-        public void SomebodyWhoHasNotReadiedSaysSoInGrey()
+        public void SomebodyWhoHasNotReadiedShowsAnEmptyRing()
         {
-            Assert.That(CrewPlate.Says(ready: false), Is.EqualTo("UNREADY"));
-            Assert.That(CrewPlate.Colour(ready: false), Is.EqualTo(MenuLook.InkSoft));
+            Assert.That(CrewPlate.Fill(ready: false).a, Is.EqualTo(0f).Within(1e-4f));
+            Assert.That(CrewPlate.Ring(ready: false), Is.EqualTo(MenuLook.InkSoft));
+            Assert.That(CrewPlate.TickShows(ready: false), Is.False);
         }
 
         [Test]
-        public void SomebodyWhoHasReadiedSaysSoInGreen()
+        public void SomebodyWhoHasReadiedShowsAFilledGreenRingWithATickInIt()
         {
-            Assert.That(CrewPlate.Says(ready: true), Is.EqualTo("READY"));
-            Assert.That(CrewPlate.Colour(ready: true), Is.EqualTo(MenuLook.Good));
+            Assert.That(CrewPlate.Fill(ready: true), Is.EqualTo(MenuLook.Good));
+            Assert.That(CrewPlate.Ring(ready: true), Is.EqualTo(MenuLook.Good));
+            Assert.That(CrewPlate.TickShows(ready: true), Is.True);
         }
 
         [Test]

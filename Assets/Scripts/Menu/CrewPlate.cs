@@ -20,9 +20,13 @@ namespace BelowTheWing.Menu
 
     public static class CrewPlate
     {
-        public static string Says(bool ready) => ready ? "READY" : "UNREADY";
+        public const int RingPixels = 46;
 
-        public static Color Colour(bool ready) => ready ? MenuLook.Good : MenuLook.InkSoft;
+        public static Color Ring(bool ready) => ready ? MenuLook.Good : MenuLook.InkSoft;
+
+        public static Color Fill(bool ready) => ready ? MenuLook.Good : Color.clear;
+
+        public static bool TickShows(bool ready) => ready;
 
         public static bool Visible(Vector3 viewportPoint)
             => viewportPoint.z > 0f

@@ -801,22 +801,28 @@ namespace BelowTheWing.EditorTools
                 tug + new Vector3(19f, 7.5f, -13f), Vector3.Lerp(nose, tug, 0.55f) + (Vector3.up * 2.5f)));
 
             Set(backdrop, "m_CartShot", Shot("Cart shot", holder.transform,
-                stage.Position + (facing * 4.6f) + new Vector3(0f, eyeHeight, 0f),
+                stage.Position + (facing * 2.3f) + new Vector3(0f, eyeHeight, 0f),
                 stage.Position + new Vector3(0f, doorwayHeight, 0f)));
 
-            // The push ends inside the cart body, so the far doorway frames the crew and the loader.
+            // The push ends past the cart's centre, close enough to the far doorway that the opening
+            // fills the frame rather than sharing it with the inside of the cart.
             Set(backdrop, "m_InsideShot", Shot("Inside shot", holder.transform,
-                stage.Position + (facing * 0.35f) + new Vector3(0f, doorwayHeight, 0f),
+                stage.Position - (facing * 0.25f) + new Vector3(0f, doorwayHeight, 0f),
                 crewLine + new Vector3(0f, crewProfile.heightMetres * 0.62f, 0f)));
 
             SetList(backdrop, "m_LobbyCrew", standing);
-            Set(backdrop, "m_PlateHeightMetres", crewProfile.heightMetres + 0.35f);
+            // A figure's origin sits at half its height, and the plate belongs two thirds of the
+            // way up from its feet.
+            Set(backdrop, "m_PlateHeightMetres", crewProfile.heightMetres / 6f);
             Set(backdrop, "m_BeltLoader", loader.transform);
             Set(backdrop, "m_CartDoors", DoorsOf(holder, staged));
 
             return backdrop;
         }
 
+        // The importer puts its own rotation and scale on an FBX root, and every vehicle model here
+        // carries euler (270, 0, 0) at scale 100 from Blender's Z up. Rotating that root throws the
+        // model onto its nose, so the holder turns and the model keeps what the importer gave it.
         static GameObject ParkTheBeltLoader(Transform under, Vector3 crewLine, Vector3 facing)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(BeltLoaderModelPath);
@@ -826,10 +832,12 @@ namespace BelowTheWing.EditorTools
                 throw new InvalidOperationException($"There is no belt loader model at {BeltLoaderModelPath}.");
             }
 
-            var loader = Dress(
-                model,
-                new Placement("Belt loader", crewLine, Quaternion.LookRotation(-facing), Vector3.one),
-                under);
+            var loader = new GameObject("Belt loader");
+            loader.transform.SetParent(under, worldPositionStays: false);
+            loader.transform.SetPositionAndRotation(crewLine, Quaternion.LookRotation(-facing));
+
+            var drawn = (GameObject)PrefabUtility.InstantiatePrefab(model, loader.transform);
+            drawn.transform.localPosition = Vector3.zero;
 
             loader.transform.position =
                 crewLine - (facing * (ReachesForward(loader, facing) + LoaderSitsBackMetres));

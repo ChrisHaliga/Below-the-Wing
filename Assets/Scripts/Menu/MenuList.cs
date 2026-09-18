@@ -9,15 +9,32 @@ namespace BelowTheWing.Menu
     {
         const int ItemSize = 27;
         const int ItemHeight = 46;
+        const int ButtonSize = 20;
+        const int ButtonWidth = 190;
+        const int ButtonGap = 10;
 
         readonly List<Row> m_Rows = new List<Row>();
 
         int m_On = -1;
 
-        public MenuList()
+        readonly bool m_AcrossTheScreen;
+
+        public MenuList() : this(acrossTheScreen: false)
         {
+        }
+
+        public MenuList(bool acrossTheScreen)
+        {
+            m_AcrossTheScreen = acrossTheScreen;
+
             Root = new VisualElement();
             Root.style.marginTop = 8;
+
+            if (acrossTheScreen)
+            {
+                Root.style.flexDirection = FlexDirection.Row;
+                Root.style.alignItems = Align.Center;
+            }
         }
 
         public VisualElement Root { get; }
@@ -44,13 +61,26 @@ namespace BelowTheWing.Menu
             row.Element.style.height = ItemHeight;
 
             row.Marker = new VisualElement();
-            row.Marker.style.width = 3;
-            row.Marker.style.height = 20;
+            row.Marker.style.height = m_AcrossTheScreen ? 3 : 20;
+            row.Marker.style.width = m_AcrossTheScreen ? 0 : 3;
             row.Marker.style.backgroundColor = Color.clear;
-            row.Marker.style.marginRight = 16;
+            row.Marker.style.marginRight = m_AcrossTheScreen ? 0 : 16;
 
-            row.Text = MenuLook.Display(text.ToUpperInvariant(), ItemSize);
+            row.Text = MenuLook.Display(text.ToUpperInvariant(), m_AcrossTheScreen ? ButtonSize : ItemSize);
             row.Text.style.color = MenuLook.InkSoft;
+
+            if (m_AcrossTheScreen)
+            {
+                row.Element.style.justifyContent = Justify.Center;
+                row.Element.style.minWidth = ButtonWidth;
+                row.Element.style.marginLeft = ButtonGap;
+                row.Element.style.marginRight = ButtonGap;
+                row.Element.style.paddingLeft = 22;
+                row.Element.style.paddingRight = 22;
+                row.Element.style.backgroundColor = new Color(0f, 0f, 0f, 0.55f);
+
+                MenuLook.Edges(row.Element, MenuLook.InkFaint, 1);
+            }
 
             row.Element.Add(row.Marker);
             row.Element.Add(row.Text);
@@ -151,8 +181,17 @@ namespace BelowTheWing.Menu
                     : on ? MenuLook.Ink
                     : MenuLook.InkSoft;
 
-                m_Rows[row].Element.style.translate =
-                    new Translate(on && available ? 8 : 0, 0);
+                m_Rows[row].Element.style.translate = m_AcrossTheScreen
+                    ? new Translate(0, on && available ? -6 : 0)
+                    : new Translate(on && available ? 8 : 0, 0);
+
+                if (m_AcrossTheScreen)
+                {
+                    MenuLook.Edges(
+                        m_Rows[row].Element,
+                        !available ? MenuLook.InkFaint : on ? MenuLook.HiVis : MenuLook.InkSoft,
+                        on && available ? 2 : 1);
+                }
             }
         }
     }

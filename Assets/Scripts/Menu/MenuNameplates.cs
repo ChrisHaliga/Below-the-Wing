@@ -19,8 +19,9 @@ namespace BelowTheWing.Menu
         sealed class Plate
         {
             public VisualElement Element;
+            public VisualElement Ring;
+            public VisualElement Tick;
             public Label Called;
-            public Label State;
         }
 
         public void Show(IReadOnlyList<CrewOnStage> crew, Camera eye)
@@ -55,8 +56,10 @@ namespace BelowTheWing.Menu
             plate.Element.style.top = at.y;
 
             plate.Called.text = crew.Called.ToUpperInvariant();
-            plate.State.text = CrewPlate.Says(crew.Ready);
-            plate.State.style.color = CrewPlate.Colour(crew.Ready);
+            plate.Ring.style.backgroundColor = CrewPlate.Fill(crew.Ready);
+            plate.Tick.style.display = CrewPlate.TickShows(crew.Ready) ? DisplayStyle.Flex : DisplayStyle.None;
+
+            MenuLook.Edges(plate.Ring, CrewPlate.Ring(crew.Ready), 3);
         }
 
         Plate Raise()
@@ -64,24 +67,79 @@ namespace BelowTheWing.Menu
             var plate = new Plate
             {
                 Element = new VisualElement { pickingMode = PickingMode.Ignore },
-                Called = MenuLook.Text("", 17, MenuLook.Ink, MenuLook.Typeface.Body),
-                State = MenuLook.Eyebrow("", MenuLook.InkSoft)
+                Ring = new VisualElement { pickingMode = PickingMode.Ignore },
+                Called = MenuLook.Text("", 18, MenuLook.Ink, MenuLook.Typeface.Body)
             };
 
             plate.Element.style.position = Position.Absolute;
             plate.Element.style.alignItems = Align.Center;
             plate.Element.style.translate = new Translate(Length.Percent(-50), Length.Percent(-100));
 
-            plate.Called.style.letterSpacing = 1.6f;
-            plate.Called.style.marginBottom = 3;
-            plate.State.style.marginBottom = 10;
+            plate.Ring.style.width = CrewPlate.RingPixels;
+            plate.Ring.style.height = CrewPlate.RingPixels;
+            plate.Ring.style.marginBottom = 8;
+            plate.Ring.style.alignItems = Align.Center;
+            plate.Ring.style.justifyContent = Justify.Center;
+            Round(plate.Ring, CrewPlate.RingPixels * 0.5f);
 
+            plate.Tick = Tick();
+            plate.Ring.Add(plate.Tick);
+
+            plate.Called.style.letterSpacing = 1.6f;
+            plate.Called.style.marginBottom = 4;
+
+            plate.Element.Add(plate.Ring);
             plate.Element.Add(plate.Called);
-            plate.Element.Add(plate.State);
 
             Root.Add(plate.Element);
 
             return plate;
+        }
+
+        // Two bars at right angles rather than a glyph, so the mark does not depend on the font
+        // carrying U+2713.
+        static VisualElement Tick()
+        {
+            var tick = new VisualElement { pickingMode = PickingMode.Ignore };
+
+            tick.style.width = CrewPlate.RingPixels;
+            tick.style.height = CrewPlate.RingPixels;
+
+            tick.Add(Bar(13f, 19f, 15f, -45f, hangsFromItsTop: true));
+            tick.Add(Bar(23.6f, 9.6f, 20f, 45f, hangsFromItsTop: false));
+
+            return tick;
+        }
+
+        const float TickThickness = 4f;
+
+        // A bar runs down the screen from its origin. Pinned at its top and turned anticlockwise it
+        // draws the short stroke down and to the right; pinned at its foot and turned clockwise it
+        // draws the long stroke up and to the right from the same point.
+        static VisualElement Bar(float left, float top, float length, float degrees, bool hangsFromItsTop)
+        {
+            var bar = new VisualElement { pickingMode = PickingMode.Ignore };
+
+            bar.style.position = Position.Absolute;
+            bar.style.left = left;
+            bar.style.top = top;
+            bar.style.width = TickThickness;
+            bar.style.height = length;
+            bar.style.backgroundColor = MenuLook.Dark;
+            bar.style.rotate = new Rotate(degrees);
+            bar.style.transformOrigin = new TransformOrigin(
+                Length.Percent(50),
+                Length.Percent(hangsFromItsTop ? 0f : 100f));
+
+            return bar;
+        }
+
+        static void Round(VisualElement element, float radius)
+        {
+            element.style.borderTopLeftRadius = radius;
+            element.style.borderTopRightRadius = radius;
+            element.style.borderBottomLeftRadius = radius;
+            element.style.borderBottomRightRadius = radius;
         }
     }
 }
