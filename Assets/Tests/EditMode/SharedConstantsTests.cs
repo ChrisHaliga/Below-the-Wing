@@ -29,10 +29,10 @@ namespace BelowTheWing.Tests.EditMode
         {
             const float wheelRadius = 0.2203f;
 
-            var onEarth = VehicleController.SuspensionMountHeightMetres(m_Tractor, wheelRadius);
+            var onEarth = VehicleController.SuspensionMountHeightMetres(m_Tractor, wheelRadius, wheelCount: 4);
 
             Physics.gravity = m_RealGravity * 2f;
-            var underTwiceTheWeight = VehicleController.SuspensionMountHeightMetres(m_Tractor, wheelRadius);
+            var underTwiceTheWeight = VehicleController.SuspensionMountHeightMetres(m_Tractor, wheelRadius, wheelCount: 4);
 
             Assert.That(underTwiceTheWeight, Is.LessThan(onEarth),
                 "twice the weight compresses the springs further, so the body sits lower on them. A " +

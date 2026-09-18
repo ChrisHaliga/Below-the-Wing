@@ -125,18 +125,16 @@ namespace BelowTheWing.Vehicles
 
         public float RearReach => Shape != null ? Shape.RearReachMetres : 0f;
 
-        public static float SuspensionCompressionAtRest(VehicleProfile profile)
+        public static float SuspensionCompressionAtRest(VehicleProfile profile, int wheelCount)
         {
-            const int corners = 4;
+            var weightOnEachWheel = profile.massKg * Physics.gravity.magnitude / Mathf.Max(wheelCount, 1);
 
-            var weightOnEachCorner = profile.massKg * Physics.gravity.magnitude / corners;
-
-            return Mathf.Clamp01(weightOnEachCorner / profile.springStrengthNewtons);
+            return Mathf.Clamp01(weightOnEachWheel / profile.springStrengthNewtons);
         }
 
-        public static float SuspensionMountHeightMetres(VehicleProfile profile, float wheelRadiusMetres)
+        public static float SuspensionMountHeightMetres(VehicleProfile profile, float wheelRadiusMetres, int wheelCount)
             => wheelRadiusMetres
-               + (profile.suspensionRestLengthMetres * (1f - SuspensionCompressionAtRest(profile)));
+               + (profile.suspensionRestLengthMetres * (1f - SuspensionCompressionAtRest(profile, wheelCount)));
 
         public void Configure(VehicleProfile profile, string displayName)
         {
@@ -196,30 +194,22 @@ namespace BelowTheWing.Vehicles
                     this, "has no shape, so there is nowhere to hang its suspension from");
             }
 
-            var middleOfTheWheelbase = 0f;
-
-            foreach (var wheel in wheels)
-            {
-                middleOfTheWheelbase += wheel.CentreLocal.z;
-            }
-
-            middleOfTheWheelbase /= wheels.Count;
+            var roles = WheelShares.Of(wheels);
 
             m_Wheels = new Wheel[wheels.Count];
             for (var i = 0; i < wheels.Count; i++)
             {
                 var wheel = wheels[i];
-                var atTheFront = wheel.CentreLocal.z > middleOfTheWheelbase;
 
                 m_Wheels[i] = new Wheel(
                     new Vector3(
                         wheel.CentreLocal.x,
-                        SuspensionMountHeightMetres(profile, wheel.RadiusMetres),
+                        SuspensionMountHeightMetres(profile, wheel.RadiusMetres, wheels.Count),
                         wheel.CentreLocal.z),
                     wheel.RadiusMetres,
-                    steers: atTheFront,
-                    driveShare: atTheFront ? 0f : 2f / wheels.Count,
-                    brakeShare: 1f / wheels.Count);
+                    roles[i].Steers,
+                    roles[i].DriveShare,
+                    roles[i].BrakeShare);
             }
 
             m_HangingBy = new float[m_Wheels.Length];

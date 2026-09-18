@@ -96,7 +96,7 @@ namespace BelowTheWing.Tests.EditMode
         public void TheTractorSettlesWithRoomToSquashAndRoomToExtend()
         {
             var tractor = Load<VehicleProfile>(TractorPath);
-            var atRest = VehicleController.SuspensionCompressionAtRest(tractor);
+            var atRest = VehicleController.SuspensionCompressionAtRest(tractor, wheelCount: 4);
 
             Assert.That(atRest, Is.InRange(0.05f, 0.30f),
                 $"the tractor's springs sit {atRest:P0} compressed carrying nothing but itself. " +

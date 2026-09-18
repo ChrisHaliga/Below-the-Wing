@@ -113,8 +113,8 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void TheBodyHangsHigherOverABiggerWheel()
         {
-            var overTheFront = VehicleController.SuspensionMountHeightMetres(m_Tractor, FrontWheelRadius);
-            var overTheRear = VehicleController.SuspensionMountHeightMetres(m_Tractor, RearWheelRadius);
+            var overTheFront = VehicleController.SuspensionMountHeightMetres(m_Tractor, FrontWheelRadius, wheelCount: 4);
+            var overTheRear = VehicleController.SuspensionMountHeightMetres(m_Tractor, RearWheelRadius, wheelCount: 4);
 
             Assert.That(overTheRear - overTheFront,
                 Is.EqualTo(RearWheelRadius - FrontWheelRadius).Within(1e-4f),
