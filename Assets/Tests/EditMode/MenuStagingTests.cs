@@ -10,7 +10,7 @@ namespace BelowTheWing.Tests.EditMode
         {
             var staging = MenuStaging.For(MenuScreen.Title);
 
-            Assert.That(staging.Station, Is.EqualTo(MenuStation.Wide));
+            Assert.That(staging.Station, Is.EqualTo(MenuStation.AsPlaced));
             Assert.That(staging.DoorsOpen, Is.False);
         }
 

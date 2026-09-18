@@ -7,9 +7,6 @@ namespace BelowTheWing.Menu
     [DisallowMultipleComponent]
     public sealed class MenuBackdrop : MonoBehaviour
     {
-        [SerializeField, Tooltip("Where the camera stands to show the whole apron")]
-        Transform m_WideShot;
-
         [SerializeField, Tooltip("Where the camera stands to face the shut cart")]
         Transform m_CartShot;
 
@@ -30,8 +27,6 @@ namespace BelowTheWing.Menu
 
         [SerializeField, Tooltip("The parked jet that fills the far side of the wide shot")]
         Transform m_Airliner;
-
-        public Transform WideShot => m_WideShot;
 
         public Transform CartShot => m_CartShot;
 
@@ -78,7 +73,6 @@ namespace BelowTheWing.Menu
         {
             var shot = station switch
             {
-                MenuStation.Wide => m_WideShot,
                 MenuStation.Inside => m_InsideShot,
                 _ => m_CartShot
             };

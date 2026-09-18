@@ -12,6 +12,7 @@ namespace BelowTheWing.Menu
         const int ButtonSize = 20;
         const int ButtonWidth = 190;
         const int ButtonGap = 10;
+        const int SelectedEdge = 2;
 
         readonly List<Row> m_Rows = new List<Row>();
 
@@ -79,9 +80,9 @@ namespace BelowTheWing.Menu
                 row.Element.style.marginRight = ButtonGap;
                 row.Element.style.paddingLeft = 22;
                 row.Element.style.paddingRight = 22;
-                row.Element.style.backgroundColor = new Color(0f, 0f, 0f, 0.55f);
+                row.Element.style.backgroundColor = MenuLook.ButtonFill;
 
-                MenuLook.Edges(row.Element, MenuLook.InkFaint, 1);
+                MenuLook.Edges(row.Element, MenuLook.InkFaint, SelectedEdge);
             }
 
             row.Element.Add(row.Marker);
@@ -183,8 +184,11 @@ namespace BelowTheWing.Menu
                     : on ? MenuLook.Ink
                     : MenuLook.InkSoft;
 
+                // A button keeps its border width and its place in the row. Changing either moves
+                // it against the buttons beside it, and a selected button sitting higher than its
+                // neighbour reads as a mistake rather than as selection.
                 m_Rows[row].Element.style.translate = m_AcrossTheScreen
-                    ? new Translate(0, on && available ? -6 : 0)
+                    ? new Translate(0, 0)
                     : new Translate(on && available ? 8 : 0, 0);
 
                 if (m_AcrossTheScreen)
@@ -192,7 +196,7 @@ namespace BelowTheWing.Menu
                     MenuLook.Edges(
                         m_Rows[row].Element,
                         !available ? MenuLook.InkFaint : on ? MenuLook.HiVis : MenuLook.InkSoft,
-                        on && available ? 2 : 1);
+                        SelectedEdge);
                 }
             }
         }

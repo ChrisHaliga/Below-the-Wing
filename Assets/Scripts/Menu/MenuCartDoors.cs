@@ -12,10 +12,10 @@ namespace BelowTheWing.Menu
         GameObject m_Cart;
 
         [SerializeField, Tooltip("Shove given to each door pole, newton-seconds. Higher slams harder")]
-        float m_ShoveNewtonSeconds = 50f;
+        float m_ShoveNewtonSeconds = 38f;
 
         [SerializeField, Tooltip("How long the far doors wait after the near ones are shoved, seconds")]
-        float m_SecondSetWaitsSeconds = 5f;
+        float m_SecondSetWaitsSeconds = 3.3f;
 
         [SerializeField, Tooltip("Rail drag, newtons per metre per second. Lower coasts further")]
         float m_RailDragNewtonsPerMetrePerSecond = 20f;
@@ -26,8 +26,8 @@ namespace BelowTheWing.Menu
         [SerializeField, Tooltip("Pull that walks a bounced door back to its end, newtons per metre")]
         float m_SettlesAtNewtonsPerMetre = 30f;
 
-        readonly List<Rigidbody> m_Near = new List<Rigidbody>();
-        readonly List<Rigidbody> m_Far = new List<Rigidbody>();
+        readonly List<SlidingDoorPole> m_Near = new List<SlidingDoorPole>();
+        readonly List<SlidingDoorPole> m_Far = new List<SlidingDoorPole>();
         readonly List<SlidingDoorPole> m_Poles = new List<SlidingDoorPole>();
 
         bool m_Open;
@@ -36,6 +36,8 @@ namespace BelowTheWing.Menu
         float m_Since;
 
         public GameObject Cart => m_Cart;
+
+        public bool BothSetsAreMoving => m_NearShoved && m_FarShoved;
 
         public float Openness
         {
@@ -71,11 +73,6 @@ namespace BelowTheWing.Menu
             m_Since = 0f;
             m_NearShoved = false;
             m_FarShoved = false;
-
-            foreach (var pole in m_Poles)
-            {
-                AimAt(pole, open);
-            }
         }
 
         void OnEnable()
@@ -100,13 +97,12 @@ namespace BelowTheWing.Menu
             {
                 pole.enabled = true;
 
-                var body = pole.GetComponent<Rigidbody>();
-                body.isKinematic = false;
+                pole.GetComponent<Rigidbody>().isKinematic = false;
 
                 LetItRun(pole.GetComponent<ConfigurableJoint>());
 
                 m_Poles.Add(pole);
-                (NearTheCamera(pole.transform.localPosition.x) ? m_Near : m_Far).Add(body);
+                (NearTheCamera(pole.transform.localPosition.x) ? m_Near : m_Far).Add(pole);
             }
 
             if (m_Poles.Count == 0)
@@ -170,15 +166,18 @@ namespace BelowTheWing.Menu
             }
         }
 
-        void Shove(IReadOnlyList<Rigidbody> poles)
+        // A pole is aimed at its new end only as it is shoved. Aiming the far pair at the same time
+        // as the near one hands them to the settle pull five seconds early, and they creep open
+        // instead of waiting and then being thrown open like the first pair.
+        void Shove(IReadOnlyList<SlidingDoorPole> poles)
         {
             var shove = ShoveFor(m_Open, m_ShoveNewtonSeconds);
 
-            foreach (var body in poles)
+            foreach (var pole in poles)
             {
-                body.AddForce(
-                    body.GetComponent<SlidingDoorPole>().OpensToward * shove,
-                    ForceMode.Impulse);
+                AimAt(pole, m_Open);
+
+                pole.GetComponent<Rigidbody>().AddForce(pole.OpensToward * shove, ForceMode.Impulse);
             }
         }
     }

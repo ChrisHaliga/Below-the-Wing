@@ -20,12 +20,18 @@ namespace BelowTheWing.Menu
         [SerializeField] Font m_Body;
         [SerializeField] Font m_Data;
 
+        [Header("Icons")]
+        [SerializeField] Texture2D m_ReadyIcon;
+        [SerializeField] Texture2D m_UnreadyIcon;
+
         [Header("Wiring")]
         [SerializeField] SessionGateway m_Gateway;
         [SerializeField] MenuCamera m_Camera;
         [SerializeField] MenuBackdrop m_Backdrop;
 
         readonly MenuFlow m_Flow = new MenuFlow();
+
+        static readonly CrewOnStage[] NobodyYet = new CrewOnStage[0];
 
         readonly List<CrewOnStage> m_OnStage = new List<CrewOnStage>();
 
@@ -42,6 +48,12 @@ namespace BelowTheWing.Menu
                 Display = m_Display,
                 Body = m_Body,
                 Data = m_Data
+            };
+
+            MenuLook.Icons = new MenuIcons
+            {
+                Ready = m_ReadyIcon,
+                Unready = m_UnreadyIcon
             };
 
             m_Chrome = new MenuChrome(GetComponent<UIDocument>().rootVisualElement);
@@ -176,15 +188,13 @@ namespace BelowTheWing.Menu
 
             m_Backdrop.CartDoors.Open(staging.DoorsOpen);
 
-            var shot = m_Backdrop.StandingAt(staging.Station);
-
-            if (screen == MenuScreen.Title)
+            if (staging.Station == MenuStation.AsPlaced)
             {
-                m_Camera.StartOn(shot);
+                m_Camera.StartWhereItIs();
                 return;
             }
 
-            m_Camera.TravelTo(shot, staging.TravelSeconds);
+            m_Camera.TravelTo(m_Backdrop.StandingAt(staging.Station), staging.TravelSeconds);
         }
 
         void Host()
@@ -260,7 +270,12 @@ namespace BelowTheWing.Menu
             StandTheCrewUp(spawned);
 
             m_Backdrop.ShowThisManyCrew(m_OnStage.Count);
-            m_Chrome.ShowCrewOnStage(m_OnStage, m_Camera.Eye);
+
+            // A nameplate over somebody the doors have not uncovered yet reads as a label floating
+            // on the outside of the cart, so they wait for the second set of doors to be thrown.
+            m_Chrome.ShowCrewOnStage(
+                m_Backdrop.CartDoors.BothSetsAreMoving ? m_OnStage : NobodyYet,
+                m_Camera.Eye);
         }
 
         void StandTheCrewUp(bool spawned)

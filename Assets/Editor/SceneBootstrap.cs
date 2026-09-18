@@ -39,6 +39,8 @@ namespace BelowTheWing.EditorTools
         const string DisplayFontPath = "Assets/UI/Fonts/Inter-SemiBold.ttf";
         const string BodyFontPath = "Assets/UI/Fonts/Inter-Regular.ttf";
         const string DataFontPath = "Assets/UI/Fonts/RobotoMono-Bold.ttf";
+        const string ReadyIconPath = "Assets/UI/Icons/Ready.png";
+        const string UnreadyIconPath = "Assets/UI/Icons/Unready.png";
         const string PanelSettingsPath = "Assets/UI/MenuPanelSettings.asset";
 
         const string DefaultPrefabListPath = "Assets/DefaultNetworkPrefabs.asset";
@@ -750,13 +752,7 @@ namespace BelowTheWing.EditorTools
             var menuCamera = eye.AddComponent<MenuCamera>();
 
             var backdrop = BuildBackdrop(
-                aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
-
-            // MenuDriver snaps the camera onto the wide shot on its first frame. Standing it there
-            // now means the scene view and that first frame show the same thing, rather than the
-            // camera sitting at the origin in the middle of the apron until Play is pressed.
-            eye.transform.SetPositionAndRotation(
-                backdrop.WideShot.position, backdrop.WideShot.rotation);
+                eye.transform, aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
 
             var menu = new GameObject("Menu");
             var document = menu.AddComponent<UIDocument>();
@@ -773,10 +769,14 @@ namespace BelowTheWing.EditorTools
             Set(driver, "m_Body", AssetDatabase.LoadAssetAtPath<Font>(BodyFontPath));
             Set(driver, "m_Data", AssetDatabase.LoadAssetAtPath<Font>(DataFontPath));
 
+            Set(driver, "m_ReadyIcon", Needed<Texture2D>(ReadyIconPath));
+            Set(driver, "m_UnreadyIcon", Needed<Texture2D>(UnreadyIconPath));
+
             EditorSceneManager.SaveScene(scene, MenuScenePath);
         }
 
         static MenuBackdrop BuildBackdrop(
+            Transform eye,
             AircraftProfile aircraftProfile,
             CrewProfile crewProfile,
             GameObject tractor,
@@ -846,11 +846,16 @@ namespace BelowTheWing.EditorTools
             var eyeHeight = crewProfile.heightMetres * 0.92f;
             var doorwayHeight = DoorwayHeightOf(staged);
 
-            var wide = Shot("Wide shot", holder.transform,
-                tug + new Vector3(19f, 7.5f, -13f), Vector3.Lerp(nose, tug, 0.55f) + (Vector3.up * 2.5f));
+            // The opening frame is the camera's own place in the scene, so there is no separate
+            // wide shot to keep it in step with.
+            var opening = tug + new Vector3(19f, 7.5f, -13f);
 
-            Set(backdrop, "m_WideShot", wide);
-            Set(backdrop, "m_Airliner", ParkTheJet(holder.transform, wide).transform);
+            eye.SetPositionAndRotation(
+                opening,
+                Quaternion.LookRotation(
+                    (Vector3.Lerp(nose, tug, 0.55f) + (Vector3.up * 2.5f)) - opening, Vector3.up));
+
+            Set(backdrop, "m_Airliner", ParkTheJet(holder.transform, eye).transform);
 
             Set(backdrop, "m_CartShot", Shot("Cart shot", holder.transform,
                 stage.Position + (facing * 2.3f) + new Vector3(0f, eyeHeight, 0f),

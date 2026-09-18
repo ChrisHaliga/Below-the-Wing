@@ -2,7 +2,7 @@ namespace BelowTheWing.Menu
 {
     public enum MenuStation
     {
-        Wide,
+        AsPlaced,
 
         Cart,
 
@@ -35,7 +35,7 @@ namespace BelowTheWing.Menu
             => screen switch
             {
                 MenuScreen.None => default,
-                MenuScreen.Title => new MenuStaging(MenuStation.Wide, false, TitleSeconds),
+                MenuScreen.Title => new MenuStaging(MenuStation.AsPlaced, false, TitleSeconds),
                 MenuScreen.Lobby => new MenuStaging(MenuStation.Inside, true, RevealSeconds),
                 _ => new MenuStaging(MenuStation.Cart, false, PanelSeconds)
             };

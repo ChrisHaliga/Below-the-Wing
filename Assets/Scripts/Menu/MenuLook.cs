@@ -12,8 +12,16 @@ namespace BelowTheWing.Menu
         public Font Data;
     }
 
+    public struct MenuIcons
+    {
+        public Texture2D Ready;
+        public Texture2D Unready;
+    }
+
     public static class MenuLook
     {
+        public static MenuIcons Icons;
+
         public static readonly Color Ink = new Color(0.96f, 0.97f, 0.97f);
         public static readonly Color InkSoft = new Color(0.66f, 0.71f, 0.72f);
         public static readonly Color InkFaint = new Color(0.40f, 0.46f, 0.47f);
@@ -35,6 +43,7 @@ namespace BelowTheWing.Menu
         public static readonly Color PanelInk = new Color(0.10f, 0.11f, 0.12f, 0.88f);
         public static readonly Color PanelEdge = new Color(0.42f, 0.46f, 0.48f, 0.65f);
         public static readonly Color KeyCap = new Color(1f, 1f, 1f, 0.14f);
+        public static readonly Color ButtonFill = new Color(0f, 0f, 0f, 0.55f);
         public const float TypeSettleSeconds = 0.35f;
 
         public static MenuTypeface Typeface;
@@ -87,22 +96,6 @@ namespace BelowTheWing.Menu
             return dim;
         }
 
-        public static VisualElement FloorShadow()
-        {
-            var shadow = new VisualElement { pickingMode = PickingMode.Ignore };
-
-            shadow.style.position = Position.Absolute;
-            shadow.style.left = 0;
-            shadow.style.right = 0;
-            shadow.style.bottom = 0;
-            shadow.style.height = Length.Percent(38);
-
-            shadow.style.backgroundImage = Background.FromTexture2D(TopToBottom());
-            shadow.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
-
-            return shadow;
-        }
-
         const float ScrimHoldsUntil = 0.55f;
 
         static Texture2D SideToSide(float darkest)
@@ -126,26 +119,6 @@ namespace BelowTheWing.Menu
             wide.Apply();
 
             return wide;
-        }
-
-        static Texture2D TopToBottom()
-        {
-            var tall = new Texture2D(1, 128, TextureFormat.RGBA32, mipChain: false)
-            {
-                wrapMode = TextureWrapMode.Clamp,
-                filterMode = FilterMode.Bilinear
-            };
-
-            for (var y = 0; y < tall.height; y++)
-            {
-                var up = y / (tall.height - 1f);
-
-                tall.SetPixel(0, y, new Color(Dark.r, Dark.g, Dark.b, Mathf.SmoothStep(0.72f, 0f, up)));
-            }
-
-            tall.Apply();
-
-            return tall;
         }
 
         public static Label Display(string text, int size)

@@ -103,8 +103,8 @@ namespace BelowTheWing.Menu
             chip.style.fontSize = MenuLook.HintSize;
             chip.style.letterSpacing = 2f;
             chip.style.color = MenuLook.Ink;
-            chip.style.backgroundColor = MenuLook.KeyCap;
-            MenuLook.Edges(chip, MenuLook.PanelEdge, 1);
+            chip.style.backgroundColor = MenuLook.ButtonFill;
+            MenuLook.Edges(chip, MenuLook.InkFaint, 1);
 
             return chip;
         }

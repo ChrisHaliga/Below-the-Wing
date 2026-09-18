@@ -23,24 +23,23 @@ namespace BelowTheWing.Tests.EditMode
         {
             var backdrop = Only<MenuBackdrop>();
 
-            Assert.That(backdrop.WideShot, Is.Not.Null);
             Assert.That(backdrop.CartShot, Is.Not.Null);
             Assert.That(backdrop.InsideShot, Is.Not.Null);
         }
 
         [Test]
-        public void TheCameraAlreadyStandsWhereItsFirstFrameWillPutIt()
+        public void TheMenuHasBothReadinessIconsWiredIntoIt()
         {
-            var backdrop = Only<MenuBackdrop>();
-            var eye = Only<MenuCamera>();
+            var driver = new UnityEditor.SerializedObject(Only<MenuDriver>());
 
-            Assert.That(Vector3.Distance(eye.transform.position, backdrop.WideShot.position),
-                Is.LessThan(0.01f),
-                "MenuDriver snaps the camera onto the wide shot on its first frame, so a camera " +
-                "parked anywhere else shows one view in the scene and jumps on Play");
+            foreach (var field in new[] { "m_ReadyIcon", "m_UnreadyIcon" })
+            {
+                var wired = driver.FindProperty(field);
 
-            Assert.That(Quaternion.Angle(eye.transform.rotation, backdrop.WideShot.rotation),
-                Is.LessThan(0.1f));
+                Assert.That(wired, Is.Not.Null, $"MenuDriver has no {field}");
+                Assert.That(wired.objectReferenceValue, Is.Not.Null,
+                    $"{field} is empty, so a nameplate draws no badge at all");
+            }
         }
 
         [Test]

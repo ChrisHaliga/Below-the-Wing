@@ -147,16 +147,20 @@ namespace BelowTheWing.Menu
         static VisualElement Stage(VisualElement screen, float scrimWide, float scrimDark)
         {
             screen.Add(MenuLook.Scrim(scrimWide, scrimDark));
-            screen.Add(MenuLook.FloorShadow());
+
+            var holder = new VisualElement();
+
+            holder.style.position = Position.Absolute;
+            holder.style.left = MenuLook.Gutter;
+            holder.style.top = 0;
+            holder.style.bottom = 0;
+            holder.style.width = MenuLook.ColumnWidth;
+            holder.style.justifyContent = Justify.Center;
 
             var column = new VisualElement();
 
-            column.style.position = Position.Absolute;
-            column.style.left = MenuLook.Gutter;
-            column.style.bottom = MenuLook.Gutter;
-            column.style.width = MenuLook.ColumnWidth;
-
-            screen.Add(column);
+            holder.Add(column);
+            screen.Add(holder);
 
             return column;
         }
@@ -206,10 +210,6 @@ namespace BelowTheWing.Menu
 
             m_Lists[MenuScreen.Main] = list;
             column.Add(list.Root);
-
-            screen.Add(MenuLook.Hints(
-                ("W / S", "Navigate"),
-                ("Enter", "Select")));
 
             return screen;
         }
@@ -299,8 +299,8 @@ namespace BelowTheWing.Menu
             chip.style.fontSize = MenuLook.HintSize;
             chip.style.letterSpacing = 2f;
             chip.style.color = MenuLook.Ink;
-            chip.style.backgroundColor = MenuLook.KeyCap;
-            MenuLook.Edges(chip, MenuLook.PanelEdge, 1);
+            chip.style.backgroundColor = MenuLook.ButtonFill;
+            MenuLook.Edges(chip, MenuLook.InkFaint, 1);
 
             return chip;
         }

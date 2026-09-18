@@ -7,19 +7,30 @@ namespace BelowTheWing.Tests.EditMode
     public sealed class CrewPlateTests
     {
         [Test]
-        public void SomebodyWhoHasNotReadiedShowsAnEmptyRing()
+        public void EachReadinessShowsItsOwnIcon()
         {
-            Assert.That(CrewPlate.Fill(ready: false).a, Is.EqualTo(0f).Within(1e-4f));
-            Assert.That(CrewPlate.Ring(ready: false), Is.EqualTo(MenuLook.InkSoft));
-            Assert.That(CrewPlate.TickShows(ready: false), Is.False);
+            var was = MenuLook.Icons;
+
+            MenuLook.Icons = new MenuIcons
+            {
+                Ready = new Texture2D(2, 2),
+                Unready = new Texture2D(2, 2)
+            };
+
+            Assert.That(CrewPlate.Badge(ready: true), Is.SameAs(MenuLook.Icons.Ready));
+            Assert.That(CrewPlate.Badge(ready: false), Is.SameAs(MenuLook.Icons.Unready));
+
+            Object.DestroyImmediate(MenuLook.Icons.Ready);
+            Object.DestroyImmediate(MenuLook.Icons.Unready);
+
+            MenuLook.Icons = was;
         }
 
         [Test]
-        public void SomebodyWhoHasReadiedShowsAFilledGreenRingWithATickInIt()
+        public void TheShippedIconsAreThereForTheMenuToLoad()
         {
-            Assert.That(CrewPlate.Fill(ready: true), Is.EqualTo(MenuLook.Good));
-            Assert.That(CrewPlate.Ring(ready: true), Is.EqualTo(MenuLook.Good));
-            Assert.That(CrewPlate.TickShows(ready: true), Is.True);
+            Assert.That(ShippedContent.Load<Texture2D>("Assets/UI/Icons/Ready.png"), Is.Not.Null);
+            Assert.That(ShippedContent.Load<Texture2D>("Assets/UI/Icons/Unready.png"), Is.Not.Null);
         }
 
         [Test]

@@ -77,19 +77,21 @@ namespace BelowTheWing.Tests.PlayMode
 
             doors.Open(true);
 
-            yield return Settle(3f);
+            yield return Settle(5f);
 
             doors.Open(false);
 
-            yield return Settle(3f);
+            yield return Settle(5f);
 
-            Assert.That(doors.Openness, Is.LessThan(0.08f),
-                $"the doors settled at {doors.Openness:0.00} open. Leaving the lobby has to put the " +
-                "cart back the way the main menu shows it");
+            Assert.That(Widest(doors, near: true), Is.LessThan(0.08f),
+                $"the near doors settled at {Widest(doors, near: true):0.00} open");
+
+            Assert.That(Widest(doors, near: false), Is.LessThan(0.08f),
+                $"the far doors settled at {Widest(doors, near: false):0.00} open");
         }
 
         [UnityTest]
-        public IEnumerator TheDoorsNearestTheCameraLeadTheOnesBehindThem()
+        public IEnumerator TheDoorsBehindTheCameraStandStillUntilTheirTurn()
         {
             yield return LoadedScene.Open("Menu");
 
@@ -97,25 +99,30 @@ namespace BelowTheWing.Tests.PlayMode
 
             doors.Open(true);
 
-            yield return Settle(0.25f);
+            yield return Settle(1.5f);
 
-            var near = 0f;
-            var far = 0f;
+            Assert.That(Widest(doors, near: true), Is.GreaterThan(0.85f),
+                "the near doors should be thrown open well inside a second and a half");
+
+            Assert.That(Widest(doors, near: false), Is.LessThan(0.05f),
+                $"the far doors are {Widest(doors, near: false):0.00} open with four seconds still " +
+                "to wait. A pole aimed at its far end before it is shoved is handed to the settle " +
+                "pull early, and creeps rather than waiting");
+        }
+
+        static float Widest(MenuCartDoors doors, bool near)
+        {
+            var most = 0f;
 
             foreach (var pole in doors.Cart.GetComponentsInChildren<SlidingDoorPole>(true))
             {
-                if (MenuCartDoors.NearTheCamera(pole.transform.localPosition.x))
+                if (MenuCartDoors.NearTheCamera(pole.transform.localPosition.x) == near)
                 {
-                    near = Mathf.Max(near, pole.Openness);
-                    continue;
+                    most = Mathf.Max(most, pole.Openness);
                 }
-
-                far = Mathf.Max(far, pole.Openness);
             }
 
-            Assert.That(near, Is.GreaterThan(far),
-                $"near {near:0.00} against far {far:0.00}. Both sets moving together reads as one " +
-                "slab rather than two doors");
+            return most;
         }
 
         static IEnumerator Settle(float seconds)

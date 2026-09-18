@@ -20,13 +20,10 @@ namespace BelowTheWing.Menu
 
     public static class CrewPlate
     {
-        public const int RingPixels = 46;
+        public const int BadgePixels = 64;
 
-        public static Color Ring(bool ready) => ready ? MenuLook.Good : MenuLook.InkSoft;
-
-        public static Color Fill(bool ready) => ready ? MenuLook.Good : Color.clear;
-
-        public static bool TickShows(bool ready) => ready;
+        public static Texture2D Badge(bool ready)
+            => ready ? MenuLook.Icons.Ready : MenuLook.Icons.Unready;
 
         public static bool Visible(Vector3 viewportPoint)
             => viewportPoint.z > 0f

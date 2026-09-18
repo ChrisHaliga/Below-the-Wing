@@ -20,14 +20,14 @@ namespace BelowTheWing.Menu
 
         public bool Travelling => m_TravelledFor < m_Seconds;
 
-        public void StartOn(Transform shot)
+        // The opening frame is wherever the camera has been put in the scene, so moving it in the
+        // editor is the framing and nothing snaps it somewhere else on the first update.
+        public void StartWhereItIs()
         {
-            m_From = At(shot);
+            m_From = new Pose(transform.position, transform.rotation);
             m_To = m_From;
             m_Seconds = TravelSeconds;
             m_TravelledFor = m_Seconds;
-
-            Place();
         }
 
         public void TravelTo(Transform shot) => TravelTo(shot, TravelSeconds);
