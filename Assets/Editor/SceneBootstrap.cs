@@ -752,6 +752,12 @@ namespace BelowTheWing.EditorTools
             var backdrop = BuildBackdrop(
                 aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
 
+            // MenuDriver snaps the camera onto the wide shot on its first frame. Standing it there
+            // now means the scene view and that first frame show the same thing, rather than the
+            // camera sitting at the origin in the middle of the apron until Play is pressed.
+            eye.transform.SetPositionAndRotation(
+                backdrop.WideShot.position, backdrop.WideShot.rotation);
+
             var menu = new GameObject("Menu");
             var document = menu.AddComponent<UIDocument>();
             document.panelSettings = MenuPanel();

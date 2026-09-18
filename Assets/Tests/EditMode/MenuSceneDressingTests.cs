@@ -29,6 +29,21 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void TheCameraAlreadyStandsWhereItsFirstFrameWillPutIt()
+        {
+            var backdrop = Only<MenuBackdrop>();
+            var eye = Only<MenuCamera>();
+
+            Assert.That(Vector3.Distance(eye.transform.position, backdrop.WideShot.position),
+                Is.LessThan(0.01f),
+                "MenuDriver snaps the camera onto the wide shot on its first frame, so a camera " +
+                "parked anywhere else shows one view in the scene and jumps on Play");
+
+            Assert.That(Quaternion.Angle(eye.transform.rotation, backdrop.WideShot.rotation),
+                Is.LessThan(0.1f));
+        }
+
+        [Test]
         public void TheDoorDriverKnowsWhichCartItOpens()
         {
             var doors = Only<MenuCartDoors>();
