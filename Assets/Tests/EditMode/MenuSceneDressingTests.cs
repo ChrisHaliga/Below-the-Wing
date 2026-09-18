@@ -59,6 +59,10 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(doors.LeafCount, Is.GreaterThan(0),
                 "the menu cart's own door driver is switched off with the rest of its behaviours, " +
                 "so the reveal has nothing to move unless the leaves are wired at build time");
+
+            Assert.That(Only<MenuBackdrop>().CartDoors, Is.SameAs(doors),
+                "a MenuCartDoors standing in the scene proves nothing on its own; the backdrop is " +
+                "what the menu asks for it through");
         }
 
         [Test]

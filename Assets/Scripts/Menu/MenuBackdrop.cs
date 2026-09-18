@@ -31,17 +31,45 @@ namespace BelowTheWing.Menu
 
         public Transform InsideShot => m_InsideShot;
 
-        public MenuCartDoors CartDoors => m_CartDoors;
+        public MenuCartDoors CartDoors
+        {
+            get
+            {
+                m_CartDoors = m_CartDoors != null ? m_CartDoors : FindAnyObjectByType<MenuCartDoors>();
+
+                if (m_CartDoors == null)
+                {
+                    throw MisbuiltException.For(
+                        this,
+                        "has no cart doors to slide open, and none stand in the scene either. Run " +
+                        "Below the Wing/Rebuild apron scene and prefabs");
+                }
+
+                return m_CartDoors;
+            }
+        }
 
         public int CrewCount => m_LobbyCrew.Count;
 
         public Transform StandingAt(MenuStation station)
-            => station switch
+        {
+            var shot = station switch
             {
                 MenuStation.Wide => m_WideShot,
                 MenuStation.Inside => m_InsideShot,
                 _ => m_CartShot
             };
+
+            if (shot == null)
+            {
+                throw MisbuiltException.For(
+                    this,
+                    $"has nowhere for the camera to stand for the {station} shot. Run " +
+                    "Below the Wing/Rebuild apron scene and prefabs");
+            }
+
+            return shot;
+        }
 
         public Vector3 PlateOver(int crew)
         {
