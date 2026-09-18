@@ -103,8 +103,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: BelowTheWing.Crew::BelowTheWing.Crew.CrewCharacter
   m_Profile: {fileID: 11400000, guid: e77e2773da55baf4e9ba251f872ba604, type: 2}
-  m_ReachMetres: 3
-  m_ConeDegrees: 40
   m_StandsOn:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -172,7 +170,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: BelowTheWing.Apron::BelowTheWing.Apron.ApronAppearance
   m_Shape: 1
   m_SizeMetres: {x: 0.6, y: 1.8, z: 0.6}
-  m_Colour: {r: 0.95, g: 0.75, b: 0.15, a: 1}
+  m_Colour: {r: 0.99, g: 0.78, b: 0.13, a: 1}
   m_LabelHeightMetres: 1.26
   m_DrawnAtLocal: {x: 0, y: 0, z: 0}
   m_DisplayName: 
