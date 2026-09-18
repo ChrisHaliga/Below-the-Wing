@@ -1,0 +1,30 @@
+{
+    "name": "BelowTheWing.Editor",
+    "rootNamespace": "BelowTheWing.EditorTools",
+    "references": [
+        "BelowTheWing.Wiring",
+        "BelowTheWing.Settings",
+        "BelowTheWing.Cargo",
+        "BelowTheWing.Vehicles",
+        "BelowTheWing.Crew",
+        "BelowTheWing.Apron",
+        "BelowTheWing.Net",
+        "BelowTheWing.Session",
+        "BelowTheWing.Diagnostics",
+        "BelowTheWing.Menu",
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Components",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
