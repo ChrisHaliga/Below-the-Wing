@@ -13,7 +13,7 @@ namespace BelowTheWing.Menu
     {
         public const float TitleSeconds = 1.4f;
         public const float PanelSeconds = 1.0f;
-        public const float RevealSeconds = 1.7f;
+        public const float RevealSeconds = 3.4f;
 
         MenuStaging(MenuStation station, bool doorsOpen, float travelSeconds)
         {

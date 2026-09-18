@@ -52,17 +52,68 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void TheStagedCartCanBeOpenedWithoutItsPhysics()
+        public void TheDoorDriverKnowsWhichCartItOpens()
         {
             var doors = Only<MenuCartDoors>();
 
-            Assert.That(doors.LeafCount, Is.GreaterThan(0),
-                "the menu cart's own door driver is switched off with the rest of its behaviours, " +
-                "so the reveal has nothing to move unless the leaves are wired at build time");
+            Assert.That(doors.Cart, Is.Not.Null,
+                "the cart's own VehicleController is switched off with the rest of its behaviours, " +
+                "so the door rig is never raised unless the driver raises it");
 
             Assert.That(Only<MenuBackdrop>().CartDoors, Is.SameAs(doors),
                 "a MenuCartDoors standing in the scene proves nothing on its own; the backdrop is " +
                 "what the menu asks for it through");
+        }
+
+        [Test]
+        public void ABeltLoaderStandsBehindTheCrew()
+        {
+            var backdrop = Only<MenuBackdrop>();
+
+            Assert.That(backdrop.BeltLoader, Is.Not.Null);
+            Assert.That(backdrop.BeltLoader.GetComponentsInChildren<Renderer>(true).Length,
+                Is.GreaterThan(0));
+
+            var toTheLoader = backdrop.BeltLoader.position - backdrop.FigureFor(2).transform.position;
+            var toTheCamera = backdrop.InsideShot.position - backdrop.FigureFor(2).transform.position;
+
+            Assert.That(Vector3.Dot(toTheLoader.normalized, toTheCamera.normalized), Is.LessThan(0f),
+                "the loader is what the crew line up in front of, so it sits on the far side of " +
+                "them from the camera");
+        }
+
+        [Test]
+        public void EveryCrewFigureCarriesItsOwnGeometry()
+        {
+            var backdrop = Only<MenuBackdrop>();
+
+            for (var crew = 0; crew < backdrop.CrewCount; crew++)
+            {
+                Assert.That(backdrop.FigureFor(crew).GetComponentsInChildren<Renderer>(true).Length,
+                    Is.GreaterThan(0),
+                    $"crew figure {crew} draws nothing. RampWorker.prefab carries no renderer of its " +
+                    "own; ApronAppearance builds one at run time, and every behaviour on a dressed " +
+                    "figure is switched off");
+            }
+        }
+
+        [Test]
+        public void TheCrewStandInEvenlySpacedSlots()
+        {
+            var backdrop = Only<MenuBackdrop>();
+            var gaps = new List<float>();
+
+            for (var crew = 1; crew < backdrop.CrewCount; crew++)
+            {
+                gaps.Add(Vector3.Distance(
+                    backdrop.FigureFor(crew).transform.position,
+                    backdrop.FigureFor(crew - 1).transform.position));
+            }
+
+            foreach (var gap in gaps)
+            {
+                Assert.That(gap, Is.EqualTo(gaps[0]).Within(1e-3f));
+            }
         }
 
         [Test]

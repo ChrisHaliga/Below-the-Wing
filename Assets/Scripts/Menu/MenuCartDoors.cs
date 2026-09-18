@@ -8,55 +8,128 @@ namespace BelowTheWing.Menu
     [DisallowMultipleComponent]
     public sealed class MenuCartDoors : MonoBehaviour
     {
-        public const float SwingSeconds = 1.1f;
+        [SerializeField, Tooltip("The cart whose doors the menu slides open")]
+        GameObject m_Cart;
 
-        [SerializeField, Tooltip("Door panels and their fabric, each slid by its first blend shape")]
-        List<SkinnedMeshRenderer> m_Leaves = new List<SkinnedMeshRenderer>();
+        [SerializeField, Tooltip("Shove given to each door pole, newton-seconds. Higher slams harder")]
+        float m_ShoveNewtonSeconds = 55f;
 
-        float m_Openness;
-        float m_Wanted;
+        [SerializeField, Tooltip("How long the far doors wait after the near ones are shoved, seconds")]
+        float m_SecondSetWaitsSeconds = 0.35f;
 
-        public float Openness => m_Openness;
+        readonly List<Rigidbody> m_Near = new List<Rigidbody>();
+        readonly List<Rigidbody> m_Far = new List<Rigidbody>();
+        readonly List<SlidingDoorPole> m_Poles = new List<SlidingDoorPole>();
 
-        public int LeafCount => m_Leaves.Count;
+        bool m_Open;
+        bool m_NearShoved = true;
+        bool m_FarShoved = true;
+        float m_Since;
 
-        public static float Toward(float openness, float wanted, float seconds, float step)
-            => Mathf.MoveTowards(openness, wanted, seconds <= 0f ? 1f : step / seconds);
+        public GameObject Cart => m_Cart;
 
-        public static float WeightFor(float openness) => SlidingDoor.ShapeWeight(openness);
+        public float Openness
+        {
+            get
+            {
+                var most = 0f;
 
-        public void Open(bool open) => m_Wanted = open ? 1f : 0f;
+                foreach (var pole in m_Poles)
+                {
+                    most = Mathf.Max(most, pole.Openness);
+                }
+
+                return most;
+            }
+        }
+
+        public static float WaitFor(bool nearTheCamera, float secondSetWaits)
+            => nearTheCamera ? 0f : Mathf.Max(secondSetWaits, 0f);
+
+        public static float ShoveFor(bool open, float newtonSeconds)
+            => (open ? 1f : -1f) * Mathf.Max(newtonSeconds, 0f);
+
+        public static bool NearTheCamera(float poleAcrossTheCart) => poleAcrossTheCart > 0f;
+
+        public void Open(bool open)
+        {
+            if (open == m_Open)
+            {
+                return;
+            }
+
+            m_Open = open;
+            m_Since = 0f;
+            m_NearShoved = false;
+            m_FarShoved = false;
+        }
 
         void OnEnable()
         {
-            foreach (var leaf in m_Leaves)
+            if (m_Cart == null)
             {
-                if (leaf == null || leaf.sharedMesh == null || leaf.sharedMesh.blendShapeCount == 0)
-                {
-                    throw MisbuiltException.Refuse(this, "carries a door leaf with no blend shape to slide");
-                }
+                throw MisbuiltException.Refuse(this, "has no cart, so there are no doors to open");
             }
 
-            m_Openness = 0f;
-            m_Wanted = 0f;
+            RaiseTheRig();
+        }
 
-            Paint();
+        void RaiseTheRig()
+        {
+            SlidingDoors.Build(m_Cart, m_Cart.GetComponent<VehicleShape>(), null);
+
+            m_Poles.Clear();
+            m_Near.Clear();
+            m_Far.Clear();
+
+            foreach (var pole in m_Cart.GetComponentsInChildren<SlidingDoorPole>(true))
+            {
+                pole.enabled = true;
+
+                var body = pole.GetComponent<Rigidbody>();
+                body.isKinematic = false;
+
+                m_Poles.Add(pole);
+                (NearTheCamera(pole.transform.localPosition.x) ? m_Near : m_Far).Add(body);
+            }
+
+            if (m_Poles.Count == 0)
+            {
+                throw MisbuiltException.Refuse(this, "raised no door poles on its cart");
+            }
         }
 
         void Update()
         {
-            m_Openness = Toward(m_Openness, m_Wanted, SwingSeconds, Time.unscaledDeltaTime);
+            if (m_NearShoved && m_FarShoved)
+            {
+                return;
+            }
 
-            Paint();
+            m_Since += Time.deltaTime;
+
+            if (!m_NearShoved)
+            {
+                Shove(m_Near);
+                m_NearShoved = true;
+            }
+
+            if (!m_FarShoved && m_Since >= WaitFor(nearTheCamera: false, m_SecondSetWaitsSeconds))
+            {
+                Shove(m_Far);
+                m_FarShoved = true;
+            }
         }
 
-        void Paint()
+        void Shove(IReadOnlyList<Rigidbody> poles)
         {
-            var weight = WeightFor(m_Openness);
+            var shove = ShoveFor(m_Open, m_ShoveNewtonSeconds);
 
-            foreach (var leaf in m_Leaves)
+            foreach (var body in poles)
             {
-                leaf.SetBlendShapeWeight(0, weight);
+                body.AddForce(
+                    body.GetComponent<SlidingDoorPole>().OpensToward * shove,
+                    ForceMode.Impulse);
             }
         }
     }

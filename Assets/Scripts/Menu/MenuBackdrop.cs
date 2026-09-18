@@ -25,6 +25,9 @@ namespace BelowTheWing.Menu
         [SerializeField, Tooltip("How far above a crew member's feet their nameplate floats")]
         float m_PlateHeightMetres = 2.05f;
 
+        [SerializeField, Tooltip("The belt loader the crew line up in front of")]
+        Transform m_BeltLoader;
+
         public Transform WideShot => m_WideShot;
 
         public Transform CartShot => m_CartShot;
@@ -54,6 +57,18 @@ namespace BelowTheWing.Menu
 
         public int CrewCount => m_LobbyCrew.Count;
 
+        public Transform BeltLoader => m_BeltLoader;
+
+        public GameObject FigureFor(int crew)
+        {
+            if (crew < 0 || crew >= m_LobbyCrew.Count || m_LobbyCrew[crew] == null)
+            {
+                throw MisbuiltException.For(this, $"has no crew figure {crew}");
+            }
+
+            return m_LobbyCrew[crew];
+        }
+
         public Transform StandingAt(MenuStation station)
         {
             var shot = station switch
@@ -75,14 +90,7 @@ namespace BelowTheWing.Menu
         }
 
         public Vector3 PlateOver(int crew)
-        {
-            if (crew < 0 || crew >= m_LobbyCrew.Count || m_LobbyCrew[crew] == null)
-            {
-                throw MisbuiltException.For(this, $"has no crew figure {crew} to float a nameplate over");
-            }
-
-            return m_LobbyCrew[crew].transform.position + (Vector3.up * m_PlateHeightMetres);
-        }
+            => FigureFor(crew).transform.position + (Vector3.up * m_PlateHeightMetres);
 
         public void ShowThisManyCrew(int howMany)
         {

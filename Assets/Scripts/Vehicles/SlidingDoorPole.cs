@@ -15,6 +15,11 @@ namespace BelowTheWing.Vehicles
 
         public float Openness { get; private set; }
 
+        public Vector3 OpensToward
+            => transform.parent != null
+                ? transform.parent.TransformDirection(m_Along)
+                : m_Along;
+
         public void Runs(
             SkinnedMeshRenderer panel, SkinnedMeshRenderer fabric, Transform cover,
             Vector3 shutAtLocal, Vector3 alongLocal, float travelMetres, float fixedPoleAt)

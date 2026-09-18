@@ -23,6 +23,11 @@ namespace BelowTheWing.EditorTools
     public static class SceneBootstrap
     {
         const string PrefabFolder = "Assets/Content/Prefabs";
+        const string BeltLoaderModelPath = "Assets/Content/Vehicles/belt_loader.fbx";
+
+        const float CrewStandBackMetres = 4.15f;
+        const float CrewSpacingMetres = 1.2f;
+        const float LoaderSitsBackMetres = 1.4f;
         const string ScenePath = "Assets/Scenes/Apron.unity";
         const string MenuScenePath = "Assets/Scenes/Menu.unity";
         const string ApronMaterialPath = "Assets/Content/ApronConcrete.mat";
@@ -759,43 +764,104 @@ namespace BelowTheWing.EditorTools
 
             var stage = train.Carts[0];
             var facing = stage.Rotation * Vector3.right;
-            var behindTheCart = stage.Position - (facing * 2.9f);
             var alongTheCart = stage.Rotation * Vector3.forward;
+            var crewLine = stage.Position - (facing * CrewStandBackMetres);
 
             var standing = new List<GameObject>(Shift.MostCrew);
 
             for (var i = 0; i < Shift.MostCrew; i++)
             {
-                var at = behindTheCart + (alongTheCart * ((i - 2f) * 0.85f));
+                var at = crewLine
+                         + (alongTheCart * ((i - ((Shift.MostCrew - 1) * 0.5f)) * CrewSpacingMetres))
+                         + (Vector3.up * (crewProfile.heightMetres * 0.5f));
+
                 var figure = Dress(
                     crew,
                     new Placement($"Crew {i + 1}", at, Quaternion.LookRotation(facing), Vector3.one),
                     holder.transform);
 
+                GreyboxShape.AttachCapsule(
+                    figure.transform,
+                    crewProfile.heightMetres,
+                    crewProfile.radiusMetres * 2f,
+                    HiVisYellow);
+
                 figure.SetActive(false);
                 standing.Add(figure);
             }
 
+            var loader = ParkTheBeltLoader(holder.transform, crewLine, facing);
+
             var nose = plan.Aircraft.Position;
             var tug = train.Tractor.Position;
             var eyeHeight = crewProfile.heightMetres * 0.92f;
+            var doorwayHeight = DoorwayHeightOf(staged);
 
             Set(backdrop, "m_WideShot", Shot("Wide shot", holder.transform,
                 tug + new Vector3(19f, 7.5f, -13f), Vector3.Lerp(nose, tug, 0.55f) + (Vector3.up * 2.5f)));
 
             Set(backdrop, "m_CartShot", Shot("Cart shot", holder.transform,
-                stage.Position + (facing * 6.4f) + new Vector3(0f, eyeHeight, 0f),
-                stage.Position + new Vector3(0f, 1.05f, 0f)));
+                stage.Position + (facing * 4.6f) + new Vector3(0f, eyeHeight, 0f),
+                stage.Position + new Vector3(0f, doorwayHeight, 0f)));
 
+            // The push ends inside the cart body, so the far doorway frames the crew and the loader.
             Set(backdrop, "m_InsideShot", Shot("Inside shot", holder.transform,
-                stage.Position + (facing * 3.1f) + new Vector3(0f, eyeHeight, 0f),
-                behindTheCart + new Vector3(0f, 1.15f, 0f)));
+                stage.Position + (facing * 0.35f) + new Vector3(0f, doorwayHeight, 0f),
+                crewLine + new Vector3(0f, crewProfile.heightMetres * 0.62f, 0f)));
 
             SetList(backdrop, "m_LobbyCrew", standing);
             Set(backdrop, "m_PlateHeightMetres", crewProfile.heightMetres + 0.35f);
+            Set(backdrop, "m_BeltLoader", loader.transform);
             Set(backdrop, "m_CartDoors", DoorsOf(holder, staged));
 
             return backdrop;
+        }
+
+        static GameObject ParkTheBeltLoader(Transform under, Vector3 crewLine, Vector3 facing)
+        {
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(BeltLoaderModelPath);
+
+            if (model == null)
+            {
+                throw new InvalidOperationException($"There is no belt loader model at {BeltLoaderModelPath}.");
+            }
+
+            var loader = Dress(
+                model,
+                new Placement("Belt loader", crewLine, Quaternion.LookRotation(-facing), Vector3.one),
+                under);
+
+            loader.transform.position =
+                crewLine - (facing * (ReachesForward(loader, facing) + LoaderSitsBackMetres));
+
+            return loader;
+        }
+
+        static float ReachesForward(GameObject thing, Vector3 facing)
+        {
+            var from = thing.transform.position;
+            var most = 0f;
+
+            foreach (var drawn in thing.GetComponentsInChildren<Renderer>(true))
+            {
+                most = Mathf.Max(most, Vector3.Dot(drawn.bounds.max - from, facing));
+                most = Mathf.Max(most, Vector3.Dot(drawn.bounds.min - from, facing));
+            }
+
+            return most;
+        }
+
+        static float DoorwayHeightOf(GameObject staged)
+        {
+            foreach (var skin in staged.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                if (skin.sharedMesh != null && skin.sharedMesh.blendShapeCount > 0)
+                {
+                    return skin.bounds.center.y - staged.transform.position.y;
+                }
+            }
+
+            throw new InvalidOperationException($"{staged.name} has no door to measure a doorway from.");
         }
 
         // The driver goes on the backdrop rather than on the cart. A component added to a prefab
@@ -804,17 +870,8 @@ namespace BelowTheWing.EditorTools
         static MenuCartDoors DoorsOf(GameObject holder, GameObject staged)
         {
             var doors = holder.AddComponent<MenuCartDoors>();
-            var leaves = new List<SkinnedMeshRenderer>();
 
-            foreach (var skin in staged.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-            {
-                if (skin.sharedMesh != null && skin.sharedMesh.blendShapeCount > 0)
-                {
-                    leaves.Add(skin);
-                }
-            }
-
-            SetList(doors, "m_Leaves", leaves);
+            Set(doors, "m_Cart", staged);
 
             return doors;
         }
