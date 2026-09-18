@@ -77,7 +77,7 @@ if ($Platform -eq "Compile") {
     $code = Invoke-Unity @("-batchmode", "-quit", "-nographics", "-projectPath", $Paths.Mirror, "-logFile", $log)
 
     if ($code -ne 0 -or (Get-ProjectCompileErrors $log).Count -gt 0) {
-        "  FAILED"
+        "  FAILED (Unity exit code $code)"
         Explain-Failure $log $Paths $code | Out-Host
         exit 1
     }

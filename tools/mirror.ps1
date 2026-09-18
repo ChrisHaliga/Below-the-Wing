@@ -57,7 +57,9 @@ function Repair-PackageCache([hashtable]$Paths) {
 # so -Wait never returns.
 function Invoke-Unity([string[]]$Arguments) {
     $proc = Start-Process -FilePath (Get-UnityPath) -ArgumentList $Arguments -PassThru -NoNewWindow
+    $null = $proc.Handle
     $proc.WaitForExit()
+    if ($null -eq $proc.ExitCode) { throw "Unity exited but its exit code was lost; the process handle was not held." }
     return $proc.ExitCode
 }
 
@@ -92,7 +94,12 @@ function Explain-Failure([string]$Log, [hashtable]$Paths, [int]$ExitCode) {
     if ($packages -gt 0) {
         "  Unity exit $ExitCode with no errors in Assets and $packages in Library\PackageCache."
         "  That is the mirror's Library, not the code. Deleting $($Paths.Mirror)\Library; run again."
-        Remove-Item (Join-Path $Paths.Mirror "Library") -Recurse -Force -ErrorAction SilentlyContinue
+        try {
+            Remove-Item (Join-Path $Paths.Mirror "Library") -Recurse -Force -ErrorAction Stop
+        }
+        catch {
+            "  Could not delete it: $($_.Exception.Message). Close whatever holds it and delete it by hand."
+        }
         return
     }
 
