@@ -33,6 +33,35 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator AnAircraftWithNoProfileRefusesToRun()
+        {
+            m_Object.AddComponent<Rigidbody>();
+            m_Object.AddComponent<BoxCollider>();
+
+            var aircraft = m_Object.AddComponent<BelowTheWing.Apron.AircraftBody>();
+            LogAssert.Expect(LogType.Exception, new Regex("Unwired.*has no aircraft profile"));
+
+            yield return null;
+
+            Assert.That(aircraft.enabled, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator AnAircraftWithNothingSolidOnItRefusesToRun()
+        {
+            m_Object.AddComponent<Rigidbody>();
+
+            var aircraft = m_Object.AddComponent<BelowTheWing.Apron.AircraftBody>();
+            LogAssert.Expect(LogType.Exception, new Regex("Unwired.*has no"));
+
+            yield return null;
+
+            Assert.That(aircraft.enabled, Is.False,
+                "an aircraft with no collider anywhere inside it is a forty-tonne hole crew and " +
+                "vehicles drive straight through, and nothing at runtime would say so");
+        }
+
+        [UnityTest]
         public IEnumerator ACrewMemberWithNoProfileRefusesToRun()
         {
             var crew = m_Object.AddComponent<CrewCharacter>();

@@ -11,9 +11,7 @@ namespace BelowTheWing.Apron
 
         public readonly VehicleFootprint BeltLoader;
 
-        public readonly Vector3 AircraftSizeMetres;
-
-        public readonly Vector3 AircraftCentreLocal;
+        public readonly VehicleFootprint Aircraft;
 
         public readonly Vector3 CrewSizeMetres;
 
@@ -21,15 +19,13 @@ namespace BelowTheWing.Apron
             VehicleFootprint tractor,
             VehicleFootprint cart,
             VehicleFootprint beltLoader,
-            Vector3 aircraftSizeMetres,
-            Vector3 aircraftCentreLocal,
+            VehicleFootprint aircraft,
             Vector3 crewSizeMetres)
         {
             Tractor = tractor;
             Cart = cart;
             BeltLoader = beltLoader;
-            AircraftSizeMetres = aircraftSizeMetres;
-            AircraftCentreLocal = aircraftCentreLocal;
+            Aircraft = aircraft;
             CrewSizeMetres = crewSizeMetres;
         }
     }

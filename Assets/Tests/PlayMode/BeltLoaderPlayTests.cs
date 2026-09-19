@@ -72,7 +72,7 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator TheBeltLoaderTopsOutSlowerThanATractor()
+        public IEnumerator TheBeltLoaderTopsOutNearTheSevenMetresPerSecondItsProfileAsksFor()
         {
             var loader = ABeltLoaderAt(Vector3.zero);
 
@@ -83,9 +83,10 @@ namespace BelowTheWing.Tests.PlayMode
 
             var speed = loader.GetComponent<Rigidbody>().linearVelocity.magnitude;
 
-            Assert.That(speed, Is.LessThan(9f),
-                $"the loader reached {speed:F2} m/s. It is geared for the apron at around 7 m/s, " +
-                "and a conveyor that keeps up with a tractor is a conveyor nobody walks beside");
+            Assert.That(speed, Is.LessThan(m_Profile.topSpeedMetresPerSecond * 1.3f),
+                $"the loader reached {speed:F2} m/s against a profile asking for " +
+                $"{m_Profile.topSpeedMetresPerSecond:F1}. A machine that ignores its own top speed " +
+                "is a machine whose profile is decoration");
         }
 
         [UnityTest]

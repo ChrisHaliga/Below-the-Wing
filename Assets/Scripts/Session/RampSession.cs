@@ -230,8 +230,7 @@ namespace BelowTheWing.Session
                 m_TractorPrefab.GetComponent<VehicleShape>().Footprint,
                 m_CartPrefab.GetComponent<VehicleShape>().Footprint,
                 m_BeltLoaderPrefab.GetComponent<VehicleShape>().Footprint,
-                m_AircraftPrefab.GetComponent<AircraftShape>().EnvelopeSizeMetres,
-                m_AircraftPrefab.GetComponent<AircraftShape>().EnvelopeCentreLocal,
+                m_AircraftPrefab.GetComponent<AircraftShape>().Footprint,
                 m_CrewProfile.SizeMetres));
 
             var mine = MyArrival(plan.CrewSpawnPoints);

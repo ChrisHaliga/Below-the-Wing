@@ -23,23 +23,21 @@ namespace BelowTheWing.EditorTools
         const float AircraftLabelAboveTheTailMetres = 2f;
 
         internal static GameObject BuildTractor(VehicleProfile profile)
-        {
-            var go = NewVehicle(
+            => BuildSomethingDriven(
                 "BaggageTractor", profile, ContentPaths.TractorModelPath, ModelMeasure.MeasureTheTractor);
 
-            go.AddComponent<VehicleOccupant>();
-
-            return SaveAndDiscard(go, $"{ContentPaths.PrefabFolder}/BaggageTractor.prefab");
-        }
-
         internal static GameObject BuildBeltLoader(VehicleProfile profile)
-        {
-            var go = NewVehicle(
+            => BuildSomethingDriven(
                 "BeltLoader", profile, ContentPaths.BeltLoaderModelPath, ModelMeasure.MeasureTheBeltLoader);
 
+        static GameObject BuildSomethingDriven(
+            string name, VehicleProfile profile, string modelPath, Func<GameObject, Transform, MeasuredVehicle> measure)
+        {
+            var go = NewVehicle(name, profile, modelPath, measure);
+
             go.AddComponent<VehicleOccupant>();
 
-            return SaveAndDiscard(go, $"{ContentPaths.PrefabFolder}/BeltLoader.prefab");
+            return SaveAndDiscard(go, $"{ContentPaths.PrefabFolder}/{name}.prefab");
         }
 
         internal static GameObject BuildCart(VehicleProfile profile)

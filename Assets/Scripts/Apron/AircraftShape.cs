@@ -1,3 +1,4 @@
+using BelowTheWing.Vehicles;
 using UnityEngine;
 
 namespace BelowTheWing.Apron
@@ -14,6 +15,9 @@ namespace BelowTheWing.Apron
         public Vector3 EnvelopeSizeMetres => m_EnvelopeSizeMetres;
 
         public Vector3 EnvelopeCentreLocal => m_EnvelopeCentreLocal;
+
+        public VehicleFootprint Footprint
+            => VehicleFootprint.Of(m_EnvelopeSizeMetres, m_EnvelopeCentreLocal, null, null);
 
         public void Describe(Vector3 sizeMetres, Vector3 centreLocal)
         {

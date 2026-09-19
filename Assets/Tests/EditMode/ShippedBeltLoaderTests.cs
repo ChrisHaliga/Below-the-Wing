@@ -1,3 +1,4 @@
+using BelowTheWing.Crew;
 using BelowTheWing.Session;
 using BelowTheWing.Vehicles;
 using NUnit.Framework;
@@ -66,15 +67,26 @@ namespace BelowTheWing.Tests.EditMode
                 "nothing says where a driver sits, so a crew member climbing in is dropped at the " +
                 "loader's origin, which is on the ground between its wheels");
 
-            Assert.That(seat.Value.y, Is.GreaterThan(0.4f),
-                $"the seat sits {seat.Value.y:0.00} m up, which is below the deck");
+            var envelope = new Bounds(shape.EnvelopeCentreLocal, shape.EnvelopeSizeMetres);
+            var radius = ShippedContent.Load<CrewProfile>("Assets/Content/Crew/RampWorker.asset").radiusMetres;
 
-            Assert.That(Mathf.Abs(seat.Value.x), Is.GreaterThan(0.5f),
-                $"the seat sits {seat.Value.x:0.00} m off the centreline, which is on top of the belt");
+            Assert.That(seat.Value.y, Is.GreaterThan(envelope.min.y + 0.4f),
+                $"the seat sits {seat.Value.y:0.00} m up, which is below the deck");
 
             Assert.That(seat.Value.z, Is.LessThan(0f),
                 $"the seat sits at z {seat.Value.z:0.00}, ahead of the chassis centre. A loader is " +
                 "driven from the back, looking along the belt");
+
+            Assert.That(seat.Value.x, Is.GreaterThan(envelope.min.x).And.LessThan(0f),
+                $"the seat at x {seat.Value.x:0.00} is outside the loader's own left edge at " +
+                $"{envelope.min.x:0.00}, so the driver is not standing on the machine at all");
+
+            Assert.That(seat.Value.x + radius, Is.LessThan(0.2f),
+                $"a driver of {radius:0.00} m radius seated at x {seat.Value.x:0.00} reaches to " +
+                $"{seat.Value.x + radius:0.00}, which is across the middle of the belt. " +
+                "belt_loader.fbx carries no SEAT marker and its clear deck either side of the belt " +
+                "is 0.265 m wide against a 0.6 m body, so the seat is derived and the driver " +
+                "overlaps the rails. A SEAT marker in the model is what fixes it properly");
         }
 
         [Test]

@@ -11,7 +11,9 @@ namespace BelowTheWing.Tests.Support
         public static readonly Vector3 BeltLoaderSizeMetres = new Vector3(1.62f, 0.79f, 4.68f);
 
         public static VehicleFootprint BeltLoaderFootprint
-            => VehicleFootprint.Of(BeltLoaderSizeMetres, null, null);
+            => VehicleFootprint.Of(BeltLoaderSizeMetres, BeltLoaderCentreLocal, null, null);
+
+        public static readonly Vector3 BeltLoaderCentreLocal = new Vector3(0f, 0.3966f, 0.2741f);
 
         public static VehicleShape.Measurements BeltLoader()
         {
@@ -46,7 +48,12 @@ namespace BelowTheWing.Tests.Support
             };
         }
 
-        public static readonly Vector3 AircraftCentreLocal = new Vector3(0f, 3.53f, 0.40f);
+        public static readonly Vector3 AircraftCentreLocal = new Vector3(0f, 3.5306f, -0.3998f);
+
+        public static VehicleFootprint AircraftFootprint
+            => VehicleFootprint.Of(AircraftSizeMetres, AircraftCentreLocal, null, null);
+
+        public static readonly VehicleFootprint NoAircraft = new VehicleFootprint();
 
         public static VehicleShape On(GameObject vehicle, VehicleShape.Measurements measurements)
         {

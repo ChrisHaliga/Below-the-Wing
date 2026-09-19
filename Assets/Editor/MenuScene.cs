@@ -104,8 +104,7 @@ namespace BelowTheWing.EditorTools
                 tractor.GetComponent<VehicleShape>().Footprint,
                 cart.GetComponent<VehicleShape>().Footprint,
                 beltLoader.GetComponent<VehicleShape>().Footprint,
-                aircraft.GetComponent<AircraftShape>().EnvelopeSizeMetres,
-                aircraft.GetComponent<AircraftShape>().EnvelopeCentreLocal,
+                aircraft.GetComponent<AircraftShape>().Footprint,
                 crewProfile.SizeMetres));
 
             Stage(aircraft, plan.Aircraft, holder.transform);

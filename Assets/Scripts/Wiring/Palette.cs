@@ -20,7 +20,6 @@ namespace BelowTheWing.Wiring
 
         public static readonly Color ApronConcrete = new Color(0.32f, 0.33f, 0.34f);
         public static readonly Color BagCanvas = new Color(0.45f, 0.38f, 0.32f);
-        public static readonly Color FuselageWhite = new Color(0.82f, 0.82f, 0.85f);
 
         public static readonly Color LeftHand = new Color(0.85f, 0.15f, 0.15f);
         public static readonly Color RightHand = new Color(0.15f, 0.8f, 0.25f);

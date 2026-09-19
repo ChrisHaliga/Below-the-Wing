@@ -25,8 +25,7 @@ namespace BelowTheWing.Session
                 tractorPrefab.GetComponent<VehicleShape>().Footprint,
                 cartFootprint,
                 beltLoaderPrefab.GetComponent<VehicleShape>().Footprint,
-                aircraftPrefab.GetComponent<AircraftShape>().EnvelopeSizeMetres,
-                aircraftPrefab.GetComponent<AircraftShape>().EnvelopeCentreLocal,
+                aircraftPrefab.GetComponent<AircraftShape>().Footprint,
                 crewProfile.SizeMetres));
 
             Place(aircraftPrefab, plan.Aircraft);

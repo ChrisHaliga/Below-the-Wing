@@ -32,9 +32,20 @@ if ($code -ne 0) {
     throw "rebuild failed"
 }
 
-foreach ($folder in @("Assets\Content", "Assets\UI")) {
+# Prefabs are mirrored, so a prefab the run stopped building stops existing here too. Everything
+# else under Assets\Content is copied without deleting: those folders hold hand-made art the run
+# never writes, and /MIR would take anything the mirror happened not to have.
+foreach ($folder in @("Assets\Content\Prefabs", "Assets\UI")) {
     if (Test-Path "$($Paths.Mirror)\$folder") {
         robocopy "$($Paths.Mirror)\$folder" "$($Paths.Source)\$folder" /MIR /NJH /NJS /NFL /NDL /R:2 /W:1 | Out-Null
+        if ($LASTEXITCODE -ge 8) { throw "copying $folder back failed (exit $LASTEXITCODE)" }
+        "  copied back $folder"
+    }
+}
+
+foreach ($folder in @("Assets\Content")) {
+    if (Test-Path "$($Paths.Mirror)\$folder") {
+        robocopy "$($Paths.Mirror)\$folder" "$($Paths.Source)\$folder" /E /NJH /NJS /NFL /NDL /R:2 /W:1 | Out-Null
         if ($LASTEXITCODE -ge 8) { throw "copying $folder back failed (exit $LASTEXITCODE)" }
         "  copied back $folder"
     }

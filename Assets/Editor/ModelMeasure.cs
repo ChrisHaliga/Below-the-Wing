@@ -66,6 +66,7 @@ namespace BelowTheWing.EditorTools
             });
 
             var chassis = MeshBoxLocal(loader, model, "Body");
+            var belt = MeshBoxLocal(loader, model, "Belt");
             var envelope = EverythingItIsMadeOf(loader, model);
 
             return new MeasuredVehicle(
@@ -74,7 +75,7 @@ namespace BelowTheWing.EditorTools
                     Wheels = measured.Placements,
                     FrontCouplingLocal = null,
                     RearCouplingLocal = null,
-                    SeatLocal = WhereADriverPerches(chassis),
+                    SeatLocal = WhereADriverPerches(chassis, belt),
                     EnvelopeSizeMetres = envelope.size,
                     EnvelopeCentreLocal = envelope.center,
                     InteriorLocal = new Bounds(Vector3.zero, Vector3.zero),
@@ -83,13 +84,13 @@ namespace BelowTheWing.EditorTools
                 measured.Visible);
         }
 
-        const float DriverSitsAheadOfTheChassisRearMetres = 0.5f;
+        const float DriverStandsThisFarAlongTheChassis = 0.15f;
 
-        static Vector3 WhereADriverPerches(Bounds chassis)
+        static Vector3 WhereADriverPerches(Bounds chassis, Bounds belt)
             => new Vector3(
-                chassis.min.x,
+                (chassis.min.x + belt.min.x) * 0.5f,
                 chassis.max.y,
-                chassis.min.z + DriverSitsAheadOfTheChassisRearMetres);
+                Mathf.Lerp(chassis.min.z, chassis.max.z, DriverStandsThisFarAlongTheChassis));
 
         static List<VehicleShape.SolidPart> SolidPieces(
             GameObject vehicle, Transform model, IReadOnlyList<string> paths)

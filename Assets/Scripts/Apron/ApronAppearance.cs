@@ -8,13 +8,11 @@ namespace BelowTheWing.Apron
     {
         public enum Shape
         {
-            Box,
+            Box = 0,
 
-            UprightCapsule,
+            UprightCapsule = 1,
 
-            LyingCapsule,
-
-            AlreadyModelled
+            AlreadyModelled = 3
         }
 
         [SerializeField, Tooltip("Stand-in shape to draw")]
@@ -83,10 +81,6 @@ namespace BelowTheWing.Apron
             {
                 case Shape.UprightCapsule:
                     GreyboxShape.AttachCapsule(transform, m_SizeMetres.y, m_SizeMetres.x, m_Colour);
-                    break;
-
-                case Shape.LyingCapsule:
-                    GreyboxShape.AttachLyingCapsule(transform, m_SizeMetres.y, m_SizeMetres.x, m_Colour);
                     break;
 
                 case Shape.AlreadyModelled:

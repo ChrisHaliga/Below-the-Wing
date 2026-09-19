@@ -34,7 +34,7 @@ namespace BelowTheWing.Tests.EditMode
                 settings,
                 new ApronEquipment(
                     m_Tractor, m_Cart, TestShapes.BeltLoaderFootprint,
-                    TestShapes.AircraftSizeMetres, TestShapes.AircraftCentreLocal, m_Crew.SizeMetres));
+                    TestShapes.AircraftFootprint, m_Crew.SizeMetres));
 
         [Test]
         public void TheApronHoldsAnAircraftABeltLoaderTwoTractorsAndEightCarts()
@@ -202,8 +202,8 @@ namespace BelowTheWing.Tests.EditMode
             var plan = Plan(settings);
             var train = plan.Trains[0];
 
-            var narrow = new VehicleFootprint(new Vector3(1.6f, 2f, 3.8f), m_Cart.FrontReachMetres, m_Cart.RearReachMetres);
-            var wide = new VehicleFootprint(new Vector3(3.2f, 2f, 3.8f), m_Cart.FrontReachMetres, m_Cart.RearReachMetres);
+            var narrow = new VehicleFootprint(new Vector3(1.6f, 2f, 3.8f), m_Cart.EnvelopeCentreLocal, m_Cart.FrontReachMetres, m_Cart.RearReachMetres);
+            var wide = new VehicleFootprint(new Vector3(3.2f, 2f, 3.8f), m_Cart.EnvelopeCentreLocal, m_Cart.FrontReachMetres, m_Cart.RearReachMetres);
 
             var besideNarrow = ApronLayout.BagsBeside(train, narrow, Vector3.one * 0.3f, settings)[0].Position.x;
             var besideWide = ApronLayout.BagsBeside(train, wide, Vector3.one * 0.3f, settings)[0].Position.x;
@@ -213,13 +213,9 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void ThePlannedAircraftIsAsWideAsTheArtRatherThanAsWideAsItsFuselage()
+        public void NothingIsPlannedInsideTheAircraftNowItsWingsAreCounted()
         {
             var plan = Plan(ApronLayoutSettings.Default);
-
-            Assert.That(plan.Aircraft.SizeMetres.x, Is.EqualTo(21.21f).Within(0.01f),
-                "the aircraft used to be planned as a capsule the width of its fuselage, so a wing " +
-                "reaching ten metres out counted for nothing and anything could be parked under it");
 
             foreach (var thing in plan.Everything)
             {
@@ -239,17 +235,20 @@ namespace BelowTheWing.Tests.EditMode
             var settings = ApronLayoutSettings.Default;
             var loader = Plan(settings).BeltLoader;
 
-            Assert.That(loader.Position.x,
-                Is.EqualTo(-settings.beltLoaderStandsLeftOfTheCentrelineMetres).Within(1e-3f),
-                "the loader parks on the aircraft's left, where its hold door is");
-            Assert.That(loader.Position.z,
-                Is.EqualTo(-settings.beltLoaderStandsAftOfTheCentreMetres).Within(1e-3f));
+            Assert.That(loader.Position.x, Is.LessThan(0f),
+                "the loader parks on the aircraft's left");
+            Assert.That(loader.Position.z, Is.LessThan(0f),
+                "the loader parks aft of the aircraft's centre");
             Assert.That(loader.Position.y, Is.EqualTo(0f).Within(1e-4f),
                 "the loader stands on the apron, not above it");
 
             Assert.That((loader.Rotation * Vector3.forward).x, Is.GreaterThan(0.99f),
-                "the loader is turned to face the fuselage, so its belt runs at the hold rather " +
-                "than along the apron");
+                "the loader is turned to face the fuselage, so its belt runs across the apron at " +
+                "the aircraft rather than along it");
+
+            Assert.That(loader.Bounds.max.x, Is.LessThan(0f),
+                "the loader's belt reaches past the aircraft's centreline, which puts it through " +
+                "the far side of the fuselage");
         }
 
         [Test]
@@ -270,6 +269,17 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(() => Plan(settings), Throws.InvalidOperationException.With.Message.Contains("Belt loader"),
                 "a player arriving on top of the belt loader is two bodies in one place, which is " +
                 "exactly what the arrival check exists to catch");
+        }
+
+        [Test]
+        public void APlacementFillsTheRoomAboveItsGroundPointRatherThanRoomUnderTheApron()
+        {
+            var tug = Plan(ApronLayoutSettings.Default).Trains[0].Tractor;
+
+            Assert.That(tug.Bounds.min.y, Is.GreaterThanOrEqualTo(-0.01f),
+                $"the tug's box starts {tug.Bounds.min.y:0.00} m underground. A placement stands on " +
+                "the apron, so a box centred on its ground point buries half of it and leaves the " +
+                "top half of the machine outside anything the arrival check looks at");
         }
 
         [Test]

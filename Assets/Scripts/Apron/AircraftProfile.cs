@@ -10,6 +10,6 @@ namespace BelowTheWing.Apron
         public string equipmentNote = "";
 
         [Tooltip("Mass, kg")]
-        public float massKg = 21523f;
+        public float massKg = 13835f;
     }
 }

@@ -29,13 +29,6 @@ namespace BelowTheWing.Wiring
             return shape;
         }
 
-        public static Transform AttachLyingCapsule(Transform target, float lengthMetres, float diameterMetres, Color colour)
-        {
-            var shape = AttachCapsule(target, lengthMetres, diameterMetres, colour);
-            shape.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            return shape;
-        }
-
         public static void DiscardThePaintOn(Transform shape)
         {
             var renderer = shape != null ? shape.GetComponent<MeshRenderer>() : null;

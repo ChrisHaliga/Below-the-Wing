@@ -232,8 +232,8 @@ namespace BelowTheWing.Apron
                 "Aircraft",
                 Vector3.zero,
                 Quaternion.identity,
-                equipment.AircraftSizeMetres,
-                equipment.AircraftCentreLocal);
+                equipment.Aircraft.EnvelopeSizeMetres,
+                equipment.Aircraft.EnvelopeCentreLocal);
             everything.Add(aircraftPlacement);
 
             var beltLoaderPlacement = new Placement(
@@ -243,7 +243,8 @@ namespace BelowTheWing.Apron
                     0f,
                     -settings.beltLoaderStandsAftOfTheCentreMetres),
                 Quaternion.LookRotation(Vector3.right),
-                equipment.BeltLoader.EnvelopeSizeMetres);
+                equipment.BeltLoader.EnvelopeSizeMetres,
+                equipment.BeltLoader.EnvelopeCentreLocal);
             everything.Add(beltLoaderPlacement);
 
             var widest = Mathf.Max(tractor.EnvelopeSizeMetres.x, cart.EnvelopeSizeMetres.x);
@@ -260,7 +261,8 @@ namespace BelowTheWing.Apron
                     $"Tug {trainNumber}",
                     new Vector3(lane, 0f, settings.firstTractorPosition.z),
                     Quaternion.identity,
-                    tractor.EnvelopeSizeMetres);
+                    tractor.EnvelopeSizeMetres,
+                    tractor.EnvelopeCentreLocal);
 
                 var carts = new List<Placement>(settings.cartsPerTrain);
                 var behind = settings.firstTractorPosition.z
@@ -273,7 +275,8 @@ namespace BelowTheWing.Apron
                         $"Cart {trainNumber}-{c + 1}",
                         new Vector3(lane, 0f, behind),
                         Quaternion.identity,
-                        cart.EnvelopeSizeMetres));
+                        cart.EnvelopeSizeMetres,
+                        cart.EnvelopeCentreLocal));
 
                     behind -= cart.RearReachMetres + cart.FrontReachMetres;
                 }

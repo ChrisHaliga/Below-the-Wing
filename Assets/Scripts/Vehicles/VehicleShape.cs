@@ -84,7 +84,8 @@ namespace BelowTheWing.Vehicles
             public IReadOnlyList<SolidPart> SolidParts;
 
             public VehicleFootprint Footprint
-                => VehicleFootprint.Of(EnvelopeSizeMetres, FrontCouplingLocal, RearCouplingLocal);
+                => VehicleFootprint.Of(
+                    EnvelopeSizeMetres, EnvelopeCentreLocal, FrontCouplingLocal, RearCouplingLocal);
         }
 
         [SerializeField, Tooltip("Wheels: where each sits and how big it is")]
@@ -133,7 +134,8 @@ namespace BelowTheWing.Vehicles
         public Vector3? SeatLocal => m_HasSeat ? m_SeatLocal : (Vector3?)null;
 
         public VehicleFootprint Footprint
-            => VehicleFootprint.Of(m_EnvelopeSizeMetres, FrontCouplingLocal, RearCouplingLocal);
+            => VehicleFootprint.Of(
+                m_EnvelopeSizeMetres, m_EnvelopeCentreLocal, FrontCouplingLocal, RearCouplingLocal);
 
         public float FrontReachMetres => Footprint.FrontReachMetres;
 
