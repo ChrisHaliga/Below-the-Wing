@@ -13,9 +13,7 @@ it says it copies results back.
 | `run-tests.ps1` | here | checking a change against the suites |
 | `rebuild-scene.ps1` | here | after changing `SceneBootstrap`, or after adding a serialized field the apron scene or the prefabs need |
 | Below the Wing → Rebuild apron scene and prefabs | Unity menu bar | same as above, when the editor is the thing you are sitting in front of |
-| `layout-menu-scene.ps1` | here | starting the menu scene over from nothing |
-| `mirror.ps1` | here | never run directly; the other three dot-source it for mirroring, running Unity and copying results back |
-| Below the Wing → Lay out the menu scene | Unity menu bar | same as above, from the editor |
+| `mirror.ps1` | here | never run directly; the other two dot-source it for mirroring, running Unity and copying results back |
 | Below the Wing → Create missing content | Unity menu bar | on a fresh clone, if the `.asset` profiles are missing |
 | Below the Wing → Give the apron scene's objects their identities | Unity menu bar | repairing scene object ids |
 
@@ -79,16 +77,13 @@ over the new. Reopen `Assets/Scenes/Apron.unity` before doing anything else.
 That is the reason to prefer the menu item when the editor is already open: it rebuilds in place
 and leaves the editor holding the result.
 
-## Laying out the menu scene
+## The menu scene
 
-```
-pwsh -File tools/layout-menu-scene.ps1
-```
-
-This throws away `Assets/Scenes/Menu.unity` and writes a fresh one: the apron dressing, the three
-camera stations the menu travels between, the crew line, the belt loader, the parked jet, and the
-UI document the menu draws into. Everything moved in the editor since the last run is lost, so run
-it to start over rather than to pick up a change.
+`Assets/Scenes/Menu.unity` is authored by hand and no script writes it. The three camera stations
+the menu travels between are plain transforms in it: the `Menu Camera` object's own position is the
+opening frame, and `Cart shot` and `Inside shot` are the two the camera pans to. Move or turn any of
+them in the editor and the menu follows, because `MenuCamera` reads their position and rotation when
+a pan starts. `MenuSceneDressingTests` is what holds the scene to what the menu code reaches for.
 
 The same caveat about the editor not noticing applies. Reopen `Assets/Scenes/Menu.unity` afterwards.
 

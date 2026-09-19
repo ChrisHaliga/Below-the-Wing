@@ -90,10 +90,6 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(backdrop.BeltLoader, Is.Not.Null, "no belt loader");
             Assert.That(backdrop.BeltLoader.GetComponentsInChildren<Renderer>(true).Length,
                 Is.GreaterThan(0), "the belt loader draws nothing");
-
-            Assert.That(backdrop.Airliner, Is.Not.Null, "no parked jet");
-            Assert.That(backdrop.Airliner.GetComponentsInChildren<Renderer>(true).Length,
-                Is.GreaterThan(0), "the parked jet draws nothing");
         }
 
         [Test]

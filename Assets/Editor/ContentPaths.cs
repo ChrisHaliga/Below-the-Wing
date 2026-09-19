@@ -17,19 +17,9 @@ namespace BelowTheWing.EditorTools
 
         internal const string ApronMaterialPath = "Assets/Content/ApronConcrete.mat";
 
-        internal const string ThemePath = "Assets/UI/MenuTheme.tss";
 
-        internal const string DisplayFontPath = "Assets/UI/Fonts/Inter-SemiBold.ttf";
 
-        internal const string BodyFontPath = "Assets/UI/Fonts/Inter-Regular.ttf";
 
-        internal const string DataFontPath = "Assets/UI/Fonts/RobotoMono-Bold.ttf";
-
-        internal const string ReadyIconPath = "Assets/UI/Icons/Ready.png";
-
-        internal const string UnreadyIconPath = "Assets/UI/Icons/Unready.png";
-
-        internal const string PanelSettingsPath = "Assets/UI/MenuPanelSettings.asset";
 
         internal const string DefaultPrefabListPath = "Assets/DefaultNetworkPrefabs.asset";
 

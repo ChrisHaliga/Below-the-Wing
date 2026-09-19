@@ -44,28 +44,5 @@ namespace BelowTheWing.EditorTools
 
             Debug.Log("Apron scene and prefabs rebuilt.");
         }
-
-        [MenuItem("Below the Wing/Lay out the menu scene")]
-        public static void LayOutTheMenuScene()
-        {
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-            {
-                Debug.Log("Menu scene layout cancelled; nothing was written.");
-                return;
-            }
-
-            MenuScene.BuildMenuScene(
-                ContentPaths.Needed<CrewProfile>(ContentPaths.CrewProfilePath),
-                ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/BaggageTractor.prefab"),
-                ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/BaggageCart.prefab"),
-                ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/BeltLoader.prefab"),
-                ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/RegionalJet.prefab"),
-                ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/RampWorker.prefab"));
-
-            Scenery.AddToBuildSettings(ContentPaths.MenuScenePath, first: true);
-
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-        }
     }
 }

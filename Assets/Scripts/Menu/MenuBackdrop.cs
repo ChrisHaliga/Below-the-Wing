@@ -25,9 +25,6 @@ namespace BelowTheWing.Menu
         [SerializeField, Tooltip("The belt loader the crew line up in front of")]
         Transform m_BeltLoader;
 
-        [SerializeField, Tooltip("The parked jet that fills the far side of the wide shot")]
-        Transform m_Airliner;
-
         public Transform CartShot => m_CartShot;
 
         public Transform InsideShot => m_InsideShot;
@@ -56,8 +53,6 @@ namespace BelowTheWing.Menu
         public int CrewCount => m_LobbyCrew.Count;
 
         public Transform BeltLoader => m_BeltLoader;
-
-        public Transform Airliner => m_Airliner;
 
         public GameObject FigureFor(int crew)
         {
