@@ -9,19 +9,23 @@ namespace BelowTheWing.Apron
 
         public readonly VehicleFootprint Cart;
 
-        public readonly AircraftProfile Aircraft;
+        public readonly Vector3 AircraftSizeMetres;
+
+        public readonly Vector3 AircraftCentreLocal;
 
         public readonly Vector3 CrewSizeMetres;
 
         public ApronEquipment(
             VehicleFootprint tractor,
             VehicleFootprint cart,
-            AircraftProfile aircraft,
+            Vector3 aircraftSizeMetres,
+            Vector3 aircraftCentreLocal,
             Vector3 crewSizeMetres)
         {
             Tractor = tractor;
             Cart = cart;
-            Aircraft = aircraft;
+            AircraftSizeMetres = aircraftSizeMetres;
+            AircraftCentreLocal = aircraftCentreLocal;
             CrewSizeMetres = crewSizeMetres;
         }
     }

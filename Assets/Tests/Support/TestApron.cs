@@ -67,9 +67,11 @@ namespace BelowTheWing.Tests.Support
             settings.trainCount = 1;
             settings.cartsPerTrain = cartCount;
             settings.firstTractorPosition = tractorPosition;
+            settings.crewSpawnPoints = 0;
 
             var plan = ApronLayout.Build(settings, new ApronEquipment(
-                    tractorMeasurements.Footprint, cartMeasurements.Footprint, TestProfiles.Aircraft(), Vector3.one))
+                    tractorMeasurements.Footprint, cartMeasurements.Footprint,
+                    TestShapes.AircraftSizeMetres, TestShapes.AircraftCentreLocal, Vector3.one))
                 .Trains[0];
 
             var members = new List<VehicleController>

@@ -26,16 +26,16 @@ namespace BelowTheWing.EditorTools
 
             var tractorProfile = ContentPaths.Needed<VehicleProfile>(ContentPaths.TractorProfilePath);
             var cartProfile = ContentPaths.Needed<VehicleProfile>(ContentPaths.CartProfilePath);
-            var aircraftProfile = ContentPaths.Needed<AircraftProfile>(ContentPaths.AircraftProfilePath);
             var crewProfile = ContentPaths.Needed<CrewProfile>(ContentPaths.CrewProfilePath);
 
             var tractor = VehiclePrefabs.BuildTractor(tractorProfile);
             var cart = VehiclePrefabs.BuildCart(cartProfile);
-            var aircraft = VehiclePrefabs.BuildAircraft(aircraftProfile);
+            var aircraft = VehiclePrefabs.BuildAircraft(
+                ContentPaths.Needed<AircraftProfile>(ContentPaths.AircraftProfilePath));
             var crew = VehiclePrefabs.BuildCrew(crewProfile);
             var bag = VehiclePrefabs.BuildBag();
 
-            ApronScene.BuildScene(aircraftProfile, crewProfile, tractor, cart, aircraft, crew, bag);
+            ApronScene.BuildScene(crewProfile, tractor, cart, aircraft, crew, bag);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -53,11 +53,10 @@ namespace BelowTheWing.EditorTools
             }
 
             MenuScene.BuildMenuScene(
-                ContentPaths.Needed<AircraftProfile>(ContentPaths.AircraftProfilePath),
                 ContentPaths.Needed<CrewProfile>(ContentPaths.CrewProfilePath),
                 ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/BaggageTractor.prefab"),
                 ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/BaggageCart.prefab"),
-                ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/NarrowbodyAirliner.prefab"),
+                ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/RegionalJet.prefab"),
                 ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/RampWorker.prefab"));
 
             Scenery.AddToBuildSettings(ContentPaths.MenuScenePath, first: true);

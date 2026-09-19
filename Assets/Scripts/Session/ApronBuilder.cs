@@ -11,7 +11,6 @@ namespace BelowTheWing.Session
     {
         public static void Build(
             ApronLayoutSettings layout,
-            AircraftProfile aircraftProfile,
             CrewProfile crewProfile,
             NetworkObject tractorPrefab,
             NetworkObject cartPrefab,
@@ -24,7 +23,8 @@ namespace BelowTheWing.Session
             var plan = ApronLayout.Build(layout, new ApronEquipment(
                 tractorPrefab.GetComponent<VehicleShape>().Footprint,
                 cartFootprint,
-                aircraftProfile,
+                aircraftPrefab.GetComponent<AircraftShape>().EnvelopeSizeMetres,
+                aircraftPrefab.GetComponent<AircraftShape>().EnvelopeCentreLocal,
                 crewProfile.SizeMetres));
 
             Place(aircraftPrefab, plan.Aircraft);

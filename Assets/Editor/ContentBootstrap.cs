@@ -20,7 +20,7 @@ namespace BelowTheWing.EditorTools
         {
             CreateIfMissing($"{VehiclesFolder}/BaggageTractor.asset", BuildTractor);
             CreateIfMissing($"{VehiclesFolder}/BaggageCart.asset", BuildCart);
-            CreateIfMissing($"{AircraftFolder}/NarrowbodyAirliner.asset", BuildAircraft);
+            CreateIfMissing($"{AircraftFolder}/RegionalJet.asset", BuildAircraft);
             CreateIfMissing($"{CrewFolder}/RampWorker.asset", BuildRampWorker);
             CreateIfMissing($"{CargoFolder}/CheckedBag.asset", BuildCheckedBag);
 
@@ -120,13 +120,11 @@ namespace BelowTheWing.EditorTools
         {
             var profile = ScriptableObject.CreateInstance<AircraftProfile>();
             profile.equipmentNote =
-                "Narrowbody airliner at operating empty weight: about forty tonnes before any fuel, "
+                "Bombardier CRJ-200 at operating empty weight: near fourteen tonnes before any fuel, "
                 + "passengers or bags. It is kinematic and never simulated, so this figure is here "
-                + "for reference rather than for physics.";
-            profile.massKg = 41400f;
-            profile.lengthMetres = 39.5f;
-            profile.fuselageDiameterMetres = 3.76f;
-            profile.centrelineHeightMetres = 3.4f;
+                + "for reference rather than for physics. Every dimension it has is measured off "
+                + "crj_200.fbx when its prefab is built, so none is written down here to drift.";
+            profile.massKg = 13835f;
             return profile;
         }
 

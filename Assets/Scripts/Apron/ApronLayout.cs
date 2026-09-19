@@ -15,15 +15,24 @@ namespace BelowTheWing.Apron
 
         public readonly Vector3 SizeMetres;
 
+        public readonly Vector3 CentreLocal;
+
         public Placement(string name, Vector3 position, Quaternion rotation, Vector3 sizeMetres)
+            : this(name, position, rotation, sizeMetres, Vector3.zero)
+        {
+        }
+
+        public Placement(
+            string name, Vector3 position, Quaternion rotation, Vector3 sizeMetres, Vector3 centreLocal)
         {
             Name = name;
             Position = position;
             Rotation = rotation;
             SizeMetres = sizeMetres;
+            CentreLocal = centreLocal;
         }
 
-        public Bounds Bounds => new Bounds(Position, SizeMetres);
+        public Bounds Bounds => new Bounds(Position + (Rotation * CentreLocal), SizeMetres);
     }
 
     public sealed class TrainPlan
@@ -188,15 +197,15 @@ namespace BelowTheWing.Apron
         {
             var tractor = equipment.Tractor;
             var cart = equipment.Cart;
-            var aircraft = equipment.Aircraft;
 
             var everything = new List<Placement>();
 
             var aircraftPlacement = new Placement(
                 "Aircraft",
-                new Vector3(0f, aircraft.centrelineHeightMetres, 0f),
+                Vector3.zero,
                 Quaternion.identity,
-                new Vector3(aircraft.fuselageDiameterMetres, aircraft.fuselageDiameterMetres, aircraft.lengthMetres));
+                equipment.AircraftSizeMetres,
+                equipment.AircraftCentreLocal);
             everything.Add(aircraftPlacement);
 
             var widest = Mathf.Max(tractor.EnvelopeSizeMetres.x, cart.EnvelopeSizeMetres.x);

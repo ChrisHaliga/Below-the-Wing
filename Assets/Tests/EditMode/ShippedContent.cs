@@ -13,11 +13,11 @@ namespace BelowTheWing.Tests.EditMode
         public const string CartPrefabPath = PrefabFolder + "/BaggageCart.prefab";
         public const string BagPrefabPath = PrefabFolder + "/Bag.prefab";
         public const string CrewPrefabPath = PrefabFolder + "/RampWorker.prefab";
-        public const string AircraftPrefabPath = PrefabFolder + "/NarrowbodyAirliner.prefab";
+        public const string AircraftPrefabPath = PrefabFolder + "/RegionalJet.prefab";
 
         public const string TractorProfilePath = "Assets/Content/Vehicles/BaggageTractor.asset";
         public const string CartProfilePath = "Assets/Content/Vehicles/BaggageCart.asset";
-        public const string AircraftProfilePath = "Assets/Content/Aircraft/NarrowbodyAirliner.asset";
+        public const string AircraftProfilePath = "Assets/Content/Aircraft/RegionalJet.asset";
         public const string CrewProfilePath = "Assets/Content/Crew/RampWorker.asset";
 
         public const string ScenePath = "Assets/Scenes/Apron.unity";

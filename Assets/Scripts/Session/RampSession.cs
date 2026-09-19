@@ -20,7 +20,6 @@ namespace BelowTheWing.Session
         ChainJointSettings m_Coupling = ChainJointSettings.Default;
 
         [Header("Equipment")]
-        [SerializeField] AircraftProfile m_AircraftProfile;
         [SerializeField] CrewProfile m_CrewProfile;
 
         [Header("Prefabs")]
@@ -63,8 +62,6 @@ namespace BelowTheWing.Session
 
         public ApronLayoutSettings Layout => m_Layout;
 
-        public AircraftProfile AircraftProfile => m_AircraftProfile;
-
         public CrewProfile CrewProfile => m_CrewProfile;
 
         public GameObject TractorPrefab => m_TractorPrefab != null ? m_TractorPrefab.gameObject : null;
@@ -103,7 +100,7 @@ namespace BelowTheWing.Session
 
             if (NetworkManager.LocalClient.IsSessionOwner)
             {
-                ApronBuilder.Build(m_Layout, m_AircraftProfile, m_CrewProfile,
+                ApronBuilder.Build(m_Layout, m_CrewProfile,
                     m_TractorPrefab, m_CartPrefab, m_AircraftPrefab, m_BagPrefab);
             }
 
@@ -223,7 +220,8 @@ namespace BelowTheWing.Session
             var plan = ApronLayout.Build(m_Layout, new ApronEquipment(
                 m_TractorPrefab.GetComponent<VehicleShape>().Footprint,
                 m_CartPrefab.GetComponent<VehicleShape>().Footprint,
-                m_AircraftProfile,
+                m_AircraftPrefab.GetComponent<AircraftShape>().EnvelopeSizeMetres,
+                m_AircraftPrefab.GetComponent<AircraftShape>().EnvelopeCentreLocal,
                 m_CrewProfile.SizeMetres));
 
             var mine = MyArrival(plan.CrewSpawnPoints);

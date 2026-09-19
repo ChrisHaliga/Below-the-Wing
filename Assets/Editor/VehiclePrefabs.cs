@@ -14,13 +14,18 @@ namespace BelowTheWing.EditorTools
 {
     internal static class VehiclePrefabs
     {
+        const float ModelFacesAwayDegrees = 180f;
+        const float ModelFacesAlongDegrees = 0f;
+
         const float VehicleLabelAboveTheEnvelopeFraction = 0.6f;
         const float BagLabelAboveTheBagFraction = 1.2f;
         const float CrewLabelUpTheBodyFraction = 0.7f;
+        const float AircraftLabelAboveTheTailMetres = 2f;
 
         internal static GameObject BuildTractor(VehicleProfile profile)
         {
-            var go = NewVehicle("BaggageTractor", profile, ContentPaths.TractorModelPath, ModelMeasure.MeasureTheTractor);
+            var go = NewVehicle(
+                "BaggageTractor", profile, ContentPaths.TractorModelPath, ModelMeasure.MeasureTheTractor);
 
             go.AddComponent<VehicleOccupant>();
 
@@ -43,7 +48,7 @@ namespace BelowTheWing.EditorTools
             var vehicle = go.AddComponent<VehicleController>();
             SerializedFields.Set(vehicle, "m_Profile", profile);
 
-            var measured = measure(go, AddModel(go, modelPath));
+            var measured = measure(go, AddModel(go, modelPath, ModelFacesAwayDegrees));
 
             var shape = go.AddComponent<VehicleShape>();
             shape.Describe(measured.Shape);
@@ -62,43 +67,63 @@ namespace BelowTheWing.EditorTools
             return go;
         }
 
-        static Transform AddModel(GameObject vehicle, string path)
+        static Transform AddModel(GameObject thing, string path, float modelFacesAwayDegrees)
         {
             var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (asset == null)
             {
                 throw new InvalidOperationException(
-                    $"No model at {path}, so '{vehicle.name}' cannot be measured and the apron " +
+                    $"No model at {path}, so '{thing.name}' cannot be measured and the apron " +
                     "cannot be built. Check the file is in the project and has been imported.");
             }
 
             var model = (GameObject)PrefabUtility.InstantiatePrefab(asset);
             model.name = GreyboxShape.LookName;
-            model.transform.SetParent(vehicle.transform, worldPositionStays: false);
-            model.transform.localRotation = Quaternion.Euler(0f, 180f, 0f) * model.transform.localRotation;
+            model.transform.SetParent(thing.transform, worldPositionStays: false);
+            model.transform.localRotation =
+                Quaternion.Euler(0f, modelFacesAwayDegrees, 0f) * model.transform.localRotation;
 
             return model.transform;
         }
 
         internal static GameObject BuildAircraft(AircraftProfile profile)
         {
-            var go = new GameObject("NarrowbodyAirliner");
+            var go = new GameObject("RegionalJet");
 
             var body = go.AddComponent<Rigidbody>();
             body.isKinematic = true;
-            go.AddComponent<CapsuleCollider>();
+
+            var model = AddModel(go, ContentPaths.RegionalJetModelPath, ModelFacesAlongDegrees);
+            var envelope = ModelMeasure.MeasureTheAircraft(go, model);
+
+            go.AddComponent<AircraftShape>().Describe(envelope.size, envelope.center);
+            BeSolidWhereItIsDrawn(model);
 
             SerializedFields.Set(go.AddComponent<AircraftBody>(), "m_Profile", profile);
             go.AddComponent<HandUse>().As = HandUse.Category.HoldOnto;
 
             AddNetworking(go, outlivesItsOwner: true);
 
-            Dress(go, ApronAppearance.Shape.LyingCapsule,
-                new Vector3(profile.fuselageDiameterMetres, profile.lengthMetres, profile.fuselageDiameterMetres),
-                Palette.FuselageWhite,
-                profile.fuselageDiameterMetres);
+            go.AddComponent<ApronAppearance>().DescribeAsModelled(
+                envelope.max.y + AircraftLabelAboveTheTailMetres);
+            go.AddComponent<ApronIdentity>();
 
-            return SaveAndDiscard(go, $"{ContentPaths.PrefabFolder}/NarrowbodyAirliner.prefab");
+            return SaveAndDiscard(go, $"{ContentPaths.PrefabFolder}/RegionalJet.prefab");
+        }
+
+        static void BeSolidWhereItIsDrawn(Transform model)
+        {
+            foreach (var drawn in model.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (drawn.sharedMesh == null)
+                {
+                    continue;
+                }
+
+                var solid = drawn.gameObject.AddComponent<MeshCollider>();
+                solid.sharedMesh = drawn.sharedMesh;
+                solid.convex = false;
+            }
         }
 
         internal static GameObject BuildBag()

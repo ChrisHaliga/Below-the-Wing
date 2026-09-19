@@ -33,12 +33,11 @@ namespace BelowTheWing.EditorTools
         const float CartShotStandsOffMetres = 2.3f;
         const float InsideShotPastTheCentreMetres = 0.25f;
         const float OpeningLooksTowardTheNoseFraction = 0.55f;
-        const float OpeningLooksAtHeightMetres = 2.5f;
-        static readonly Vector3 OpeningStandsOffTheTug = new Vector3(19f, 7.5f, -13f);
+        const float OpeningLooksAtHeightMetres = 0.88f;
+        static readonly Vector3 OpeningStandsOffTheTug = new Vector3(19.18f, 4.41f, -13.38f);
         static readonly Vector2Int MenuReferenceResolution = new Vector2Int(1920, 1080);
 
         internal static void BuildMenuScene(
-            AircraftProfile aircraftProfile,
             CrewProfile crewProfile,
             GameObject tractor,
             GameObject cart,
@@ -63,8 +62,7 @@ namespace BelowTheWing.EditorTools
             eye.AddComponent<AudioListener>();
             var menuCamera = eye.AddComponent<MenuCamera>();
 
-            var backdrop = BuildBackdrop(
-                eye.transform, aircraftProfile, crewProfile, tractor, cart, aircraft, crew);
+            var backdrop = BuildBackdrop(eye.transform, crewProfile, tractor, cart, aircraft, crew);
 
             var menu = new GameObject("Menu");
             var document = menu.AddComponent<UIDocument>();
@@ -89,7 +87,6 @@ namespace BelowTheWing.EditorTools
 
         static MenuBackdrop BuildBackdrop(
             Transform eye,
-            AircraftProfile aircraftProfile,
             CrewProfile crewProfile,
             GameObject tractor,
             GameObject cart,
@@ -103,7 +100,8 @@ namespace BelowTheWing.EditorTools
             var plan = ApronLayout.Build(layout, new ApronEquipment(
                 tractor.GetComponent<VehicleShape>().Footprint,
                 cart.GetComponent<VehicleShape>().Footprint,
-                aircraftProfile,
+                aircraft.GetComponent<AircraftShape>().EnvelopeSizeMetres,
+                aircraft.GetComponent<AircraftShape>().EnvelopeCentreLocal,
                 crewProfile.SizeMetres));
 
             Stage(aircraft, plan.Aircraft, holder.transform);

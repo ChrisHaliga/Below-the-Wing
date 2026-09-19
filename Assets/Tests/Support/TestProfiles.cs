@@ -81,18 +81,6 @@ namespace BelowTheWing.Tests.Support
             return p;
         }
 
-        public static AircraftProfile Aircraft()
-        {
-            var p = ScriptableObject.CreateInstance<AircraftProfile>();
-            p.equipmentNote = "Narrowbody airliner at operating empty weight, roughly 41 tonnes.";
-            p.massKg = 41400f;
-            p.lengthMetres = 39.5f;
-            p.fuselageDiameterMetres = 3.76f;
-            p.centrelineHeightMetres = 3.4f;
-            return p;
-        }
-
-
         public static AnimationCurve CartGripCurve()
             => new AnimationCurve(
                 new Keyframe(0f, 0f),

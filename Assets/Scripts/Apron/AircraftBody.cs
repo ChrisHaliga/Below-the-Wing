@@ -18,24 +18,20 @@ namespace BelowTheWing.Apron
             {
                 throw MisbuiltException.Refuse(
                     this,
-                    "has no aircraft profile, so it is not the size of an aircraft and everything parks relative to it");
+                    "has no aircraft profile, so nothing says what it weighs");
+            }
+
+            if (GetComponentInChildren<Collider>(true) == null)
+            {
+                throw MisbuiltException.Refuse(
+                    this,
+                    "has no collider anywhere inside it, so crew and vehicles would drive straight " +
+                    "through the aircraft they are loading");
             }
 
             var body = GetComponent<Rigidbody>();
             body.mass = m_Profile.massKg;
             body.isKinematic = true;
-
-            var fuselage = GetComponent<CapsuleCollider>();
-            if (fuselage == null)
-            {
-                fuselage = gameObject.AddComponent<CapsuleCollider>();
-            }
-
-            fuselage.radius = m_Profile.fuselageDiameterMetres * 0.5f;
-            fuselage.height = m_Profile.lengthMetres;
-
-            fuselage.direction = 2;
-            fuselage.center = Vector3.zero;
         }
     }
 }

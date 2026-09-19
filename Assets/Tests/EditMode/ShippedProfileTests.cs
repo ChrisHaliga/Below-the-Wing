@@ -142,13 +142,12 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
-        public void TheAircraftIsANarrowbodyAtItsRealEmptyWeightAndLength()
+        public void TheAircraftIsARegionalJetAtItsRealEmptyWeight()
         {
             var aircraft = Load<AircraftProfile>(AircraftPath);
 
-            Assert.That(aircraft.massKg, Is.InRange(35000f, 50000f), "operating empty weight, roughly forty tonnes");
-            Assert.That(aircraft.lengthMetres, Is.InRange(30f, 45f));
-            Assert.That(aircraft.fuselageDiameterMetres, Is.InRange(3f, 4.5f));
+            Assert.That(aircraft.massKg, Is.InRange(12000f, 16000f),
+                "operating empty weight of a CRJ-200, near fourteen tonnes");
         }
 
         [Test]

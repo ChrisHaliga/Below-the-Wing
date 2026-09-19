@@ -15,7 +15,7 @@ namespace BelowTheWing.Menu
         float m_ShoveNewtonSeconds = 38f;
 
         [SerializeField, Tooltip("How long the far doors wait after the near ones are shoved, seconds")]
-        float m_SecondSetWaitsSeconds = 3.3f;
+        float m_SecondSetWaitsSeconds = 2.8f;
 
         [SerializeField, Tooltip("The rail the menu builds the doors on. The game uses DoorRailSettings.Default")]
         DoorRailSettings m_Rail = MenuRail;

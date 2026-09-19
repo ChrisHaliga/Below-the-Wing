@@ -6,6 +6,10 @@ namespace BelowTheWing.Tests.Support
 {
     public static class TestShapes
     {
+        public static readonly Vector3 AircraftSizeMetres = new Vector3(21.21f, 5.38f, 27.44f);
+
+        public static readonly Vector3 AircraftCentreLocal = new Vector3(0f, 3.53f, 0.40f);
+
         public static VehicleShape On(GameObject vehicle, VehicleShape.Measurements measurements)
         {
             var shape = vehicle.GetComponent<VehicleShape>();

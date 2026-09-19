@@ -13,7 +13,6 @@ namespace BelowTheWing.Tests.EditMode
     {
         VehicleFootprint m_Tractor;
         VehicleFootprint m_Cart;
-        AircraftProfile m_Aircraft;
         CrewProfile m_Crew;
 
         [SetUp]
@@ -21,19 +20,21 @@ namespace BelowTheWing.Tests.EditMode
         {
             m_Tractor = TestShapes.Tractor().Footprint;
             m_Cart = TestShapes.Cart().Footprint;
-            m_Aircraft = TestProfiles.Aircraft();
             m_Crew = TestProfiles.CrewMember();
         }
 
         [TearDown]
         public void TearDown()
         {
-            Object.DestroyImmediate(m_Aircraft);
             Object.DestroyImmediate(m_Crew);
         }
 
         ApronPlan Plan(ApronLayoutSettings settings)
-            => ApronLayout.Build(settings, new ApronEquipment(m_Tractor, m_Cart, m_Aircraft, m_Crew.SizeMetres));
+            => ApronLayout.Build(
+                settings,
+                new ApronEquipment(
+                    m_Tractor, m_Cart,
+                    TestShapes.AircraftSizeMetres, TestShapes.AircraftCentreLocal, m_Crew.SizeMetres));
 
         [Test]
         public void TheApronHoldsOneAircraftTwoTractorsAndEightCarts()
@@ -211,11 +212,32 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void ThePlannedAircraftIsAsWideAsTheArtRatherThanAsWideAsItsFuselage()
+        {
+            var plan = Plan(ApronLayoutSettings.Default);
+
+            Assert.That(plan.Aircraft.SizeMetres.x, Is.EqualTo(21.21f).Within(0.01f),
+                "the aircraft used to be planned as a capsule the width of its fuselage, so a wing " +
+                "reaching ten metres out counted for nothing and anything could be parked under it");
+
+            foreach (var thing in plan.Everything)
+            {
+                if (ReferenceEquals(thing.Name, plan.Aircraft.Name))
+                {
+                    continue;
+                }
+
+                Assert.That(plan.Aircraft.Bounds.Intersects(thing.Bounds), Is.False,
+                    $"'{thing.Name}' stands inside the aircraft once its wings are counted");
+            }
+        }
+
+        [Test]
         public void EveryPlacementIsTheRealSizeOfWhatItStandsFor()
         {
             var plan = Plan(ApronLayoutSettings.Default);
 
-            Assert.That(plan.Aircraft.SizeMetres.z, Is.EqualTo(m_Aircraft.lengthMetres).Within(0.01f));
+            Assert.That(plan.Aircraft.SizeMetres, Is.EqualTo(TestShapes.AircraftSizeMetres));
             Assert.That(plan.Trains[0].Tractor.SizeMetres, Is.EqualTo(m_Tractor.EnvelopeSizeMetres));
             Assert.That(plan.Trains[0].Carts[0].SizeMetres, Is.EqualTo(m_Cart.EnvelopeSizeMetres));
         }

@@ -177,6 +177,9 @@ namespace BelowTheWing.EditorTools
             return doors;
         }
 
+        internal static Bounds MeasureTheAircraft(GameObject aircraft, Transform model)
+            => EverythingItIsMadeOf(aircraft, model);
+
         static bool IsCouplingHardware(string name)
             => name.StartsWith("Hitch", StringComparison.OrdinalIgnoreCase);
 

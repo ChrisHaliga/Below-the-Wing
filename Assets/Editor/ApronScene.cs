@@ -12,7 +12,6 @@ namespace BelowTheWing.EditorTools
     internal static class ApronScene
     {
         internal static void BuildScene(
-            AircraftProfile aircraftProfile,
             CrewProfile crewProfile,
             GameObject tractor,
             GameObject cart,
@@ -32,7 +31,6 @@ namespace BelowTheWing.EditorTools
             sessionObject.AddComponent<NetworkObject>();
             var session = sessionObject.AddComponent<RampSession>();
 
-            SerializedFields.Set(session, "m_AircraftProfile", aircraftProfile);
             SerializedFields.Set(session, "m_CrewProfile", crewProfile);
             SerializedFields.Set(session, "m_TractorPrefab", tractor.GetComponent<NetworkObject>());
             SerializedFields.Set(session, "m_CartPrefab", cart.GetComponent<NetworkObject>());

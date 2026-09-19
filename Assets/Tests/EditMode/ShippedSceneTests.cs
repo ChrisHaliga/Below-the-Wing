@@ -113,7 +113,7 @@ namespace BelowTheWing.Tests.EditMode
 
             foreach (var field in new[]
                      {
-                         "m_AircraftProfile", "m_CrewProfile",
+                         "m_CrewProfile",
                          "m_TractorPrefab", "m_CartPrefab", "m_AircraftPrefab", "m_CrewPrefab", "m_BagPrefab",
                          "m_Camera", "m_Readout"
                      })
@@ -395,7 +395,7 @@ namespace BelowTheWing.Tests.EditMode
         {
             AssertHasProfile(Prefab("BaggageTractor").GetComponent<VehicleController>(), "m_Profile");
             AssertHasProfile(Prefab("BaggageCart").GetComponent<VehicleController>(), "m_Profile");
-            AssertHasProfile(Prefab("NarrowbodyAirliner").GetComponent<AircraftBody>(), "m_Profile");
+            AssertHasProfile(Prefab("RegionalJet").GetComponent<AircraftBody>(), "m_Profile");
             AssertHasProfile(Prefab("RampWorker").GetComponent<CrewCharacter>(), "m_Profile");
         }
 
