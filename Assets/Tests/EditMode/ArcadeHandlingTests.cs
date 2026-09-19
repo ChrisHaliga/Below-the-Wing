@@ -79,6 +79,44 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void ReversingStraightBackStaysStraightBack()
+        {
+            var reversing = new Vector3(0f, 0f, -5f);
+
+            var held = ArcadeHandling.HeldToItsHeading(
+                reversing, Vector3.forward, holdsPerSecond: 3f,
+                mostSideGripMetresPerSecondSquared: 20f, deltaTime: 0.02f);
+
+            Assert.That(held.x, Is.EqualTo(0f).Within(0.01f),
+                $"reversing straight back at 5 m/s, grip pushed {held.x:F2} m/s of sideways speed " +
+                "into it in one step. Velocity and heading are opposite when reversing, and there " +
+                "is no defined axis to rotate one onto the other about, so the body slides off to " +
+                "whichever side the rotation happens to pick");
+
+            Assert.That(held.z, Is.LessThan(0f),
+                $"reversing at 5 m/s came out at {held.z:F2} m/s along the heading. Grip holds a " +
+                "body to the line it is travelling, and must not turn it round to face the way it " +
+                "is pointed");
+        }
+
+        [Test]
+        public void ReversingAtAnAngleIsPulledBackOntoTheLineItBacksAlong()
+        {
+            var sliding = new Vector3(2f, 0f, -5f);
+
+            var held = ArcadeHandling.HeldToItsHeading(
+                sliding, Vector3.forward, holdsPerSecond: 3f,
+                mostSideGripMetresPerSecondSquared: 100f, deltaTime: 0.1f);
+
+            Assert.That(Mathf.Abs(held.x), Is.LessThan(Mathf.Abs(sliding.x)),
+                $"backing at an angle, the sideways {sliding.x:F2} m/s came out as {held.x:F2}. " +
+                "Grip works the same way in reverse as forwards");
+
+            Assert.That(held.magnitude, Is.EqualTo(sliding.magnitude).Within(0.01f),
+                "grip turns a slide into travel rather than scrubbing the speed off");
+        }
+
+        [Test]
         public void NoGripAtAllIsAFullSlide()
         {
             var sliding = new Vector3(4f, 0f, 10f);

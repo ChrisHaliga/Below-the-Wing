@@ -34,12 +34,14 @@ namespace BelowTheWing.Vehicles
                 return velocity;
             }
 
-            var off = Vector3.Angle(velocity, heading) * Mathf.Deg2Rad;
+            var along = Vector3.Dot(velocity, heading) < 0f ? -heading : heading;
+
+            var off = Vector3.Angle(velocity, along) * Mathf.Deg2Rad;
             var wanted = off * (1f - Mathf.Exp(-Mathf.Max(holdsPerSecond, 0f) * deltaTime));
             var afforded = Mathf.Max(mostSideGripMetresPerSecondSquared, 0f) * deltaTime / speed;
 
             return Vector3.RotateTowards(
-                velocity, heading.normalized * speed, Mathf.Min(wanted, afforded), 0f);
+                velocity, along.normalized * speed, Mathf.Min(wanted, afforded), 0f);
         }
     }
 }
