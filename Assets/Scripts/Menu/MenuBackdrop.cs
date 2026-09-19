@@ -52,6 +52,10 @@ namespace BelowTheWing.Menu
 
         public int CrewCount => m_LobbyCrew.Count;
 
+        public IReadOnlyList<GameObject> LobbyCrew => m_LobbyCrew;
+
+        public float PlateHeightMetres => m_PlateHeightMetres;
+
         public Transform BeltLoader => m_BeltLoader;
 
         public GameObject FigureFor(int crew)
