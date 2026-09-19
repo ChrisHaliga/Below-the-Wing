@@ -2,7 +2,8 @@
 #
 # The editor holds a lock on the real project, so the menu item cannot be run there from a
 # script. This mirrors, runs SceneBootstrap.Rebuild in batch mode, and copies back the apron
-# scene, the prefabs and the UI assets it generates. Menu.unity is authored by hand and is left
+# scene and everything the run writes under Assets\Content and Assets\UI: the prefabs, and the
+# profile assets ContentBootstrap creates for equipment the project has none for yet. Menu.unity is authored by hand and is left
 # alone; tools\layout-menu-scene.ps1 is what writes that one.
 
 param([string]$MirrorName = "testproj3")
@@ -31,7 +32,7 @@ if ($code -ne 0) {
     throw "rebuild failed"
 }
 
-foreach ($folder in @("Assets\Content\Prefabs", "Assets\UI")) {
+foreach ($folder in @("Assets\Content", "Assets\UI")) {
     if (Test-Path "$($Paths.Mirror)\$folder") {
         robocopy "$($Paths.Mirror)\$folder" "$($Paths.Source)\$folder" /MIR /NJH /NJS /NFL /NDL /R:2 /W:1 | Out-Null
         if ($LASTEXITCODE -ge 8) { throw "copying $folder back failed (exit $LASTEXITCODE)" }
