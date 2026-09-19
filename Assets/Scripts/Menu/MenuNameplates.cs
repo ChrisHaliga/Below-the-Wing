@@ -17,6 +17,8 @@ namespace BelowTheWing.Menu
 
         public VisualElement Root { get; }
 
+        const float PlateWidthPixels = 220f;
+
         sealed class Plate
         {
             public VisualElement Element;
@@ -75,7 +77,8 @@ namespace BelowTheWing.Menu
 
             plate.Element.style.position = Position.Absolute;
             plate.Element.style.alignItems = Align.Center;
-            plate.Element.style.translate = new Translate(Length.Percent(-50), Length.Percent(-100));
+            plate.Element.style.width = PlateWidthPixels;
+            plate.Element.style.translate = new Translate(-PlateWidthPixels * 0.5f, Length.Percent(-100));
 
             plate.Badge.style.width = CrewPlate.BadgePixels;
             plate.Badge.style.height = CrewPlate.BadgePixels;
@@ -84,6 +87,9 @@ namespace BelowTheWing.Menu
 
             plate.Called.style.letterSpacing = 1.6f;
             plate.Called.style.marginBottom = 4;
+            plate.Called.style.whiteSpace = WhiteSpace.NoWrap;
+            plate.Called.style.unityTextAlign = TextAnchor.MiddleCenter;
+            plate.Called.style.overflow = Overflow.Visible;
 
             plate.Element.Add(plate.Badge);
             plate.Element.Add(plate.Called);
