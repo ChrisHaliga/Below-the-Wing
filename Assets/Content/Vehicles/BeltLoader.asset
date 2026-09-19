@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3578dce1322a49f4894525837c573d53, type: 3}
+  m_Name: BeltLoader
+  m_EditorClassIdentifier: BelowTheWing.Vehicles::BelowTheWing.Vehicles.VehicleProfile
+  equipmentNote: 'Belt loader: the conveyor that runs bags up to a hold door. Around
+    three and a half tonnes, and geared for the apron rather than the road, so it
+    tops out near 25 km/h. It carries no hitch, because a loader is driven to the
+    aircraft and never tows a train.'
+  massKg: 3400
+  centerOfMassOffset: {x: 0, y: 0.4, z: 0}
+  suspensionRestLengthMetres: 0.1
+  springStrengthNewtons: 56000
+  damperNewtonsPerMetrePerSecond: 19000
+  lateralGripCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 3
+      value: 12
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 12
+      value: 5
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  rollingResistanceCoefficient: 0.02
+  coastingDragPerSecond: 0.4
+  maxDriveForceNewtons: 34000
+  launchDriveMultiplier: 2.5
+  sprintDriveMultiplier: 1.2
+  topSpeedMetresPerSecond: 7
+  maxBrakeForceNewtons: 27000
+  launchFadesByFractionOfTopSpeed: 0.6
+  maxSteerAngleDegrees: 45
+  steerLockAtTopSpeedDegrees: 25
+  arcadeHandling: 1
+  fastestTurnDegreesPerSecond: 140
+  turnsIntoItPerSecond: 6
+  mostSideGripMetresPerSecondSquared: 20
+  gripHoldsHeadingPerSecond: 3
+  steerRateDegreesPerSecond: 70
+  bounciness: 0.4
+  driveable: 1

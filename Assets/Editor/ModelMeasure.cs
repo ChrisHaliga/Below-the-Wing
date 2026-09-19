@@ -55,6 +55,42 @@ namespace BelowTheWing.EditorTools
                 measured.Visible);
         }
 
+        internal static MeasuredVehicle MeasureTheBeltLoader(GameObject loader, Transform model)
+        {
+            var measured = Wheels(loader, model, new[]
+            {
+                "Wheel_Front_Left",
+                "Wheel_Front_Right",
+                "Wheel_Back_Left",
+                "Wheel_Back_Right"
+            });
+
+            var chassis = MeshBoxLocal(loader, model, "Body");
+            var envelope = EverythingItIsMadeOf(loader, model);
+
+            return new MeasuredVehicle(
+                new VehicleShape.Measurements
+                {
+                    Wheels = measured.Placements,
+                    FrontCouplingLocal = null,
+                    RearCouplingLocal = null,
+                    SeatLocal = WhereADriverPerches(chassis),
+                    EnvelopeSizeMetres = envelope.size,
+                    EnvelopeCentreLocal = envelope.center,
+                    InteriorLocal = new Bounds(Vector3.zero, Vector3.zero),
+                    SolidParts = SolidPieces(loader, model, new[] { "Body", "Belt" })
+                },
+                measured.Visible);
+        }
+
+        const float DriverSitsAheadOfTheChassisRearMetres = 0.5f;
+
+        static Vector3 WhereADriverPerches(Bounds chassis)
+            => new Vector3(
+                chassis.min.x,
+                chassis.max.y,
+                chassis.min.z + DriverSitsAheadOfTheChassisRearMetres);
+
         static List<VehicleShape.SolidPart> SolidPieces(
             GameObject vehicle, Transform model, IReadOnlyList<string> paths)
         {

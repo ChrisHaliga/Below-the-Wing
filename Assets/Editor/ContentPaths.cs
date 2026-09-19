@@ -37,6 +37,8 @@ namespace BelowTheWing.EditorTools
 
         internal const string CartProfilePath = "Assets/Content/Vehicles/BaggageCart.asset";
 
+        internal const string BeltLoaderProfilePath = "Assets/Content/Vehicles/BeltLoader.asset";
+
         internal const string AircraftProfilePath = "Assets/Content/Aircraft/RegionalJet.asset";
 
         internal const string CrewProfilePath = "Assets/Content/Crew/RampWorker.asset";

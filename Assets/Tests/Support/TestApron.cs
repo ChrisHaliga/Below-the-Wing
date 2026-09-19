@@ -71,6 +71,7 @@ namespace BelowTheWing.Tests.Support
 
             var plan = ApronLayout.Build(settings, new ApronEquipment(
                     tractorMeasurements.Footprint, cartMeasurements.Footprint,
+                    TestShapes.BeltLoaderFootprint,
                     TestShapes.AircraftSizeMetres, TestShapes.AircraftCentreLocal, Vector3.one))
                 .Trains[0];
 

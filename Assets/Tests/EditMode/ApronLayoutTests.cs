@@ -33,17 +33,18 @@ namespace BelowTheWing.Tests.EditMode
             => ApronLayout.Build(
                 settings,
                 new ApronEquipment(
-                    m_Tractor, m_Cart,
+                    m_Tractor, m_Cart, TestShapes.BeltLoaderFootprint,
                     TestShapes.AircraftSizeMetres, TestShapes.AircraftCentreLocal, m_Crew.SizeMetres));
 
         [Test]
-        public void TheApronHoldsOneAircraftTwoTractorsAndEightCarts()
+        public void TheApronHoldsAnAircraftABeltLoaderTwoTractorsAndEightCarts()
         {
             var plan = Plan(ApronLayoutSettings.Default);
 
             Assert.That(plan.Trains.Count, Is.EqualTo(2));
             Assert.That(plan.Trains.Sum(t => t.Carts.Count), Is.EqualTo(8));
-            Assert.That(plan.Everything.Count, Is.EqualTo(11), "the aircraft, two tractors and eight carts");
+            Assert.That(plan.Everything.Count, Is.EqualTo(12),
+                "the aircraft, the belt loader, two tractors and eight carts");
         }
 
         [Test]
@@ -230,6 +231,56 @@ namespace BelowTheWing.Tests.EditMode
                 Assert.That(plan.Aircraft.Bounds.Intersects(thing.Bounds), Is.False,
                     $"'{thing.Name}' stands inside the aircraft once its wings are counted");
             }
+        }
+
+        [Test]
+        public void TheBeltLoaderStandsOffTheAircraftsLeftSideTurnedTowardsIt()
+        {
+            var settings = ApronLayoutSettings.Default;
+            var loader = Plan(settings).BeltLoader;
+
+            Assert.That(loader.Position.x,
+                Is.EqualTo(-settings.beltLoaderStandsLeftOfTheCentrelineMetres).Within(1e-3f),
+                "the loader parks on the aircraft's left, where its hold door is");
+            Assert.That(loader.Position.z,
+                Is.EqualTo(-settings.beltLoaderStandsAftOfTheCentreMetres).Within(1e-3f));
+            Assert.That(loader.Position.y, Is.EqualTo(0f).Within(1e-4f),
+                "the loader stands on the apron, not above it");
+
+            Assert.That((loader.Rotation * Vector3.forward).x, Is.GreaterThan(0.99f),
+                "the loader is turned to face the fuselage, so its belt runs at the hold rather " +
+                "than along the apron");
+        }
+
+        [Test]
+        public void TheBeltLoaderIsPartOfWhatAnArrivalIsCheckedAgainst()
+        {
+            var settings = ApronLayoutSettings.Default;
+            settings.beltLoaderStandsLeftOfTheCentrelineMetres = 14f;
+            settings.crewSpawnPoints = 0;
+            settings.crewLineStartsLeftOfTheTractorsMetres = -4f;
+            settings.crewArriveAheadOfTheTractorsMetres = 15f;
+
+            Assert.That((Plan(settings).BeltLoader.Position - new Vector3(-14f, 0f, -7f)).magnitude,
+                Is.LessThan(1e-3f),
+                "the fixture only means anything if the arrival and the loader are put in one place");
+
+            settings.crewSpawnPoints = 1;
+
+            Assert.That(() => Plan(settings), Throws.InvalidOperationException.With.Message.Contains("Belt loader"),
+                "a player arriving on top of the belt loader is two bodies in one place, which is " +
+                "exactly what the arrival check exists to catch");
+        }
+
+        [Test]
+        public void APlacementTurnedSidewaysFillsASidewaysBox()
+        {
+            var loader = Plan(ApronLayoutSettings.Default).BeltLoader;
+
+            Assert.That(loader.Bounds.size.x, Is.EqualTo(TestShapes.BeltLoaderSizeMetres.z).Within(1e-3f),
+                "the loader is turned across the apron, so the 4.68 m it is long reaches along x. " +
+                "Reporting its 1.62 m width there says nothing is parked where its belt is");
+            Assert.That(loader.Bounds.size.z, Is.EqualTo(TestShapes.BeltLoaderSizeMetres.x).Within(1e-3f));
         }
 
         [Test]

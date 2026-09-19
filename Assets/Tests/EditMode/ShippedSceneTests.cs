@@ -114,7 +114,8 @@ namespace BelowTheWing.Tests.EditMode
             foreach (var field in new[]
                      {
                          "m_CrewProfile",
-                         "m_TractorPrefab", "m_CartPrefab", "m_AircraftPrefab", "m_CrewPrefab", "m_BagPrefab",
+                         "m_TractorPrefab", "m_CartPrefab", "m_BeltLoaderPrefab", "m_AircraftPrefab",
+                         "m_CrewPrefab", "m_BagPrefab",
                          "m_Camera", "m_Readout"
                      })
             {
@@ -151,7 +152,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void EveryCopyOnAnotherMachineIsSteeredWithFiguresThatCanActuallyCloseAGap()
         {
-            foreach (var name in new[] { "BaggageTractor", "BaggageCart", "Bag", "RampWorker" })
+            foreach (var name in new[] { "BaggageTractor", "BaggageCart", "BeltLoader", "Bag", "RampWorker" })
             {
                 var mover = Prefab(name).GetComponent<MotionReplication>();
                 Assert.That(mover, Is.Not.Null,
@@ -188,7 +189,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void EveryPrefabCarriesWhatTheCodeReachesForOnIt()
         {
-            foreach (var name in new[] { "BaggageTractor", "BaggageCart" })
+            foreach (var name in new[] { "BaggageTractor", "BaggageCart", "BeltLoader" })
             {
                 var vehicle = Prefab(name);
                 Assert.That(vehicle.GetComponent<VehicleController>(), Is.Not.Null, $"{name}: no controller");
@@ -395,6 +396,7 @@ namespace BelowTheWing.Tests.EditMode
         {
             AssertHasProfile(Prefab("BaggageTractor").GetComponent<VehicleController>(), "m_Profile");
             AssertHasProfile(Prefab("BaggageCart").GetComponent<VehicleController>(), "m_Profile");
+            AssertHasProfile(Prefab("BeltLoader").GetComponent<VehicleController>(), "m_Profile");
             AssertHasProfile(Prefab("RegionalJet").GetComponent<AircraftBody>(), "m_Profile");
             AssertHasProfile(Prefab("RampWorker").GetComponent<CrewCharacter>(), "m_Profile");
         }
@@ -412,7 +414,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void EverythingThatMovesSaysWhichMachineMovesIt()
         {
-            foreach (var name in new[] { "BaggageTractor", "BaggageCart", "Bag", "RampWorker" })
+            foreach (var name in new[] { "BaggageTractor", "BaggageCart", "BeltLoader", "Bag", "RampWorker" })
             {
                 var prefab = Prefab(name);
 
@@ -427,7 +429,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void EveryVehicleIsDrawnAsItsModelRatherThanAsAStandInBox()
         {
-            foreach (var name in new[] { "BaggageTractor", "BaggageCart" })
+            foreach (var name in new[] { "BaggageTractor", "BaggageCart", "BeltLoader" })
             {
                 var prefab = Prefab(name);
 
@@ -447,7 +449,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void TheWheelsAVehicleDrawsAreTheOnesItsSuspensionProbesFrom()
         {
-            foreach (var name in new[] { "BaggageTractor", "BaggageCart" })
+            foreach (var name in new[] { "BaggageTractor", "BaggageCart", "BeltLoader" })
             {
                 var prefab = Prefab(name);
                 var shape = prefab.GetComponent<VehicleShape>();

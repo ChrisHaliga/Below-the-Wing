@@ -32,7 +32,22 @@ namespace BelowTheWing.Apron
             CentreLocal = centreLocal;
         }
 
-        public Bounds Bounds => new Bounds(Position + (Rotation * CentreLocal), SizeMetres);
+        public Bounds Bounds => new Bounds(Position + (Rotation * CentreLocal), RoomItFills);
+
+        Vector3 RoomItFills
+        {
+            get
+            {
+                var across = Rotation * new Vector3(SizeMetres.x, 0f, 0f);
+                var up = Rotation * new Vector3(0f, SizeMetres.y, 0f);
+                var along = Rotation * new Vector3(0f, 0f, SizeMetres.z);
+
+                return new Vector3(
+                    Mathf.Abs(across.x) + Mathf.Abs(up.x) + Mathf.Abs(along.x),
+                    Mathf.Abs(across.y) + Mathf.Abs(up.y) + Mathf.Abs(along.y),
+                    Mathf.Abs(across.z) + Mathf.Abs(up.z) + Mathf.Abs(along.z));
+            }
+        }
     }
 
     public sealed class TrainPlan
@@ -51,6 +66,9 @@ namespace BelowTheWing.Apron
     public sealed class ApronPlan
     {
         public Placement Aircraft { get; }
+
+        public Placement BeltLoader { get; }
+
         public IReadOnlyList<TrainPlan> Trains { get; }
 
         public IReadOnlyList<Placement> Everything { get; }
@@ -59,11 +77,13 @@ namespace BelowTheWing.Apron
 
         public ApronPlan(
             Placement aircraft,
+            Placement beltLoader,
             IReadOnlyList<TrainPlan> trains,
             IReadOnlyList<Placement> everything,
             IReadOnlyList<Placement> crewSpawnPoints)
         {
             Aircraft = aircraft;
+            BeltLoader = beltLoader;
             Trains = trains;
             Everything = everything;
             CrewSpawnPoints = crewSpawnPoints;
@@ -97,6 +117,12 @@ namespace BelowTheWing.Apron
         [Tooltip("How far left of the first tractor the arrival line starts, m")]
         public float crewLineStartsLeftOfTheTractorsMetres;
 
+        [Tooltip("How far left of the aircraft's centreline the belt loader stands, m")]
+        public float beltLoaderStandsLeftOfTheCentrelineMetres;
+
+        [Tooltip("How far aft of the aircraft's centre the belt loader stands, m")]
+        public float beltLoaderStandsAftOfTheCentreMetres;
+
         [Tooltip("Bags dropped beside each train's first cart")]
         public int bagsPerTrain;
 
@@ -116,6 +142,8 @@ namespace BelowTheWing.Apron
             crewSpacingMetres = 2f,
             crewArriveAheadOfTheTractorsMetres = 6f,
             crewLineStartsLeftOfTheTractorsMetres = 2f,
+            beltLoaderStandsLeftOfTheCentrelineMetres = 4.5f,
+            beltLoaderStandsAftOfTheCentreMetres = 7f,
             bagsPerTrain = 4,
             bagClearanceFromTheCartMetres = 0.6f,
             bagPitchMetres = 0.9f
@@ -208,6 +236,16 @@ namespace BelowTheWing.Apron
                 equipment.AircraftCentreLocal);
             everything.Add(aircraftPlacement);
 
+            var beltLoaderPlacement = new Placement(
+                "Belt loader",
+                new Vector3(
+                    -settings.beltLoaderStandsLeftOfTheCentrelineMetres,
+                    0f,
+                    -settings.beltLoaderStandsAftOfTheCentreMetres),
+                Quaternion.LookRotation(Vector3.right),
+                equipment.BeltLoader.EnvelopeSizeMetres);
+            everything.Add(beltLoaderPlacement);
+
             var widest = Mathf.Max(tractor.EnvelopeSizeMetres.x, cart.EnvelopeSizeMetres.x);
             var lanePitch = widest + settings.trainSpacingMetres;
 
@@ -246,7 +284,7 @@ namespace BelowTheWing.Apron
             }
 
             return new ApronPlan(
-                aircraftPlacement, trains, everything,
+                aircraftPlacement, beltLoaderPlacement, trains, everything,
                 ArrivalPoints(settings, equipment.CrewSizeMetres, everything));
         }
     }

@@ -30,12 +30,14 @@ namespace BelowTheWing.EditorTools
 
             var tractor = VehiclePrefabs.BuildTractor(tractorProfile);
             var cart = VehiclePrefabs.BuildCart(cartProfile);
+            var beltLoader = VehiclePrefabs.BuildBeltLoader(
+                ContentPaths.Needed<VehicleProfile>(ContentPaths.BeltLoaderProfilePath));
             var aircraft = VehiclePrefabs.BuildAircraft(
                 ContentPaths.Needed<AircraftProfile>(ContentPaths.AircraftProfilePath));
             var crew = VehiclePrefabs.BuildCrew(crewProfile);
             var bag = VehiclePrefabs.BuildBag();
 
-            ApronScene.BuildScene(crewProfile, tractor, cart, aircraft, crew, bag);
+            ApronScene.BuildScene(crewProfile, tractor, cart, beltLoader, aircraft, crew, bag);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -56,6 +58,7 @@ namespace BelowTheWing.EditorTools
                 ContentPaths.Needed<CrewProfile>(ContentPaths.CrewProfilePath),
                 ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/BaggageTractor.prefab"),
                 ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/BaggageCart.prefab"),
+                ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/BeltLoader.prefab"),
                 ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/RegionalJet.prefab"),
                 ContentPaths.Needed<GameObject>($"{ContentPaths.PrefabFolder}/RampWorker.prefab"));
 

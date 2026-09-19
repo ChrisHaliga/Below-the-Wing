@@ -32,6 +32,16 @@ namespace BelowTheWing.EditorTools
             return SaveAndDiscard(go, $"{ContentPaths.PrefabFolder}/BaggageTractor.prefab");
         }
 
+        internal static GameObject BuildBeltLoader(VehicleProfile profile)
+        {
+            var go = NewVehicle(
+                "BeltLoader", profile, ContentPaths.BeltLoaderModelPath, ModelMeasure.MeasureTheBeltLoader);
+
+            go.AddComponent<VehicleOccupant>();
+
+            return SaveAndDiscard(go, $"{ContentPaths.PrefabFolder}/BeltLoader.prefab");
+        }
+
         internal static GameObject BuildCart(VehicleProfile profile)
         {
             var go = NewVehicle("BaggageCart", profile, ContentPaths.CartModelPath, ModelMeasure.MeasureTheCart);

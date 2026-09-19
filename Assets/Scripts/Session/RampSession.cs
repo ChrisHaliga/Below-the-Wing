@@ -29,6 +29,9 @@ namespace BelowTheWing.Session
         [SerializeField, Tooltip("Cart prefab")]
         NetworkObject m_CartPrefab;
 
+        [SerializeField, Tooltip("Belt loader prefab")]
+        NetworkObject m_BeltLoaderPrefab;
+
         [SerializeField, Tooltip("Aircraft prefab")]
         NetworkObject m_AircraftPrefab;
 
@@ -98,10 +101,16 @@ namespace BelowTheWing.Session
                 throw MisbuiltException.Refuse(this, "has no bag prefab, so the apron would be built with nothing to carry");
             }
 
+            if (m_BeltLoaderPrefab == null)
+            {
+                throw MisbuiltException.Refuse(
+                    this, "has no belt loader prefab, so the apron would be built with nothing to run bags up to the hold");
+            }
+
             if (NetworkManager.LocalClient.IsSessionOwner)
             {
                 ApronBuilder.Build(m_Layout, m_CrewProfile,
-                    m_TractorPrefab, m_CartPrefab, m_AircraftPrefab, m_BagPrefab);
+                    m_TractorPrefab, m_CartPrefab, m_BeltLoaderPrefab, m_AircraftPrefab, m_BagPrefab);
             }
 
             NetworkManager.OnConnectionEvent += OnSomebodyCameOrWent;
@@ -220,6 +229,7 @@ namespace BelowTheWing.Session
             var plan = ApronLayout.Build(m_Layout, new ApronEquipment(
                 m_TractorPrefab.GetComponent<VehicleShape>().Footprint,
                 m_CartPrefab.GetComponent<VehicleShape>().Footprint,
+                m_BeltLoaderPrefab.GetComponent<VehicleShape>().Footprint,
                 m_AircraftPrefab.GetComponent<AircraftShape>().EnvelopeSizeMetres,
                 m_AircraftPrefab.GetComponent<AircraftShape>().EnvelopeCentreLocal,
                 m_CrewProfile.SizeMetres));

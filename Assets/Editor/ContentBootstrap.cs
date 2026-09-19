@@ -20,6 +20,7 @@ namespace BelowTheWing.EditorTools
         {
             CreateIfMissing($"{VehiclesFolder}/BaggageTractor.asset", BuildTractor);
             CreateIfMissing($"{VehiclesFolder}/BaggageCart.asset", BuildCart);
+            CreateIfMissing($"{VehiclesFolder}/BeltLoader.asset", BuildBeltLoader);
             CreateIfMissing($"{AircraftFolder}/RegionalJet.asset", BuildAircraft);
             CreateIfMissing($"{CrewFolder}/RampWorker.asset", BuildRampWorker);
             CreateIfMissing($"{CargoFolder}/CheckedBag.asset", BuildCheckedBag);
@@ -72,6 +73,47 @@ namespace BelowTheWing.EditorTools
             profile.maxSteerAngleDegrees = 60f;
             profile.steerLockAtTopSpeedDegrees = 30f;
             profile.steerRateDegreesPerSecond = 90f;
+            profile.driveable = true;
+            return profile;
+        }
+
+        static VehicleProfile BuildBeltLoader()
+        {
+            var profile = ScriptableObject.CreateInstance<VehicleProfile>();
+            profile.equipmentNote =
+                "Belt loader: the conveyor that runs bags up to a hold door. Around three and a half "
+                + "tonnes, and geared for the apron rather than the road, so it tops out near "
+                + "25 km/h. It carries no hitch, because a loader is driven to the aircraft and "
+                + "never tows a train.";
+            profile.massKg = 3400f;
+
+            profile.centerOfMassOffset = new Vector3(0f, 0.4f, 0f);
+
+            profile.suspensionRestLengthMetres = 0.10f;
+
+            profile.springStrengthNewtons = 56000f;
+            profile.damperNewtonsPerMetrePerSecond = 19000f;
+            profile.coastingDragPerSecond = 0.4f;
+            profile.lateralGripCurve = TireCurve();
+
+            profile.maxDriveForceNewtons = 34000f;
+            profile.launchDriveMultiplier = 2.5f;
+            profile.launchFadesByFractionOfTopSpeed = 0.6f;
+            profile.topSpeedMetresPerSecond = 7f;
+            profile.sprintDriveMultiplier = 1.2f;
+            profile.maxBrakeForceNewtons = 27000f;
+            profile.bounciness = 0.4f;
+
+            profile.arcadeHandling = true;
+            profile.fastestTurnDegreesPerSecond = 140f;
+            profile.turnsIntoItPerSecond = 6f;
+            profile.mostSideGripMetresPerSecondSquared = 20f;
+            profile.gripHoldsHeadingPerSecond = 3f;
+
+            profile.maxSteerAngleDegrees = 45f;
+            profile.steerLockAtTopSpeedDegrees = 25f;
+            profile.steerRateDegreesPerSecond = 70f;
+
             profile.driveable = true;
             return profile;
         }

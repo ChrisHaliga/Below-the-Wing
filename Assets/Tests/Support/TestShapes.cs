@@ -8,6 +8,44 @@ namespace BelowTheWing.Tests.Support
     {
         public static readonly Vector3 AircraftSizeMetres = new Vector3(21.21f, 5.38f, 27.44f);
 
+        public static readonly Vector3 BeltLoaderSizeMetres = new Vector3(1.62f, 0.79f, 4.68f);
+
+        public static VehicleFootprint BeltLoaderFootprint
+            => VehicleFootprint.Of(BeltLoaderSizeMetres, null, null);
+
+        public static VehicleShape.Measurements BeltLoader()
+        {
+            const float wheelRadius = 0.265f;
+
+            var chassis = new Vector3(1.40f, 0.39f, 3.15f);
+            var chassisMiddle = new Vector3(0f, 0.435f, 0.24f);
+
+            var belt = new Vector3(0.87f, 0.16f, 4.68f);
+            var beltMiddle = new Vector3(0f, 0.71f, 0.27f);
+
+            return new VehicleShape.Measurements
+            {
+                Wheels = new List<VehicleShape.WheelPlacement>
+                {
+                    new VehicleShape.WheelPlacement(new Vector3(-0.67f, wheelRadius, 1.33f), wheelRadius),
+                    new VehicleShape.WheelPlacement(new Vector3(0.67f, wheelRadius, 1.33f), wheelRadius),
+                    new VehicleShape.WheelPlacement(new Vector3(-0.67f, wheelRadius, -1.00f), wheelRadius),
+                    new VehicleShape.WheelPlacement(new Vector3(0.67f, wheelRadius, -1.00f), wheelRadius)
+                },
+                FrontCouplingLocal = null,
+                RearCouplingLocal = null,
+                SeatLocal = new Vector3(-0.70f, 0.63f, -0.835f),
+                EnvelopeSizeMetres = BeltLoaderSizeMetres,
+                EnvelopeCentreLocal = new Vector3(0f, 0.395f, 0.27f),
+                InteriorLocal = new Bounds(Vector3.zero, Vector3.zero),
+                SolidParts = new List<VehicleShape.SolidPart>
+                {
+                    new VehicleShape.SolidPart("Body", chassis, chassisMiddle),
+                    new VehicleShape.SolidPart("Belt", belt, beltMiddle)
+                }
+            };
+        }
+
         public static readonly Vector3 AircraftCentreLocal = new Vector3(0f, 3.53f, 0.40f);
 
         public static VehicleShape On(GameObject vehicle, VehicleShape.Measurements measurements)

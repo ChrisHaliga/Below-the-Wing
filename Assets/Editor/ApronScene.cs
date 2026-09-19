@@ -15,6 +15,7 @@ namespace BelowTheWing.EditorTools
             CrewProfile crewProfile,
             GameObject tractor,
             GameObject cart,
+            GameObject beltLoader,
             GameObject aircraft,
             GameObject crew,
             GameObject bag)
@@ -34,6 +35,7 @@ namespace BelowTheWing.EditorTools
             SerializedFields.Set(session, "m_CrewProfile", crewProfile);
             SerializedFields.Set(session, "m_TractorPrefab", tractor.GetComponent<NetworkObject>());
             SerializedFields.Set(session, "m_CartPrefab", cart.GetComponent<NetworkObject>());
+            SerializedFields.Set(session, "m_BeltLoaderPrefab", beltLoader.GetComponent<NetworkObject>());
             SerializedFields.Set(session, "m_AircraftPrefab", aircraft.GetComponent<NetworkObject>());
             SerializedFields.Set(session, "m_CrewPrefab", crew.GetComponent<NetworkObject>());
 

@@ -41,6 +41,7 @@ namespace BelowTheWing.EditorTools
             CrewProfile crewProfile,
             GameObject tractor,
             GameObject cart,
+            GameObject beltLoader,
             GameObject aircraft,
             GameObject crew)
         {
@@ -62,7 +63,8 @@ namespace BelowTheWing.EditorTools
             eye.AddComponent<AudioListener>();
             var menuCamera = eye.AddComponent<MenuCamera>();
 
-            var backdrop = BuildBackdrop(eye.transform, crewProfile, tractor, cart, aircraft, crew);
+            var backdrop = BuildBackdrop(
+                eye.transform, crewProfile, tractor, cart, beltLoader, aircraft, crew);
 
             var menu = new GameObject("Menu");
             var document = menu.AddComponent<UIDocument>();
@@ -90,6 +92,7 @@ namespace BelowTheWing.EditorTools
             CrewProfile crewProfile,
             GameObject tractor,
             GameObject cart,
+            GameObject beltLoader,
             GameObject aircraft,
             GameObject crew)
         {
@@ -100,6 +103,7 @@ namespace BelowTheWing.EditorTools
             var plan = ApronLayout.Build(layout, new ApronEquipment(
                 tractor.GetComponent<VehicleShape>().Footprint,
                 cart.GetComponent<VehicleShape>().Footprint,
+                beltLoader.GetComponent<VehicleShape>().Footprint,
                 aircraft.GetComponent<AircraftShape>().EnvelopeSizeMetres,
                 aircraft.GetComponent<AircraftShape>().EnvelopeCentreLocal,
                 crewProfile.SizeMetres));

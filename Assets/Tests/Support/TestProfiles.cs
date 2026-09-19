@@ -37,6 +37,41 @@ namespace BelowTheWing.Tests.Support
             return p;
         }
 
+        public static VehicleProfile BeltLoader()
+        {
+            var p = ScriptableObject.CreateInstance<VehicleProfile>();
+            p.equipmentNote = "Belt loader, around three and a half tonnes.";
+            p.massKg = 3400f;
+
+            p.centerOfMassOffset = new Vector3(0f, 0.4f, 0f);
+            p.suspensionRestLengthMetres = 0.10f;
+            p.springStrengthNewtons = 56000f;
+            p.damperNewtonsPerMetrePerSecond = 19000f;
+            p.coastingDragPerSecond = 0.4f;
+            p.lateralGripCurve = PeakingGripCurve();
+
+            p.maxDriveForceNewtons = 34000f;
+            p.launchDriveMultiplier = 2.5f;
+            p.launchFadesByFractionOfTopSpeed = 0.6f;
+            p.topSpeedMetresPerSecond = 7f;
+            p.sprintDriveMultiplier = 1.2f;
+            p.maxBrakeForceNewtons = 27000f;
+            p.bounciness = 0.4f;
+
+            p.arcadeHandling = true;
+            p.fastestTurnDegreesPerSecond = 140f;
+            p.turnsIntoItPerSecond = 6f;
+            p.mostSideGripMetresPerSecondSquared = 20f;
+            p.gripHoldsHeadingPerSecond = 3f;
+
+            p.maxSteerAngleDegrees = 45f;
+            p.steerLockAtTopSpeedDegrees = 25f;
+            p.steerRateDegreesPerSecond = 70f;
+
+            p.driveable = true;
+            return p;
+        }
+
         public static VehicleProfile Cart()
         {
             var p = ScriptableObject.CreateInstance<VehicleProfile>();
