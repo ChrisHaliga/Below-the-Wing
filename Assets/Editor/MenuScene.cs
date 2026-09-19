@@ -100,12 +100,11 @@ namespace BelowTheWing.EditorTools
             var backdrop = holder.AddComponent<MenuBackdrop>();
 
             var layout = ApronLayoutSettings.Default;
-            var plan = ApronLayout.Build(
-                layout,
+            var plan = ApronLayout.Build(layout, new ApronEquipment(
                 tractor.GetComponent<VehicleShape>().Footprint,
                 cart.GetComponent<VehicleShape>().Footprint,
                 aircraftProfile,
-                crewProfile.SizeMetres);
+                crewProfile.SizeMetres));
 
             Stage(aircraft, plan.Aircraft, holder.transform);
 

@@ -149,7 +149,7 @@ namespace BelowTheWing.Apron
         static IReadOnlyList<Placement> ArrivalPoints(
             ApronLayoutSettings settings,
             Vector3 crewSizeMetres,
-            IReadOnlyList<Placement> equipment)
+            IReadOnlyList<Placement> standing)
         {
             var standingHeight = crewSizeMetres.y * 0.5f;
 
@@ -167,7 +167,7 @@ namespace BelowTheWing.Apron
 
                 var arrival = new Placement($"Arrival {i + 1}", at, Quaternion.identity, crewSizeMetres);
 
-                foreach (var thing in equipment)
+                foreach (var thing in standing)
                 {
                     if (arrival.Bounds.Intersects(thing.Bounds))
                     {
@@ -184,13 +184,12 @@ namespace BelowTheWing.Apron
             return points;
         }
 
-        public static ApronPlan Build(
-            ApronLayoutSettings settings,
-            VehicleFootprint tractor,
-            VehicleFootprint cart,
-            AircraftProfile aircraft,
-            Vector3 crewSizeMetres)
+        public static ApronPlan Build(ApronLayoutSettings settings, ApronEquipment equipment)
         {
+            var tractor = equipment.Tractor;
+            var cart = equipment.Cart;
+            var aircraft = equipment.Aircraft;
+
             var everything = new List<Placement>();
 
             var aircraftPlacement = new Placement(
@@ -237,7 +236,9 @@ namespace BelowTheWing.Apron
                 everything.AddRange(carts);
             }
 
-            return new ApronPlan(aircraftPlacement, trains, everything, ArrivalPoints(settings, crewSizeMetres, everything));
+            return new ApronPlan(
+                aircraftPlacement, trains, everything,
+                ArrivalPoints(settings, equipment.CrewSizeMetres, everything));
         }
     }
 }

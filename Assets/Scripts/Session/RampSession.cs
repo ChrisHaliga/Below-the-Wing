@@ -220,12 +220,11 @@ namespace BelowTheWing.Session
 
         void SpawnOwnCrew()
         {
-            var plan = ApronLayout.Build(
-                m_Layout,
+            var plan = ApronLayout.Build(m_Layout, new ApronEquipment(
                 m_TractorPrefab.GetComponent<VehicleShape>().Footprint,
                 m_CartPrefab.GetComponent<VehicleShape>().Footprint,
                 m_AircraftProfile,
-                m_CrewProfile.SizeMetres);
+                m_CrewProfile.SizeMetres));
 
             var mine = MyArrival(plan.CrewSpawnPoints);
 

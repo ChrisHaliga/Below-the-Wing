@@ -32,7 +32,8 @@ namespace BelowTheWing.Tests.EditMode
             Object.DestroyImmediate(m_Crew);
         }
 
-        ApronPlan Plan(ApronLayoutSettings settings) => ApronLayout.Build(settings, m_Tractor, m_Cart, m_Aircraft, m_Crew.SizeMetres);
+        ApronPlan Plan(ApronLayoutSettings settings)
+            => ApronLayout.Build(settings, new ApronEquipment(m_Tractor, m_Cart, m_Aircraft, m_Crew.SizeMetres));
 
         [Test]
         public void TheApronHoldsOneAircraftTwoTractorsAndEightCarts()

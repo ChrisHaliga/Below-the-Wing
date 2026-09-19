@@ -21,12 +21,11 @@ namespace BelowTheWing.Session
             var cartFootprint = cartPrefab.GetComponent<VehicleShape>().Footprint;
             var bagSize = bagPrefab.GetComponent<Bag>().Profile.sizeMetres;
 
-            var plan = ApronLayout.Build(
-                layout,
+            var plan = ApronLayout.Build(layout, new ApronEquipment(
                 tractorPrefab.GetComponent<VehicleShape>().Footprint,
                 cartFootprint,
                 aircraftProfile,
-                crewProfile.SizeMetres);
+                crewProfile.SizeMetres));
 
             Place(aircraftPrefab, plan.Aircraft);
 

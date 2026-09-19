@@ -232,7 +232,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void ACartIsPlacedItsOwnFrontReachBehindTheTractorsRearReach()
         {
-            var plan = ApronLayout.Build(OneTrain(1), m_Tractor.Footprint, m_Cart.Footprint, m_Aircraft, Vector3.one);
+            var plan = ApronLayout.Build(OneTrain(1), new ApronEquipment(m_Tractor.Footprint, m_Cart.Footprint, m_Aircraft, Vector3.one));
             var train = plan.Trains[0];
 
             var gap = train.Tractor.Position.z - train.Carts[0].Position.z;
@@ -246,7 +246,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void TwoCartsBehindEachOtherStandTheirTwoReachesApart()
         {
-            var plan = ApronLayout.Build(OneTrain(2), m_Tractor.Footprint, m_Cart.Footprint, m_Aircraft, Vector3.one);
+            var plan = ApronLayout.Build(OneTrain(2), new ApronEquipment(m_Tractor.Footprint, m_Cart.Footprint, m_Aircraft, Vector3.one));
             var carts = plan.Trains[0].Carts;
 
             var gap = carts[0].Position.z - carts[1].Position.z;
@@ -259,7 +259,7 @@ namespace BelowTheWing.Tests.EditMode
         [Test]
         public void EverythingIsPlacedStandingOnTheGround()
         {
-            var plan = ApronLayout.Build(OneTrain(2), m_Tractor.Footprint, m_Cart.Footprint, m_Aircraft, Vector3.one);
+            var plan = ApronLayout.Build(OneTrain(2), new ApronEquipment(m_Tractor.Footprint, m_Cart.Footprint, m_Aircraft, Vector3.one));
             var train = plan.Trains[0];
 
             Assert.That(train.Tractor.Position.y, Is.EqualTo(0f).Within(1e-4f));
