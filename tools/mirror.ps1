@@ -77,13 +77,42 @@ function Get-PackageCompileErrorCount([string]$Log) {
     return @(Select-String -Path $Log -Pattern 'error CS' -SimpleMatch | Where-Object { $_.Line -match 'PackageCache' }).Count
 }
 
-# Prints why a Unity run failed. Compile errors in the project are the code's fault and are
-# listed. Compile errors only in Library\PackageCache, with none in Assets, are the mirror's fault:
-# a build graph or package cache left half-written by a killed or crashed Unity, which later runs
-# trust. The one cure that has worked every time is a fresh Library, so this deletes it and says
-# so; the next run pays for one import and is then healthy.
+# Errors that say a package namespace does not exist. The project's own code never fails this way:
+# Unity.Netcode, Unity.Services and UnityEngine.InputSystem are all packages, so a run that cannot
+# see them resolved no packages at all, and every file that uses one fails at its using line.
+function Get-UnresolvedPackageErrorCount([string]$Log) {
+    if (-not (Test-Path $Log)) { return 0 }
+    return @(Select-String -Path $Log -Pattern "error CS0234: The type or namespace name '(Netcode|Services|InputSystem|Collections|Mathematics|Burst)' does not exist").Count
+}
+
+function Clear-MirrorLibrary([hashtable]$Paths) {
+    try {
+        Remove-Item (Join-Path $Paths.Mirror "Library") -Recurse -Force -ErrorAction Stop
+        "  Deleted $($Paths.Mirror)\Library; run again."
+    }
+    catch {
+        "  Could not delete $($Paths.Mirror)\Library: $($_.Exception.Message). Close whatever holds it and delete it by hand."
+    }
+}
+
+# Prints why a Unity run failed, and heals the mirror where the mirror is what is wrong.
+#
+# Compile errors in the project are the code's fault and are listed. Two shapes are the mirror's
+# fault instead, both left behind by a killed or crashed Unity and both cured only by a fresh
+# Library: errors only in Library\PackageCache with none in Assets, and errors in Assets that all
+# say a package namespace is missing, which means no package resolved and has nothing to do with
+# whatever was edited. The next run pays for one import and is then healthy.
 function Explain-Failure([string]$Log, [hashtable]$Paths, [int]$ExitCode) {
     $ours = Get-ProjectCompileErrors $Log
+    $unresolved = Get-UnresolvedPackageErrorCount $Log
+
+    if ($unresolved -gt 0) {
+        "  Unity exit $ExitCode with $unresolved errors saying a package namespace does not exist."
+        "  No package resolved in the mirror, so this is its Library and not the code."
+        Clear-MirrorLibrary $Paths
+        return
+    }
+
     if ($ours.Count -gt 0) {
         "  $($ours.Count) distinct compile errors in the project:"
         $ours | Select-Object -First 40 | ForEach-Object { "    $_" }
@@ -93,13 +122,8 @@ function Explain-Failure([string]$Log, [hashtable]$Paths, [int]$ExitCode) {
     $packages = Get-PackageCompileErrorCount $Log
     if ($packages -gt 0) {
         "  Unity exit $ExitCode with no errors in Assets and $packages in Library\PackageCache."
-        "  That is the mirror's Library, not the code. Deleting $($Paths.Mirror)\Library; run again."
-        try {
-            Remove-Item (Join-Path $Paths.Mirror "Library") -Recurse -Force -ErrorAction Stop
-        }
-        catch {
-            "  Could not delete it: $($_.Exception.Message). Close whatever holds it and delete it by hand."
-        }
+        "  That is the mirror's Library, not the code."
+        Clear-MirrorLibrary $Paths
         return
     }
 
