@@ -108,8 +108,6 @@ namespace BelowTheWing.EditorTools
         internal static MeasuredVehicle MeasureTheCart(GameObject cart, Transform model)
         {
             const float slabThicknessMetres = 0.15f;
-            const float lipHeightMetres = 0.18f;
-            const float lipThicknessMetres = 0.05f;
 
             var measured = Wheels(cart, model, new[] { "Wheel_1", "Wheel_2", "Wheel_3", "Wheel_4" });
 
@@ -128,22 +126,6 @@ namespace BelowTheWing.EditorTools
                     "Deck",
                     new Vector3(deckWidthMetres, slabThicknessMetres, deckLengthMetres),
                     new Vector3(0f, deckTopMetres - (slabThicknessMetres * 0.5f), 0f)),
-
-                new VehicleShape.SolidPart(
-                    "Lip left",
-                    new Vector3(lipThicknessMetres, lipHeightMetres, deckLengthMetres),
-                    new Vector3(
-                        -((deckWidthMetres * 0.5f) - (lipThicknessMetres * 0.5f)),
-                        deckTopMetres + (lipHeightMetres * 0.5f),
-                        0f)),
-
-                new VehicleShape.SolidPart(
-                    "Lip right",
-                    new Vector3(lipThicknessMetres, lipHeightMetres, deckLengthMetres),
-                    new Vector3(
-                        (deckWidthMetres * 0.5f) - (lipThicknessMetres * 0.5f),
-                        deckTopMetres + (lipHeightMetres * 0.5f),
-                        0f)),
 
                 new VehicleShape.SolidPart(
                     "End front",

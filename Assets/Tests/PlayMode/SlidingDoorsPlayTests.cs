@@ -156,15 +156,20 @@ namespace BelowTheWing.Tests.PlayMode
 
             var body = pole.GetComponent<Rigidbody>();
 
+            pole.TakeHold();
+
             for (var step = 0; step < 75; step++)
             {
                 body.AddForce(cart.transform.forward * 60f, ForceMode.Force);
                 yield return new WaitForFixedUpdate();
             }
 
+            pole.LetGo();
+
             Assert.That(pole.Openness, Is.GreaterThan(0.95f),
-                $"pulled at 60 N for 1.5 seconds the door only reached {pole.Openness:P0} open. " +
-                "A door that will not follow a steady pull is a door the player cannot work");
+                $"held and pulled at 60 N for 1.5 seconds the door only reached {pole.Openness:P0} " +
+                "open. A door that will not follow a hand's steady pull is a door the player " +
+                "cannot work");
         }
     
         [UnityTest]

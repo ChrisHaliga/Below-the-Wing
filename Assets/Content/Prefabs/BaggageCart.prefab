@@ -125,18 +125,6 @@ MonoBehaviour:
     Piece: {fileID: 0}
     PieceTurn: {x: 0, y: 0, z: 0, w: 1}
     PieceScale: {x: 1, y: 1, z: 1}
-  - Name: Lip left
-    SizeMetres: {x: 0.05, y: 0.18, z: 3.1437695}
-    CentreLocal: {x: -0.8313427, y: 0.5581274, z: 0}
-    Piece: {fileID: 0}
-    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
-    PieceScale: {x: 1, y: 1, z: 1}
-  - Name: Lip right
-    SizeMetres: {x: 0.05, y: 0.18, z: 3.1437695}
-    CentreLocal: {x: 0.8313427, y: 0.5581274, z: 0}
-    Piece: {fileID: 0}
-    PieceTurn: {x: 0, y: 0, z: 0, w: 1}
-    PieceScale: {x: 1, y: 1, z: 1}
   - Name: End front
     SizeMetres: {x: 1.7126853, y: 1.482415, z: 0.15}
     CentreLocal: {x: 0, y: 1.2093349, z: 1.6468848}

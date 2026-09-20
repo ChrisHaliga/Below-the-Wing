@@ -59,6 +59,16 @@ MonoBehaviour:
   sprintDriveMultiplier: 1
   topSpeedMetresPerSecond: 0
   maxBrakeForceNewtons: 2000
+  doorRail:
+    poleKg: 6
+    dragNewtonsPerMetrePerSecond: 40
+    holdsAtNewtons: 1500
+    bounceOffTheEnd: 0
+    seatsAtNewtons: 40
+    latchHoldsAtNewtons: 800
+    seatedWithinFraction: 0.04
+    projectionDistanceMetres: 0.005
+    projectionAngleDegrees: 0.5
   bounciness: 0.4
   maxSteerAngleDegrees: 55
   steerRateDegreesPerSecond: 0

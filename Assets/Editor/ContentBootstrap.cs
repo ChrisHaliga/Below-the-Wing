@@ -155,6 +155,7 @@ namespace BelowTheWing.EditorTools
             profile.maxSteerAngleDegrees = 55f;
             profile.steerRateDegreesPerSecond = 0f;
             profile.driveable = false;
+            profile.doorRail = DoorRailSettings.Default;
             return profile;
         }
 

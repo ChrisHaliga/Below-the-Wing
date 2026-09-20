@@ -98,6 +98,7 @@ namespace BelowTheWing.Cargo
         ConfigurableJoint m_Tether;
         bool m_Tethered;
         bool m_TetherHadABody;
+        IUnhookWhenHeld m_HasHoldOf;
 
         public Hand(Transform anchor, Rigidbody body, HandSettings settings)
         {
@@ -364,6 +365,9 @@ namespace BelowTheWing.Cargo
 
             m_Tethered = true;
             m_TetherHadABody = body != null;
+
+            m_HasHoldOf = thing.GetComponentInParent<IUnhookWhenHeld>();
+            m_HasHoldOf?.TakeHold();
         }
 
         void LetGoOfTheTether()
@@ -372,6 +376,9 @@ namespace BelowTheWing.Cargo
             {
                 UnityEngine.Object.DestroyImmediate(m_Tether);
             }
+
+            m_HasHoldOf?.LetGo();
+            m_HasHoldOf = null;
 
             m_Tether = null;
             m_Tethered = false;

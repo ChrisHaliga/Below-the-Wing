@@ -80,6 +80,10 @@ namespace BelowTheWing.Vehicles
         [Tooltip("Steering rate, degrees/s")]
         public float steerRateDegreesPerSecond = 120f;
 
+        [Header("Doors")]
+        [Tooltip("The rail any sliding doors on this vehicle run on")]
+        public DoorRailSettings doorRail = DoorRailSettings.Default;
+
         [Header("Bodywork")]
         [Tooltip("Bounce of the bodywork, 0 to 1")]
         public float bounciness = 0.4f;

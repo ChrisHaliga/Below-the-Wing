@@ -17,7 +17,7 @@ namespace BelowTheWing.Menu
         [SerializeField, Tooltip("How long the far doors wait after the near ones are shoved, seconds")]
         float m_SecondSetWaitsSeconds = 2.8f;
 
-        [SerializeField, Tooltip("The rail the menu builds the doors on. The game uses DoorRailSettings.Default")]
+        [SerializeField, Tooltip("The rail the menu builds the doors on. A cart in the game uses its profile's")]
         DoorRailSettings m_Rail = MenuRail;
 
         readonly List<SlidingDoorPole> m_Near = new List<SlidingDoorPole>();
@@ -116,7 +116,8 @@ namespace BelowTheWing.Menu
 
                 rail.dragNewtonsPerMetrePerSecond = 20f;
                 rail.bounceOffTheEnd = 0.25f;
-                rail.settlesAtNewtonsPerMetre = 30f;
+                rail.seatsAtNewtons = 0f;
+                rail.latchHoldsAtNewtons = 0f;
 
                 return rail;
             }

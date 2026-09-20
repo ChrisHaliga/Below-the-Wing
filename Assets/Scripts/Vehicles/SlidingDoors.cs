@@ -130,7 +130,7 @@ namespace BelowTheWing.Vehicles
             pole.AddComponent<SlidingDoorPole>().Runs(
                 panel, fabric, cover,
                 pole.transform.localPosition, new Vector3(0f, 0f, towardsTheEnd),
-                Mathf.Abs(openAt - shutAt), fixedPoleAt);
+                Mathf.Abs(openAt - shutAt), fixedPoleAt, rail);
 
             LeaveTheCartAlone(grab, vehicle);
         }
@@ -211,9 +211,9 @@ namespace BelowTheWing.Vehicles
 
             track.zDrive = new JointDrive
             {
-                positionSpring = Mathf.Max(rail.settlesAtNewtonsPerMetre, 0f),
+                positionSpring = SlidingDoor.SeatingStiffnessNewtonsPerMetre,
                 positionDamper = Mathf.Max(rail.dragNewtonsPerMetrePerSecond, 0f),
-                maximumForce = rail.holdsAtNewtons
+                maximumForce = Mathf.Max(rail.seatsAtNewtons, 0f)
             };
 
             track.projectionMode = JointProjectionMode.PositionAndRotation;

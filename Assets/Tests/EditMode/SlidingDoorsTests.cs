@@ -73,7 +73,6 @@ namespace BelowTheWing.Tests.EditMode
             var rail = DoorRailSettings.Default;
             rail.dragNewtonsPerMetrePerSecond = 20f;
             rail.bounceOffTheEnd = 0.25f;
-            rail.settlesAtNewtonsPerMetre = 30f;
 
             SlidingDoors.Build(cart, cart.GetComponent<VehicleShape>(), null, rail);
 
@@ -84,8 +83,18 @@ namespace BelowTheWing.Tests.EditMode
             {
                 Assert.That(joint.zDrive.positionDamper, Is.EqualTo(20f).Within(1e-4f));
                 Assert.That(joint.linearLimit.bounciness, Is.EqualTo(0.25f).Within(1e-4f));
-                Assert.That(joint.zDrive.positionSpring, Is.EqualTo(30f).Within(1e-4f),
-                    "the rail is built to the settings it is given, with no second pass over the joints");
+                Assert.That(joint.zDrive.positionSpring,
+                    Is.EqualTo(SlidingDoor.SeatingStiffnessNewtonsPerMetre).Within(1e-4f),
+                    "the drive that carries a door to its end is stiff and capped, so what a door " +
+                    "can push through is the cap rather than the stiffness");
+
+                Assert.That(joint.zDrive.maximumForce, Is.EqualTo(rail.seatsAtNewtons).Within(1e-4f),
+                    "a door starts loose, so the drive is capped at the gentle seating pull until " +
+                    "the pole finds it seated and raises the cap to the latch");
+
+                Assert.That(joint.zMotion, Is.EqualTo(ConfigurableJointMotion.Limited),
+                    "locking this axis pins the pole at the joint's connected anchor, which is the " +
+                    "middle of the travel, so every door reads exactly half open");
             }
         }
 
@@ -98,7 +107,52 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(rail.dragNewtonsPerMetrePerSecond, Is.EqualTo(40f).Within(1e-4f));
             Assert.That(rail.holdsAtNewtons, Is.EqualTo(1500f).Within(1e-4f));
             Assert.That(rail.bounceOffTheEnd, Is.EqualTo(0f).Within(1e-4f), "a hand-pushed door stops dead at its end");
-            Assert.That(rail.settlesAtNewtonsPerMetre, Is.EqualTo(0f).Within(1e-4f), "and nothing springs it back at the player");
+
+            Assert.That(rail.seatsAtNewtons, Is.GreaterThan(0f),
+                "nothing carries a door left halfway to either end, so it stays halfway");
+
+            Assert.That(rail.latchHoldsAtNewtons, Is.InRange(400f, 3000f),
+                $"a latch of {rail.latchHoldsAtNewtons:0} N has to beat a 20 kg bag leaning on a " +
+                "door, around 200 N, and lose to a hand, which makes 1000 N at 0.1 m of arm stretch");
+        }
+
+        [Test]
+        public void TheDefaultRailUnhooksOnAShakeNoBagCanCause()
+        {
+            var rail = DoorRailSettings.Default;
+
+            Assert.That(rail.unhooksAboveMetresPerSecondSquared, Is.GreaterThan(10f),
+                $"a hook thrown by {rail.unhooksAboveMetresPerSecondSquared:0} m/s^2 comes off " +
+                "every time a bag lands in the cart or a tractor pulls away");
+
+            Assert.That(rail.unhooksAboveMetresPerSecondSquared, Is.LessThan(100f),
+                "a hook nothing can shake off is a door that never opens when the cart is hit");
+        }
+
+        [Test]
+        public void ADoorLetGoBelowHalfwayShutsAndAboveHalfwayOpens()
+        {
+            Assert.That(SlidingDoor.EndItSettlesTo(0f), Is.EqualTo(SlidingDoor.Shut));
+            Assert.That(SlidingDoor.EndItSettlesTo(0.4f), Is.EqualTo(SlidingDoor.Shut));
+            Assert.That(SlidingDoor.EndItSettlesTo(0.49f), Is.EqualTo(SlidingDoor.Shut));
+
+            Assert.That(SlidingDoor.EndItSettlesTo(0.5f), Is.EqualTo(SlidingDoor.Open));
+            Assert.That(SlidingDoor.EndItSettlesTo(0.6f), Is.EqualTo(SlidingDoor.Open),
+                "a door shoved most of the way open finishes the job rather than sliding back");
+            Assert.That(SlidingDoor.EndItSettlesTo(1f), Is.EqualTo(SlidingDoor.Open));
+        }
+
+        [Test]
+        public void OnlyADoorNearAnEndCountsAsSeated()
+        {
+            Assert.That(SlidingDoor.Seated(0f, 0.04f), Is.True);
+            Assert.That(SlidingDoor.Seated(1f, 0.04f), Is.True);
+            Assert.That(SlidingDoor.Seated(0.04f, 0.04f), Is.True);
+
+            Assert.That(SlidingDoor.Seated(0.2f, 0.04f), Is.False,
+                "a door a fifth of the way open is travelling, and latching it there is what " +
+                "leaves a door stuck in an intermediate spot");
+            Assert.That(SlidingDoor.Seated(0.5f, 0.04f), Is.False);
         }
 
         GameObject ACartWithDoors(int count)
