@@ -99,14 +99,18 @@ namespace BelowTheWing.Tests.PlayMode
 
             yield return Steps.Seconds(0.5f);
 
+            pole.TakeHold();
+
             pole.GetComponent<Rigidbody>().AddForce(
                 cart.transform.forward * 60f, ForceMode.Impulse);
+
+            pole.LetGo();
 
             yield return Steps.Seconds(2f);
 
             Assert.That(pole.Openness, Is.EqualTo(1f).Within(0.02f),
-                $"slammed open at 10 m/s the door settled at {pole.Openness:P0}. A door with no " +
-                "spring on it stops where it is shoved and stays there");
+                $"slammed open at 10 m/s the door settled at {pole.Openness:P0}. A door thrown at " +
+                "its open end stays there rather than drifting back off it");
         }
 
         [UnityTest]

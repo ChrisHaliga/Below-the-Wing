@@ -41,12 +41,14 @@ namespace BelowTheWing.Tests.PlayMode
             return m_Cart.GetComponentsInChildren<SlidingDoorPole>(true);
         }
 
-        static void Put(SlidingDoorPole pole, float openness)
+        static void LeftPartOpen(SlidingDoorPole pole, float openness)
         {
-            var body = pole.GetComponent<Rigidbody>();
+            pole.TakeHold();
 
             pole.transform.localPosition += pole.AlongTheRail * (pole.TravelMetres * openness);
-            body.linearVelocity = Vector3.zero;
+            pole.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
+
+            pole.LetGo();
         }
 
         [UnityTest]
@@ -54,7 +56,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var doors = ACartWithDoors();
 
-            Put(doors[0], 0.4f);
+            LeftPartOpen(doors[0], 0.4f);
 
             yield return Steps.Seconds(3f);
 
@@ -69,7 +71,7 @@ namespace BelowTheWing.Tests.PlayMode
         {
             var doors = ACartWithDoors();
 
-            Put(doors[0], 0.6f);
+            LeftPartOpen(doors[0], 0.6f);
 
             yield return Steps.Seconds(3f);
 
@@ -84,7 +86,7 @@ namespace BelowTheWing.Tests.PlayMode
 
             yield return Steps.Seconds(1.5f);
 
-            Assert.That(doors[0].Latched, Is.True, "the door never latched, so nothing is under test");
+            Assert.That(doors[0].Hooked, Is.True, "the door never hooked, so nothing is under test");
 
             var bag = GameObject.CreatePrimitive(PrimitiveType.Cube);
             bag.transform.localScale = new Vector3(0.4f, 0.25f, 0.6f);
@@ -199,11 +201,14 @@ namespace BelowTheWing.Tests.PlayMode
 
             var cart = m_Cart.GetComponent<Rigidbody>();
             var shake = m_CartProfile.doorRail.unhooksAboveMetresPerSecondSquared;
+            var wanted = shake * 4f * Time.fixedDeltaTime;
 
-            cart.linearVelocity = doors[0].OpensToward * (shake * 4f * Time.fixedDeltaTime);
+            cart.AddForce(doors[0].OpensToward * (wanted * cart.mass), ForceMode.Impulse);
 
-            yield return new WaitForFixedUpdate();
-            yield return new WaitForFixedUpdate();
+            for (var step = 0; step < 6; step++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
 
             Assert.That(doors[0].Hooked, Is.False,
                 "the cart was knocked harder than the rail says throws a hook and the door stayed " +

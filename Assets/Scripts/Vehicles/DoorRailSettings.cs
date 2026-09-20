@@ -21,10 +21,10 @@ namespace BelowTheWing.Vehicles
         [Tooltip("Steady pull toward whichever end the door is nearer, N. Zero for none")]
         public float seatsAtNewtons;
 
-        [Tooltip("Force needed to drag a seated door off its end, N. Zero for no latch")]
+        [Tooltip("Force needed to drag a seated door off its end, N. Zero for no latch and no hook")]
         public float latchHoldsAtNewtons;
 
-        [Tooltip("Shake of the cart that throws a shut door's hook off, m/s^2. Zero never throws it")]
+        [Tooltip("Shake of the cart that throws a shut door's hook off, m/s^2. Zero leaves only a hand")]
         public float unhooksAboveMetresPerSecondSquared;
 
         [Tooltip("How near an end counts as seated, as a share of the travel")]

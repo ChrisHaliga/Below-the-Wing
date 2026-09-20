@@ -83,14 +83,14 @@ namespace BelowTheWing.Tests.EditMode
             {
                 Assert.That(joint.zDrive.positionDamper, Is.EqualTo(20f).Within(1e-4f));
                 Assert.That(joint.linearLimit.bounciness, Is.EqualTo(0.25f).Within(1e-4f));
-                Assert.That(joint.zDrive.positionSpring,
-                    Is.EqualTo(SlidingDoor.SeatingStiffnessNewtonsPerMetre).Within(1e-4f),
-                    "the drive that carries a door to its end is stiff and capped, so what a door " +
-                    "can push through is the cap rather than the stiffness");
+                Assert.That(joint.zDrive.positionSpring, Is.EqualTo(0f).Within(1e-4f),
+                    "a spring on this drive pulls toward the joint's anchor, which is the middle of " +
+                    "the travel. What carries a door to an end is a force the pole applies, so that " +
+                    "it can be capped without capping the drag along with it");
 
-                Assert.That(joint.zDrive.maximumForce, Is.EqualTo(rail.seatsAtNewtons).Within(1e-4f),
-                    "a door starts loose, so the drive is capped at the gentle seating pull until " +
-                    "the pole finds it seated and raises the cap to the latch");
+                Assert.That(joint.zDrive.maximumForce, Is.EqualTo(rail.holdsAtNewtons).Within(1e-4f),
+                    "the drive damps, and a cap below the rail's hold takes the damping away: a " +
+                    "door then bounces off its end stop and drifts back");
 
                 Assert.That(joint.zMotion, Is.EqualTo(ConfigurableJointMotion.Limited),
                     "locking this axis pins the pole at the joint's connected anchor, which is the " +
@@ -127,6 +127,22 @@ namespace BelowTheWing.Tests.EditMode
 
             Assert.That(rail.unhooksAboveMetresPerSecondSquared, Is.LessThan(100f),
                 "a hook nothing can shake off is a door that never opens when the cart is hit");
+        }
+
+        [Test]
+        public void ARailWithNoLatchHooksNothing()
+        {
+            var cart = ACartWithDoors(1);
+            var rail = DoorRailSettings.Default;
+            rail.latchHoldsAtNewtons = 0f;
+
+            SlidingDoors.Build(cart, cart.GetComponent<VehicleShape>(), null, rail);
+
+            var pole = cart.GetComponentInChildren<SlidingDoorPole>(true);
+
+            Assert.That(pole.HooksShut, Is.False,
+                "the menu shoves its doors with a rail that holds them nowhere, and a hook it never " +
+                "asked for pins them shut against a 38 newton-second shove");
         }
 
         [Test]

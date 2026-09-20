@@ -6,7 +6,10 @@ namespace BelowTheWing.Vehicles
     {
         public const float FullyOpenWeight = 100f;
 
-        public const float SeatingStiffnessNewtonsPerMetre = 40000f;
+        public const float SeatingStiffnessNewtonsPerMetre = 12000f;
+
+        public static float SeatingDampingFor(float poleKg)
+            => 2f * Mathf.Sqrt(SeatingStiffnessNewtonsPerMetre * Mathf.Max(poleKg, 0.001f));
 
         public const float Shut = 0f;
 

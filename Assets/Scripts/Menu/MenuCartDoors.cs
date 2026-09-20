@@ -90,6 +90,7 @@ namespace BelowTheWing.Menu
             foreach (var pole in m_Cart.GetComponentsInChildren<SlidingDoorPole>(true))
             {
                 pole.enabled = true;
+                pole.RunsOn(m_Rail);
 
                 pole.GetComponent<Rigidbody>().isKinematic = false;
 
@@ -116,7 +117,7 @@ namespace BelowTheWing.Menu
 
                 rail.dragNewtonsPerMetrePerSecond = 20f;
                 rail.bounceOffTheEnd = 0.25f;
-                rail.seatsAtNewtons = 0f;
+                rail.seatsAtNewtons = 40f;
                 rail.latchHoldsAtNewtons = 0f;
 
                 return rail;

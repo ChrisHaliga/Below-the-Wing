@@ -7,7 +7,8 @@ namespace BelowTheWing.Vehicles
     [RequireComponent(typeof(Rigidbody))]
     public sealed class SlidingDoorPole : MonoBehaviour, IUnhookWhenHeld
     {
-        const float HookedHoldsAtNewtons = 100000f;
+        const float HookedSlackMetres = 0.002f;
+        const float CatchesBelowMetresPerSecond = 0.2f;
 
         SkinnedMeshRenderer m_Panel;
         SkinnedMeshRenderer m_Fabric;
@@ -23,8 +24,10 @@ namespace BelowTheWing.Vehicles
         Vector3 m_CartWas;
 
         int m_Hands;
-        bool m_Hooked = true;
-        bool m_AwayFromShut;
+        bool m_Hooked;
+        bool m_CameBack;
+
+        bool ItHooksShut => m_Rail.latchHoldsAtNewtons > 0f;
 
         public float Openness { get; private set; }
 
@@ -58,12 +61,44 @@ namespace BelowTheWing.Vehicles
             m_Track = GetComponent<ConfigurableJoint>();
             m_Cart = m_Track != null ? m_Track.connectedBody : null;
             m_CartWas = m_Cart != null ? m_Cart.linearVelocity : Vector3.zero;
+
+            Hook(ItHooksShut);
         }
 
         public void TakeHold()
         {
             m_Hands++;
-            m_Hooked = false;
+            Hook(false);
+            m_CameBack = false;
+        }
+
+        public bool HooksShut => ItHooksShut;
+
+        public void RunsOn(DoorRailSettings rail)
+        {
+            m_Rail = rail;
+            Hook(ItHooksShut);
+
+            var body = GetComponent<Rigidbody>();
+            if (body != null && rail.poleKg > 0f)
+            {
+                body.mass = rail.poleKg;
+            }
+
+            if (m_Track == null)
+            {
+                return;
+            }
+
+            var drive = m_Track.zDrive;
+            drive.positionSpring = 0f;
+            drive.positionDamper = Mathf.Max(rail.dragNewtonsPerMetrePerSecond, 0f);
+            drive.maximumForce = rail.holdsAtNewtons;
+            m_Track.zDrive = drive;
+
+            var stop = m_Track.linearLimit;
+            stop.bounciness = Mathf.Clamp01(rail.bounceOffTheEnd);
+            m_Track.linearLimit = stop;
         }
 
         public void LetGo() => m_Hands = Mathf.Max(m_Hands - 1, 0);
@@ -92,33 +127,53 @@ namespace BelowTheWing.Vehicles
         void MindTheHook()
         {
             var shake = HowHardTheCartIsShaken();
+
+            if (!ItHooksShut || m_Hands > 0)
+            {
+                Hook(false);
+                return;
+            }
+
+            if (m_Hooked)
+            {
+                if (m_Rail.unhooksAboveMetresPerSecondSquared > 0f
+                    && shake > m_Rail.unhooksAboveMetresPerSecondSquared)
+                {
+                    Hook(false);
+                }
+
+                return;
+            }
+
             var shut = Openness <= Mathf.Clamp(m_Rail.seatedWithinFraction, 0f, 0.5f);
 
             if (!shut)
             {
-                m_Hooked = false;
-                m_AwayFromShut = true;
+                m_CameBack = true;
                 return;
             }
 
-            if (m_Hands > 0)
+            if (m_CameBack && Mathf.Abs(SpeedAlongTheRail()) < CatchesBelowMetresPerSecond)
             {
-                m_Hooked = false;
+                Hook(true);
+                m_CameBack = false;
+            }
+        }
+
+        void Hook(bool on)
+        {
+            m_Hooked = on;
+
+            if (m_Track == null)
+            {
                 return;
             }
 
-            if (m_AwayFromShut)
-            {
-                m_Hooked = true;
-                m_AwayFromShut = false;
-                return;
-            }
+            m_Track.connectedAnchor = on ? m_ShutAt : m_ShutAt + (m_Along * (m_TravelMetres * 0.5f));
 
-            if (m_Hooked && m_Rail.unhooksAboveMetresPerSecondSquared > 0f
-                && shake > m_Rail.unhooksAboveMetresPerSecondSquared)
-            {
-                m_Hooked = false;
-            }
+            var stop = m_Track.linearLimit;
+            stop.limit = on ? HookedSlackMetres : m_TravelMetres * 0.5f;
+            m_Track.linearLimit = stop;
         }
 
         float HowHardTheCartIsShaken()
@@ -138,7 +193,9 @@ namespace BelowTheWing.Vehicles
 
         void HoldItAtItsEnd()
         {
-            if (m_Track == null)
+            var body = GetComponent<Rigidbody>();
+
+            if (body == null || m_Hooked)
             {
                 return;
             }
@@ -147,14 +204,34 @@ namespace BelowTheWing.Vehicles
                       && m_Rail.latchHoldsAtNewtons > 0f
                       && SlidingDoor.Seated(Openness, m_Rail.seatedWithinFraction);
 
-            var drive = m_Track.zDrive;
-            drive.maximumForce = WhatHoldsIt();
-            m_Track.zDrive = drive;
+            var holds = WhatHoldsIt();
 
-            var end = m_Hooked ? SlidingDoor.Shut : SlidingDoor.EndItSettlesTo(Openness);
+            if (holds <= 0f)
+            {
+                return;
+            }
 
-            m_Track.targetPosition = new Vector3(
-                0f, 0f, SlidingDoor.TargetAlongTheRail(end, m_TravelMetres, m_Along.z));
+            var howFarShort = (SlidingDoor.EndItSettlesTo(Openness) - Openness) * m_TravelMetres;
+            var alongTheRail = Vector3.Dot(body.linearVelocity - CartVelocity(), OpensToward);
+
+            var push = Mathf.Clamp(
+                (howFarShort * SlidingDoor.SeatingStiffnessNewtonsPerMetre)
+                - (alongTheRail * SlidingDoor.SeatingDampingFor(body.mass)),
+                -holds,
+                holds);
+
+            body.AddForce(OpensToward * push);
+        }
+
+        Vector3 CartVelocity() => m_Cart != null ? m_Cart.linearVelocity : Vector3.zero;
+
+        float SpeedAlongTheRail()
+        {
+            var body = GetComponent<Rigidbody>();
+
+            return body == null
+                ? 0f
+                : Vector3.Dot(body.linearVelocity - CartVelocity(), OpensToward);
         }
 
         float WhatHoldsIt()
@@ -162,11 +239,6 @@ namespace BelowTheWing.Vehicles
             if (m_Hands > 0)
             {
                 return 0f;
-            }
-
-            if (m_Hooked)
-            {
-                return HookedHoldsAtNewtons;
             }
 
             return Latched ? m_Rail.latchHoldsAtNewtons : Mathf.Max(m_Rail.seatsAtNewtons, 0f);

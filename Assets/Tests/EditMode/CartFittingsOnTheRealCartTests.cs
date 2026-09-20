@@ -92,12 +92,19 @@ namespace BelowTheWing.Tests.EditMode
             Assert.That(pole.transform.localPosition.z, Is.EqualTo(0.02919f).Within(5e-4f),
                 "a shut door puts its moving pole at 0.02919 m, near the middle of the cart");
 
+            Assert.That(pole.TravelMetres, Is.EqualTo(1.01162f).Within(1e-3f),
+                "the pole travels 1.01162 m, from 0.02919 m shut out to 1.04081 m open");
+
             var rail = pole.GetComponent<ConfigurableJoint>();
 
+            pole.TakeHold();
+
             Assert.That(rail.linearLimit.limit * 2f, Is.EqualTo(1.01162f).Within(1e-3f),
-                "the pole travels 1.01162 m, from 0.02919 m shut out to 1.04081 m open");
+                "off its hook the rail gives the pole the whole travel the model asks for");
             Assert.That(rail.connectedAnchor.z, Is.EqualTo(0.535f).Within(1e-3f),
                 "the rail is anchored half way along that travel");
+
+            pole.LetGo();
         }
 
         [Test]

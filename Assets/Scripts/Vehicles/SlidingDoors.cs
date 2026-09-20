@@ -211,9 +211,9 @@ namespace BelowTheWing.Vehicles
 
             track.zDrive = new JointDrive
             {
-                positionSpring = SlidingDoor.SeatingStiffnessNewtonsPerMetre,
+                positionSpring = 0f,
                 positionDamper = Mathf.Max(rail.dragNewtonsPerMetrePerSecond, 0f),
-                maximumForce = Mathf.Max(rail.seatsAtNewtons, 0f)
+                maximumForce = rail.holdsAtNewtons
             };
 
             track.projectionMode = JointProjectionMode.PositionAndRotation;
