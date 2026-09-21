@@ -8,8 +8,13 @@ namespace BelowTheWing.Vehicles
 
         public const float SeatingStiffnessNewtonsPerMetre = 12000f;
 
-        public static float SeatingDampingFor(float poleKg)
-            => 2f * Mathf.Sqrt(SeatingStiffnessNewtonsPerMetre * Mathf.Max(poleKg, 0.001f));
+        public const float SettlesAtMetresPerSecond = 1f;
+
+        public static float CriticalDampingFor(float stiffnessNewtonsPerMetre, float poleKg)
+            => 2f * Mathf.Sqrt(Mathf.Max(stiffnessNewtonsPerMetre, 0f) * Mathf.Max(poleKg, 0.001f));
+
+        public static float SettlingDampingFor(float holdsAtNewtons)
+            => Mathf.Max(holdsAtNewtons, 0f) / SettlesAtMetresPerSecond;
 
         public const float Shut = 0f;
 

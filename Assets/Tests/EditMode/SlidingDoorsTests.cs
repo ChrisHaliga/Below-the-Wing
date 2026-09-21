@@ -146,6 +146,21 @@ namespace BelowTheWing.Tests.EditMode
         }
 
         [Test]
+        public void TheDefaultRailLetsAHandMoveADoorFromWhereAPlayerStands()
+        {
+            var rail = DoorRailSettings.Default;
+
+            Assert.That(rail.followsAHandNewtonsPerMetre, Is.GreaterThan(0f),
+                "a held door that follows nothing only moves when the arm tether hits its own " +
+                "reach limit, which is 1.2 m away, so the player has to sprint or flick to open it");
+
+            Assert.That(rail.followsAHandNewtonsPerMetre * 0.1f, Is.GreaterThan(rail.seatsAtNewtons),
+                $"a hand 0.1 m along the rail pulls {rail.followsAHandNewtonsPerMetre * 0.1f:0} N " +
+                $"against the {rail.seatsAtNewtons:0} N carrying the door back to its end, so a " +
+                "small movement has to win");
+        }
+
+        [Test]
         public void ADoorLetGoBelowHalfwayShutsAndAboveHalfwayOpens()
         {
             Assert.That(SlidingDoor.EndItSettlesTo(0f), Is.EqualTo(SlidingDoor.Shut));

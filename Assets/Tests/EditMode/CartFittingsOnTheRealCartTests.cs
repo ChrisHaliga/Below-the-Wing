@@ -97,7 +97,7 @@ namespace BelowTheWing.Tests.EditMode
 
             var rail = pole.GetComponent<ConfigurableJoint>();
 
-            pole.TakeHold();
+            pole.TakeHold(new GameObject("Hand").transform);
 
             Assert.That(rail.linearLimit.limit * 2f, Is.EqualTo(1.01162f).Within(1e-3f),
                 "off its hook the rail gives the pole the whole travel the model asks for");

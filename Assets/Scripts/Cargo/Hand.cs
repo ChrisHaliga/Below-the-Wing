@@ -367,7 +367,7 @@ namespace BelowTheWing.Cargo
             m_TetherHadABody = body != null;
 
             m_HasHoldOf = thing.GetComponentInParent<IUnhookWhenHeld>();
-            m_HasHoldOf?.TakeHold();
+            m_HasHoldOf?.TakeHold(m_Anchor);
         }
 
         void LetGoOfTheTether()

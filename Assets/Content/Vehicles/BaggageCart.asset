@@ -64,9 +64,11 @@ MonoBehaviour:
     dragNewtonsPerMetrePerSecond: 40
     holdsAtNewtons: 1500
     bounceOffTheEnd: 0
-    seatsAtNewtons: 40
+    seatsAtNewtons: 200
     latchHoldsAtNewtons: 800
+    unhooksAboveMetresPerSecondSquared: 25
     seatedWithinFraction: 0.04
+    followsAHandNewtonsPerMetre: 4000
     projectionDistanceMetres: 0.005
     projectionAngleDegrees: 0.5
   bounciness: 0.4

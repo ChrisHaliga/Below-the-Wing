@@ -30,6 +30,11 @@ namespace BelowTheWing.Tests.PlayMode
                 Object.DestroyImmediate(m_Cart);
             }
 
+            if (m_Hand != null)
+            {
+                Object.DestroyImmediate(m_Hand);
+            }
+
             m_Apron.TearDown();
             Object.DestroyImmediate(m_CartProfile);
         }
@@ -41,14 +46,39 @@ namespace BelowTheWing.Tests.PlayMode
             return m_Cart.GetComponentsInChildren<SlidingDoorPole>(true);
         }
 
-        static void LeftPartOpen(SlidingDoorPole pole, float openness)
+        GameObject m_Hand;
+
+        Transform AHand()
         {
-            pole.TakeHold();
+            m_Hand = m_Hand != null ? m_Hand : new GameObject("Hand");
+            return m_Hand.transform;
+        }
+
+        void LeftPartOpen(SlidingDoorPole pole, float openness)
+        {
+            pole.TakeHold(AHand());
 
             pole.transform.localPosition += pole.AlongTheRail * (pole.TravelMetres * openness);
             pole.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
 
             pole.LetGo();
+        }
+
+        IEnumerator AllTheWayOpen(SlidingDoorPole pole)
+        {
+            var hand = AHand();
+
+            pole.TakeHold(hand);
+
+            for (var step = 0; step < 120; step++)
+            {
+                hand.position = pole.transform.position + (pole.OpensToward * 0.5f);
+                yield return new WaitForFixedUpdate();
+            }
+
+            pole.LetGo();
+
+            yield return Steps.Seconds(2.5f);
         }
 
         [UnityTest]
@@ -143,7 +173,7 @@ namespace BelowTheWing.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator AHandThrowsTheHookAndOpensAShutDoor()
+        public IEnumerator AHandHalfAMetreAlongTheRailOpensADoorWithoutBeingFlung()
         {
             var doors = ACartWithDoors();
 
@@ -151,21 +181,35 @@ namespace BelowTheWing.Tests.PlayMode
 
             Assert.That(doors[0].Hooked, Is.True, "the door never hooked, so nothing is under test");
 
-            var body = doors[0].GetComponent<Rigidbody>();
+            yield return AllTheWayOpen(doors[0]);
 
-            doors[0].TakeHold();
+            Assert.That(doors[0].Openness, Is.GreaterThan(0.95f),
+                $"a hand held half a metre along the rail got the door to {doors[0].Openness:F2}. " +
+                "A grip that only bites once the player has sprinted away from the cart is a door " +
+                "nobody can work from where they are standing");
+        }
 
-            for (var step = 0; step < 120; step++)
-            {
-                body.AddForce(doors[0].OpensToward * 200f);
-                yield return new WaitForFixedUpdate();
-            }
+        [UnityTest]
+        public IEnumerator AnOpenDoorIsNotKnockedShutByItsNeighbourBeingWorked()
+        {
+            var doors = ACartWithDoors();
 
-            doors[0].LetGo();
+            yield return Steps.Seconds(1.5f);
+            yield return AllTheWayOpen(doors[0]);
 
-            Assert.That(doors[0].Openness, Is.GreaterThan(0.5f),
-                $"a hand pulling a door it has hold of reached {doors[0].Openness:F2} open. A hook " +
-                "a hand cannot throw is a door that never opens");
+            Assert.That(doors[0].Hooked, Is.True,
+                "a door left at its open end is caught there, or nothing holds it against a knock");
+
+            var was = doors[0].Openness;
+
+            doors[1].GetComponent<Rigidbody>().AddForce(
+                doors[1].OpensToward * 120f, ForceMode.Impulse);
+
+            yield return Steps.Seconds(2f);
+
+            Assert.That(Mathf.Abs(doors[0].Openness - was), Is.LessThan(0.05f),
+                $"working the next door moved the open one from {was:F2} to " +
+                $"{doors[0].Openness:F2}. An open door is held at its end the same way a shut one is");
         }
 
         [UnityTest]

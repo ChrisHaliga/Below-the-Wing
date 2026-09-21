@@ -1,8 +1,10 @@
+using UnityEngine;
+
 namespace BelowTheWing.Cargo
 {
     public interface IUnhookWhenHeld
     {
-        void TakeHold();
+        void TakeHold(Transform hand);
 
         void LetGo();
     }

@@ -99,12 +99,16 @@ namespace BelowTheWing.Tests.PlayMode
 
             yield return Steps.Seconds(0.5f);
 
-            pole.TakeHold();
+            var hand = new GameObject("Hand").transform;
+
+            pole.TakeHold(hand);
+            hand.position = pole.transform.position + (pole.OpensToward * 0.5f);
 
             pole.GetComponent<Rigidbody>().AddForce(
                 cart.transform.forward * 60f, ForceMode.Impulse);
 
             pole.LetGo();
+            Object.Destroy(hand.gameObject);
 
             yield return Steps.Seconds(2f);
 
@@ -158,22 +162,23 @@ namespace BelowTheWing.Tests.PlayMode
 
             yield return Steps.Seconds(0.5f);
 
-            var body = pole.GetComponent<Rigidbody>();
+            var hand = new GameObject("Hand").transform;
 
-            pole.TakeHold();
+            pole.TakeHold(hand);
 
             for (var step = 0; step < 75; step++)
             {
-                body.AddForce(cart.transform.forward * 60f, ForceMode.Force);
+                hand.position = pole.transform.position + (pole.OpensToward * 0.3f);
                 yield return new WaitForFixedUpdate();
             }
 
             pole.LetGo();
+            Object.Destroy(hand.gameObject);
 
             Assert.That(pole.Openness, Is.GreaterThan(0.95f),
-                $"held and pulled at 60 N for 1.5 seconds the door only reached {pole.Openness:P0} " +
-                "open. A door that will not follow a hand's steady pull is a door the player " +
-                "cannot work");
+                $"a hand held 0.3 m along the rail for 1.5 seconds got the door to " +
+                $"{pole.Openness:P0} open. A door that will not follow a hand's steady pull is a " +
+                "door the player cannot work");
         }
     
         [UnityTest]

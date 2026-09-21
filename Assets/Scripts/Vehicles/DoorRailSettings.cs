@@ -30,6 +30,9 @@ namespace BelowTheWing.Vehicles
         [Tooltip("How near an end counts as seated, as a share of the travel")]
         public float seatedWithinFraction;
 
+        [Tooltip("How hard a held door follows the hand along its rail, N/m. Zero for none")]
+        public float followsAHandNewtonsPerMetre;
+
         [Tooltip("Position error the solver snaps shut, m")]
         public float projectionDistanceMetres;
 
@@ -42,10 +45,11 @@ namespace BelowTheWing.Vehicles
             dragNewtonsPerMetrePerSecond = 40f,
             holdsAtNewtons = 1500f,
             bounceOffTheEnd = 0f,
-            seatsAtNewtons = 40f,
+            seatsAtNewtons = 200f,
             latchHoldsAtNewtons = 800f,
             unhooksAboveMetresPerSecondSquared = 25f,
             seatedWithinFraction = 0.04f,
+            followsAHandNewtonsPerMetre = 4000f,
             projectionDistanceMetres = 0.005f,
             projectionAngleDegrees = 0.5f
         };

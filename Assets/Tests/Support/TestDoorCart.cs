@@ -33,9 +33,16 @@ namespace BelowTheWing.Tests.Support
 
             var body = cart.AddComponent<Rigidbody>();
             body.mass = profile.massKg;
-            body.useGravity = false;
 
             TestShapes.On(cart, TestShapes.Cart());
+
+            var shape = cart.GetComponent<VehicleShape>();
+            var standing = cart.AddComponent<BoxCollider>();
+            standing.center = shape.EnvelopeCentreLocal;
+            standing.size = shape.EnvelopeSizeMetres;
+
+            cart.transform.position = new Vector3(
+                0f, (shape.EnvelopeSizeMetres.y * 0.5f) - shape.EnvelopeCentreLocal.y, 0f);
 
             for (var door = 1; door <= Doors; door++)
             {

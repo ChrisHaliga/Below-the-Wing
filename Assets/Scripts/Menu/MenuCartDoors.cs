@@ -119,6 +119,7 @@ namespace BelowTheWing.Menu
                 rail.bounceOffTheEnd = 0.25f;
                 rail.seatsAtNewtons = 40f;
                 rail.latchHoldsAtNewtons = 0f;
+                rail.followsAHandNewtonsPerMetre = 0f;
 
                 return rail;
             }
