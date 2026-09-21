@@ -13,6 +13,33 @@ the record of what was believed then.
 
 ---
 
+## 2026-09-20 - A swapped-in model is compared under the settings the game loads it with
+
+Unity cannot read an fbx's object names without importing it, so the tool that swaps a new version
+of a model into the project has to import the dropped file before it can say what the model lost.
+
+The dropped file is staged into `Assets/Content/_Swapping` beside a copy of the target's own
+`.meta`, with a fresh guid so the two do not collide. Settings that change which transforms exist,
+`preserveHierarchy`, `optimizeGameObjects` and `sortHierarchyByName` among them, then match, and the
+comparison is against the hierarchy the game would actually load. The staging copy is deleted
+whether the swap goes ahead or not.
+
+`importCameras` and `importLights` are not the reason, though they looked like it. Measured on
+2026-09-20: `crj_200.fbx` imports the objects named `Camera` and `Light` either way. Those settings
+strip the Camera and Light components and leave the GameObjects, so a comparison of transform names
+cannot see them and never could. Nothing in the suite proves the meta copy changes an outcome,
+because no shipped model differs from the default in a setting that moves a transform. It is kept
+for the settings that would.
+
+That measurement is also why the comparison looks at which parts carry a mesh, and not only at
+names. A part that keeps its name and loses its mesh reads as unchanged by name, and
+`ModelMeasure.PartOfTheModel` throws on exactly that case at build time.
+
+Turned down: parsing the fbx directly. It is a binary format, both generations of it, and a parser
+would be a second opinion about the art that could disagree with Unity's.
+
+---
+
 ## 2026-09-15 — A crash cannot free a port, so nothing is allowed to depend on one
 
 A player reported that closing the game unexpectedly left it holding their port with no way to shut
