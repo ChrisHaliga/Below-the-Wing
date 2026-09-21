@@ -35,8 +35,10 @@ function Sync-Mirror([hashtable]$Paths) {
 # with its source files but none of its .asmdef files. Later runs trust the folder as extracted,
 # every source in it is ignored as being in an immutable folder with no assembly definition, and
 # everything that references that assembly fails with types not found while Assets shows no error.
-# Deleting the cache makes the next run extract again, from the editor's own copy for a built-in
-# package and from the machine-wide cache for the rest.
+#
+# The whole Library goes, not only the cache. Deleting the cache alone leaves the artifact database
+# and the Bee build graph still pointing into it, and the run after that resolves no packages at all
+# and fails with every using line in the project unresolved. That cost a wasted run every time.
 function Repair-PackageCache([hashtable]$Paths) {
     $cache = Join-Path $Paths.Mirror "Library\PackageCache"
     if (-not (Test-Path $cache)) { return }
@@ -47,8 +49,9 @@ function Repair-PackageCache([hashtable]$Paths) {
     }
 
     if ($broken) {
-        "  package cache is partial ($(($broken | ForEach-Object { $_.Name -replace '@.*','' }) -join ', ') have sources but no asmdef); clearing it"
-        Remove-Item $cache -Recurse -Force
+        "  package cache is partial ($(($broken | ForEach-Object { $_.Name -replace '@.*','' }) -join ', ') have sources but no asmdef)."
+        "  Deleting the whole Library so the next run reimports from scratch; that run is slower."
+        Remove-Item (Join-Path $Paths.Mirror "Library") -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
